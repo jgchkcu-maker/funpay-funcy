@@ -35,3 +35,9 @@ test('finance, templates, and accounts wrap controls instead of pushing the popu
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-popup\s+\.fpt-acc-item[\s\S]*?flex-wrap:\s*wrap/);
   assert.match(css, /\.fp-tools-popup\s+\.currency-rate-display\s*\{[^}]*min-width:\s*0/s);
 });
+
+test('short and very narrow popup does not reintroduce fixed nav-row height', () => {
+  const css = responsiveCss();
+
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*520px\)\s+and\s+\(max-height:\s*650px\)[\s\S]*?\.fp-tools-nav\s+li\[data-page\]\s+a,[\s\S]*?height:\s*auto[^}]*min-height:\s*48px/s);
+});
