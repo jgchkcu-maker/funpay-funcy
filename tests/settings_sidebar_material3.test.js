@@ -13,7 +13,7 @@ test('settings navigation uses a single vertical Material-style sidebar', () => 
   const css = fs.readFileSync(cssPath, 'utf8');
 
   assert.match(css, /\.fp-tools-nav\s+ul\s*\{[^}]*display:\s*flex[^}]*flex-direction:\s*column/s);
-  assert.match(css, /\.fp-tools-nav\s+li\[data-page\]\s+a\s*\{[^}]*flex-direction:\s*row/s);
+  assert.match(css, /\.fp-tools-nav\s+li\[data-page\]\s+a,\s*\.fp-tools-nav\s+li\[data-page\]\.fpt-nav-wide\s+a\s*\{[^}]*flex-direction:\s*row/s);
   assert.match(css, /\.fp-tools-nav\s+li\[data-page\]\s+a\s*>\s*span:last-child\s*\{[^}]*white-space:\s*nowrap/s);
   assert.doesNotMatch(css, /\.fp-tools-nav\s+ul\s*\{[^}]*grid-template-columns/s);
 });
