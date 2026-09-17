@@ -5,7 +5,7 @@ const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const cssPath = path.join(repoRoot, 'css', 'settings_sidebar_material3.css');
-const subtabsCssPath = path.join(repoRoot, 'css', 'subtabs_material3.css');
+const responsiveCssPath = path.join(repoRoot, 'css', 'settings_responsive_guard.css');
 const guardPath = path.join(repoRoot, 'content', 'ui', 'popup_viewport_guard.js');
 const manifestPath = path.join(repoRoot, 'manifest.json');
 
@@ -31,17 +31,17 @@ test('popup defaults to a wider desktop layout and search starts as an icon', ()
 });
 
 test('settings responsiveness is driven by popup container width, not only browser viewport', () => {
-  const css = fs.readFileSync(cssPath, 'utf8');
-  const subtabsCss = fs.readFileSync(subtabsCssPath, 'utf8');
+  assert.equal(fs.existsSync(responsiveCssPath), true, 'responsive settings guard stylesheet must exist');
+  const css = fs.readFileSync(responsiveCssPath, 'utf8');
 
   assert.match(css, /\.fp-tools-popup\s*\{[^}]*container-type:\s*size[^}]*container-name:\s*fpt-popup/s);
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*900px\)/);
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)/);
-  assert.match(subtabsCss, /@container\s+fpt-popup\s*\(max-width:\s*900px\)/);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-height:\s*650px\)/);
 });
 
 test('compact popup keeps navigation usable without consuming the content area', () => {
-  const css = fs.readFileSync(cssPath, 'utf8');
+  const css = fs.readFileSync(responsiveCssPath, 'utf8');
 
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-nav\s*\{[^}]*flex-basis:\s*72px[^}]*width:\s*72px/s);
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-nav\s+li\[data-page\]\s+a\s*>\s*span:last-child\s*\{[^}]*display:\s*none/s);
@@ -49,7 +49,7 @@ test('compact popup keeps navigation usable without consuming the content area',
 });
 
 test('theme preview is bounded and dense settings grids collapse in compact popup', () => {
-  const css = fs.readFileSync(cssPath, 'utf8');
+  const css = fs.readFileSync(responsiveCssPath, 'utf8');
 
   assert.match(css, /#fp-wallpaper-carousel\s*\{[^}]*height:\s*clamp\(/s);
   assert.match(css, /#fp-wallpaper-carousel\s*\{[^}]*max-height:\s*420px/s);
@@ -59,11 +59,12 @@ test('theme preview is bounded and dense settings grids collapse in compact popu
 });
 
 test('shared settings rows are allowed to shrink and wrap instead of overflowing', () => {
-  const css = fs.readFileSync(cssPath, 'utf8');
+  const css = fs.readFileSync(responsiveCssPath, 'utf8');
 
   assert.match(css, /\.fp-tools-content\s*>\s*\*\s*\{[^}]*min-width:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+\.setting-group[^}]*min-width:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+\.template-container[^}]*min-width:\s*0/s);
+  assert.match(css, /\.fp-tools-popup\s+img[^}]*max-width:\s*100%/s);
 });
 
 test('viewport guard clamps old saved sizes and positions without overflowing', () => {
@@ -127,7 +128,7 @@ test('legacy tiny saved popup sizes are detected for one-time widening', () => {
   assert.equal(shouldResetLegacySize(null), false);
 });
 
-test('manifest loads the sidebar override last and installs viewport guard after popup code', () => {
+test('manifest loads responsive guard after all legacy settings styles', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const funpayScript = manifest.content_scripts.find(entry =>
     Array.isArray(entry.matches) && entry.matches.includes('https://funpay.com/*') &&
@@ -135,9 +136,11 @@ test('manifest loads the sidebar override last and installs viewport guard after
   );
   assert.ok(funpayScript, 'main FunPay content script entry must exist');
 
-  const cssIndex = funpayScript.css.indexOf('css/settings_sidebar_material3.css');
-  const iconThemeIndex = funpayScript.css.indexOf('css/fpt_icons_theme.css');
-  assert.ok(cssIndex > iconThemeIndex, 'sidebar override must load after the legacy icon theme');
+  const sidebarIndex = funpayScript.css.indexOf('css/settings_sidebar_material3.css');
+  const subtabsIndex = funpayScript.css.indexOf('css/subtabs_material3.css');
+  const responsiveIndex = funpayScript.css.indexOf('css/settings_responsive_guard.css');
+  assert.ok(responsiveIndex > sidebarIndex, 'responsive guard must load after sidebar styles');
+  assert.ok(responsiveIndex > subtabsIndex, 'responsive guard must load after subtab styles');
 
   const guardIndex = funpayScript.js.indexOf('content/ui/popup_viewport_guard.js');
   const popupIndex = funpayScript.js.indexOf('content/ui/main_popup.js');
