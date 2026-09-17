@@ -21,7 +21,7 @@ test('subtabs remain single-line and horizontally usable in narrow windows', () 
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /\.fpt-subtabs-bar\s*\{[^}]*overflow-x:\s*auto/s);
   assert.match(css, /\.fpt-subtab\s*\{[^}]*white-space:\s*nowrap/s);
-  assert.match(css, /\.fpt-subtab\s*\{[^}]*flex:\s*0\s+0\s+auto/s);
+  assert.match(css, /\.fpt-subtab\s*\{[^}]*flex:\s*0\s+auto/s);
 });
 
 test('motion enhancer tracks the active tab and keeps accessibility state synchronized', () => {
@@ -32,6 +32,16 @@ test('motion enhancer tracks the active tab and keeps accessibility state synchr
   assert.match(js, /\.fp-tools-page-content\.active/);
   assert.match(js, /aria-selected/);
   assert.match(js, /MutationObserver/);
+});
+
+test('keeping the active subtab visible never scrolls the settings page vertically', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  const helper = js.match(/function keepActiveTabVisible[\s\S]*?\n    \}/)?.[0] || '';
+  assert.ok(helper, 'active-tab visibility helper must exist');
+  assert.doesNotMatch(helper, /scrollIntoView/,
+    'scrollIntoView can scroll the parent settings content vertically');
+  assert.match(helper, /bar\.scrollTo|bar\.scrollLeft/,
+    'only the horizontal subtab bar itself should scroll');
 });
 
 test('tab switch is intercepted before legacy display none/block', () => {
@@ -114,6 +124,7 @@ test('reveal cleanup restores temporary styles and hides the outgoing page', () 
 test('settings content reserves scrollbar space so tab height changes cannot shift layout', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*scrollbar-gutter:\s*stable/s);
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*overflow-anchor:\s*none/s);
 });
 
 test('rapid repeated switches cancel the previous local animation', () => {
