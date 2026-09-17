@@ -60,8 +60,8 @@ test('settings content clips animated paint only while a subtab transition is ru
   assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*min-height:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*overflow-x:\s*hidden/s);
   assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\.fpt-subtab-transitioning\s*\{[^}]*contain:\s*paint/s);
-  assert.match(js, /classList\.add\(['"]fpt-subtab-transitioning['"]\)/);
-  assert.match(js, /classList\.remove\(['"]fpt-subtab-transitioning['"]\)/);
+  assert.match(js, /classList\.add\(TRANSITIONING_CLASS\)/);
+  assert.match(js, /classList\.remove\(TRANSITIONING_CLASS\)/);
 });
 
 test('local transition never exposes the page background between old and new content', () => {
@@ -74,7 +74,7 @@ test('local transition never exposes the page background between old and new con
   assert.match(local, /opacity:\s*0\.9\d*/,
     'new page should begin near opaque rather than from a blank frame');
   assert.match(local, /opacity:\s*1/);
-  assert.doesNotMatch(local, /opacity:\s*0(?:\D|$)/,
+  assert.doesNotMatch(local, /opacity:\s*0(?=\s*[,;}])/,
     'local transition must never create a fully transparent frame');
 });
 
