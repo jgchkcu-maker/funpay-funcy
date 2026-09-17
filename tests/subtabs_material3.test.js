@@ -34,6 +34,30 @@ test('motion enhancer tracks the active tab and animates incoming page content',
   assert.match(js, /MutationObserver/);
 });
 
+test('tab switch is intercepted before legacy display none/block to prevent flicker', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  assert.match(js, /startViewTransition/);
+  assert.match(js, /addEventListener\(['"]click['"],[\s\S]*?true\s*\)/);
+  assert.match(js, /stopImmediatePropagation\(\)/);
+  assert.match(js, /WeakSet/);
+});
+
+test('fallback transition fades old page before switching and fades new page in', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  assert.match(js, /\.animate\(/);
+  assert.match(js, /opacity:\s*1/);
+  assert.match(js, /opacity:\s*0/);
+  assert.match(js, /translate3d\(0,\s*-?3px/);
+  assert.match(js, /translate3d\(0,\s*5px/);
+});
+
+test('view transition styles animate only the settings page snapshot', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  assert.match(css, /::view-transition-old\(fpt-settings-page\)/);
+  assert.match(css, /::view-transition-new\(fpt-settings-page\)/);
+  assert.match(css, /animation-duration:\s*2\d{2}ms/);
+});
+
 test('reduced-motion disables tab and page animations', () => {
   assert.ok(fs.existsSync(cssPath), 'subtabs Material stylesheet must exist');
   const css = fs.readFileSync(cssPath, 'utf8');
