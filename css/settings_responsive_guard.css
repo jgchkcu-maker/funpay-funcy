@@ -1,0 +1,507 @@
+/* FP Tools settings responsive guard — loaded after all legacy settings CSS. */
+
+.fp-tools-popup {
+    container-type: size;
+    container-name: fpt-popup;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup,
+.fp-tools-popup .fp-tools-body,
+.fp-tools-popup .fp-tools-content,
+.fp-tools-popup .fp-tools-page-content {
+    min-width: 0;
+    min-height: 0;
+}
+
+.fp-tools-popup .fp-tools-body,
+.fp-tools-popup .fp-tools-content {
+    max-width: 100%;
+}
+
+.fp-tools-content > * {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup .setting-group,
+.fp-tools-popup .template-container,
+.fp-tools-popup .fpt-setting-card,
+.fp-tools-popup .fpt-status-card,
+.fp-tools-popup .fpt-card,
+.fp-tools-popup .support-promo,
+.fp-tools-popup .fpt-subpanel,
+.fp-tools-popup .fpt-needs-ai-box,
+.fp-tools-popup .fpt-needs-ai-result,
+.fp-tools-popup .fpt-needs-list,
+.fp-tools-popup .fpt-acc-item {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup img,
+.fp-tools-popup canvas,
+.fp-tools-popup video,
+.fp-tools-popup svg {
+    max-width: 100%;
+}
+
+.fp-tools-popup input,
+.fp-tools-popup textarea,
+.fp-tools-popup select,
+.fp-tools-popup button {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup .template-info,
+.fp-tools-popup .fpt-setting-desc,
+.fp-tools-popup .support-promo,
+.fp-tools-popup .fpt-card,
+.fp-tools-popup .fpt-status-card {
+    overflow-wrap: anywhere;
+}
+
+.fp-tools-popup .template-settings-list .template-label,
+.fp-tools-popup .fpt-status-card-left > div,
+.fp-tools-popup .fpt-acc-info {
+    min-width: 0;
+}
+
+.fp-tools-popup .currency-rate-display {
+    min-width: 0;
+}
+
+.fp-tools-popup .fp-tools-page-content [style*="display:flex"] > *,
+.fp-tools-popup .fp-tools-page-content [style*="display: flex"] > * {
+    min-width: 0;
+}
+
+.fpt-nav-search-results {
+    width: min(430px, calc(100cqw - 24px));
+    max-width: calc(100cqw - 24px);
+    max-height: min(340px, calc(100cqh - 90px));
+    box-sizing: border-box;
+}
+
+/* Bound the theme catalog instead of letting width:100% + 16:9 become 600px+ tall. */
+.fp-tools-popup #fp-wallpaper-carousel {
+    width: 100% !important;
+    height: clamp(220px, 42cqh, 420px) !important;
+    min-height: 180px;
+    max-height: 420px;
+    aspect-ratio: auto !important;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup #fp-wp-img-slot,
+.fp-tools-popup #fp-wp-img-slot > img {
+    width: 100%;
+    height: 100%;
+}
+
+.fp-tools-popup #fp-wp-img-slot > img {
+    object-fit: cover;
+}
+
+.fp-tools-popup .color-input-grid,
+.fp-tools-popup .theme-actions-grid,
+.fp-tools-popup .fpt-presets-grid,
+.fp-tools-popup .fpt-needs-presets-grid,
+.fp-tools-popup .fpt-status-hub,
+.fp-tools-popup .fp-stats-grid3,
+.fp-tools-popup .fp-stats-extra-grid,
+.fp-tools-popup .fpt-pos-grid,
+.fp-tools-popup .fpt-appx-grid,
+.fp-tools-popup .auto-sender-controls {
+    min-width: 0;
+}
+
+.fp-tools-popup .color-input-grid > *,
+.fp-tools-popup .theme-actions-grid > *,
+.fp-tools-popup .fpt-presets-grid > *,
+.fp-tools-popup .fpt-needs-presets-grid > *,
+.fp-tools-popup .fpt-status-hub > *,
+.fp-tools-popup .fp-stats-grid3 > *,
+.fp-tools-popup .fp-stats-extra-grid > *,
+.fp-tools-popup .fpt-pos-grid > *,
+.fp-tools-popup .fpt-appx-grid > *,
+.fp-tools-popup .auto-sender-controls > * {
+    min-width: 0;
+}
+
+/* These overlays live outside .fp-tools-popup, so use viewport bounds for them. */
+.fp-tools-modal-overlay {
+    box-sizing: border-box;
+    padding: 12px;
+}
+
+.fp-tools-modal-content {
+    min-width: 0;
+    width: min(500px, 100%);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.fp-tools-modal-header,
+.fp-tools-modal-footer {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.fp-tools-modal-body {
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.fp-tools-modal-body input,
+.fp-tools-modal-body select,
+.fp-tools-modal-body textarea,
+.fp-tools-modal-body button {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@container fpt-popup (max-width: 900px) {
+    .fp-tools-nav {
+        width: 200px;
+        flex: 0 0 200px;
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
+    .fp-tools-content {
+        padding: 20px 18px 24px;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        gap: 8px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .fp-tools-nav .nav-icon,
+    .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 9px;
+        font-size: 18px;
+    }
+
+    .fp-tools-nav li[data-page] a > span:last-child {
+        font-size: 12.5px;
+    }
+
+    .fp-tools-popup .color-input-grid,
+    .color-input-grid,
+    .fp-tools-popup .theme-actions-grid,
+    .theme-actions-grid,
+    .fp-tools-popup .fpt-presets-grid,
+    .fp-tools-popup .fpt-needs-presets-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup .fp-stats-grid3,
+    .fp-tools-popup .fp-stats-extra-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        column-gap: 16px;
+        row-gap: 18px;
+    }
+
+    .fp-tools-popup .fpt-pos-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup .fpt-subtabs-bar {
+        min-height: 46px;
+        margin-bottom: 16px;
+        border-radius: 14px;
+    }
+
+    .fp-tools-popup .fpt-subtab {
+        min-height: 36px;
+        padding: 0 12px !important;
+        border-radius: 10px !important;
+        font-size: 12.5px !important;
+    }
+}
+
+@container fpt-popup (max-width: 700px) {
+    .fp-tools-nav {
+        flex-basis: 164px;
+        width: 164px;
+        padding: 8px 7px 12px;
+        overflow-x: hidden;
+    }
+
+    .fp-tools-content {
+        padding: 14px 12px 18px;
+    }
+
+    .fp-tools-nav li.fp-nav-divider {
+        margin: 8px 6px 3px !important;
+        font-size: 9px !important;
+        letter-spacing: .09em;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        justify-content: flex-start;
+        gap: 7px;
+        height: 44px;
+        min-height: 44px;
+        padding: 5px 6px !important;
+    }
+
+    .fp-tools-nav li[data-page] a > span:last-child {
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11.5px;
+    }
+
+    .fp-tools-nav .nav-icon,
+    .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 9px;
+        font-size: 18px;
+    }
+
+    .fpt-nav-search {
+        justify-content: flex-end;
+        min-height: 42px;
+        padding: 2px 2px 6px;
+    }
+
+    .fpt-nav-search:focus-within .fpt-nav-search-input {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 30px 0 34px !important;
+        color: var(--fptm-text, #e7e8ec) !important;
+        caret-color: var(--fptm-accent, #1b75bb);
+    }
+
+    .fpt-nav-search:focus-within::before {
+        left: 12px;
+        right: auto;
+        transform: none;
+    }
+
+    .fp-tools-popup .fpt-nav-search .fpt-nav-search-clear {
+        right: 10px !important;
+    }
+
+    .fp-tools-popup .color-input-grid,
+    .color-input-grid,
+    .fp-tools-popup .theme-actions-grid,
+    .theme-actions-grid,
+    .fp-tools-popup .fpt-presets-grid,
+    .fp-tools-popup .fpt-needs-presets-grid,
+    .fp-tools-popup .fpt-status-hub,
+    .fp-tools-popup .fp-stats-grid3,
+    .fp-tools-popup .fp-stats-extra-grid,
+    .fp-tools-popup .fpt-appx-grid,
+    .fp-tools-popup .auto-sender-controls {
+        grid-template-columns: 1fr !important;
+    }
+
+    .fp-tools-popup .fpt-pos-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .theme-actions-grid > *,
+    .theme-actions-grid #shareThemeBtn,
+    .theme-actions-grid #resetThemeBtn {
+        grid-column: auto !important;
+        width: 100%;
+    }
+
+    .fp-tools-popup #fp-wallpaper-carousel {
+        height: clamp(190px, 36cqh, 300px) !important;
+        min-height: 170px;
+    }
+
+    .fp-tools-popup .fpt-subtabs-bar {
+        gap: 2px;
+        padding: 4px;
+        margin-bottom: 12px;
+        scroll-padding-inline: 4px;
+    }
+
+    .fp-tools-popup .fpt-subtab {
+        gap: 6px;
+        min-height: 36px;
+        padding: 0 10px !important;
+    }
+
+    .fp-tools-popup .fpt-setting-card,
+    .fp-tools-popup .fpt-status-card,
+    .fp-tools-popup .fpt-setting-title-row,
+    .fp-tools-popup .fpt-needs-header-bar,
+    .fp-tools-popup .autobump-modal-controls,
+    .fp-tools-popup .template-settings-list .template-item-header,
+    .fp-tools-popup .fpt-acc-item,
+    .fp-tools-popup .fpt-acc-actions,
+    .fp-tools-popup .currency-input-group,
+    .fp-tools-popup .currency-swap-container,
+    .fp-tools-popup .fp-tools-page-content [style*="display:flex"],
+    .fp-tools-popup .fp-tools-page-content [style*="display: flex"] {
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+
+    .fp-tools-popup .fpt-setting-info,
+    .fp-tools-popup .fpt-status-card-left {
+        min-width: 0;
+        flex: 1 1 220px;
+    }
+
+    .fp-tools-popup .template-settings-list .template-label {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+
+    .fp-tools-popup .fpt-acc-actions {
+        margin-left: auto;
+    }
+
+    .fp-tools-popup .currency-input {
+        flex: 1 1 180px;
+    }
+
+    .fp-tools-popup .currency-select {
+        flex: 1 1 120px;
+    }
+
+    .fp-tools-popup .currency-rate-display {
+        flex: 1 1 140px;
+        min-width: 0;
+    }
+
+    .fp-tools-popup .range-label {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .fp-tools-popup .fp-s3-mid,
+    .fp-tools-popup .fp-s3-end {
+        text-align: left;
+        align-items: flex-start;
+    }
+}
+
+@container fpt-popup (max-width: 520px) {
+    .fp-tools-nav {
+        flex-basis: 132px;
+        width: 132px;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .fp-tools-content {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        height: auto;
+        min-height: 48px;
+        gap: 5px;
+        align-items: center;
+    }
+
+    .fp-tools-nav li[data-page] a > span:last-child {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.15;
+        font-size: 10.5px;
+    }
+
+    .fp-tools-nav .nav-icon,
+    .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+        width: 27px;
+        height: 27px;
+        min-width: 27px;
+        font-size: 17px;
+    }
+
+    .fp-tools-nav li.fp-nav-divider {
+        margin-left: 4px !important;
+        margin-right: 4px !important;
+        letter-spacing: .06em;
+    }
+
+    .fp-tools-popup .calculator-buttons {
+        gap: 7px;
+    }
+
+    .fp-tools-popup .calc-btn {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+}
+
+@container fpt-popup (max-height: 650px) {
+    .fp-tools-nav {
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        min-height: 40px;
+        height: 40px;
+    }
+
+    .fpt-nav-search {
+        min-height: 40px;
+        padding-bottom: 4px;
+    }
+
+    .fp-tools-nav li.fp-nav-divider {
+        margin-top: 7px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .fp-tools-content {
+        padding-top: 14px;
+        padding-bottom: 16px;
+    }
+
+    .fp-tools-popup #fp-wallpaper-carousel {
+        height: clamp(180px, 40cqh, 280px) !important;
+        min-height: 160px;
+    }
+}
+
+/* Width wrapping wins over short-height compaction when both constraints are active. */
+@container fpt-popup (max-width: 520px) and (max-height: 650px) {
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        height: auto;
+        min-height: 48px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup #fp-wallpaper-carousel,
+    .fp-tools-popup #fp-wp-img-slot > img {
+        transition: none !important;
+    }
+}
