@@ -72,6 +72,16 @@
     overflow-wrap: anywhere;
 }
 
+.fp-tools-popup .template-settings-list .template-label,
+.fp-tools-popup .fpt-status-card-left > div,
+.fp-tools-popup .fpt-acc-info {
+    min-width: 0;
+}
+
+.fp-tools-popup .currency-rate-display {
+    min-width: 0;
+}
+
 /* Inline flex rows are common in the legacy markup. Make their children shrinkable. */
 .fp-tools-popup .fp-tools-page-content [style*="display:flex"] > *,
 .fp-tools-popup .fp-tools-page-content [style*="display: flex"] > * {
@@ -112,14 +122,26 @@
 .fp-tools-popup .color-input-grid,
 .fp-tools-popup .theme-actions-grid,
 .fp-tools-popup .fpt-presets-grid,
-.fp-tools-popup .fpt-needs-presets-grid {
+.fp-tools-popup .fpt-needs-presets-grid,
+.fp-tools-popup .fpt-status-hub,
+.fp-tools-popup .fp-stats-grid3,
+.fp-tools-popup .fp-stats-extra-grid,
+.fp-tools-popup .fpt-pos-grid,
+.fp-tools-popup .fpt-appx-grid,
+.fp-tools-popup .auto-sender-controls {
     min-width: 0;
 }
 
 .fp-tools-popup .color-input-grid > *,
 .fp-tools-popup .theme-actions-grid > *,
 .fp-tools-popup .fpt-presets-grid > *,
-.fp-tools-popup .fpt-needs-presets-grid > * {
+.fp-tools-popup .fpt-needs-presets-grid > *,
+.fp-tools-popup .fpt-status-hub > *,
+.fp-tools-popup .fp-stats-grid3 > *,
+.fp-tools-popup .fp-stats-extra-grid > *,
+.fp-tools-popup .fpt-pos-grid > *,
+.fp-tools-popup .fpt-appx-grid > *,
+.fp-tools-popup .auto-sender-controls > * {
     min-width: 0;
 }
 
@@ -208,6 +230,17 @@
     .fp-tools-popup .fpt-presets-grid,
     .fp-tools-popup .fpt-needs-presets-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup .fp-stats-grid3,
+    .fp-tools-popup .fp-stats-extra-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        column-gap: 16px;
+        row-gap: 18px;
+    }
+
+    .fp-tools-popup .fpt-pos-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
 
     .fp-tools-popup .fpt-subtabs-bar {
@@ -300,8 +333,17 @@
     .fp-tools-popup .theme-actions-grid,
     .theme-actions-grid,
     .fp-tools-popup .fpt-presets-grid,
-    .fp-tools-popup .fpt-needs-presets-grid {
+    .fp-tools-popup .fpt-needs-presets-grid,
+    .fp-tools-popup .fpt-status-hub,
+    .fp-tools-popup .fp-stats-grid3,
+    .fp-tools-popup .fp-stats-extra-grid,
+    .fp-tools-popup .fpt-appx-grid,
+    .fp-tools-popup .auto-sender-controls {
         grid-template-columns: 1fr !important;
+    }
+
+    .fp-tools-popup .fpt-pos-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     }
 
     .theme-actions-grid > *,
@@ -334,6 +376,11 @@
     .fp-tools-popup .fpt-setting-title-row,
     .fp-tools-popup .fpt-needs-header-bar,
     .fp-tools-popup .autobump-modal-controls,
+    .fp-tools-popup .template-settings-list .template-item-header,
+    .fp-tools-popup .fpt-acc-item,
+    .fp-tools-popup .fpt-acc-actions,
+    .fp-tools-popup .currency-input-group,
+    .fp-tools-popup .currency-swap-container,
     .fp-tools-popup .fp-tools-page-content [style*="display:flex"],
     .fp-tools-popup .fp-tools-page-content [style*="display: flex"] {
         min-width: 0;
@@ -346,9 +393,37 @@
         flex: 1 1 220px;
     }
 
+    .fp-tools-popup .template-settings-list .template-label {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+
+    .fp-tools-popup .fpt-acc-actions {
+        margin-left: auto;
+    }
+
+    .fp-tools-popup .currency-input {
+        flex: 1 1 180px;
+    }
+
+    .fp-tools-popup .currency-select {
+        flex: 1 1 120px;
+    }
+
+    .fp-tools-popup .currency-rate-display {
+        flex: 1 1 140px;
+        min-width: 0;
+    }
+
     .fp-tools-popup .range-label {
         gap: 8px;
         flex-wrap: wrap;
+    }
+
+    .fp-tools-popup .fp-s3-mid,
+    .fp-tools-popup .fp-s3-end {
+        text-align: left;
+        align-items: flex-start;
     }
 }
 
@@ -393,6 +468,15 @@
         margin-left: 4px !important;
         margin-right: 4px !important;
         letter-spacing: .06em;
+    }
+
+    .fp-tools-popup .calculator-buttons {
+        gap: 7px;
+    }
+
+    .fp-tools-popup .calc-btn {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
     }
 }
 
