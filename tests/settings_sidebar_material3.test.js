@@ -40,11 +40,12 @@ test('settings responsiveness is driven by popup container width, not only brows
   assert.match(css, /@container\s+fpt-popup\s*\(max-height:\s*650px\)/);
 });
 
-test('compact popup keeps navigation usable without consuming the content area', () => {
+test('compact popup keeps navigation labels and search usable while freeing content width', () => {
   const css = fs.readFileSync(responsiveCssPath, 'utf8');
 
-  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-nav\s*\{[^}]*flex-basis:\s*72px[^}]*width:\s*72px/s);
-  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-nav\s+li\[data-page\]\s+a\s*>\s*span:last-child\s*\{[^}]*display:\s*none/s);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-nav\s*\{[^}]*flex-basis:\s*164px[^}]*width:\s*164px/s);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-nav\s+li\[data-page\]\s+a\s*>\s*span:last-child\s*\{[^}]*display:\s*block/s);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fpt-nav-search:focus-within\s+\.fpt-nav-search-input\s*\{[^}]*width:\s*100%/s);
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-content\s*\{[^}]*padding:/s);
 });
 
@@ -65,6 +66,16 @@ test('shared settings rows are allowed to shrink and wrap instead of overflowing
   assert.match(css, /\.fp-tools-popup\s+\.setting-group[^}]*min-width:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+\.template-container[^}]*min-width:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+img[^}]*max-width:\s*100%/s);
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-page-content\s+\[style\*=['"]display:flex['"]\]\s*>\s*\*\s*\{[^}]*min-width:\s*0/s);
+});
+
+test('search results and detached settings modals stay inside their own visible area', () => {
+  const css = fs.readFileSync(responsiveCssPath, 'utf8');
+
+  assert.match(css, /\.fpt-nav-search-results\s*\{[^}]*width:\s*min\(430px,\s*calc\(100cqw\s*-\s*24px\)\)/s);
+  assert.match(css, /\.fp-tools-modal-overlay\s*\{[^}]*padding:\s*12px/s);
+  assert.match(css, /\.fp-tools-modal-content\s*\{[^}]*max-width:\s*calc\(100vw\s*-\s*24px\)[^}]*max-height:\s*calc\(100vh\s*-\s*24px\)/s);
+  assert.match(css, /\.fp-tools-modal-body\s*\{[^}]*overflow:\s*auto/s);
 });
 
 test('viewport guard clamps old saved sizes and positions without overflowing', () => {
@@ -114,6 +125,16 @@ test('viewport guard normalizes restored geometry and preserves safe margins', (
     { width: 1024, height: 640 }
   );
   assert.deepEqual(afterMonitorChange, { left: 12, top: 12, width: 1000, height: 616 });
+});
+
+test('viewport guard degrades margins safely even for an extremely small viewport', () => {
+  const { clampPopupRect } = require(guardPath);
+  const tinyViewport = clampPopupRect(
+    { left: -20, top: -20, width: 500, height: 500 },
+    { width: 20, height: 18 }
+  );
+
+  assert.deepEqual(tinyViewport, { left: 10, top: 9, width: 0, height: 0 });
 });
 
 test('legacy tiny saved popup sizes are detected for one-time widening', () => {
