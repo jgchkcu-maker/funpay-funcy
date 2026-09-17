@@ -62,6 +62,18 @@ test('viewport guard clamps old saved sizes and positions without overflowing', 
   assert.deepEqual(smallViewport, { left: 12, top: 12, width: 676, height: 476 });
 });
 
+test('legacy tiny saved popup sizes are detected for one-time widening', () => {
+  assert.equal(fs.existsSync(guardPath), true, 'popup viewport guard must exist');
+  const { shouldResetLegacySize } = require(guardPath);
+
+  assert.equal(shouldResetLegacySize({ width: '230px', height: '650px' }), true);
+  assert.equal(shouldResetLegacySize({ width: '759px', height: '700px' }), true);
+  assert.equal(shouldResetLegacySize({ width: '900px', height: '500px' }), true);
+  assert.equal(shouldResetLegacySize({ width: '760px', height: '520px' }), false);
+  assert.equal(shouldResetLegacySize({ width: '1024px', height: '700px' }), false);
+  assert.equal(shouldResetLegacySize(null), false);
+});
+
 test('manifest loads the sidebar override last and installs viewport guard after popup code', () => {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   const funpayScript = manifest.content_scripts.find(entry =>
