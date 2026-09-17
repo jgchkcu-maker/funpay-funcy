@@ -79,7 +79,7 @@ test('local reveal keeps the outgoing page visible underneath the incoming page'
   const local = js.match(/function runLocalTransition[\s\S]*?\n    \}/)?.[0] || '';
 
   assert.ok(local, 'local transition must exist');
-  assert.match(local, /const\s+oldPage\s*=\s*popup\.querySelector\(ACTIVE_PAGE_SELECTOR\)/,
+  assert.match(local, /const\s+oldPage\s*=\s*(?:popup\s*&&\s*)?popup\.querySelector\(ACTIVE_PAGE_SELECTOR\)/,
     'the outgoing page must be captured before the legacy switch');
   assert.match(local, /oldPage\.style\.display\s*=\s*['"]block['"]/,
     'the outgoing page should remain visible during the reveal');
