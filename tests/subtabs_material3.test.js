@@ -66,6 +66,21 @@ test('view transition styles animate only the settings page snapshot', () => {
   assert.match(css, /animation-duration:\s*2\d{2}ms/);
 });
 
+test('subtab transition never exposes the page background between old and new content', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  const js = fs.readFileSync(motionPath, 'utf8');
+  const oldKeyframes = css.match(/@keyframes\s+fptSettingsPageOut\s*\{[\s\S]*?\n\}/)?.[0] || '';
+  const fallback = js.match(/async function runFallbackTransition[\s\S]*?\n    \}/)?.[0] || '';
+
+  assert.ok(oldKeyframes, 'outgoing View Transition keyframes must exist');
+  assert.doesNotMatch(oldKeyframes, /opacity:\s*0(?:\D|$)/, 'outgoing snapshot must not fade to transparent');
+  assert.match(oldKeyframes, /opacity:\s*1/, 'outgoing snapshot should remain opaque beneath the incoming page');
+
+  assert.ok(fallback, 'fallback transition must exist');
+  assert.doesNotMatch(fallback, /\{\s*opacity:\s*0,\s*transform:\s*['"]translate3d\(0,\s*-3px/, 'fallback must not fade the old page to zero before switching');
+  assert.match(fallback, /dispatchLegacyClick\(tab\)[\s\S]*?newPage\.animate/, 'fallback should switch immediately and animate the new page over a non-blank frame');
+});
+
 test('reduced-motion disables tab and page animations', () => {
   assert.ok(fs.existsSync(cssPath), 'subtabs Material stylesheet must exist');
   const css = fs.readFileSync(cssPath, 'utf8');
