@@ -84,6 +84,7 @@
         "content/features/lot_management.js",
         "content/features/inline_price_editor.js",
         "content/features/quick_lot_search.js",
+        "content/features/template_popover_layout.js",
         "content/features/templates.js",
         "content/features/theme.js",
         "content/features/exact_price.js",
