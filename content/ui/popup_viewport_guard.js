@@ -19,6 +19,19 @@
         return Number.parseFloat(value);
     }
 
+    function getViewportSize(target = root) {
+        const innerWidth = Math.max(0, finiteOr(target && target.innerWidth, 0));
+        const innerHeight = Math.max(0, finiteOr(target && target.innerHeight, 0));
+        const visualViewport = target && target.visualViewport;
+        const visualWidth = finiteOr(visualViewport && visualViewport.width, NaN);
+        const visualHeight = finiteOr(visualViewport && visualViewport.height, NaN);
+
+        return {
+            width: Number.isFinite(visualWidth) && visualWidth > 0 ? visualWidth : innerWidth,
+            height: Number.isFinite(visualHeight) && visualHeight > 0 ? visualHeight : innerHeight
+        };
+    }
+
     function shouldResetLegacySize(savedSize) {
         if (!savedSize) return false;
         const width = cssPixels(savedSize.width);
@@ -76,9 +89,11 @@
     }
 
     function clampPopupElement(popup, persist = true) {
-        if (!popup || !root.innerWidth || !root.innerHeight) return null;
+        if (!popup) return null;
+        const viewport = getViewportSize(root);
+        if (!viewport.width || !viewport.height) return null;
         const rect = popup.getBoundingClientRect();
-        const next = clampPopupRect(rect, { width: root.innerWidth, height: root.innerHeight });
+        const next = clampPopupRect(rect, viewport);
         let changed = false;
 
         if (!nearlyEqual(rect.width, next.width)) {
@@ -108,11 +123,13 @@
     }
 
     function resetLegacySizeToPreferred(popup) {
-        if (!popup || !root.innerWidth || !root.innerHeight) return;
+        if (!popup) return;
+        const viewport = getViewportSize(root);
+        if (!viewport.width || !viewport.height) return;
         const rect = popup.getBoundingClientRect();
         const next = clampPopupRect(
             { left: rect.left, top: rect.top, width: PREFERRED_WIDTH, height: PREFERRED_HEIGHT },
-            { width: root.innerWidth, height: root.innerHeight }
+            viewport
         );
         popup.style.width = `${Math.round(next.width)}px`;
         popup.style.height = `${Math.round(next.height)}px`;
@@ -138,6 +155,9 @@
 
         schedule();
         root.addEventListener('resize', schedule, { passive: true });
+        if (root.visualViewport && typeof root.visualViewport.addEventListener === 'function') {
+            root.visualViewport.addEventListener('resize', schedule, { passive: true });
+        }
 
         if (typeof root.ResizeObserver === 'function') {
             const resizeObserver = new root.ResizeObserver(schedule);
@@ -164,7 +184,7 @@
     }
 
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = { clampPopupRect, shouldResetLegacySize };
+        module.exports = { clampPopupRect, getViewportSize, shouldResetLegacySize };
     }
 
     if (typeof document !== 'undefined' && root.addEventListener) {
