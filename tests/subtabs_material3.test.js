@@ -53,11 +53,15 @@ test('content transition stays local to popup and never uses document View Trans
     'the real active page should be animated locally');
 });
 
-test('settings content is a paint containment boundary so animation cannot escape the window', () => {
+test('settings content clips animated paint only while a subtab transition is running', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
+  const js = fs.readFileSync(motionPath, 'utf8');
+
   assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*min-height:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*overflow-x:\s*hidden/s);
-  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*contain:\s*paint/s);
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\.fpt-subtab-transitioning\s*\{[^}]*contain:\s*paint/s);
+  assert.match(js, /classList\.add\(['"]fpt-subtab-transitioning['"]\)/);
+  assert.match(js, /classList\.remove\(['"]fpt-subtab-transitioning['"]\)/);
 });
 
 test('local transition never exposes the page background between old and new content', () => {
