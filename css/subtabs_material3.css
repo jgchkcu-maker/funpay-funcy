@@ -117,19 +117,55 @@
     outline-offset: -2px;
 }
 
-.fp-tools-popup .fp-tools-page-content.fpt-page-enter {
-    animation: fptPageEnter 180ms cubic-bezier(.2, 0, 0, 1) both;
+/*
+ * Content transition: main_popup.js still changes pages synchronously, but the
+ * motion layer wraps that mutation in a local View Transition. The temporary
+ * root class scopes these pseudo-elements to FP Tools switches only.
+ */
+html.fpt-subtab-view-transition::view-transition-old(root),
+html.fpt-subtab-view-transition::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+}
+
+html.fpt-subtab-view-transition::view-transition-group(fpt-settings-page) {
+    animation-duration: 220ms;
+    animation-timing-function: cubic-bezier(.2, 0, 0, 1);
+}
+
+html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page),
+html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
+    mix-blend-mode: normal;
     transform-origin: 50% 0;
 }
 
-@keyframes fptPageEnter {
+html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page) {
+    animation: fptSettingsPageOut 150ms cubic-bezier(.4, 0, 1, 1) both;
+}
+
+html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
+    animation: fptSettingsPageIn 220ms cubic-bezier(.2, 0, 0, 1) both;
+}
+
+@keyframes fptSettingsPageOut {
     from {
-        opacity: .72;
-        transform: translate3d(0, 4px, 0);
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, -3px, 0) scale(.997);
+    }
+}
+
+@keyframes fptSettingsPageIn {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 5px, 0) scale(.997);
     }
     to {
         opacity: 1;
-        transform: translate3d(0, 0, 0);
+        transform: translate3d(0, 0, 0) scale(1);
     }
 }
 
@@ -162,7 +198,11 @@
         transition: none !important;
     }
 
-    .fp-tools-popup .fp-tools-page-content.fpt-page-enter {
+    html.fpt-subtab-view-transition::view-transition-old(root),
+    html.fpt-subtab-view-transition::view-transition-new(root),
+    html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page),
+    html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page),
+    html.fpt-subtab-view-transition::view-transition-group(fpt-settings-page) {
         animation: none !important;
     }
 }

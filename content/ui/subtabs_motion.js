@@ -5,6 +5,14 @@
     const BAR_SELECTOR = '#fptTopSubtabsBar';
     const TAB_SELECTOR = '.fpt-subtab';
     const ACTIVE_PAGE_SELECTOR = '.fp-tools-page-content.active';
+    const VIEW_TRANSITION_NAME = 'fpt-settings-page';
+    const VIEW_TRANSITION_ROOT_CLASS = 'fpt-subtab-view-transition';
+
+    const legacyClickBypass = new WeakSet();
+    let switchSerial = 0;
+    let activeViewTransition = null;
+    let activeViewCleanup = null;
+    let fallbackAnimations = [];
 
     function getTabs(bar) {
         return Array.from(bar.querySelectorAll(TAB_SELECTOR));
@@ -59,27 +67,157 @@
         }
     }
 
-    function animateActivePage(bar) {
-        const popup = bar.closest('.fp-tools-popup');
-        const page = popup && popup.querySelector(ACTIVE_PAGE_SELECTOR);
-        if (!page) return;
-
-        page.classList.remove('fpt-page-enter');
-        if (prefersReducedMotion()) return;
-
-        // Restart the entrance animation when the selected page changes.
-        page.getBoundingClientRect();
-        page.classList.add('fpt-page-enter');
-        page.addEventListener('animationend', () => {
-            page.classList.remove('fpt-page-enter');
-        }, { once: true });
-    }
-
-    function sync(bar, animatePage = false) {
+    function sync(bar) {
         setTabA11y(bar);
         syncIndicator(bar);
         keepActiveTabVisible(bar);
-        if (animatePage) animateActivePage(bar);
+    }
+
+    function cancelInFlightTransitions() {
+        switchSerial += 1;
+
+        fallbackAnimations.forEach((animation) => {
+            try { animation.cancel(); } catch (_) { /* no-op */ }
+        });
+        fallbackAnimations = [];
+
+        if (activeViewTransition && typeof activeViewTransition.skipTransition === 'function') {
+            try { activeViewTransition.skipTransition(); } catch (_) { /* no-op */ }
+        }
+        if (activeViewCleanup) {
+            activeViewCleanup();
+            activeViewCleanup = null;
+        }
+        activeViewTransition = null;
+
+        return switchSerial;
+    }
+
+    function dispatchLegacyClick(tab) {
+        legacyClickBypass.add(tab);
+        try {
+            tab.click();
+        } finally {
+            legacyClickBypass.delete(tab);
+        }
+    }
+
+    function runViewTransition(bar, tab, serial) {
+        const popup = bar.closest('.fp-tools-popup');
+        const oldPage = popup && popup.querySelector(ACTIVE_PAGE_SELECTOR);
+        if (!popup || !oldPage) {
+            dispatchLegacyClick(tab);
+            return;
+        }
+
+        const root = document.documentElement;
+        const oldInlineName = oldPage.style.viewTransitionName;
+        let newPage = null;
+        let newInlineName = '';
+        let cleaned = false;
+
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            oldPage.style.viewTransitionName = oldInlineName;
+            if (newPage) newPage.style.viewTransitionName = newInlineName;
+            root.classList.remove(VIEW_TRANSITION_ROOT_CLASS);
+        };
+
+        oldPage.style.viewTransitionName = VIEW_TRANSITION_NAME;
+        root.classList.add(VIEW_TRANSITION_ROOT_CLASS);
+        activeViewCleanup = cleanup;
+
+        let transition;
+        try {
+            transition = document.startViewTransition(() => {
+                // The old snapshot is captured before this callback. Hand the same
+                // transition name to the newly-active page for a local crossfade.
+                oldPage.style.viewTransitionName = oldInlineName;
+                dispatchLegacyClick(tab);
+                newPage = popup.querySelector(ACTIVE_PAGE_SELECTOR);
+                if (newPage) {
+                    newInlineName = newPage.style.viewTransitionName;
+                    newPage.style.viewTransitionName = VIEW_TRANSITION_NAME;
+                }
+            });
+        } catch (_) {
+            cleanup();
+            activeViewCleanup = null;
+            runFallbackTransition(bar, tab, serial);
+            return;
+        }
+
+        activeViewTransition = transition;
+        Promise.resolve(transition.finished).catch(() => {}).finally(() => {
+            cleanup();
+            if (serial === switchSerial) {
+                activeViewCleanup = null;
+                activeViewTransition = null;
+            }
+        });
+    }
+
+    async function runFallbackTransition(bar, tab, serial) {
+        const popup = bar.closest('.fp-tools-popup');
+        const oldPage = popup && popup.querySelector(ACTIVE_PAGE_SELECTOR);
+        if (!popup || !oldPage || typeof oldPage.animate !== 'function') {
+            dispatchLegacyClick(tab);
+            return;
+        }
+
+        const outAnimation = oldPage.animate([
+            { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+            { opacity: 0, transform: 'translate3d(0, -3px, 0)' }
+        ], {
+            duration: 90,
+            easing: 'cubic-bezier(.4, 0, 1, 1)',
+            fill: 'both'
+        });
+        fallbackAnimations = [outAnimation];
+
+        try { await outAnimation.finished; } catch (_) { return; }
+        if (serial !== switchSerial) return;
+
+        dispatchLegacyClick(tab);
+        const newPage = popup.querySelector(ACTIVE_PAGE_SELECTOR);
+        if (!newPage || typeof newPage.animate !== 'function') {
+            outAnimation.cancel();
+            fallbackAnimations = [];
+            return;
+        }
+
+        const inAnimation = newPage.animate([
+            { opacity: 0, transform: 'translate3d(0, 5px, 0)' },
+            { opacity: 1, transform: 'translate3d(0, 0, 0)' }
+        ], {
+            duration: 180,
+            easing: 'cubic-bezier(.2, 0, 0, 1)',
+            fill: 'both'
+        });
+        fallbackAnimations = [outAnimation, inAnimation];
+
+        try { await inAnimation.finished; } catch (_) { /* cancelled by a newer switch */ }
+        if (serial === switchSerial) {
+            outAnimation.cancel();
+            inAnimation.cancel();
+            fallbackAnimations = [];
+        }
+    }
+
+    function runTabTransition(bar, tab) {
+        const serial = cancelInFlightTransitions();
+
+        if (prefersReducedMotion()) {
+            dispatchLegacyClick(tab);
+            return;
+        }
+
+        if (typeof document.startViewTransition === 'function') {
+            runViewTransition(bar, tab, serial);
+        } else {
+            runFallbackTransition(bar, tab, serial);
+        }
     }
 
     function install(bar) {
@@ -87,21 +225,26 @@
         bar.dataset.fptMotionInstalled = '1';
 
         let frame = 0;
-        let animateOnNextSync = false;
-        const scheduleSync = (animatePage = false) => {
-            animateOnNextSync = animateOnNextSync || animatePage;
+        const scheduleSync = () => {
             if (frame) cancelAnimationFrame(frame);
             frame = requestAnimationFrame(() => {
                 frame = 0;
-                const shouldAnimatePage = animateOnNextSync;
-                animateOnNextSync = false;
-                sync(bar, shouldAnimatePage);
+                sync(bar);
             });
         };
 
+        // Capture the click before main_popup.js can instantly flip display:none/block.
+        // The legacy click is replayed inside our transition callback.
         bar.addEventListener('click', (event) => {
-            if (event.target.closest(TAB_SELECTOR)) scheduleSync(true);
-        });
+            const tab = event.target.closest(TAB_SELECTOR);
+            if (!tab || !bar.contains(tab) || legacyClickBypass.has(tab)) return;
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            if (tab.classList.contains('is-active')) return;
+
+            runTabTransition(bar, tab);
+        }, true);
 
         bar.addEventListener('keydown', (event) => {
             if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
@@ -120,14 +263,14 @@
             tabs[index].click();
         });
 
-        bar.addEventListener('scroll', () => scheduleSync(false), { passive: true });
+        bar.addEventListener('scroll', scheduleSync, { passive: true });
 
         const observer = new MutationObserver((records) => {
             const changed = records.some((record) =>
                 record.type === 'childList' ||
                 (record.type === 'attributes' && record.attributeName === 'class')
             );
-            if (changed) scheduleSync(true);
+            if (changed) scheduleSync();
         });
         observer.observe(bar, {
             childList: true,
@@ -137,12 +280,12 @@
         });
 
         if (typeof ResizeObserver === 'function') {
-            const resizeObserver = new ResizeObserver(() => scheduleSync(false));
+            const resizeObserver = new ResizeObserver(scheduleSync);
             resizeObserver.observe(bar);
         }
 
-        window.addEventListener('resize', () => scheduleSync(false), { passive: true });
-        scheduleSync(false);
+        window.addEventListener('resize', scheduleSync, { passive: true });
+        scheduleSync();
     }
 
     let documentObserver = null;

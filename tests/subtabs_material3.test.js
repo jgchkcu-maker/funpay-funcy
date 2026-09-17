@@ -24,14 +24,46 @@ test('subtabs remain single-line and horizontally usable in narrow windows', () 
   assert.match(css, /\.fpt-subtab\s*\{[^}]*flex:\s*0\s+0\s+auto/s);
 });
 
-test('motion enhancer tracks the active tab and animates incoming page content', () => {
+test('motion enhancer tracks the active tab and keeps accessibility state synchronized', () => {
   assert.ok(fs.existsSync(motionPath), 'subtabs motion enhancer must exist');
   const js = fs.readFileSync(motionPath, 'utf8');
   assert.match(js, /--fpt-subtab-indicator-x/);
   assert.match(js, /--fpt-subtab-indicator-width/);
   assert.match(js, /\.fp-tools-page-content\.active/);
-  assert.match(js, /fpt-page-enter/);
+  assert.match(js, /aria-selected/);
   assert.match(js, /MutationObserver/);
+});
+
+test('tab switch is intercepted before legacy display none/block to prevent flicker', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  assert.match(js, /startViewTransition/);
+  assert.match(js, /addEventListener\(['"]click['"],[\s\S]*?true\s*\)/);
+  assert.match(js, /stopImmediatePropagation\(\)/);
+  assert.match(js, /WeakSet/);
+});
+
+test('fallback transition fades old page before switching and fades new page in', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  assert.match(js, /\.animate\(/);
+  assert.match(js, /opacity:\s*1/);
+  assert.match(js, /opacity:\s*0/);
+  assert.match(js, /translate3d\(0,\s*-?3px/);
+  assert.match(js, /translate3d\(0,\s*5px/);
+});
+
+test('interrupted view transitions synchronously clean their temporary state', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  assert.match(js, /let\s+activeViewCleanup\s*=\s*null/);
+  assert.match(js, /activeViewCleanup\(\)/);
+  assert.match(js, /classList\.remove\(VIEW_TRANSITION_ROOT_CLASS\)/);
+});
+
+test('view transition styles animate only the settings page snapshot', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  assert.match(css, /::view-transition-old\(root\)[\s\S]*animation:\s*none/);
+  assert.match(css, /::view-transition-old\(fpt-settings-page\)/);
+  assert.match(css, /::view-transition-new\(fpt-settings-page\)/);
+  assert.match(css, /animation-duration:\s*2\d{2}ms/);
 });
 
 test('reduced-motion disables tab and page animations', () => {
