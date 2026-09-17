@@ -86,6 +86,7 @@
         "content/features/quick_lot_search.js",
         "content/features/template_popover_layout.js",
         "content/features/templates.js",
+        "content/features/template_popover_viewport.js",
         "content/features/theme.js",
         "content/features/exact_price.js",
         "content/features/buyer_price_field.js",
@@ -144,6 +145,7 @@
       ],
       "css": [
         "css/content_styles.css",
+        "css/template_popover_material.css",
         "css/ai_creator.css",
         "css/fpt_icons_theme.css"
       ],
