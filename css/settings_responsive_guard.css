@@ -1,9 +1,9 @@
 /*
  * FP Tools settings responsive guard.
  *
- * This file is intentionally loaded after the legacy settings styles. The settings
- * window is resizable independently from the browser viewport, so layout decisions
- * here use container queries tied to the popup itself instead of window media queries.
+ * Loaded after every legacy settings stylesheet. The FP Tools window can be resized
+ * independently from the browser, so its layout must react to the popup itself rather
+ * than only to window media queries.
  */
 
 .fp-tools-popup {
@@ -25,7 +25,7 @@
     max-width: 100%;
 }
 
-/* A child with an intrinsic/fixed width must never be able to widen the scrollport. */
+/* Intrinsic/fixed-size descendants must never widen the settings scrollport. */
 .fp-tools-content > * {
     min-width: 0;
     max-width: 100%;
@@ -72,11 +72,23 @@
     overflow-wrap: anywhere;
 }
 
-/*
- * The catalog preview used to inherit width:100% + aspect-ratio:16/9 from inline
- * markup, so a wide settings window produced a 600px+ tall image. Keep the media
- * crop, but bound the viewport footprint to a useful range.
- */
+/* Inline flex rows are common in the legacy markup. Make their children shrinkable. */
+.fp-tools-popup .fp-tools-page-content [style*="display:flex"] > *,
+.fp-tools-popup .fp-tools-page-content [style*="display: flex"] > * {
+    min-width: 0;
+}
+
+/* Search results are moved from the sidebar into .fp-tools-body by JS. Their width must
+ * therefore follow the popup, not the browser viewport. */
+.fpt-nav-search-results {
+    width: min(430px, calc(100cqw - 24px));
+    max-width: calc(100cqw - 24px);
+    max-height: min(340px, calc(100cqh - 90px));
+    box-sizing: border-box;
+}
+
+/* The catalog preview used to be width:100% + 16:9, producing 600px+ tall previews.
+ * Keep a useful media viewport while bounding its vertical footprint. */
 .fp-tools-popup #fp-wallpaper-carousel {
     width: 100% !important;
     height: clamp(220px, 42cqh, 420px) !important;
@@ -96,7 +108,7 @@
     object-fit: cover;
 }
 
-/* Keep shared grids mathematically shrinkable even before a breakpoint is reached. */
+/* Shared grids stay mathematically shrinkable before a breakpoint is reached. */
 .fp-tools-popup .color-input-grid,
 .fp-tools-popup .theme-actions-grid,
 .fp-tools-popup .fpt-presets-grid,
@@ -111,7 +123,46 @@
     min-width: 0;
 }
 
-/* Medium popup: compact the drawer and dense grids based on popup width. */
+/* Modal overlays are appended to <body>, outside .fp-tools-popup, so they need their own
+ * viewport guard. This prevents import/export/category modals from escaping small screens. */
+.fp-tools-modal-overlay {
+    box-sizing: border-box;
+    padding: 12px;
+}
+
+.fp-tools-modal-content {
+    min-width: 0;
+    width: min(500px, 100%);
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.fp-tools-modal-header,
+.fp-tools-modal-footer {
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.fp-tools-modal-body {
+    min-width: 0;
+    min-height: 0;
+    max-width: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.fp-tools-modal-body input,
+.fp-tools-modal-body select,
+.fp-tools-modal-body textarea,
+.fp-tools-modal-body button {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Medium popup: compact the drawer and dense grids from the actual popup width. */
 @container fpt-popup (max-width: 900px) {
     .fp-tools-nav {
         width: 200px;
@@ -173,14 +224,12 @@
     }
 }
 
-/*
- * Narrow popup: switch the navigation drawer to an icon rail. Labels are hidden,
- * but every hub stays reachable through its icon/title and no content is removed.
- */
+/* Narrow popup: keep labels/search discoverable. A compact drawer is safer than an icon-only
+ * rail because search remains editable and every destination still has a visible name. */
 @container fpt-popup (max-width: 700px) {
     .fp-tools-nav {
-        flex-basis: 72px;
-        width: 72px;
+        flex-basis: 164px;
+        width: 164px;
         padding: 8px 7px 12px;
         overflow-x: hidden;
     }
@@ -190,67 +239,60 @@
     }
 
     .fp-tools-nav li.fp-nav-divider {
-        height: 1px;
-        min-height: 1px;
-        margin: 9px 8px 7px !important;
-        overflow: hidden;
-        color: transparent !important;
-        background: var(--fptm-border, rgba(127,127,127,.16));
-    }
-
-    .fp-tools-nav li.fp-nav-divider:first-child {
-        margin-top: 3px !important;
+        margin: 8px 6px 3px !important;
+        font-size: 9px !important;
+        letter-spacing: .09em;
     }
 
     .fp-tools-nav li[data-page] a,
     .fp-tools-nav li[data-page].fpt-nav-wide a {
-        justify-content: center;
-        gap: 0;
-        height: 46px;
-        min-height: 46px;
-        padding: 5px !important;
+        justify-content: flex-start;
+        gap: 7px;
+        height: 44px;
+        min-height: 44px;
+        padding: 5px 6px !important;
     }
 
     .fp-tools-nav li[data-page] a > span:last-child {
-        display: none;
+        display: block;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11.5px;
     }
 
     .fp-tools-nav .nav-icon,
     .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        border-radius: 11px;
-        font-size: 20px;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 9px;
+        font-size: 18px;
     }
 
     .fpt-nav-search {
-        justify-content: center;
-        min-height: 44px;
-        padding: 2px 0 6px;
-    }
-
-    .fpt-nav-search-input {
-        width: 42px !important;
-        min-width: 42px !important;
+        justify-content: flex-end;
+        min-height: 42px;
+        padding: 2px 2px 6px;
     }
 
     .fpt-nav-search:focus-within .fpt-nav-search-input {
-        width: 56px !important;
-        padding: 0 8px !important;
-        color: transparent !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 0 30px 0 34px !important;
+        color: var(--fptm-text, #e7e8ec) !important;
         caret-color: var(--fptm-accent, #1b75bb);
     }
 
-    .fpt-nav-search::before,
     .fpt-nav-search:focus-within::before {
-        left: 50%;
+        left: 12px;
         right: auto;
-        transform: translateX(-50%);
+        transform: none;
     }
 
     .fp-tools-popup .fpt-nav-search .fpt-nav-search-clear {
-        display: none !important;
+        right: 10px !important;
     }
 
     .fp-tools-popup .color-input-grid,
@@ -291,7 +333,9 @@
     .fp-tools-popup .fpt-status-card,
     .fp-tools-popup .fpt-setting-title-row,
     .fp-tools-popup .fpt-needs-header-bar,
-    .fp-tools-popup .autobump-modal-controls {
+    .fp-tools-popup .autobump-modal-controls,
+    .fp-tools-popup .fp-tools-page-content [style*="display:flex"],
+    .fp-tools-popup .fp-tools-page-content [style*="display: flex"] {
         min-width: 0;
         flex-wrap: wrap;
     }
@@ -299,11 +343,60 @@
     .fp-tools-popup .fpt-setting-info,
     .fp-tools-popup .fpt-status-card-left {
         min-width: 0;
-        flex: 1 1 240px;
+        flex: 1 1 220px;
+    }
+
+    .fp-tools-popup .range-label {
+        gap: 8px;
+        flex-wrap: wrap;
     }
 }
 
-/* Very short popup: reduce vertical chrome rather than clipping controls. */
+/* Very narrow browser windows still preserve named navigation instead of hiding features. */
+@container fpt-popup (max-width: 520px) {
+    .fp-tools-nav {
+        flex-basis: 132px;
+        width: 132px;
+        padding-left: 5px;
+        padding-right: 5px;
+    }
+
+    .fp-tools-content {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        height: auto;
+        min-height: 48px;
+        gap: 5px;
+        align-items: center;
+    }
+
+    .fp-tools-nav li[data-page] a > span:last-child {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.15;
+        font-size: 10.5px;
+    }
+
+    .fp-tools-nav .nav-icon,
+    .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+        width: 27px;
+        height: 27px;
+        min-width: 27px;
+        font-size: 17px;
+    }
+
+    .fp-tools-nav li.fp-nav-divider {
+        margin-left: 4px !important;
+        margin-right: 4px !important;
+        letter-spacing: .06em;
+    }
+}
+
+/* Short popup: reduce vertical chrome rather than clipping controls. */
 @container fpt-popup (max-height: 650px) {
     .fp-tools-nav {
         padding-top: 7px;
