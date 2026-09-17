@@ -118,61 +118,18 @@
 }
 
 /*
- * Content transition: the old snapshot stays opaque beneath the incoming page.
- * That prevents the white content surface from becoming visible mid-transition.
+ * Keep the real animated page inside the settings scrollport. Paint containment
+ * is enabled only during the ~170ms transition so normal popovers/tooltips are
+ * not clipped the rest of the time.
  */
-html.fpt-subtab-view-transition::view-transition-old(root),
-html.fpt-subtab-view-transition::view-transition-new(root) {
-    animation: none;
-    mix-blend-mode: normal;
+.fp-tools-popup .fp-tools-content {
+    min-height: 0;
+    overflow-x: hidden;
 }
 
-html.fpt-subtab-view-transition::view-transition-group(fpt-settings-page) {
-    animation-duration: 190ms;
-    animation-timing-function: cubic-bezier(.2, 0, 0, 1);
-}
-
-html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page),
-html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
-    mix-blend-mode: normal;
-    transform-origin: 50% 0;
-}
-
-html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page) {
-    z-index: 1;
-    animation: fptSettingsPageOut 190ms cubic-bezier(.2, 0, 0, 1) both;
-}
-
-html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
-    z-index: 2;
-    animation: fptSettingsPageIn 190ms cubic-bezier(.2, 0, 0, 1) both;
-}
-
-@keyframes fptSettingsPageOut {
-    from {
-        opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
-        filter: blur(0);
-    }
-    to {
-        opacity: 1;
-        transform: translate3d(0, -2px, 0) scale(.998);
-        filter: blur(.18px);
-    }
-}
-
-@keyframes fptSettingsPageIn {
-    from {
-        opacity: 0;
-        transform: translate3d(0, 4px, 0) scale(.998);
-    }
-    45% {
-        opacity: .82;
-    }
-    to {
-        opacity: 1;
-        transform: translate3d(0, 0, 0) scale(1);
-    }
+.fp-tools-popup .fp-tools-content.fpt-subtab-transitioning {
+    contain: paint;
+    isolation: isolate;
 }
 
 @media (max-width: 850px) {
@@ -202,13 +159,5 @@ html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
     .fp-tools-popup .fpt-subtabs-bar::before,
     .fp-tools-popup .fpt-subtab {
         transition: none !important;
-    }
-
-    html.fpt-subtab-view-transition::view-transition-old(root),
-    html.fpt-subtab-view-transition::view-transition-new(root),
-    html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page),
-    html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page),
-    html.fpt-subtab-view-transition::view-transition-group(fpt-settings-page) {
-        animation: none !important;
     }
 }
