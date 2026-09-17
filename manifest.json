@@ -151,7 +151,8 @@
         "css/fpt_icons_theme.css",
         "css/template_popover_material.css",
         "css/settings_sidebar_material3.css",
-        "css/subtabs_material3.css"
+        "css/subtabs_material3.css",
+        "css/settings_responsive_guard.css"
       ],
       "run_at": "document_idle"
     }
