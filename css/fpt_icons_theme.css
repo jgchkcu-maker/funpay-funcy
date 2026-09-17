@@ -1092,6 +1092,199 @@ button.add-image-btn .material-symbols-rounded {
 /* ============================================================================
    3.0.6.2 - «Что тебе нужно» tab
    ============================================================================ */
+/* Presets grid */
+.fp-tools-popup .fpt-needs-presets {
+    margin-bottom: 14px;
+}
+.fp-tools-popup .fpt-needs-presets-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #7a7a8e;
+    margin-bottom: 8px;
+}
+.fp-tools-popup .fpt-needs-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+.fp-tools-popup .fpt-preset-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--fptm-surface-2, #0c0c11);
+    border: 1px solid var(--fptm-border, #1c1c24);
+    border-radius: 10px;
+    padding: 9px 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+.fp-tools-popup .fpt-preset-btn:hover {
+    border-color: rgba(27,117,187,0.5);
+    background: rgba(27,117,187,0.06);
+    transform: translateY(-1px);
+}
+.fp-tools-popup .fpt-preset-btn:active {
+    transform: translateY(0);
+}
+.fp-tools-popup .fpt-preset-icon {
+    font-size: 20px;
+    color: #4a9fd4;
+    background: rgba(27,117,187,0.12);
+    padding: 6px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.fp-tools-popup .fpt-preset-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.fp-tools-popup .fpt-preset-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--fptm-text, #ececf4);
+}
+.fp-tools-popup .fpt-preset-desc {
+    font-size: 11px;
+    color: var(--fptm-muted, #8a8a96);
+    margin-top: 1px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* Header bar with count and bulk buttons */
+.fp-tools-popup .fpt-needs-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: var(--fptm-surface-2, #0c0c11);
+    border: 1px solid var(--fptm-border, #1c1c24);
+    border-radius: 10px;
+}
+.fp-tools-popup .fpt-needs-counter-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: var(--fptm-text, #ececf4);
+}
+.fp-tools-popup .fpt-counter-icon {
+    font-size: 17px;
+    color: #4a9fd4;
+}
+.fp-tools-popup .fpt-needs-bulk-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.fp-tools-popup .fpt-needs-bulk-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 4px 9px;
+    border-radius: 6px;
+    border: 1px solid var(--fptm-border, #2a2a36);
+    background: transparent;
+    color: var(--fptm-muted, #b8b8c4);
+    cursor: pointer;
+    transition: all 0.13s ease;
+}
+.fp-tools-popup .fpt-needs-bulk-btn:hover {
+    color: #ececf4;
+    border-color: rgba(27,117,187,0.5);
+    background: rgba(27,117,187,0.09);
+}
+.fp-tools-popup .fpt-needs-bulk-btn .material-symbols-rounded {
+    font-size: 15px;
+}
+
+/* Pills for category filtering */
+.fp-tools-popup .fpt-needs-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.fp-tools-popup .fpt-pill-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    border-radius: 20px;
+    border: 1px solid var(--fptm-border, #22222e);
+    background: var(--fptm-surface-2, #0c0c11);
+    color: var(--fptm-muted, #8a8a96);
+    cursor: pointer;
+    transition: all 0.13s ease;
+}
+.fp-tools-popup .fpt-pill-btn:hover {
+    color: var(--fptm-text, #ececf4);
+    border-color: rgba(27,117,187,0.4);
+}
+.fp-tools-popup .fpt-pill-btn.active {
+    color: #fff;
+    background: #1b75bb;
+    border-color: #1b75bb;
+}
+.fp-tools-popup .fpt-pill-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.18);
+    color: inherit;
+}
+.fp-tools-popup .fpt-pill-disabled.active {
+    background: #c0392b;
+    border-color: #c0392b;
+}
+
+/* Search wrapper with icon and clear */
+.fp-tools-popup .fpt-needs-search-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 240px;
+    max-width: 55%;
+}
+.fp-tools-popup .fpt-search-icon {
+    position: absolute;
+    left: 8px;
+    font-size: 16px;
+    color: #6a6a7a;
+    pointer-events: none;
+}
+.fp-tools-popup .fpt-filter-clear-btn {
+    position: absolute;
+    right: 7px;
+    background: none;
+    border: none;
+    color: #8a8a96;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 5px;
+}
+.fp-tools-popup .fpt-filter-clear-btn:hover {
+    color: #ececf4;
+}
+.fp-tools-popup .fpt-needs-search-wrapper .fpt-needs-filter {
+    width: 100%;
+    padding-left: 28px !important;
+    padding-right: 24px !important;
+    max-width: 100% !important;
+}
+
 .fp-tools-popup .fpt-needs-ai-box {
     display: flex;
     flex-direction: column;
@@ -1442,4 +1635,317 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup #fptNeedsAskBtn .material-symbols-rounded,
 .fp-tools-popup #fptNeedsAskBtn .material-icons {
     color: var(--fpt-on-accent, #fff) !important;
+}
+
+/* =============================================================================
+   10. Новая дизайн-система интерфейса: Хабы, Подвкладки, Карточки настроек, Дашборд
+   ============================================================================= */
+
+/* Подвкладки (Sub-tabs bar) */
+.fp-tools-popup .fpt-subtabs-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--fptm-surface-2, #08090f);
+    padding: 5px;
+    border-radius: 10px;
+    border: 1px solid var(--fptm-border, #1a1c28);
+    margin-bottom: 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.fp-tools-popup .fpt-subtabs-bar::-webkit-scrollbar {
+    display: none;
+}
+.fp-tools-popup .fpt-subtab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--fptm-muted, #8e92a8);
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    user-select: none;
+}
+.fp-tools-popup .fpt-subtab:hover {
+    color: var(--fptm-text, #e2e4f0);
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+.fp-tools-popup .fpt-subtab.is-active {
+    color: var(--fpt-on-accent, #fff) !important;
+    background: var(--fpt-accent, #1b75bb) !important;
+    border-color: var(--fpt-accent, #1b75bb) !important;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.fp-tools-popup .fpt-subtab .material-symbols-rounded {
+    font-size: 16px;
+}
+
+/* Карточки настроек (Card-Row Pattern) */
+.fp-tools-popup .fpt-setting-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 13px 16px;
+    background: var(--fptm-surface-2, #0a0b12) !important;
+    border: 1px solid var(--fptm-border, #181924) !important;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    box-shadow: none !important;
+}
+.fp-tools-popup .fpt-setting-card:hover {
+    border-color: rgba(255, 255, 255, 0.12) !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+.fp-tools-popup .fpt-setting-info {
+    flex: 1;
+    min-width: 0;
+}
+.fp-tools-popup .fpt-setting-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+    flex-wrap: wrap;
+}
+.fp-tools-popup .fpt-setting-title {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--fptm-text, #e2e4f0);
+    line-height: 1.3;
+}
+.fp-tools-popup .fpt-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fptm-muted, #8e92a8);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.fp-tools-popup .fpt-badge-accent {
+    background: rgba(27, 117, 187, 0.18);
+    color: var(--fpt-accent, #58a6ff);
+    border-color: rgba(27, 117, 187, 0.35);
+}
+.fp-tools-popup .fpt-badge-location {
+    background: rgba(168, 85, 247, 0.12);
+    color: #c084fc;
+    border-color: rgba(168, 85, 247, 0.25);
+}
+.fp-tools-popup .fpt-setting-desc {
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: var(--fptm-muted, #7e839e);
+}
+
+/* Свитчер переключения (iOS/Linear Switch) */
+.fp-tools-popup .fpt-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    cursor: pointer;
+    margin: 0 !important;
+}
+.fp-tools-popup .fpt-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+.fp-tools-popup .fpt-switch-slider {
+    position: absolute;
+    inset: 0;
+    background-color: var(--fptm-surface, #181924);
+    border: 1px solid var(--fptm-border, #282a3c);
+    border-radius: 24px;
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+}
+.fp-tools-popup .fpt-switch-slider::before {
+    content: "";
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #8e92a8;
+    border-radius: 50%;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+.fp-tools-popup .fpt-switch input:checked + .fpt-switch-slider {
+    background-color: var(--fpt-accent, #1b75bb);
+    border-color: var(--fpt-accent, #1b75bb);
+}
+.fp-tools-popup .fpt-switch input:checked + .fpt-switch-slider::before {
+    transform: translateX(20px);
+    background-color: var(--fpt-on-accent, #ffffff);
+}
+
+/* Прогрессивное раскрытие (Subpanels) */
+.fp-tools-popup .fpt-subpanel {
+    background: var(--fptm-surface-2, #08090f);
+    border: 1px solid var(--fptm-border, #1a1c28);
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: -6px;
+    margin-bottom: 12px;
+    border-top: none;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    transition: all 0.2s ease;
+}
+
+/* Дашборд (Dashboard Layout) */
+.fp-tools-popup .fpt-dashboard-section-title {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--fptm-text, #e2e4f0);
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.fp-tools-popup .fpt-dashboard-section-title:first-child {
+    margin-top: 0;
+}
+.fp-tools-popup .fpt-status-hub {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.fp-tools-popup .fpt-status-card {
+    background: var(--fptm-surface-2, #0c0d14);
+    border: 1px solid var(--fptm-border, #1a1c28);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: border-color 0.15s ease, background 0.15s ease;
+    cursor: pointer;
+}
+.fp-tools-popup .fpt-status-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.02);
+}
+.fp-tools-popup .fpt-status-card-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.fp-tools-popup .fpt-status-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--fpt-accent, #58a6ff);
+}
+.fp-tools-popup .fpt-status-card-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--fptm-text, #e2e4f0);
+}
+.fp-tools-popup .fpt-status-card-sub {
+    font-size: 11px;
+    color: var(--fptm-muted, #7e839e);
+    margin-top: 2px;
+}
+.fp-tools-popup .fpt-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.fp-tools-popup .fpt-status-badge.status-on {
+    background: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+.fp-tools-popup .fpt-status-badge.status-off {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--fptm-muted, #7e839e);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.fp-tools-popup .fpt-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.fp-tools-popup .fpt-preset-card {
+    background: var(--fptm-surface-2, #0c0d14);
+    border: 1px solid var(--fptm-border, #1a1c28);
+    border-radius: 10px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+.fp-tools-popup .fpt-preset-card:hover {
+    border-color: var(--fpt-accent, #1b75bb);
+    background: rgba(27, 117, 187, 0.07);
+    transform: translateY(-1px);
+}
+.fp-tools-popup .fpt-preset-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fptm-text, #e2e4f0);
+}
+.fp-tools-popup .fpt-preset-desc {
+    font-size: 11px;
+    color: var(--fptm-muted, #7e839e);
+    margin-top: 4px;
+    line-height: 1.35;
+}
+.fp-tools-popup .fpt-quick-actions-bar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+}
+.fp-tools-popup .fpt-quick-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--fptm-surface-2, #0c0d14);
+    border: 1px solid var(--fptm-border, #1a1c28);
+    border-radius: 8px;
+    color: var(--fptm-text, #d8dae8);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+.fp-tools-popup .fpt-quick-action-btn:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.05);
 }

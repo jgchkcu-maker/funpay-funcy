@@ -1,13 +1,17 @@
 // content/features/needs_tab.js
 // =============================================================================
 // Вкладка «Что тебе нужно».
-//  • Свободный ввод → ИИ сопоставляет с реестром форс-элементов → карточки с галочками.
-//  • Полный список форс-элементов с галочками (вкл/выкл) и встроенным предпросмотром.
+//  • Быстрые пресеты в 1 клик (По умолчанию, Я покупатель, Продавец, Минимализм).
+//  • Информационный бар: активные / всего + кнопки «Включить все» / «Отключить все».
+//  • Фильтры-таблетки по разделам и фильтр только по отключённым элементам.
+//  • Свободный ввод → ИИ сопоставляет с реестром элементов → карточки с галочками.
+//  • Полный список элементов с галочками (вкл/выкл) и встроенным предпросмотром.
 //  • Чекбоксы → АВТОСОХРАНЕНИЕ в fpToolsDisabledFeatures при каждом изменении (скрытие живое).
 // Заблокированные (locked) элементы выключать нельзя.
 // =============================================================================
 
 let __fptNeedsInited = false;
+let __fptActivePillGroup = 'all';
 
 function fptNeedsRegistry() {
     return (typeof FPT_FEATURE_REGISTRY !== 'undefined' && FPT_FEATURE_REGISTRY) ||
@@ -21,9 +25,6 @@ function fptEscapeHtml(s) {
 }
 
 // Inline preview markup - a faithful mini visual copy of the real element.
-// Not escaped: the registry author controls this html (trusted, no user input).
-// {{MAGIC_ICON}} is replaced with the real path to icons/magic.png so the AI
-// button preview uses the exact same icon as the live button.
 function fptNeedsPreviewHtml(entry) {
     const p = entry.preview;
     if (p && p.kind === 'html') {
@@ -42,7 +43,48 @@ function fptNeedsPreviewHtml(entry) {
     return `<div class="fpt-pv-stage fpt-pv-none">Нет предпросмотра</div>`;
 }
 
-// Render the full feature list grouped by `group`.
+// Check if entry belongs to the selected pill group
+function fptMatchesPillGroup(entry, pillGroup, disabledSet) {
+    if (!pillGroup || pillGroup === 'all') return true;
+    if (pillGroup === 'disabled') return disabledSet.has(entry.id);
+    const g = (entry.group || '').toLowerCase();
+    if (pillGroup === 'chat') {
+        return g.includes('чат') || g.includes('заметки');
+    }
+    if (pillGroup === 'editor') {
+        return g.includes('редактор');
+    }
+    if (pillGroup === 'lots') {
+        return g.includes('лот') || g.includes('профил');
+    }
+    if (pillGroup === 'orders') {
+        return g.includes('заказ');
+    }
+    return true;
+}
+
+// Update counts in header and badges
+function fptUpdateHeaderStatus(disabledCount, totalCount) {
+    const activeEl = document.getElementById('fptNeedsActiveCount');
+    const totalEl = document.getElementById('fptNeedsTotalCount');
+    const badgeEl = document.getElementById('fptPillDisabledCount');
+    const counterBadge = document.getElementById('fptNeedsCounterBadge');
+
+    const active = Math.max(0, totalCount - disabledCount);
+    if (activeEl) activeEl.textContent = String(active);
+    if (totalEl) totalEl.textContent = String(totalCount);
+    if (badgeEl) badgeEl.textContent = String(disabledCount);
+
+    if (counterBadge) {
+        if (disabledCount === 0) {
+            counterBadge.style.borderColor = 'rgba(46, 204, 113, 0.4)';
+        } else {
+            counterBadge.style.borderColor = '';
+        }
+    }
+}
+
+// Render the full feature list grouped by `group` with filtering
 async function fptRenderNeedsList(filterText) {
     const list = document.getElementById('fptNeedsList');
     if (!list) return;
@@ -50,16 +92,19 @@ async function fptRenderNeedsList(filterText) {
     const { fpToolsDisabledFeatures = [] } = await chrome.storage.local.get('fpToolsDisabledFeatures');
     const disabled = new Set(Array.isArray(fpToolsDisabledFeatures) ? fpToolsDisabledFeatures : []);
 
-    const q = (filterText || '').trim().toLowerCase();
+    fptUpdateHeaderStatus(disabled.size, reg.length);
+
+    const q = (filterText !== undefined ? filterText : (document.getElementById('fptNeedsFilter')?.value || '')).trim().toLowerCase();
     const groups = {};
     reg.forEach(entry => {
+        if (!fptMatchesPillGroup(entry, __fptActivePillGroup, disabled)) return;
         if (q && !(`${entry.label} ${entry.desc}`.toLowerCase().includes(q))) return;
         (groups[entry.group] = groups[entry.group] || []).push(entry);
     });
 
     const groupNames = Object.keys(groups);
     if (!groupNames.length) {
-        list.innerHTML = `<p class="template-info" style="text-align:center;">Ничего не найдено.</p>`;
+        list.innerHTML = `<p class="template-info" style="text-align:center;padding:24px 0;">Ничего не найдено по текущим фильтрам.</p>`;
         return;
     }
 
@@ -94,27 +139,20 @@ async function fptRenderNeedsList(filterText) {
     }).join('');
 }
 
-// Save the current checkbox state immediately (autosave). Called on every
-// checkbox change - there is no separate "apply" button anymore.
+// Save the current checkbox state immediately (autosave).
 async function fptApplyNeedsSelection() {
     const list = document.getElementById('fptNeedsList');
     const status = document.getElementById('fptNeedsStatus');
     if (!list) return;
     const reg = fptNeedsRegistry();
     const lockedIds = new Set(reg.filter(e => e.locked).map(e => e.id));
-    // Only ids that exist in the CURRENT registry are valid. Anything else in
-    // storage is stale (left over from an old version / removed feature) and must
-    // never be counted or kept - that was the cause of the bogus "Отключено: 10".
     const knownIds = new Set(reg.map(e => e.id));
 
-    // Start from the previously-saved set so features filtered out of the current
-    // view (by search) keep their state, then update from visible checkboxes.
     let prev = [];
     try {
         const data = await chrome.storage.local.get('fpToolsDisabledFeatures');
         prev = Array.isArray(data.fpToolsDisabledFeatures) ? data.fpToolsDisabledFeatures : [];
     } catch (_) { prev = []; }
-    // keep only valid, non-locked, currently-known ids → prunes stale garbage
     const disabledSet = new Set(prev.filter(id => knownIds.has(id) && !lockedIds.has(id)));
 
     list.querySelectorAll('.fpt-needs-cb').forEach(cb => {
@@ -127,10 +165,10 @@ async function fptApplyNeedsSelection() {
 
     try {
         await chrome.storage.local.set({ fpToolsDisabledFeatures: disabled });
-        // refresh live CSS hiding immediately
         if (typeof window !== 'undefined' && typeof window.fptApplyDisabledFeatures === 'function') {
             await window.fptApplyDisabledFeatures(disabled);
         }
+        fptUpdateHeaderStatus(disabled.length, reg.length);
         if (status) {
             status.textContent = disabled.length
                 ? `Сохранено · отключено: ${disabled.length}`
@@ -153,6 +191,130 @@ async function fptApplyNeedsSelection() {
     }
 }
 
+// Preset definitions
+const FPT_PRESETS = {
+    default: {
+        name: 'По умолчанию',
+        getDisabledIds: () => []
+    },
+    buyer: {
+        name: 'Я покупатель',
+        getDisabledIds: (reg) => {
+            return reg
+                .filter(e => !e.locked)
+                .filter(e => {
+                    const g = (e.group || '').toLowerCase();
+                    if (e.id === 'rmthub_seller_search' || e.id === 'order_copy_chip') return false;
+                    if (g.includes('чат')) return false;
+                    if (g.includes('редактор') || g.includes('чужие лоты') ||
+                        e.id === 'order_copy_lot_btn' || e.id === 'market_analytics_btn' ||
+                        e.id === 'raise_all_lots_btn' || e.id === 'sales_stats_expand' ||
+                        e.id === 'lot_select_btn' || e.id === 'lot_reactivate_btn' ||
+                        e.id === 'lot_pinned_container') {
+                        return true;
+                    }
+                    return false;
+                })
+                .map(e => e.id);
+        }
+    },
+    seller: {
+        name: 'Продавец',
+        getDisabledIds: () => [
+            'rmthub_seller_search',
+            'profanity_warning',
+            'chat_char_counter'
+        ]
+    },
+    minimal: {
+        name: 'Минимализм',
+        getDisabledIds: (reg) => reg.filter(e => !e.locked).map(e => e.id)
+    }
+};
+
+// Apply a preset directly
+async function fptApplyPreset(presetKey) {
+    const preset = FPT_PRESETS[presetKey];
+    if (!preset) return;
+    const reg = fptNeedsRegistry();
+    const lockedIds = new Set(reg.filter(e => e.locked).map(e => e.id));
+    const toDisable = preset.getDisabledIds(reg).filter(id => !lockedIds.has(id));
+
+    try {
+        await chrome.storage.local.set({ fpToolsDisabledFeatures: toDisable });
+        if (typeof window !== 'undefined' && typeof window.fptApplyDisabledFeatures === 'function') {
+            await window.fptApplyDisabledFeatures(toDisable);
+        }
+        await fptRenderNeedsList();
+        const status = document.getElementById('fptNeedsStatus');
+        if (status) {
+            status.textContent = `Применён пресет «${preset.name}» · отключено: ${toDisable.length}`;
+            status.classList.remove('fpt-needs-status-err');
+            status.classList.add('fpt-needs-status-ok');
+            clearTimeout(fptApplyNeedsSelection._t);
+            fptApplyNeedsSelection._t = setTimeout(() => {
+                if (status) status.classList.remove('fpt-needs-status-ok');
+            }, 1800);
+        }
+        if (typeof showNotification === 'function') {
+            showNotification(`Применён профиль «${preset.name}»`);
+        }
+    } catch (e) {
+        console.error('Ошибка применения пресета:', e);
+    }
+}
+
+// Bulk enable all
+async function fptEnableAll() {
+    const reg = fptNeedsRegistry();
+    try {
+        await chrome.storage.local.set({ fpToolsDisabledFeatures: [] });
+        if (typeof window !== 'undefined' && typeof window.fptApplyDisabledFeatures === 'function') {
+            await window.fptApplyDisabledFeatures([]);
+        }
+        await fptRenderNeedsList();
+        const status = document.getElementById('fptNeedsStatus');
+        if (status) {
+            status.textContent = 'Сохранено · все элементы включены';
+            status.classList.remove('fpt-needs-status-err');
+            status.classList.add('fpt-needs-status-ok');
+            clearTimeout(fptApplyNeedsSelection._t);
+            fptApplyNeedsSelection._t = setTimeout(() => {
+                if (status) status.classList.remove('fpt-needs-status-ok');
+            }, 1400);
+        }
+        if (typeof showNotification === 'function') showNotification('Все элементы интерфейса включены');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+// Bulk disable all non-locked
+async function fptDisableAll() {
+    const reg = fptNeedsRegistry();
+    const toDisable = reg.filter(e => !e.locked).map(e => e.id);
+    try {
+        await chrome.storage.local.set({ fpToolsDisabledFeatures: toDisable });
+        if (typeof window !== 'undefined' && typeof window.fptApplyDisabledFeatures === 'function') {
+            await window.fptApplyDisabledFeatures(toDisable);
+        }
+        await fptRenderNeedsList();
+        const status = document.getElementById('fptNeedsStatus');
+        if (status) {
+            status.textContent = `Сохранено · отключено: ${toDisable.length}`;
+            status.classList.remove('fpt-needs-status-err');
+            status.classList.add('fpt-needs-status-ok');
+            clearTimeout(fptApplyNeedsSelection._t);
+            fptApplyNeedsSelection._t = setTimeout(() => {
+                if (status) status.classList.remove('fpt-needs-status-ok');
+            }, 1400);
+        }
+        if (typeof showNotification === 'function') showNotification('Все отключаемые элементы скрыты');
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 // Ask the AI which features the user wants to disable, then show confirm cards.
 async function fptNeedsAskAI() {
     const input = document.getElementById('fptNeedsInput');
@@ -167,7 +329,6 @@ async function fptNeedsAskAI() {
     }
 
     const reg = fptNeedsRegistry();
-    // exclude locked entries from what the AI may suggest
     const offerable = reg.filter(e => !e.locked);
     const compact = JSON.stringify(offerable.map(e => ({ id: e.id, label: e.label, desc: e.desc })));
 
@@ -242,7 +403,7 @@ async function fptNeedsAskAI() {
 
 // Wire all event handlers (idempotent).
 function initializeNeedsTab() {
-    fptRenderNeedsList('');
+    fptRenderNeedsList();
 
     if (__fptNeedsInited) return;
     __fptNeedsInited = true;
@@ -250,20 +411,75 @@ function initializeNeedsTab() {
     const page = document.querySelector('.fp-tools-page-content[data-page="needs"]');
     if (!page) return;
 
+    // AI Ask
     const askBtn = document.getElementById('fptNeedsAskBtn');
     if (askBtn) askBtn.addEventListener('click', fptNeedsAskAI);
 
+    // Search filter & clear button
     const filter = document.getElementById('fptNeedsFilter');
-    if (filter) filter.addEventListener('input', () => fptRenderNeedsList(filter.value));
+    const clearBtn = document.getElementById('fptNeedsFilterClear');
+    if (filter) {
+        filter.addEventListener('input', () => {
+            const val = filter.value;
+            if (clearBtn) clearBtn.style.display = val ? 'inline-block' : 'none';
+            fptRenderNeedsList(val);
+        });
+    }
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            if (filter) {
+                filter.value = '';
+                clearBtn.style.display = 'none';
+                fptRenderNeedsList('');
+            }
+        });
+    }
 
-    // AUTOSAVE: every checkbox toggle in the list saves instantly (no apply button).
+    // Category pills filter
+    const pillsContainer = document.getElementById('fptNeedsPills');
+    if (pillsContainer) {
+        pillsContainer.addEventListener('click', (e) => {
+            const pill = e.target.closest('.fpt-pill-btn');
+            if (!pill) return;
+            pillsContainer.querySelectorAll('.fpt-pill-btn').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            __fptActivePillGroup = pill.dataset.group || 'all';
+            fptRenderNeedsList();
+        });
+    }
+
+    // Presets and bulk buttons
+    page.addEventListener('click', (e) => {
+        const presetBtn = e.target.closest('.fpt-preset-btn');
+        if (presetBtn && presetBtn.dataset.preset) {
+            e.preventDefault();
+            fptApplyPreset(presetBtn.dataset.preset);
+            return;
+        }
+
+        const enableAll = e.target.closest('#fptNeedsEnableAllBtn');
+        if (enableAll) {
+            e.preventDefault();
+            fptEnableAll();
+            return;
+        }
+
+        const disableAll = e.target.closest('#fptNeedsDisableAllBtn');
+        if (disableAll) {
+            e.preventDefault();
+            fptDisableAll();
+            return;
+        }
+    });
+
+    // AUTOSAVE: every checkbox toggle in the list saves instantly
     page.addEventListener('change', (e) => {
         if (e.target.classList && e.target.classList.contains('fpt-needs-cb')) {
             fptApplyNeedsSelection();
         }
     });
 
-    // delegated clicks: toggle inline preview + AI confirm
+    // Delegated clicks: toggle inline preview + AI confirm
     page.addEventListener('click', async (e) => {
         const previewBtn = e.target.closest('.fpt-needs-preview-btn');
         if (previewBtn) {
@@ -282,7 +498,7 @@ function initializeNeedsTab() {
             const picks = resultBox.querySelectorAll('.fpt-needs-ai-pick');
             const toDisable = new Set();
             picks.forEach(cb => { if (cb.checked) toDisable.add(cb.dataset.id); });
-            // reflect into main list checkboxes (uncheck = disable) → autosave
+
             document.querySelectorAll('.fpt-needs-cb').forEach(cb => {
                 if (toDisable.has(cb.dataset.id)) cb.checked = false;
             });

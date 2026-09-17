@@ -23,7 +23,6 @@
     "https://funpay.tools/*",
     "https://cdn.jsdelivr.net/*",
     "https://raw.githubusercontent.com/*",
-    "https://fpt-chat.starobinskiy01.workers.dev/*",
     "https://fpt-descs.starobinskiy01.workers.dev/*",
     "https://fonts.googleapis.com/*",
     "https://translate.googleapis.com/*",
@@ -58,8 +57,7 @@
         "https://funpay.com/*"
       ],
       "js": [
-        "content/theme_flash_fix.js",
-        "content/early_custom_styles.js"
+        "content/theme_flash_fix.js"
       ],
       "run_at": "document_start",
       "all_frames": true
@@ -77,9 +75,7 @@
         "content/utils.js",
         "content/features/feature_registry.js",
         "content/features/feature_disabler.js",
-        "content/features/cursor_fx.js",
         "content/ui/settings_loader.js",
-        "content/features/font_tools.js",
         "content/features/accounts.js",
         "content/features/ai_chat.js",
         "content/features/auto_delivery.js",
@@ -97,7 +93,6 @@
         "content/features/profile_descriptions.js",
         "content/features/profile_raise_all.js",
         "content/features/user_notes.js",
-        "content/features/image_generator.js",
         "content/features/custom_sound.js",
         "content/features/custom_sound_editor.js",
         "content/features/misc.js",
@@ -106,10 +101,7 @@
         "content/features/ai_lot_creator.js",
         "content/features/currency_calculator.js",
         "content/features/notes.js",
-        "content/features/global_chat.js",
         "content/features/overview_tour.js",
-        "content/features/magicstick.js",
-        "content/features/piggy_bank.js",
         "content/features/lot_io.js",
         "content/features/auto_review.js",
         "content/features/fpt_identifier.js",
@@ -121,7 +113,6 @@
         "content/features/lot_note_buttons.js",
         "content/features/chat_lot_note.js",
         "content/features/lot_context_menu.js",
-        "content/features/ai_lot_audit.js",
         "content/features/settings_io.js",
         "content/features/bulk_lot_editor.js",
         "content/features/buyer_history.js",
@@ -131,7 +122,6 @@
         "content/features/chat_search.js",
         "content/features/order_enhancements.js",
         "content/features/blacklist.js",
-        "content/features/epic_nicknames.js",
         "content/features/auto_delivery_ui.js",
         "content/features/rmthub_search.js",
         "content/features/new_chat_starter.js",
@@ -153,9 +143,7 @@
       ],
       "css": [
         "css/content_styles.css",
-        "css/image_generator.css",
         "css/ai_creator.css",
-        "css/live_styler.css",
         "css/fpt_icons_theme.css"
       ],
       "run_at": "document_idle"

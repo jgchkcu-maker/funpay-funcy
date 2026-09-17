@@ -126,36 +126,12 @@ const FPT_FEATURE_REGISTRY = [
 
     // ───────────── Редактор лота ─────────────
     {
-        id: 'chat_image_generator_btn',
-        label: 'Кнопка «Сгенерировать» картинку лота',
-        desc: 'Серая кнопка «Сгенерировать» возле поля картинок на странице добавления/редактирования лота - открывает генератор изображения-превью для лота.',
-        group: 'Редактор лота',
-        selector: '#fpToolsGenerateImageBtn, .generate-btn-container',
-        preview: { kind: 'html', html: '<div class="fpt-pv-fpbtn">Сгенерировать</div>' }
-    },
-    {
         id: 'lot_ai_gen_btn',
         label: 'Кнопка «ИИ-генерация» лота',
         desc: 'Кнопка с иконкой-блёстками «ИИ-генерация» рядом с заголовком страницы редактирования лота - открывает ИИ-генератор описания лота.',
         group: 'Редактор лота',
         selector: '#fp-tools-ai-gen-btn-wrapper',
         preview: { kind: 'html', html: '<div class="fpt-pv-aigen"><svg height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="m176-120-56-56 301-302-181-45 198-123-17-234 179 151 216-88-87 217 151 178-234-16-124 198-45-181-301 301Zm24-520-80-80 80-80 80 80-80 80Zm520 743-80-80 80-80 80 80-80 80Z"/></svg><span>ИИ-генерация</span></div>' }
-    },
-    {
-        id: 'lot_font_controls',
-        label: 'Шрифты и спецсимволы в лоте',
-        desc: 'Блок «Шрифт» с выпадающим списком стилизованных шрифтов и кнопкой «Клавиатура» на странице редактирования лота.',
-        group: 'Редактор лота',
-        selector: '.fp-tools-font-controls, .fp-tools-symbols-panel',
-        preview: { kind: 'html', html: '<div class="fpt-pv-fontblock"><label>Шрифт</label><select class="fpt-pv-fpselect"><option>Стандартный</option></select><span class="fpt-pv-fpbtn"><i class="fa fa-keyboard-o"></i> Клавиатура</span></div>' }
-    },
-    {
-        id: 'lot_keyboard_btn',
-        label: 'Кнопка «Клавиатура» спецсимволов',
-        desc: 'Отдельная кнопка «Клавиатура» (иконка клавиатуры) в блоке шрифтов редактора лота - открывает панель спецсимволов.',
-        group: 'Редактор лота',
-        selector: '#fpToolsKeyboardToggleBtn',
-        preview: { kind: 'html', html: '<div class="fpt-pv-fpbtn"><i class="fa fa-keyboard-o"></i> Клавиатура</div>' }
     },
     {
         id: 'lot_translate_btn',
@@ -327,6 +303,24 @@ const FPT_FEATURE_REGISTRY = [
         group: 'Меню профиля',
         selector: '#fp-tools-add-status-btn',
         preview: { kind: 'html', html: '<div class="fpt-pv-menu"><a>+ Добавить новую метку</a></div>' }
+    },
+
+    // ───────────── Страница заказа ─────────────
+    {
+        id: 'order_copy_lot_btn',
+        label: 'Кнопка «Копировать лот» в заказе',
+        desc: 'Кнопка под блоком оплаченного товара на странице заказа (/orders/) для быстрого создания копии купленного лота.',
+        group: 'Страница заказа',
+        selector: '#fpt-olc-btn',
+        preview: { kind: 'html', html: '<div class="fpt-pv-fpbtn"><span class="material-symbols-rounded" style="font-size:15px;margin-right:4px;">content_copy</span>Копировать лот</div>' }
+    },
+    {
+        id: 'order_copy_chip',
+        label: 'Копирование номера заказа в 1 клик',
+        desc: 'Кликабельный чип с номером заказа (#XXXXXX ⧉) в заголовке страницы заказа — нажатие копирует номер.',
+        group: 'Страница заказа',
+        selector: '.fp-order-copy-chip',
+        preview: { kind: 'html', html: '<div class="fpt-pv-fpbtn" style="border-radius:6px;padding:3px 8px;font-size:12px;">#N2Y2BNJN <span style="font-size:10px;opacity:.7;">⧉</span></div>' }
     }
 ];
 

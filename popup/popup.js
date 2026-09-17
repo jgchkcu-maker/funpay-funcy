@@ -21,26 +21,34 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // ─── Quick stats ─────────────────────────────────────────────────
-    chrome.storage.local.get(['fpToolsAutoReplies', 'autoBumpEnabled'], (data) => {
+    chrome.storage.local.get(['fpToolsAutoReplies', 'autoBumpEnabled', 'fpAutoRestoreEnabled', 'fpToolsAutoDeliveryLots'], (data) => {
         const autoReplies = data.fpToolsAutoReplies || {};
         const anyAR = autoReplies.greetingEnabled
             || autoReplies.keywordsEnabled
             || autoReplies.autoReviewEnabled
             || autoReplies.bonusForReviewEnabled;
 
+        const lotsCount = data.fpToolsAutoDeliveryLots ? Object.keys(data.fpToolsAutoDeliveryLots).length : 0;
+        const autoDeliveryOn = !!data.fpAutoRestoreEnabled || lotsCount > 0;
+
         const statsSection = document.getElementById('quickStats');
-        const arEl  = document.getElementById('statAutoReply');
-        const abEl  = document.getElementById('statAutoBump');
+        const abEl = document.getElementById('statAutoBump');
+        const adEl = document.getElementById('statAutoDelivery');
+        const arEl = document.getElementById('statAutoReply');
 
         if (statsSection) statsSection.style.display = 'flex';
 
-        if (arEl) {
-            arEl.textContent = anyAR ? 'Включены' : 'Выключены';
-            arEl.className   = 'stat-value ' + (anyAR ? 'on' : 'off');
-        }
         if (abEl) {
-            abEl.textContent = data.autoBumpEnabled ? 'Включено' : 'Выключено';
+            abEl.textContent = data.autoBumpEnabled ? 'Вкл' : 'Выкл';
             abEl.className   = 'stat-value ' + (data.autoBumpEnabled ? 'on' : 'off');
+        }
+        if (adEl) {
+            adEl.textContent = autoDeliveryOn ? 'Вкл' : 'Выкл';
+            adEl.className   = 'stat-value ' + (autoDeliveryOn ? 'on' : 'off');
+        }
+        if (arEl) {
+            arEl.textContent = anyAR ? 'Вкл' : 'Выкл';
+            arEl.className   = 'stat-value ' + (anyAR ? 'on' : 'off');
         }
     });
 

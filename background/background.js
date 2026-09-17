@@ -1449,49 +1449,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    if (request.action === 'fetchDonaters') {
-        (async () => {
-            // Уникальный bust на каждый запрос: пробивает и HTTP-кэш браузера,
-            // и залипший edge-кэш jsdelivr по @main.
-            const bust = Date.now() + '_' + Math.random().toString(36).slice(2);
-
-            // Несколько источников по очереди. raw github отдаёт актуальное
-            // сразу после коммита и не кэшируется как CDN, поэтому он первый.
-            // Дальше - оба репозитория через оба способа, на всякий случай.
-            const sources = [
-                `https://raw.githubusercontent.com/XaviersDev/FunPayTools-Site/main/donaters.json?t=${bust}`,
-                `https://raw.githubusercontent.com/XaviersDev/FunPay-Tools/main/donaters.json?t=${bust}`,
-                `https://cdn.jsdelivr.net/gh/XaviersDev/FunPayTools-Site@main/donaters.json?t=${bust}`,
-                `https://cdn.jsdelivr.net/gh/XaviersDev/FunPay-Tools@main/donaters.json?t=${bust}`
-            ];
-
-            const fetchOpts = {
-                method: 'GET',
-                cache: 'no-store',          // запрет HTTP-кэша браузера
-                headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-            };
-
-            let lastErr = null;
-            for (const url of sources) {
-                try {
-                    const res = await fetch(url, fetchOpts);
-                    if (!res.ok) { lastErr = new Error(`HTTP ${res.status} @ ${url}`); continue; }
-                    const json = await res.json();
-                    // Принимаем только непустой объект - отсекаем битые/пустые ответы.
-                    if (json && typeof json === 'object' && Object.keys(json).length > 0) {
-                        sendResponse({ success: true, data: json });
-                        return;
-                    }
-                    lastErr = new Error(`Empty/invalid JSON @ ${url}`);
-                } catch (e) {
-                    lastErr = e;
-                }
-            }
-            sendResponse({ success: false, error: String(lastErr) });
-        })();
-        return true;
-    }
-
     // AI HANDLERS
     if (request.action === "getAIProcessedText") {
         fetchAIResponse(request.text, request.context, request.myUsername, request.type).then(sendResponse);

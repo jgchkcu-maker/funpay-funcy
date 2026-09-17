@@ -90,69 +90,302 @@ function createMainPopup() {
                     <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>
                 </div>
                 <ul>
-                    <li class="fp-nav-divider">Основное</li>
-                    <li data-page="general" class="active"><a><span class="nav-icon material-symbols-rounded">settings</span><span>Общие</span></a></li>
-                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>
-                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Что тебе нужно</span></a></li>
-                    <li data-page="slash_commands"><a><span class="nav-icon material-symbols-rounded">terminal</span><span>Слэш-команды</span></a></li>
-                    <li data-page="telegram"><a><span class="nav-icon material-symbols-rounded">send</span><span>Telegram</span></a></li>
-                    <li class="fp-nav-divider">Эксклюзив</li>
-                    <li data-page="epic_nicks"><a><span class="nav-icon material-symbols-rounded">diamond</span><span>Это увидят все</span></a></li>
-                    <li class="fp-nav-divider">Интерфейс</li>
-                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Кастомизация</span></a></li>
-                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>
-                    <li class="fp-nav-divider">Чат и продажи</li>
-                    <li data-page="global_chat"><a><span class="nav-icon material-symbols-rounded">forum</span><span>Общий чат</span></a></li>
-                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Шаблоны</span></a></li>
-                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">smart_toy</span><span>Авто-ответы</span></a></li>
-                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Авто-выдача</span></a></li>
-                    <li class="fp-nav-divider">Торговля</li>
-                    <li data-page="lot_io"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Лоты</span></a></li>
-                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Авто-поднятие</span></a></li>
-                    <li data-page="ai_audit"><a><span class="nav-icon material-symbols-rounded">search_insights</span><span>ИИ-аудит</span></a></li>
-                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>
-                    <li class="fp-nav-divider">Финансы</li>
-                    <li data-page="piggy_banks"><a><span class="nav-icon material-symbols-rounded">savings</span><span>Копилки</span></a></li>
-                    <li data-page="calculator"><a><span class="nav-icon material-symbols-rounded">calculate</span><span>Калькулятор</span></a></li>
-                    <li data-page="currency_calc"><a><span class="nav-icon material-symbols-rounded">currency_exchange</span><span>Валюты</span></a></li>
-                    <li class="fp-nav-divider">Прочее</li>
-                    <li data-page="notes"><a><span class="nav-icon material-symbols-rounded">edit_note</span><span>Заметки</span></a></li>
-                    <li data-page="overview"><a><span class="nav-icon material-symbols-rounded">movie</span><span>Обзор</span></a></li>
-                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Настройки</span></a></li>
-                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Тикеты</span></a></li>
-                    <li data-page="support"><a><span class="nav-icon material-symbols-rounded">favorite</span><span>Поддержка</span></a></li>
+                    <li class="fp-nav-divider">Главное</li>
+                    <li data-page="dashboard" data-hub="dashboard" class="active"><a><span class="nav-icon material-symbols-rounded">dashboard</span><span>Дашборд</span></a></li>
+                    <li class="fp-nav-divider">Управление</li>
+                    <li data-page="automation" data-hub="automation"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоматизация</span></a></li>
+                    <li data-page="chat" data-hub="chat"><a><span class="nav-icon material-symbols-rounded">chat</span><span>Чат и клиенты</span></a></li>
+                    <li data-page="lots" data-hub="lots"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Товары и рынок</span></a></li>
+                    <li data-page="finance" data-hub="finance"><a><span class="nav-icon material-symbols-rounded">monitoring</span><span>Финансы</span></a></li>
+                    <li class="fp-nav-divider">Настройки</li>
+                    <li data-page="theme" data-hub="appearance"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Внешний вид</span></a></li>
+                    <li data-page="general" data-hub="system"><a><span class="nav-icon material-symbols-rounded">settings</span><span>Система</span></a></li>
+                    <!-- Прокси-элементы для 100% обратной совместимости с внешними скриптами -->
+                    <li class="fpt-proxy-nav" data-page="accounts" data-target-hub="system" data-target-sub="accounts" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="needs" data-target-hub="appearance" data-target-sub="needs" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="slash_commands" data-target-hub="chat" data-target-sub="slash_commands" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="telegram" data-target-hub="system" data-target-sub="telegram" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="templates" data-target-hub="chat" data-target-sub="templates" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="auto_review" data-target-hub="automation" data-target-sub="auto_review" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="auto_delivery" data-target-hub="automation" data-target-sub="auto_delivery" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="lot_io" data-target-hub="lots" data-target-sub="lot_io" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="autobump" data-target-hub="automation" data-target-sub="autobump" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="blacklist" data-target-hub="chat" data-target-sub="blacklist" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="calculator" data-target-hub="finance" data-target-sub="calculator" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="currency_calc" data-target-hub="finance" data-target-sub="currency_calc" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="notes" data-target-hub="chat" data-target-sub="notes" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="overview" data-target-hub="dashboard" data-target-sub="overview" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="settings_io" data-target-hub="system" data-target-sub="settings_io" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="tickets" data-target-hub="system" data-target-sub="tickets" style="display:none;"><a></a></li>
+                    <li class="fpt-proxy-nav" data-page="support" data-target-hub="system" data-target-sub="support" style="display:none;"><a></a></li>
                 </ul>
                 <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>
             </nav>
             <main class="fp-tools-content">
-                <div class="fp-tools-page-content active" data-page="general">
-                    <h3>Общие настройки</h3>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="showSalesStatsCheckbox">
-                        <label for="showSalesStatsCheckbox" style="margin-bottom:0;"><span>Показывать статистику покупок и продаж на их вкладках</span></label>
+                <!-- Верхняя динамическая панель подвкладок (Subtabs Bar) -->
+                <div class="fpt-subtabs-bar" id="fptTopSubtabsBar" style="display:none;"></div>
+
+                <!-- =================== ХАБ 1: ДАШБОРД =================== -->
+                <div class="fp-tools-page-content active" data-page="dashboard" data-hub="dashboard">
+                    <div class="fpt-dashboard-section-title">
+                        <span class="material-symbols-rounded" style="color:var(--fpt-accent, #1b75bb);">speed</span>
+                        <span>Мониторинг и статус</span>
                     </div>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="showFinanceStatsCheckbox">
-                        <label for="showFinanceStatsCheckbox" style="margin-bottom:0;"><span>Показывать статистику финансов в «Финансы»</span></label>
+                    <div class="fpt-status-hub">
+                        <div class="fpt-status-card" id="fptDashCardBump" title="Нажмите для перехода к авто-поднятию">
+                            <div class="fpt-status-card-left">
+                                <div class="fpt-status-icon"><span class="material-symbols-rounded">rocket_launch</span></div>
+                                <div>
+                                    <div class="fpt-status-card-title">Авто-поднятие лотов</div>
+                                    <div class="fpt-status-card-sub" id="fptDashBumpSub">Проверка статуса...</div>
+                                </div>
+                            </div>
+                            <span class="fpt-status-badge status-off" id="fptDashBumpBadge">Выключено</span>
+                        </div>
+
+                        <div class="fpt-status-card" id="fptDashCardDelivery" title="Нажмите для перехода к авто-выдаче">
+                            <div class="fpt-status-card-left">
+                                <div class="fpt-status-icon"><span class="material-symbols-rounded">bolt</span></div>
+                                <div>
+                                    <div class="fpt-status-card-title">Авто-выдача заказов</div>
+                                    <div class="fpt-status-card-sub" id="fptDashDeliverySub">Проверка статуса...</div>
+                                </div>
+                            </div>
+                            <span class="fpt-status-badge status-off" id="fptDashDeliveryBadge">Выключено</span>
+                        </div>
+
+                        <div class="fpt-status-card" id="fptDashCardReview" title="Нажмите для перехода к авто-ответам">
+                            <div class="fpt-status-card-left">
+                                <div class="fpt-status-icon"><span class="material-symbols-rounded">smart_toy</span></div>
+                                <div>
+                                    <div class="fpt-status-card-title">Авто-ответчик и отзывы</div>
+                                    <div class="fpt-status-card-sub" id="fptDashReviewSub">Проверка статуса...</div>
+                                </div>
+                            </div>
+                            <span class="fpt-status-badge status-off" id="fptDashReviewBadge">Выключено</span>
+                        </div>
+
+                        <div class="fpt-status-card" id="fptDashCardTg" title="Нажмите для перехода к Telegram и Discord">
+                            <div class="fpt-status-card-left">
+                                <div class="fpt-status-icon"><span class="material-symbols-rounded">send</span></div>
+                                <div>
+                                    <div class="fpt-status-card-title">Telegram & Discord</div>
+                                    <div class="fpt-status-card-sub" id="fptDashTgSub">Проверка подключения...</div>
+                                </div>
+                            </div>
+                            <span class="fpt-status-badge status-off" id="fptDashTgBadge">Не настроен</span>
+                        </div>
                     </div>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="hideBalanceCheckbox">
-                        <label for="hideBalanceCheckbox" style="margin-bottom:0;"><span>Скрыть баланс</span></label>
+
+                    <div class="fpt-dashboard-section-title">
+                        <span class="material-symbols-rounded" style="color:#eab308;">tune</span>
+                        <span>Быстрые пресеты профиля (в 1 клик)</span>
                     </div>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="viewSellersPromoCheckbox">
-                        <label for="viewSellersPromoCheckbox" style="margin-bottom:0;"><span>Отображение иконок промо-лотов</span></label>
+                    <div class="fpt-presets-grid">
+                        <div class="fpt-preset-card" data-preset="keys">
+                            <div class="fpt-preset-header">
+                                <span class="material-symbols-rounded" style="color:#22c55e;">vpn_key</span>
+                                <span>Продавец ключей и гифтов</span>
+                            </div>
+                            <div class="fpt-preset-desc">Включает автовыдачу, автоответчик, шаблоны в чате и статистику.</div>
+                        </div>
+
+                        <div class="fpt-preset-card" data-preset="currency">
+                            <div class="fpt-preset-header">
+                                <span class="material-symbols-rounded" style="color:#3b82f6;">payments</span>
+                                <span>Продавец валюты и услуг</span>
+                            </div>
+                            <div class="fpt-preset-desc">Включает автоподнятие, комиссию разделов, калькулятор и статистику.</div>
+                        </div>
+
+                        <div class="fpt-preset-card" data-preset="buyer">
+                            <div class="fpt-preset-header">
+                                <span class="material-symbols-rounded" style="color:#a855f7;">shield_person</span>
+                                <span>Покупатель</span>
+                            </div>
+                            <div class="fpt-preset-desc">Скрывает баланс от посторонних глаз, включает реальные цены и заметки.</div>
+                        </div>
+
+                        <div class="fpt-preset-card" data-preset="minimal">
+                            <div class="fpt-preset-header">
+                                <span class="material-symbols-rounded" style="color:#ec4899;">check_circle</span>
+                                <span>Минимализм</span>
+                            </div>
+                            <div class="fpt-preset-desc">Оставляет только чистый сайт FunPay, скрывая лишний визуальный шум.</div>
+                        </div>
                     </div>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="fptShowCommissionCheckbox">
-                        <label for="fptShowCommissionCheckbox" style="margin-bottom:0;"><span>Показывать комиссию разделов</span></label>
+
+                    <div class="fpt-dashboard-section-title">
+                        <span class="material-symbols-rounded" style="color:#38bdf8;">navigation</span>
+                        <span>Быстрые действия</span>
                     </div>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="fptShowRealPricesCheckbox">
-                        <label for="fptShowRealPricesCheckbox" style="margin-bottom:0;"><span>Показывать реальные цены лотов</span></label>
+                    <div class="fpt-quick-actions-bar">
+                        <button type="button" class="fpt-quick-action-btn" id="fptQuickStartTour">
+                            <span class="material-symbols-rounded">play_circle</span><span>Интерактивный тур</span>
+                        </button>
+                        <button type="button" class="fpt-quick-action-btn" id="fptQuickExportLots">
+                            <span class="material-symbols-rounded">inventory_2</span><span>Экспорт лотов</span>
+                        </button>
+                        <button type="button" class="fpt-quick-action-btn" id="fptQuickBackup">
+                            <span class="material-symbols-rounded">backup</span><span>Бэкап настроек</span>
+                        </button>
                     </div>
+
+                    <div class="feature-list-container" style="margin-top:20px;">
+                        <h3 style="border:none;margin-bottom:12px;">Справочник возможностей</h3>
+                        <div class="feature-item"><div class="feature-title"><span class="material-icons">smart_toy</span>ИИ-Ассистент в чате</div><div class="feature-location"><strong>Где найти:</strong> В любом чате, кнопка "AI" рядом с полем ввода.</div><div class="feature-desc">Улучшает ваш текст, делая его вежливым и профессиональным. Активируйте режим и нажмите Enter для обработки.</div></div>
+                        <div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_high</span>AI-Генератор лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота.</div><div class="feature-desc">Создает название и описание для лота на основе ваших идей, анализируя стиль ваших предложений.</div></div>
+                        <div class="feature-item"><div class="feature-title"><span class="material-icons">palette</span>Полная кастомизация</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Внешний вид".</div><div class="feature-desc">Измените внешний вид FunPay: анимированный фон, цвета, шрифты, прозрачность блоков.</div></div>
+                        <div class="feature-item"><div class="feature-title"><span class="material-icons">rocket_launch</span>Авто-поднятие лотов</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Автоматизация".</div><div class="feature-desc">Автоматическое поднятие лотов по таймеру с фильтрацией по категориям и наличию автовыдачи.</div></div>
+                        <div class="feature-item"><div class="feature-title"><span class="material-icons">bolt</span>Авто-выдача товаров</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Автоматизация".</div><div class="feature-desc">Мгновенная отправка товара покупателю после оплаты с поддержкой авто-восстановления лотов.</div></div>
+                    </div>
+                </div>
+
+                <!-- =================== ПОДРАЗДЕЛ: ЦЕНЫ И КОМИССИИ =================== -->
+                <div class="fp-tools-page-content" data-page="pricing" style="display:none;">
+                    <h3>Цены и комиссии</h3>
+                    <p class="template-info">Настройки отображения комиссий площадки и реальной стоимости лотов.</p>
                     
-                    <h3>Звук уведомления</h3>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Комиссия разделов</span>
+                                <span class="fpt-badge fpt-badge-location">Лоты</span>
+                            </div>
+                            <div class="fpt-setting-desc">Отображает реальный процент комиссии FunPay рядом с названием категории при создании и просмотре лотов.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="fptShowCommissionCheckbox">
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Показывать реальные цены лотов</span>
+                                <span class="fpt-badge fpt-badge-location">Каталог</span>
+                            </div>
+                            <div class="fpt-setting-desc">Рассчитывает и отображает точную сумму с учетом комиссии платежных систем без округлений в большую сторону.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="fptShowRealPricesCheckbox">
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Иконки промо-лотов</span>
+                                <span class="fpt-badge fpt-badge-location">Каталог</span>
+                            </div>
+                            <div class="fpt-setting-desc">Отображение специальных меток у рекламных и продвигаемых предложений продавцов.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="viewSellersPromoCheckbox">
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =================== ПОДРАЗДЕЛ: СТАТИСТИКА И ЗАКАЗЫ =================== -->
+                <div class="fp-tools-page-content" data-page="sales_stats" style="display:none;">
+                    <h3>Статистика и заказы</h3>
+                    <p class="template-info">Управление отображением аналитических данных, баланса и истории сделок.</p>
+
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Статистика покупок и продаж</span>
+                                <span class="fpt-badge fpt-badge-location">Вкладки заказов</span>
+                            </div>
+                            <div class="fpt-setting-desc">Отображает аналитический центр с графиками выручки и круговыми диаграммами на вкладках «Мои продажи» и «Покупки».</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="showSalesStatsCheckbox">
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Статистика финансов</span>
+                                <span class="fpt-badge fpt-badge-location">Финансы</span>
+                            </div>
+                            <div class="fpt-setting-desc">Показывает расширенную сводку операций и график динамики баланса в разделе «Финансы».</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="showFinanceStatsCheckbox">
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Скрыть баланс</span>
+                                <span class="fpt-badge fpt-badge-location">Шапка сайта</span>
+                            </div>
+                            <div class="fpt-setting-desc">Маскирует баланс аккаунта звёздочками (**** ₽) для защиты конфиденциальности на стримах и скриншотах.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="hideBalanceCheckbox">
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">История покупок в чате</span>
+                                <span class="fpt-badge fpt-badge-location">Чат</span>
+                            </div>
+                            <div class="fpt-setting-desc">Показывает в шапке каждого диалога общую сумму покупок и количество заказов собеседника у вас.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="fpToolsBuyerHistory" checked>
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Сумма неподтверждённых заказов</span>
+                                <span class="fpt-badge fpt-badge-location">Шапка сайта</span>
+                            </div>
+                            <div class="fpt-setting-desc">Отображает в шапке сайта сумму оплаченных, но еще не подтвержденных покупателями заказов.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="fpToolsShowUnconfirmed" checked>
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =================== ПОДРАЗДЕЛ: УВЕДОМЛЕНИЯ И ЗВУК (GENERAL) =================== -->
+                <div class="fp-tools-page-content" data-page="general" style="display:none;">
+                    <h3>Уведомления и звук</h3>
+                    
+                    <h4 style="margin-top: 15px; margin-bottom: 8px;">Звук уведомления</h4>
                     <div class="fp-tools-radio-group" id="notificationSoundGroup">
                         <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="default" checked><span>Стандартный</span></label>
                         <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="vk"><span>VK</span></label>
@@ -208,37 +441,46 @@ function createMainPopup() {
                         </div>
                     </div>
 
-                    <h3 style="margin-top: 40px;">Уведомления в Discord</h3>
-                     <div class="checkbox-label-inline">
-                        <input type="checkbox" id="discordLogEnabled">
-                        <label for="discordLogEnabled" style="margin-bottom:0;"><span>Включить уведомления о новых сообщениях</span></label>
+                    <h4 style="margin-top: 25px; margin-bottom: 8px;">Discord</h4>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Уведомления в Discord</span>
+                                <span class="fpt-badge fpt-badge-accent">Интеграция</span>
+                            </div>
+                            <div class="fpt-setting-desc">Отправлять мгновенные оповещения о новых сообщениях и событиях в ваш Discord-канал.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="discordLogEnabled">
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
                     </div>
-                    <div id="discordSettingsContainer">
-                        <label for="discordWebhookUrl" style="margin-top: 10px;">Webhook URL:</label>
+                    <div id="discordSettingsContainer" class="fpt-subpanel" style="display:none;">
+                        <label for="discordWebhookUrl" style="margin-top: 0;">Webhook URL:</label>
                         <input type="text" id="discordWebhookUrl" class="template-input" placeholder="Вставьте ссылку на вебхук вашего Discord канала">
-                        <div class="checkbox-label-inline" style="margin-top:10px;"><input type="checkbox" id="discordPingEveryone"><label for="discordPingEveryone" style="margin-bottom:0;"><span>Пинговать @everyone</span></label></div>
-                        <div class="checkbox-label-inline"><input type="checkbox" id="discordPingHere"><label for="discordPingHere" style="margin-bottom:0;"><span>Пинговать @here</span></label></div>
+                        <div style="display:flex;gap:20px;margin-top:10px;">
+                            <label class="checkbox-label-inline" style="margin:0;"><input type="checkbox" id="discordPingEveryone"><span>Пинговать @everyone</span></label>
+                            <label class="checkbox-label-inline" style="margin:0;"><input type="checkbox" id="discordPingHere"><span>Пинговать @here</span></label>
+                        </div>
                     </div>
 
-                    <div class="support-promo">
-                        <span class="nav-icon material-symbols-rounded">favorite</span>
-                        <span>Понравился FP Tools? <a href="#" data-nav-to="support">Поддержите труд разработчика</a> во вкладке "Поддержка"!</span>
-                    </div>
-                    
-                    <h3 style="margin-top: 30px;">Заказы и статистика</h3>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="fpToolsBuyerHistory" checked>
-                        <label for="fpToolsBuyerHistory" style="margin-bottom:0;"><span>Показывать историю покупок в чате</span></label>
-                    </div>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="fpToolsShowUnconfirmed" checked>
-                        <label for="fpToolsShowUnconfirmed" style="margin-bottom:0;"><span>Показывать сумму неподтверждённых заказов</span></label>
-                    </div>
-
-                    <h3 style="margin-top: 30px;">Идентификатор FPT</h3>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="fptIdentifierEnabled" checked>
-                        <label for="fptIdentifierEnabled" style="margin-bottom:0;"><span>Показывать метку «FunPay Tools» рядом с ником собеседника</span></label>
+                    <h4 style="margin-top: 25px; margin-bottom: 8px;">Идентификатор FPT</h4>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title-row">
+                                <span class="fpt-setting-title">Метка «FunPay Tools» у собеседника</span>
+                                <span class="fpt-badge fpt-badge-location">Чат</span>
+                            </div>
+                            <div class="fpt-setting-desc">Показывает пометку рядом с ником пользователя в чате, если он тоже использует расширение.</div>
+                        </div>
+                        <div class="fpt-setting-control">
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="fptIdentifierEnabled" checked>
+                                <span class="fpt-switch-slider"></span>
+                            </label>
+                        </div>
                     </div>
                     <p class="template-info">При включении к исходящим сообщениям добавляется невидимый символ. Если собеседник тоже использует FPT - рядом с его ником появится пометка. Символ не виден обычным пользователям. Не добавляется в ссылки и скопированный текст.</p>
 
@@ -248,37 +490,17 @@ function createMainPopup() {
                     </div>
                 </div> <!-- КОНЕЦ ВКЛАДКИ "ОБЩИЕ" -->
 
-                <!-- НАЧАЛО ВКЛАДКИ "ЭПИЧЕСКИЕ НИКИ" -->
-                <div class="fp-tools-page-content" data-page="epic_nicks">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3>Эпический никнейм <span class="material-symbols-rounded" style="vertical-align:-3px;color:#4a9fd4;">diamond</span></h3>
-                    </div>
-                    <p class="template-info" style="font-size: 14px; line-height: 1.5;">
-                        Выделитесь среди конкурентов! Ваш никнейм будет светиться, переливаться и излучать частицы <b>у всех пользователей расширения FP Tools</b> (более 15 000 человек).
-                    </p>
-
-                    <div style="background: rgba(27,117,187,0.1); border: 1px solid rgba(27,117,187,0.3); border-radius: 12px; padding: 18px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                        <div style="font-size: 15px; margin-bottom: 12px; color: #fff;">Приобрести уникальный стиль можно навсегда по очень низкой цене.</div>
-                        <div style="font-size: 13px; color: var(--fptm-muted, #a0a0a0); margin-bottom: 15px;">Больше 6 способов оплаты на выбор. Нажав на кнопку ниже, вы перейдёте в Telegram-бота, где сможете нажать на "Украсить ник на сайте FunPay"</div>
-                        <a href="https://t.me/FPToolsBot" target="_blank" class="btn" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; font-size: 14px; padding: 10px;">
-                            <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-1.37.2-1.64l16.44-5.99c.73-.27 1.36.17 1.15.99l-2.28 10.82c-.15.71-.56 1.01-1.2 1.01l-4.82-.01-1.15 4.35c-.32.74-1.23.46-1.42-.47z"/></svg>
-                            Получить уникальный ник
-                        </a>
-                    </div>
-
-                    <h4 style="margin-bottom: 15px;">Вот несколько примеров для того, чтобы вы посмотрели, как это будет выглядеть у всех пользователей расширения:</h4>
-                    <div id="fpt-epic-previews-container" style="display: flex; flex-direction: column; gap: 30px; margin-top: 10px; background:var(--fptm-surface-2, #0e0f16); border: 1px solid var(--fptm-border, #1e2030); border-radius: 8px; padding: 20px;">
-                        <div style="text-align: center; color: var(--fptm-faint, #5a5f7a); font-size: 12px;">Загрузка движка частиц...</div>
-                    </div>
-                </div> <!-- КОНЕЦ ВКЛАДКИ "ЭПИЧЕСКИЕ НИКИ" -->
-
                 <!-- НАЧАЛО ВКЛАДКИ "АККАУНТЫ" -->
                 <div class="fp-tools-page-content" data-page="accounts">
                     <h3>Управление аккаунтами</h3>
                     <p class="template-info">Добавьте текущий аккаунт в список, чтобы быстро переключаться между профилями без ввода пароля.</p>
-                    <div class="support-promo" style="background: rgba(27,117,187,0.08); border-color: rgba(27,117,187,0.25); margin-bottom: 20px;">
-                        <span class="nav-icon material-symbols-rounded" style="color: #1b75bb;">info</span>
-                        <span>Нажмите «+ Добавить текущий аккаунт» для каждого профиля. Переключение происходит мгновенно без ввода паролей.</span>
+                    <div class="support-promo" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 14px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-start;">
+                        <span class="material-symbols-rounded" style="color: #ef4444; font-size: 26px; flex-shrink: 0; margin-top: 2px;">warning</span>
+                        <div style="font-size: 13px; line-height: 1.5; color: #fca5a5;">
+                            <strong style="color: #ffffff; font-size: 14px; display: block; margin-bottom: 5px;">⚠️ Внимание: Высокий риск блокировки за мультиаккаунт!</strong>
+                            Переключение аккаунтов в одном браузере сохраняет единый цифровой отпечаток устройства (IP-адрес, Canvas, WebGL, cookies Cloudflare/FunPay). FunPay запрещает создание вторых аккаунтов без согласования — при блокировке одного профиля <b>автоматически блокируются все связанные аккаунты</b> с заморозкой баланса.<br><br>
+                            Для безопасной работы с несколькими аккаунтами <b>настоятельно рекомендуется</b> использовать антидетект-браузеры (Dolphin Anty, AdsPower и др.) либо раздельные профили браузера с индивидуальными приватными прокси.
+                        </div>
                     </div>
                     <button id="addCurrentAccountBtn" class="btn">+ Добавить текущий аккаунт</button>
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-top:22px;margin-bottom:10px;">
@@ -291,24 +513,89 @@ function createMainPopup() {
                 </div>
                 <div class="fp-tools-page-content" data-page="needs">
                     <h3>Что тебе нужно</h3>
-                    <p class="template-info">Здесь убираются кнопки и элементы, которые расширение само добавляет на страницы FunPay (например, кнопка ИИ-переписывателя в чате или кнопка «Прочитать все») и которые иначе никак не отключить. Опишите своими словами, что мешает - ИИ поймёт и спросит подтверждение. Либо отметьте вручную. Применяется сразу, без перезагрузки. Функции со своим переключателем (тема, авто-поднятие, эффекты курсора, метка рядом с ником и т.п.) отключаются в их собственных вкладках.</p>
+                    <p class="template-info">Управляйте кнопками и блоками, которые расширение добавляет на страницы FunPay. Выберите готовый пресет в один клик, опишите словами через ИИ или настройте каждый элемент вручную. Изменения сохраняются и применяются мгновенно без перезагрузки страниц.</p>
+
+                    <!-- Пресеты в 1 клик -->
+                    <div class="fpt-needs-presets">
+                        <div class="fpt-needs-presets-title">Готовые профили в 1 клик:</div>
+                        <div class="fpt-needs-presets-grid">
+                            <button type="button" class="fpt-preset-btn" data-preset="default">
+                                <span class="fpt-preset-icon material-symbols-rounded">bolt</span>
+                                <div class="fpt-preset-text">
+                                    <span class="fpt-preset-name">По умолчанию</span>
+                                    <span class="fpt-preset-desc">Всё включено</span>
+                                </div>
+                            </button>
+                            <button type="button" class="fpt-preset-btn" data-preset="buyer">
+                                <span class="fpt-preset-icon material-symbols-rounded">shopping_bag</span>
+                                <div class="fpt-preset-text">
+                                    <span class="fpt-preset-name">Я покупатель</span>
+                                    <span class="fpt-preset-desc">Скрыть лоты и продажи</span>
+                                </div>
+                            </button>
+                            <button type="button" class="fpt-preset-btn" data-preset="seller">
+                                <span class="fpt-preset-icon material-symbols-rounded">storefront</span>
+                                <div class="fpt-preset-text">
+                                    <span class="fpt-preset-name">Продавец</span>
+                                    <span class="fpt-preset-desc">Всё для лотов и торговли</span>
+                                </div>
+                            </button>
+                            <button type="button" class="fpt-preset-btn" data-preset="minimal">
+                                <span class="fpt-preset-icon material-symbols-rounded">cleaning_services</span>
+                                <div class="fpt-preset-text">
+                                    <span class="fpt-preset-name">Минимализм</span>
+                                    <span class="fpt-preset-desc">Оригинальный FunPay</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
 
                     <div class="fpt-needs-ai-box">
-                        <textarea id="fptNeedsInput" placeholder="Например: «убери ИИ-кнопку и счётчик символов в чате, не нужна кнопка Прочитать все и пункт Добавить в ЧС»" rows="3"></textarea>
-                        <button id="fptNeedsAskBtn" class="btn"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-4px;margin-right:6px;">auto_awesome</span>Понять и подобрать</button>
+                        <textarea id="fptNeedsInput" placeholder="Например: «убери ИИ-кнопку и счётчик символов в чате, не нужна кнопка Прочитать все и пункт Добавить в ЧС»" rows="2"></textarea>
+                        <button id="fptNeedsAskBtn" class="btn"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-4px;margin-right:6px;">auto_awesome</span>Понять и подобрать через ИИ</button>
                     </div>
 
                     <div id="fptNeedsAiResult" class="fpt-needs-ai-result" style="display:none;"></div>
 
                     <div class="fpt-needs-manual">
-                        <div class="fpt-needs-manual-head">
-                            <h4 style="margin:0;">Все добавленные элементы</h4>
-                            <input type="text" id="fptNeedsFilter" class="fpt-needs-filter" placeholder="Поиск по названию…">
+                        <!-- Верхняя панель: счётчик активных + кнопки Всё включить/выключить -->
+                        <div class="fpt-needs-header-bar">
+                            <div class="fpt-needs-counter-badge" id="fptNeedsCounterBadge">
+                                <span class="material-symbols-rounded fpt-counter-icon">tune</span>
+                                <span id="fptNeedsCounterText">Активно: <b id="fptNeedsActiveCount">0</b> из <b id="fptNeedsTotalCount">0</b></span>
+                            </div>
+                            <div class="fpt-needs-bulk-actions">
+                                <button type="button" id="fptNeedsEnableAllBtn" class="fpt-needs-bulk-btn" title="Включить все элементы">
+                                    <span class="material-symbols-rounded">check_circle</span> Включить все
+                                </button>
+                                <button type="button" id="fptNeedsDisableAllBtn" class="fpt-needs-bulk-btn" title="Отключить все элементы">
+                                    <span class="material-symbols-rounded">block</span> Отключить все
+                                </button>
+                            </div>
                         </div>
-                        <p class="template-info" style="margin-top:6px;">Галочка = элемент показывается. Снимите галочку, чтобы убрать его со страниц - сохраняется и применяется сразу, без перезагрузки и без кнопки «применить». Нажмите <span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px;color:#4a9fd4;">visibility</span>, чтобы увидеть, как элемент выглядит.</p>
+
+                        <!-- Фильтры-таблетки по разделам -->
+                        <div class="fpt-needs-pills" id="fptNeedsPills">
+                            <button type="button" class="fpt-pill-btn active" data-group="all">Все</button>
+                            <button type="button" class="fpt-pill-btn" data-group="chat">Чат</button>
+                            <button type="button" class="fpt-pill-btn" data-group="lots">Лоты и профиль</button>
+                            <button type="button" class="fpt-pill-btn" data-group="editor">Редактор лота</button>
+                            <button type="button" class="fpt-pill-btn" data-group="orders">Заказы</button>
+                            <button type="button" class="fpt-pill-btn fpt-pill-disabled" data-group="disabled">Отключённые <span class="fpt-pill-badge" id="fptPillDisabledCount">0</span></button>
+                        </div>
+
+                        <div class="fpt-needs-manual-head">
+                            <h4 style="margin:0;">Элементы интерфейса</h4>
+                            <div class="fpt-needs-search-wrapper">
+                                <span class="material-symbols-rounded fpt-search-icon">search</span>
+                                <input type="text" id="fptNeedsFilter" class="fpt-needs-filter" placeholder="Поиск по названию или описанию…">
+                                <button type="button" id="fptNeedsFilterClear" class="fpt-filter-clear-btn" style="display:none;" title="Очистить поиск">✕</button>
+                            </div>
+                        </div>
+                        <p class="template-info" style="margin-top:6px;">Галочка = элемент отображается на сайте. Снимите галочку, чтобы скрыть его. Нажмите <span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px;color:#4a9fd4;">visibility</span>, чтобы посмотреть мини-копию элемента.</p>
                         <div id="fptNeedsList" class="fpt-needs-list"></div>
                         <div class="fpt-needs-footer">
-                            <span class="fpt-needs-autosave-note"><span class="material-symbols-rounded">bolt</span>Изменения сохраняются автоматически</span>
+                            <span class="fpt-needs-autosave-note"><span class="material-symbols-rounded">bolt</span>Изменения сохраняются и применяются мгновенно</span>
                             <span id="fptNeedsStatus" class="fpt-needs-status"></span>
                         </div>
                     </div>
@@ -415,94 +702,10 @@ function createMainPopup() {
                     <div class="checkbox-label-inline"><input type="checkbox" id="templatesEnabled" checked><label for="templatesEnabled" style="margin-bottom:0;"><span><b>Включить шаблоны</b></span></label></div>
                     <div class="checkbox-label-inline" style="margin-top:8px;"><input type="checkbox" id="sendTemplatesImmediately"><label for="sendTemplatesImmediately" style="margin-bottom:0;"><span>Отправлять шаблоны сразу по клику</span></label></div>
 
-                    <div id="fpt-templates-config">
-                    <label style="margin-top:10px;display:block;">Расположение кнопок:</label>
-                    <div class="fpt-pos-grid">
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="above"><span class="fpt-pos-ico"><span class="fpt-pos-row"></span><span class="fpt-pos-field"></span></span><span class="fpt-pos-name">Над полем</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="bottom" checked><span class="fpt-pos-ico"><span class="fpt-pos-field"></span><span class="fpt-pos-row"></span></span><span class="fpt-pos-name">Под полем</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_top"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-top"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">В панели сверху</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_bottom"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-bottom"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">В панели снизу</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="popover"><span class="fpt-pos-ico fpt-pos-ico-pop"><span class="fpt-pos-field"></span><span class="fpt-pos-pop-btn"></span></span><span class="fpt-pos-name">Меню у скрепки</span></label>
-                    </div>
-                    <p class="template-info" id="fpt-popover-hint" style="margin-top:6px;display:none;">«Меню у скрепки»: слева от кнопки прикрепления файла появится отдельная кнопка с иконкой шаблонов. По клику открывается компактное меню со всеми шаблонами и быстрым переходом в эти настройки.</p>
-
-                    <h3>Внешний вид кнопок</h3>
-                    <div class="fpt-appx">
-                        <div class="fpt-appx-grid">
-                            <div class="fpt-appx-block">
-                                <div class="fpt-appx-cap">Форма</div>
-                                <div class="fpt-seg" data-fpt-opt="shape">
-                                    <button type="button" data-val="rounded" title="Скруглённые"><span class="fpt-shape-prev" style="border-radius:5px;"></span></button>
-                                    <button type="button" data-val="pill" title="Капсула"><span class="fpt-shape-prev" style="border-radius:999px;"></span></button>
-                                    <button type="button" data-val="square" title="Прямые углы"><span class="fpt-shape-prev" style="border-radius:1px;"></span></button>
-                                </div>
-                            </div>
-                            <div class="fpt-appx-block">
-                                <div class="fpt-appx-cap">Размер</div>
-                                <div class="fpt-seg" data-fpt-opt="size">
-                                    <button type="button" data-val="s" title="Маленький"><span class="fpt-az" style="font-size:11px;">Aa</span></button>
-                                    <button type="button" data-val="m" title="Средний"><span class="fpt-az" style="font-size:14px;">Aa</span></button>
-                                    <button type="button" data-val="l" title="Большой"><span class="fpt-az" style="font-size:17px;">Aa</span></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="fpt-appx-block">
-                            <div class="fpt-appx-cap">Заливка</div>
-                            <div class="fpt-seg fpt-seg-fill" data-fpt-opt="fill">
-                                <button type="button" data-val="solid" title="Сплошная"><span class="fpt-fill-prev" style="background:#1b75bb;"></span><span class="fpt-fill-name">Сплошная</span></button>
-                                <button type="button" data-val="soft" title="Мягкая"><span class="fpt-fill-prev" style="background:rgba(27,117,187,.28);"></span><span class="fpt-fill-name">Мягкая</span></button>
-                                <button type="button" data-val="outline" title="Контур"><span class="fpt-fill-prev" style="background:transparent;border:2px solid #1b75bb;"></span><span class="fpt-fill-name">Контур</span></button>
-                                <button type="button" data-val="ghost" title="Призрачная"><span class="fpt-fill-prev" style="background:transparent;border:1px dashed #1b75bb;"></span><span class="fpt-fill-name">Призрак</span></button>
-                            </div>
-                        </div>
-
-                        <div class="fpt-appx-block fpt-align-block" id="fpt-align-block">
-                            <div class="fpt-appx-cap">Выравнивание текста</div>
-                            <div class="fpt-seg" data-fpt-opt="align">
-                                <button type="button" data-val="left" title="Слева"><span class="material-symbols-rounded">format_align_left</span></button>
-                                <button type="button" data-val="center" title="По центру"><span class="material-symbols-rounded">format_align_center</span></button>
-                                <button type="button" data-val="right" title="Справа"><span class="material-symbols-rounded">format_align_right</span></button>
-                            </div>
-                            <div class="fpt-align-hint">Доступно при включённом «На всю ширину»</div>
-                        </div>
-
-                        <div class="fpt-appx-block">
-                            <div class="fpt-appx-cap">Дополнительно</div>
-                            <div class="fpt-appx-toggles">
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="fullWidth"><span class="material-symbols-rounded">width_full</span><span>На всю ширину</span></button>
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="compact"><span class="material-symbols-rounded">density_small</span><span>Компактно</span></button>
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="uppercase"><span class="material-symbols-rounded">text_fields</span><span>ЗАГЛАВНЫЕ</span></button>
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="showPreview"><span class="material-symbols-rounded">preview</span><span>Превью при наведении</span></button>
-                            </div>
-                        </div>
-
-                        <!-- Доп. настройки, видимые только для «в панели» -->
-                        <div class="fpt-appx-block fpt-sidebar-only" id="fpt-sidebar-extra">
-                            <div class="fpt-appx-cap">Компактность панели</div>
-                            <div class="fpt-seg" data-fpt-opt="sidebarDensity">
-                                <button type="button" data-val="cozy" title="Просторно">Просторно</button>
-                                <button type="button" data-val="normal" title="Обычно">Обычно</button>
-                                <button type="button" data-val="dense" title="Плотно">Плотно</button>
-                            </div>
-                            <div class="fpt-appx-cap" style="margin-top:10px;">Раскладка</div>
-                            <div class="fpt-seg" data-fpt-opt="sidebarLayout">
-                                <button type="button" data-val="flow" title="Авто-сетка (по ширине)">Авто-сетка</button>
-                                <button type="button" data-val="list" title="Список (в столбик)">Список</button>
-                            </div>
-                            <div class="fpt-align-hint" style="display:block;color:#6b7194;">«Авто-сетка» умно раскладывает кнопки по ширине панели, как на скрине.</div>
-                        </div>
-
-                        <div class="fpt-appx-block">
-                            <div class="fpt-appx-cap">Живой предпросмотр</div>
-                            <div id="fpt-appearance-preview" class="chat-buttons-container" data-fpt-shape="rounded" data-fpt-size="m" data-fpt-fill="solid" data-fpt-align="center" data-fpt-fullwidth="0" data-fpt-uppercase="0" data-fpt-compact="0">
-                                <button type="button" class="chat-template-btn" style="background-color:var(--fpt-accent,#1b75bb);--btn-color:var(--fpt-accent,#1b75bb);">Приветствие</button>
-                                <button type="button" class="chat-template-btn" style="background-color:#FF6B6B;--btn-color:#FF6B6B;">Спасибо за заказ</button>
-                                <button type="button" class="custom-chat-template-btn" style="background-color:var(--fpt-accent,#1b75bb);--btn-color:var(--fpt-accent,#1b75bb);">Свой шаблон</button>
-                            </div>
-                        </div>
-                    </div>
-                    </div>
+                    <p class="template-info" style="margin-top:10px;">
+                        <span class="material-symbols-rounded" style="vertical-align:middle;font-size:18px;color:#f59e0b;margin-right:4px;">bolt</span>
+                        Шаблоны доступны по иконке <b>молнии (⚡)</b> прямо в поле ввода чата FunPay.
+                    </p>
 
                     <h3>Редактор шаблонов</h3>
                      <p class="template-info">Кликните на название или текст шаблона, чтобы его изменить. Все изменения сохраняются автоматически.</p>
@@ -688,12 +891,6 @@ function createMainPopup() {
                         <p class="template-info">Здесь будут отображаться отложенные процессы импорта.</p>
                     </div>
                 </div>
-                <div class="fp-tools-page-content" data-page="piggy_banks">
-                    <h3>Управление копилками</h3>
-                    <p class="template-info">Создавайте копилки для отслеживания прогресса к вашим финансовым целям. Основная копилка будет отображаться при наведении на баланс в шапке сайта.</p>
-                    <button id="create-piggy-bank-btn" class="btn">+ Создать новую копилку</button>
-                    <div id="piggy-banks-list-container" class="piggy-banks-list-container"></div>
-                </div>
                 <div class="fp-tools-page-content" data-page="theme">
                     <h3>Кастомизация темы</h3>
                     <div class="checkbox-label-inline" style="margin-bottom:15px;"><input type="checkbox" id="enableCustomThemeCheckbox"><label for="enableCustomThemeCheckbox" style="margin-bottom:0;"><span>Включить кастомную тему</span></label></div>
@@ -744,51 +941,62 @@ function createMainPopup() {
                     <div class="setting-group"><h4 style="margin-top: 0;">Расположение</h4><div class="template-container"><div class="range-label"><label for="headerPositionSelect">Верхняя панель:</label></div><select id="headerPositionSelect"><option value="top">Вверх (по умолчанию)</option><option value="bottom">Вниз</option></select></div></div>
                     
                     <div class="setting-group" id="fptTextOutlineGroup"><h4 style="margin-top: 0;">Контур тексту</h4><div class="checkbox-label-inline"><input type="checkbox" id="fptTextOutlineEnabled"><label for="fptTextOutlineEnabled" style="margin-bottom:0;"><span>Включить контур буквам</span></label></div><small style="font-size:12px;opacity:0.7;display:block;margin-top:-10px;margin-bottom:8px;">Обводит все буквы в меню контуром для возможного повышения читаемости.</small><div id="fptTextOutlineControls" style="display:none;"><div class="template-container color-input-grid"><div><label for="fptTextOutlineColor">Цвет контура:</label><input type="color" id="fptTextOutlineColor" class="theme-color-input" value="#1b75bb"></div></div><div class="template-container"><div class="range-label"><label for="fptTextOutlineWidth">Толщина:</label><span id="fptTextOutlineWidthValue">1px</span></div><input type="range" id="fptTextOutlineWidth" min="0" max="5" step="0.5"></div></div></div>
-                    <div class="theme-actions-grid"><button id="enableMagicStickBtn" class="btn" style="grid-column: 1 / -1;"><span class="material-icons">auto_fix_normal</span><span>Включить режим редактора</span></button><button id="generatePaletteBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">auto_fix_high</span>цвета фона</button><button id="randomizeThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">casino</span>рандом</button><button id="shareThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">share</span>Поделиться темой</button><button id="exportThemeBtn" class="btn btn-default" title="Сохранить текущие настройки темы в файл (.fptheme)">Экспорт</button><button id="importThemeBtn" class="btn btn-default" title="Загрузить настройки темы из файла (.fptheme)">Импорт</button><input type="file" id="importThemeInput" accept=".fptheme" style="display: none;"><button id="resetThemeBtn" class="btn btn-default">СБРОСИТЬ ТЕМУ</button></div>
+                    <div class="theme-actions-grid"><button id="generatePaletteBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">auto_fix_high</span>цвета фона</button><button id="randomizeThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">casino</span>рандом</button><button id="shareThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">share</span>Поделиться темой</button><button id="exportThemeBtn" class="btn btn-default" title="Сохранить текущие настройки темы в файл (.fptheme)">Экспорт</button><button id="importThemeBtn" class="btn btn-default" title="Загрузить настройки темы из файла (.fptheme)">Импорт</button><input type="file" id="importThemeInput" accept=".fptheme" style="display: none;"><button id="resetThemeBtn" class="btn btn-default">СБРОСИТЬ ТЕМУ</button></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="autobump">
                     <h3>Авто-поднятие лотов</h3>
-                    <div class="checkbox-label-inline"><input type="checkbox" id="autoBumpEnabled"><label for="autoBumpEnabled" style="margin-bottom:0;"><span>Включить автоподнятие</span></label></div>
-                    <small style="font-size:12px;opacity:0.75;display:block;margin-top:-10px;margin-left:30px;margin-bottom:8px;">Стабильно поднимает все лоты через FunPay API</small>
+                    <p class="template-info">Регулярное автоматическое поднятие предложений на FunPay по расписанию через официальный API площадки.</p>
 
-                    <div class="checkbox-label-inline"><input type="checkbox" id="selectiveBumpEnabled"><label for="selectiveBumpEnabled" style="margin-bottom:0;"><span>Поднимать только выбранные категории</span></label></div>
-                    <button id="configureSelectiveBumpBtn" class="btn btn-default" style="width: auto; padding: 8px 16px; font-size: 14px;">выбрать...</button>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title">
+                                <span>Включить авто-поднятие</span>
+                                <span class="fpt-badge fpt-badge-pro">FunPay API</span>
+                            </div>
+                            <div class="fpt-setting-desc">Стабильно поднимает все лоты через официальный API FunPay с соблюдением интервалов площадки</div>
+                        </div>
+                        <label class="fpt-switch">
+                            <input type="checkbox" id="autoBumpEnabled">
+                            <span class="fpt-slider"></span>
+                        </label>
+                    </div>
 
-                    <div class="checkbox-label-inline" style="margin-top: 15px;"><input type="checkbox" id="bumpOnlyAutoDelivery"><label for="bumpOnlyAutoDelivery" style="margin-bottom:0;"><span>Поднимать только категории с автовыдачей</span></label></div>
-                    <small style="font-size: 12px; opacity: 0.7; display: block; margin-top: -10px; margin-left: 30px;">Будут подняты только те категории, в которых есть хотя бы один лот с иконкой автовыдачи (⚡️).</small>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title">
+                                <span>Поднимать только выбранные категории</span>
+                            </div>
+                            <div class="fpt-setting-desc">Ограничивает поднятие только выбранным списком игр и разделов</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <button id="configureSelectiveBumpBtn" class="btn btn-default" style="width: auto; padding: 6px 14px; font-size: 13px;">Выбрать…</button>
+                            <label class="fpt-switch">
+                                <input type="checkbox" id="selectiveBumpEnabled">
+                                <span class="fpt-slider"></span>
+                            </label>
+                        </div>
+                    </div>
 
-                    <label style="margin-top: 20px;">Консоль логов:</label>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title">
+                                <span>Поднимать только категории с автовыдачей</span>
+                            </div>
+                            <div class="fpt-setting-desc">Будут подняты только те категории, в которых есть хотя бы один лот с иконкой автовыдачи (⚡️)</div>
+                        </div>
+                        <label class="fpt-switch">
+                            <input type="checkbox" id="bumpOnlyAutoDelivery">
+                            <span class="fpt-slider"></span>
+                        </label>
+                    </div>
+
+                    <label style="margin-top: 20px; font-weight: 600; display: block;">Консоль логов авто-поднятия:</label>
                     <div id="autoBumpConsole" class="fp-tools-console"></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="notes">
                     <h3>Заметки</h3>
                     <p class="template-info">Это ваш личный блокнот. Текст сохраняется автоматически при вводе и доступен между сессиями браузера.</p>
                     <textarea id="fpToolsNotesArea" class="template-input" style="height: 80%; resize: none; min-height: 400px;" placeholder="Запишите сюда что-нибудь важное: список дел, временные данные для покупателя, идеи для новых лотов..."></textarea>
-                </div>
-                <div class="fp-tools-page-content" data-page="global_chat">
-                    <h3>Общий чат</h3>
-                    <p class="template-info">Чат для пользователей расширения</p>
-                    
-                    <!-- ЗАМЕТКА С ПРАВИЛАМИ И ПРЕДУПРЕЖДЕНИЕМ -->
-                    <div class="fpt-gc-disclaimer" style="flex-direction: column; gap: 10px;">
-                        <div style="display:flex; align-items:flex-start; gap: 6px;">
-                            <span class="material-symbols-rounded" style="color:#e05252;">shield</span>
-                            <span>Это чат сообщества FP Tools. Будьте вежливы и уважайте других участников. За нарушения - блокировка в чате.</span>
-                        </div>
-                        <div style="background: rgba(0,0,0,0.2); border: 1px dashed rgba(224, 82, 82, 0.4); border-radius: 6px; padding: 10px; font-size: 11px;">
-                            <b style="color: #ff6b6b; display: block; margin-bottom: 4px;">ЗАПРЕЩЕНО:</b>
-                            Спам и флуд, реклама, оскорбления, разжигание, обман. Соблюдайте порядок - чат для общения по FP Tools.
-                        </div>
-                    </div>
-
-                    <div id="fpt-gc-feed" class="fpt-gc-feed">
-                        <div class="fpt-gc-loading">Загрузка сообщений…</div>
-                    </div>
-                    <div class="fpt-gc-composer">
-                        <textarea id="fpt-gc-input" rows="1" placeholder="Сообщение…" maxlength="300"></textarea>
-                        <button id="fpt-gc-send" type="button" class="fpt-gc-send-btn" title="Отправить"><span class="material-symbols-rounded">send</span></button>
-                    </div>
-                    <div id="fpt-gc-status" class="fpt-gc-status"></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="calculator">
                     <h3>Калькулятор</h3>
@@ -811,65 +1019,10 @@ function createMainPopup() {
                     <p class="template-info">Курсы обновляются раз в день. Используется открытый API.</p>
                     <div class="currency-converter-container"><div class="currency-input-group"><input type="number" id="currencyAmountFrom" class="template-input currency-input" value="100"><select id="currencySelectFrom" class="template-input currency-select"></select></div><div class="currency-swap-container"><button id="currencySwapBtn" class="currency-swap-btn">⇅</button><div id="currencyRateDisplay" class="currency-rate-display"></div></div><div class="currency-input-group"><input type="text" id="currencyAmountTo" class="template-input currency-input" readonly><select id="currencySelectTo" class="template-input currency-select"></select></div></div><div id="currency-error-display" class="currency-error"></div>
                 </div>
-                <div class="fp-tools-page-content" data-page="effects">
-                    <h3>Эффекты частиц</h3>
-                    <div class="checkbox-label-inline"><input type="checkbox" id="cursorFxEnabled"><label for="cursorFxEnabled" style="margin-bottom:0;"><span>Включить эффекты частиц</span></label></div>
-                    <div class="template-container"><label for="cursorFxType">Тип эффекта:</label><select id="cursorFxType"><option value="sparkle">Искры</option><option value="trail">След</option><option value="snow">Снег</option><option value="blood">Кровь</option></select></div>
-                    <div class="template-container color-input-grid"><div><label for="cursorFxColor1">Цвет 1:</label><input type="color" id="cursorFxColor1" class="theme-color-input" value="#FF6B6B"></div><div><label for="cursorFxColor2">Цвет 2 (градиент):</label><input type="color" id="cursorFxColor2" class="theme-color-input" value="#1b75bb"></div></div>
-                    <div class="checkbox-label-inline"><input type="checkbox" id="cursorFxRgb"><label for="cursorFxRgb" style="margin-bottom:0;"><span>Радужный (RGB)</span></label></div>
-                    <div class="template-container"><div class="range-label"><label for="cursorFxCount">Интенсивность:</label><span id="cursorFxCountValue">50%</span></div><input type="range" id="cursorFxCount" min="0" max="100" step="1"></div>
-                    <div style="margin-top: 20px;"><button id="resetCursorFxBtn" class="btn btn-default">Сбросить эффекты</button></div>
-                    <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 25px 0;"></div>
-                    <h3>Пользовательский курсор</h3>
-                    <div class="checkbox-label-inline"><input type="checkbox" id="customCursorEnabled"><label for="customCursorEnabled" style="margin-bottom:0;"><span>Включить свой курсор</span></label></div>
-                    <div id="customCursorControls" style="display: none;"><div class="template-container"><label>Изображение курсора:</label><div id="cursor-image-preview" style="width:64px; height:64px; background-color:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:10px; background-size:contain; background-position:center; background-repeat: no-repeat; display:flex; align-items:center; justify-content:center; color: var(--fptm-muted, #888); font-size:12px;">Нет</div><button id="uploadCursorImageBtn" class="btn">Загрузить</button><button id="removeCursorImageBtn" class="btn btn-default" style="margin-left: 10px;">Удалить</button><input type="file" id="cursorImageInput" accept="image/*" style="display: none;"></div><div class="checkbox-label-inline"><input type="checkbox" id="hideSystemCursor" checked><label for="hideSystemCursor" style="margin-bottom:0;"><span>Скрыть системный курсор</span></label></div><div class="template-container"><div class="range-label"><label for="customCursorSize">Размер:</label><span id="customCursorSizeValue">32px</span></div><input type="range" id="customCursorSize" min="16" max="128" step="1" value="32"></div><div class="template-container"><div class="range-label"><label for="customCursorOpacity">Прозрачность:</label><span id="customCursorOpacityValue">100%</span></div><input type="range" id="customCursorOpacity" min="0" max="100" step="1" value="100"></div></div>
-                </div>
                 <div class="fp-tools-page-content" data-page="overview">
                     <div class="overview-container"><h3 style="border:none">Видео-обзор функций</h3><p class="template-info">Посмотрите короткий кинематографический ролик, демонстрирующий все возможности FP Tools в действии. Откройте для себя инструменты, о которых вы могли не знать!</p><div class="overview-promo-art"></div><button id="start-overview-tour-btn" class="btn">▶️ Начать обзор</button></div>
-                    <div class="feature-list-container"><h3>Справочник по функциям</h3><div class="feature-item"><div class="feature-title"><span class="material-icons">smart_toy</span>ИИ-Ассистент в чате</div><div class="feature-location"><strong>Где найти:</strong> В любом чате, кнопка "AI" рядом с полем ввода.</div><div class="feature-desc">Улучшает ваш текст, делая его вежливым и профессиональным. Активируйте режим и нажмите Enter для обработки. Также предупреждает о грубости.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_high</span>AI-Генератор лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота.</div><div class="feature-desc">Создает название и описание для лота на основе ваших идей, анализируя и копируя стиль ваших существующих предложений.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">add_photo_alternate</span>AI-Генератор изображений</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота, в разделе "Изображения".</div><div class="feature-desc">Создавайте уникальные и стильные превью для ваших предложений с помощью встроенного генератора, в том числе по текстовому запросу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">palette</span>Полная кастомизация</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Кастомизация".</div><div class="feature-desc">Измените внешний вид FunPay: установите анимированный фон, настройте цвета, шрифты, прозрачность блоков и даже расположение верхней панели.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_normal</span>"Кастомизатор (режим редактора)</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Кастомизация".</div><div class="feature-desc">Редактируйте любой элемент сайта в реальном времени. Меняйте цвета, размеры или скрывайте ненужное, сохраняя стили навсегда.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">description</span>Шаблоны и AI-переменные</div><div class="feature-location"><strong>Где найти:</strong> Под полем ввода в чате. Настраиваются во вкладке "Шаблоны".</div><div class="feature-desc">Быстрая вставка готовых сообщений. Поддерживают переменные {buyername}, {date} и даже генерацию текста через {ai:ваш запрос}.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">checklist</span>Управление лотами и ценами</div><div class="feature-location"><strong>Где найти:</strong> На странице вашего профиля (funpay.com/users/...).</div><div class="feature-desc">Кнопка "Выбрать" позволяет выделить несколько лотов для массового удаления, дублирования, отключения или редактирования цен.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">control_point_duplicate</span>Клонирование лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования любого вашего лота.</div><div class="feature-desc">Кнопка "Копировать" позволяет создать точную копию лота или массово размножить его по разным категориям (например, по разным серверам).</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">content_copy</span>Копировать лот со страницы заказа</div><div class="feature-location"><strong>Где найти:</strong> На странице купленного заказа (funpay.com/orders/...), кнопка под блоком "Оплаченный товар".</div><div class="feature-desc">Создаёт копию купленного лота через тот же мастер, что и обычное клонирование: подтягивает описание, автоматически переводит его на английский и, если у лота была автовыдача, сразу вставляет выданный товар в поле автовыдачи.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">public</span>Глобальный импорт лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования лота, кнопка "Импорт".</div><div class="feature-desc">Импортируйте название и описание любого лота с FunPay, чтобы анализировать конкурентов или использовать как основу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">sort_by_alpha</span>Сортировка по отзывам</div><div class="feature-location"><strong>Где найти:</strong> На любой странице со списком лотов.</div><div class="feature-desc">Кликните на заголовок "Продавец" в таблице, чтобы отсортировать все предложения по количеству отзывов у продавцов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">label</span>Пометки для пользователей</div><div class="feature-location"><strong>Где найти:</strong> В выпадающем меню в заголовке чата с человеком.</div><div class="feature-desc">Устанавливайте настраиваемые цветные метки для пользователей, которые будут видны в вашем списке контактов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">rocket_launch</span>Авто-поднятие лотов</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Авто-поднятие".</div><div class="feature-desc">Настройте автоматическое поднятие лотов по таймеру. Можно выбрать для поднятия только определенные категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">monitoring</span>Статистика</div><div class="feature-location"><strong>Где найти:</strong> Страница "Продажи" - статистика продаж, кнопка "Аналитика рынка" на странице игры.</div><div class="feature-desc">Получайте детальную статистику по своим продажам и анализируйте рыночную ситуацию в любой категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">savings</span>Финансовые копилки</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Копилки" и иконка в шапке сайта.</div><div class="feature-desc">Устанавливайте финансовые цели и отслеживайте их достижение. Копилка синхронизируется с балансом FunPay.</div></div></div>
+                    <div class="feature-list-container"><h3>Справочник по функциям</h3><div class="feature-item"><div class="feature-title"><span class="material-icons">smart_toy</span>ИИ-Ассистент в чате</div><div class="feature-location"><strong>Где найти:</strong> В любом чате, кнопка "AI" рядом с полем ввода.</div><div class="feature-desc">Улучшает ваш текст, делая его вежливым и профессиональным. Активируйте режим и нажмите Enter для обработки. Также предупреждает о грубости.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_high</span>AI-Генератор лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота.</div><div class="feature-desc">Создает название и описание для лота на основе ваших идей, анализируя и копируя стиль ваших существующих предложений.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">palette</span>Полная кастомизация</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Кастомизация".</div><div class="feature-desc">Измените внешний вид FunPay: установите анимированный фон, настройте цвета, шрифты, прозрачность блоков и даже расположение верхней панели.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">description</span>Шаблоны и AI-переменные</div><div class="feature-location"><strong>Где найти:</strong> Под полем ввода в чате. Настраиваются во вкладке "Шаблоны".</div><div class="feature-desc">Быстрая вставка готовых сообщений. Поддерживают переменные {buyername}, {date} и даже генерацию текста через {ai:ваш запрос}.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">checklist</span>Управление лотами и ценами</div><div class="feature-location"><strong>Где найти:</strong> На странице вашего профиля (funpay.com/users/...).</div><div class="feature-desc">Кнопка "Выбрать" позволяет выделить несколько лотов для массового удаления, дублирования, отключения или редактирования цен.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">control_point_duplicate</span>Клонирование лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования любого вашего лота.</div><div class="feature-desc">Кнопка "Копировать" позволяет создать точную копию лота или массово размножить его по разным категориям (например, по разным серверам).</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">content_copy</span>Копировать лот со страницы заказа</div><div class="feature-location"><strong>Где найти:</strong> На странице купленного заказа (funpay.com/orders/...), кнопка под блоком "Оплаченный товар".</div><div class="feature-desc">Создаёт копию купленного лота через тот же мастер, что и обычное клонирование: подтягивает описание, автоматически переводит его на английский и, если у лота была автовыдача, сразу вставляет выданный товар в поле автовыдачи.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">public</span>Глобальный импорт лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования лота, кнопка "Импорт".</div><div class="feature-desc">Импортируйте название и описание любого лота с FunPay, чтобы анализировать конкурентов или использовать как основу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">sort_by_alpha</span>Сортировка по отзывам</div><div class="feature-location"><strong>Где найти:</strong> На любой странице со списком лотов.</div><div class="feature-desc">Кликните на заголовок "Продавец" в таблице, чтобы отсортировать все предложения по количеству отзывов у продавцов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">label</span>Пометки для пользователей</div><div class="feature-location"><strong>Где найти:</strong> В выпадающем меню в заголовке чата с человеком.</div><div class="feature-desc">Устанавливайте настраиваемые цветные метки для пользователей, которые будут видны в вашем списке контактов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">rocket_launch</span>Авто-поднятие лотов</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Авто-поднятие".</div><div class="feature-desc">Настройте автоматическое поднятие лотов по таймеру. Можно выбрать для поднятия только определенные категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">monitoring</span>Статистика</div><div class="feature-location"><strong>Где найти:</strong> Страница "Продажи" - статистика продаж, кнопка "Аналитика рынка" на странице игры.</div><div class="feature-desc">Получайте детальную статистику по своим продажам и анализируйте рыночную ситуацию в любой категории.</div></div></div>
                 </div>
-                <div class="fp-tools-page-content" data-page="ai_audit">
-                    <h3>ИИ-аудит лотов</h3>
-
-                    <!-- START STATE -->
-                    <div id="fp-audit-start-wrap">
-                        <p class="template-info">ИИ прочитает все ваши лоты и последние 30 отзывов, сгенерирует ~40 вопросов и на основе ваших ответов выдаст конкретные рекомендации.</p>
-                        <div class="support-promo" style="background:rgba(27,117,187,0.07);border-color:rgba(27,117,187,0.2);margin-bottom:16px;">
-                            <span class="material-symbols-rounded" style="font-size:16px;color:#f4c84a;vertical-align:-3px;">lightbulb</span>
-                            <span>Вопросы будут именно о ваших лотах - ИИ внимательно их изучит перед генерацией.</span>
-                        </div>
-                        <button id="fp-audit-start-btn" class="btn" style="width:100%;padding:12px;"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-4px;margin-right:6px;">search_insights</span>Начать аудит</button>
-                        <p id="fp-audit-cooldown-msg" style="display:none;text-align:center;font-size:12px;color:var(--fptm-faint, #5a5f7a);margin-top:8px;"></p>
-                    </div>
-
-                    <!-- LOADING STATE -->
-                    <div id="fp-audit-loading" style="display:none;font-size:13px;color:var(--fptm-faint, #5a5f7a);margin-top:10px;white-space:pre-line;text-align:center;line-height:1.7;padding:20px 0;"></div>
-
-                    <!-- SURVEY STATE -->
-                    <div id="fp-audit-survey" style="display:none;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                            <span id="fp-audit-q-num" style="font-size:12px;color:var(--fptm-faint, #5a5f7a);"></span>
-                            <span id="fp-audit-skip" style="font-size:11px;color:var(--fptm-faint, #3a3d52);cursor:pointer;" onclick="document.getElementById('fp-audit-next-btn')?.click()">Пропустить →</span>
-                        </div>
-                        <div style="height:4px;background:var(--fptm-surface, #1e2030);border-radius:2px;margin-bottom:16px;overflow:hidden;">
-                            <div id="fp-audit-progress-bar" style="height:100%;background:#1b75bb;width:0;transition:width .3s;border-radius:2px;"></div>
-                        </div>
-                        <div id="fp-audit-q-container" style="min-height:120px;"></div>
-                        <div style="display:flex;gap:8px;margin-top:16px;">
-                            <button id="fp-audit-prev-btn" class="btn btn-default" style="flex:1;">← Назад</button>
-                            <button id="fp-audit-next-btn" class="btn" style="flex:2;">Далее →</button>
-                        </div>
-                    </div>
-
-                    <!-- PROCESSING STATE -->
-                    <div id="fp-audit-processing" style="display:none;text-align:center;padding:30px 0;color:var(--fptm-faint, #5a5f7a);font-size:13px;">
-                        ИИ анализирует ваши ответы и готовит рекомендации...
-                    </div>
-
-                    <!-- RESULTS STATE -->
-                    <div id="fp-audit-results" style="display:none;overflow-y:auto;max-height:460px;padding-right:4px;"></div>
-                </div>
-
                 <div class="fp-tools-page-content" data-page="settings_io">
                     <h3>Импорт и экспорт настроек</h3>
                     <p class="template-info">Сохраните все настройки FunPay Tools в файл и восстановите на другом устройстве или аккаунте.</p>
@@ -912,17 +1065,35 @@ function createMainPopup() {
                         <span>Используйте переменные: <code>{buyername}</code>, <code>{orderid}</code>, <code>{orderlink}</code>, <code>$username</code>, <code>$order_link</code>, <code>$order_id</code>, <code>$sleep=3</code> (пауза в секундах).</span>
                     </div>
 
-                    <div class="checkbox-label-inline" style="margin-bottom:12px;">
-                        <input type="checkbox" id="fpAutoRestoreEnabled">
-                        <label for="fpAutoRestoreEnabled" style="margin-bottom:0;"><span>Авто-восстановление лотов после деактивации</span></label>
-                    </div>
-                    <div class="checkbox-label-inline" style="margin-bottom:16px;">
-                        <input type="checkbox" id="fpAutoDisableEnabled">
-                        <label for="fpAutoDisableEnabled" style="margin-bottom:0;"><span>Авто-деактивация лотов при пустом складе</span></label>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title">
+                                <span>Авто-восстановление лотов после деактивации</span>
+                                <span class="fpt-badge fpt-badge-success">Рекомендуется</span>
+                            </div>
+                            <div class="fpt-setting-desc">Автоматически восстанавливает и перевыставляет лот при наличии остатков на складе или в секретах</div>
+                        </div>
+                        <label class="fpt-switch">
+                            <input type="checkbox" id="fpAutoRestoreEnabled">
+                            <span class="fpt-slider"></span>
+                        </label>
                     </div>
 
-                    <h4>Настройка авто-выдачи по лотам</h4>
-                    <p class="template-info">Выберите лот для настройки авто-выдачи. Если лот не настроен - отправляется содержимое поля «Секреты» автоматически.</p>
+                    <div class="fpt-setting-card">
+                        <div class="fpt-setting-info">
+                            <div class="fpt-setting-title">
+                                <span>Авто-деактивация лотов при пустом складе</span>
+                            </div>
+                            <div class="fpt-setting-desc">Скрывает лот из поиска FunPay, если все ключи/товары были распроданы, предотвращая штрафы</div>
+                        </div>
+                        <label class="fpt-switch">
+                            <input type="checkbox" id="fpAutoDisableEnabled">
+                            <span class="fpt-slider"></span>
+                        </label>
+                    </div>
+
+                    <h4 style="margin-top:24px;">Настройка авто-выдачи по лотам</h4>
+                    <p class="template-info">Выберите лот для настройки авто-выдачи. Если лот не настроен — отправляется содержимое поля «Секреты» автоматически.</p>
                     <button id="fp-load-delivery-lots-btn" class="btn btn-default" style="margin-bottom:12px;">Загрузить список лотов</button>
                     <div id="fp-delivery-lots-list"></div>
                 </div>
@@ -1213,8 +1384,7 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fpt-needs-ai-result,
 .fp-tools-popup.fptm-themed .fpt-needs-list,
 .fp-tools-popup.fptm-themed .fp-account-card,
-.fp-tools-popup.fptm-themed .fpt-card,
-.fp-tools-popup.fptm-themed .piggy-bank-card{
+.fp-tools-popup.fptm-themed .fpt-card{
     background:var(--fptm-surface) !important; border:1px solid var(--fptm-border) !important;
     border-radius:14px !important; box-shadow:none !important;
 }
@@ -1867,56 +2037,386 @@ function _updateColorInputs(palette) {
 
 
 
+const FPT_HUB_CONFIG = {
+    dashboard: {
+        id: 'dashboard',
+        label: 'Дашборд',
+        icon: 'dashboard',
+        subtabs: []
+    },
+    automation: {
+        id: 'automation',
+        label: 'Автоматизация',
+        icon: 'rocket_launch',
+        defaultSub: 'autobump',
+        subtabs: [
+            { id: 'autobump', label: 'Авто-поднятие', icon: 'rocket_launch' },
+            { id: 'auto_delivery', label: 'Авто-выдача', icon: 'bolt' },
+            { id: 'auto_review', label: 'Авто-отзывы', icon: 'smart_toy' }
+        ]
+    },
+    chat: {
+        id: 'chat',
+        label: 'Чат и клиенты',
+        icon: 'chat',
+        defaultSub: 'templates',
+        subtabs: [
+            { id: 'templates', label: 'Шаблоны ответов', icon: 'chat' },
+            { id: 'slash_commands', label: 'Слэш-команды', icon: 'terminal' },
+            { id: 'notes', label: 'Заметки о клиентах', icon: 'edit_note' },
+            { id: 'blacklist', label: 'Черный список', icon: 'block' }
+        ]
+    },
+    lots: {
+        id: 'lots',
+        label: 'Товары и рынок',
+        icon: 'inventory_2',
+        defaultSub: 'lot_io',
+        subtabs: [
+            { id: 'lot_io', label: 'Импорт / Экспорт', icon: 'inventory_2' },
+            { id: 'pricing', label: 'Цены и комиссии', icon: 'price_change' }
+        ]
+    },
+    finance: {
+        id: 'finance',
+        label: 'Финансы',
+        icon: 'monitoring',
+        defaultSub: 'sales_stats',
+        subtabs: [
+            { id: 'sales_stats', label: 'Статистика продаж', icon: 'monitoring' },
+            { id: 'calculator', label: 'Калькулятор', icon: 'calculate' },
+            { id: 'currency_calc', label: 'Валютный калькулятор', icon: 'currency_exchange' }
+        ]
+    },
+    appearance: {
+        id: 'appearance',
+        navPageId: 'theme',
+        label: 'Внешний вид',
+        icon: 'palette',
+        defaultSub: 'theme',
+        subtabs: [
+            { id: 'theme', label: 'Тема и цвета', icon: 'palette' },
+            { id: 'needs', label: 'Кастомизация сайта', icon: 'tune' }
+        ]
+    },
+    system: {
+        id: 'system',
+        navPageId: 'general',
+        label: 'Система',
+        icon: 'settings',
+        defaultSub: 'general',
+        subtabs: [
+            { id: 'general', label: 'Уведомления и Webhook', icon: 'notifications' },
+            { id: 'accounts', label: 'Аккаунты', icon: 'manage_accounts' },
+            { id: 'telegram', label: 'Telegram Бот', icon: 'send' },
+            { id: 'settings_io', label: 'Резервные копии', icon: 'backup' },
+            { id: 'tickets', label: 'Поддержка FunPay', icon: 'help_outline' },
+            { id: 'support', label: 'О расширении', icon: 'info' }
+        ]
+    }
+};
+
+const FPT_PAGE_TO_HUB = {
+    dashboard: { hub: 'dashboard', sub: 'dashboard' },
+    overview: { hub: 'dashboard', sub: 'dashboard' },
+    automation: { hub: 'automation', sub: 'autobump' },
+    autobump: { hub: 'automation', sub: 'autobump' },
+    auto_delivery: { hub: 'automation', sub: 'auto_delivery' },
+    auto_review: { hub: 'automation', sub: 'auto_review' },
+    chat: { hub: 'chat', sub: 'templates' },
+    templates: { hub: 'chat', sub: 'templates' },
+    slash_commands: { hub: 'chat', sub: 'slash_commands' },
+    notes: { hub: 'chat', sub: 'notes' },
+    blacklist: { hub: 'chat', sub: 'blacklist' },
+    lots: { hub: 'lots', sub: 'lot_io' },
+    lot_io: { hub: 'lots', sub: 'lot_io' },
+    pricing: { hub: 'lots', sub: 'pricing' },
+    finance: { hub: 'finance', sub: 'sales_stats' },
+    sales_stats: { hub: 'finance', sub: 'sales_stats' },
+    calculator: { hub: 'finance', sub: 'calculator' },
+    currency_calc: { hub: 'finance', sub: 'currency_calc' },
+    appearance: { hub: 'appearance', sub: 'theme' },
+    theme: { hub: 'appearance', sub: 'theme' },
+    needs: { hub: 'appearance', sub: 'needs' },
+    system: { hub: 'system', sub: 'general' },
+    general: { hub: 'system', sub: 'general' },
+    accounts: { hub: 'system', sub: 'accounts' },
+    telegram: { hub: 'system', sub: 'telegram' },
+    settings_io: { hub: 'system', sub: 'settings_io' },
+    tickets: { hub: 'system', sub: 'tickets' },
+    support: { hub: 'system', sub: 'support' }
+};
+
 function setupPopupNavigation() {
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (!toolsPopup) return;
     const navItems = toolsPopup.querySelectorAll('.fp-tools-nav li, .fp-tools-header-tab');
     const contentPages = toolsPopup.querySelectorAll('.fp-tools-page-content');
+    const subtabsBar = toolsPopup.querySelector('#fptTopSubtabsBar');
 
+    async function updateDashboardLiveStatus() {
+        try {
+            const data = await chrome.storage.local.get([
+                'autoBumpEnabled',
+                'autoBumpInterval',
+                'fpAutoRestoreEnabled',
+                'fpToolsAutoDeliveryLots',
+                'fpToolsAutoReplies',
+                'telegramBotToken',
+                'discordWebhookUrl'
+            ]);
+
+            const bumpBadge = document.getElementById('fptDashBumpBadge');
+            const bumpSub = document.getElementById('fptDashBumpSub');
+            if (bumpBadge && bumpSub) {
+                if (data.autoBumpEnabled) {
+                    bumpBadge.className = 'fpt-status-badge status-on';
+                    bumpBadge.textContent = 'Включено';
+                    bumpSub.textContent = `Интервал: ~${data.autoBumpInterval || 120} мин`;
+                } else {
+                    bumpBadge.className = 'fpt-status-badge status-off';
+                    bumpBadge.textContent = 'Выключено';
+                    bumpSub.textContent = 'Нажмите для настройки';
+                }
+            }
+
+            const deliveryBadge = document.getElementById('fptDashDeliveryBadge');
+            const deliverySub = document.getElementById('fptDashDeliverySub');
+            if (deliveryBadge && deliverySub) {
+                const lotsCount = data.fpToolsAutoDeliveryLots ? Object.keys(data.fpToolsAutoDeliveryLots).length : 0;
+                if (data.fpAutoRestoreEnabled || lotsCount > 0) {
+                    deliveryBadge.className = 'fpt-status-badge status-on';
+                    deliveryBadge.textContent = 'Включено';
+                    deliverySub.textContent = lotsCount > 0 ? `${lotsCount} лот(ов) на выдаче` : 'Авто-восстановление активно';
+                } else {
+                    deliveryBadge.className = 'fpt-status-badge status-off';
+                    deliveryBadge.textContent = 'Выключено';
+                    deliverySub.textContent = 'Нажмите для настройки';
+                }
+            }
+
+            const reviewBadge = document.getElementById('fptDashReviewBadge');
+            const reviewSub = document.getElementById('fptDashReviewSub');
+            if (reviewBadge && reviewSub) {
+                const repliesOn = data.fpToolsAutoReplies?.greeting || data.fpToolsAutoReplies?.orderConfirmed || false;
+                if (repliesOn) {
+                    reviewBadge.className = 'fpt-status-badge status-on';
+                    reviewBadge.textContent = 'Включено';
+                    reviewSub.textContent = 'Приветствие и ответы активны';
+                } else {
+                    reviewBadge.className = 'fpt-status-badge status-off';
+                    reviewBadge.textContent = 'Выключено';
+                    reviewSub.textContent = 'Нажмите для настройки';
+                }
+            }
+
+            const tgBadge = document.getElementById('fptDashTgBadge');
+            const tgSub = document.getElementById('fptDashTgSub');
+            if (tgBadge && tgSub) {
+                const hasTg = !!data.telegramBotToken;
+                const hasDiscord = !!data.discordWebhookUrl;
+                if (hasTg && hasDiscord) {
+                    tgBadge.className = 'fpt-status-badge status-on';
+                    tgBadge.textContent = 'Подключено';
+                    tgSub.textContent = 'Telegram и Discord активны';
+                } else if (hasTg) {
+                    tgBadge.className = 'fpt-status-badge status-on';
+                    tgBadge.textContent = 'Подключено';
+                    tgSub.textContent = 'Telegram бот активен';
+                } else if (hasDiscord) {
+                    tgBadge.className = 'fpt-status-badge status-on';
+                    tgBadge.textContent = 'Подключено';
+                    tgSub.textContent = 'Discord Webhook активен';
+                } else {
+                    tgBadge.className = 'fpt-status-badge status-off';
+                    tgBadge.textContent = 'Не настроен';
+                    tgSub.textContent = 'Нажмите для настройки';
+                }
+            }
+        } catch (e) {
+            console.warn('FP Tools: updateDashboardLiveStatus error', e);
+        }
+    }
+
+    function switchHubAndSub(hubKey, subId) {
+        const hub = FPT_HUB_CONFIG[hubKey] || FPT_HUB_CONFIG.dashboard;
+        const targetSub = subId || hub.defaultSub || hubKey;
+
+        // 1. Активируем левое меню хабов
+        navItems.forEach(item => {
+            const isMatch = (item.dataset.hub === hubKey) ||
+                            (!item.dataset.hub && item.dataset.page === hubKey) ||
+                            (hub.navPageId && item.dataset.page === hub.navPageId);
+            item.classList.toggle('active', !!isMatch);
+        });
+
+        // 2. Отрисовываем горизонтальные подвкладки
+        if (subtabsBar) {
+            if (hub.subtabs && hub.subtabs.length > 0) {
+                subtabsBar.style.display = 'flex';
+                subtabsBar.innerHTML = '';
+                hub.subtabs.forEach(tab => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `fpt-subtab ${tab.id === targetSub ? 'is-active' : ''}`;
+                    btn.dataset.sub = tab.id;
+                    btn.innerHTML = `<span class="material-symbols-rounded">${tab.icon}</span><span>${tab.label}</span>`;
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        switchHubAndSub(hubKey, tab.id);
+                    });
+                    subtabsBar.appendChild(btn);
+                });
+            } else {
+                subtabsBar.style.display = 'none';
+                subtabsBar.innerHTML = '';
+            }
+        }
+
+        // 3. Отображаем выбранную страницу
+        contentPages.forEach(page => {
+            const isActive = page.dataset.page === targetSub;
+            page.classList.toggle('active', isActive);
+            page.style.display = isActive ? 'block' : 'none';
+        });
+
+        // 4. Запускаем инициализаторы для вкладок
+        if (targetSub === 'currency_calc') initializeCurrencyCalculator();
+        if (targetSub === 'notes') { if (typeof initializeNotes === 'function') initializeNotes(); }
+        if (targetSub === 'templates') { if (typeof setupTemplateSettingsHandlers === 'function') setupTemplateSettingsHandlers(); }
+        if (targetSub === 'lot_io') { if (typeof initializeLotIO === 'function') initializeLotIO(); }
+        if (targetSub === 'auto_review') { if (typeof initializeAutoReviewUI === 'function') initializeAutoReviewUI(); }
+        if (targetSub === 'needs') { if (typeof initializeNeedsTab === 'function') initializeNeedsTab(); }
+        if (targetSub === 'slash_commands') { if (typeof initializeSlashCommandsUI === 'function') initializeSlashCommandsUI(); }
+        if (targetSub === 'telegram') { if (typeof initializeTelegramUI === 'function') initializeTelegramUI(); }
+        if (targetSub === 'blacklist') { if (typeof initializeBlacklist === 'function') initializeBlacklist(); }
+        if (targetSub === 'tickets') { if (typeof initTicketsTab === 'function') initTicketsTab(); }
+        if (targetSub === 'dashboard') { updateDashboardLiveStatus(); }
+        if (targetSub === 'theme') {
+            if (typeof initializeWallpaperPresets === 'function') initializeWallpaperPresets();
+            const g = document.getElementById('fp-wallpaper-carousel');
+            if (g) g.style.display = 'block';
+        } else {
+            const g = document.getElementById('fp-wallpaper-carousel');
+            if (g) g.style.display = 'none';
+        }
+
+        // 5. Сохраняем состояние
+        try {
+            chrome.storage.local.set({ fpToolsLastPage: targetSub, fpToolsLastHub: hubKey });
+        } catch (_) {}
+    }
+
+    // Глобальная функция перехода по страницам
+    window.openPage = function(targetPageId) {
+        const route = FPT_PAGE_TO_HUB[targetPageId] || { hub: 'dashboard', sub: 'dashboard' };
+        switchHubAndSub(route.hub, route.sub);
+    };
+
+    // Слушатели кликов по левой навигации
     navItems.forEach(li => {
         if (!li.dataset.page) return;
         li.addEventListener('click', (e) => {
             e.preventDefault();
             const pageId = li.dataset.page;
-
-            navItems.forEach(item => item.classList.remove('active'));
-            li.classList.add('active');
-            
-            contentPages.forEach(page => {
-                page.classList.toggle('active', page.dataset.page === pageId);
-            });
-            if (pageId === 'epic_nicks') { if (typeof renderEpicPreviews === 'function') renderEpicPreviews(); }
-            if (pageId === 'currency_calc') initializeCurrencyCalculator();
-            if (pageId === 'notes') { if (typeof initializeNotes === 'function') initializeNotes(); }
-            if (pageId === 'global_chat') { if (typeof initializeGlobalChat === 'function') initializeGlobalChat(); }
-            if (pageId === 'templates') { if (typeof setupTemplateSettingsHandlers === 'function') setupTemplateSettingsHandlers(); }
-            if (pageId === 'piggy_banks') { if (typeof renderPiggyBankSettings === 'function') renderPiggyBankSettings(); }
-            if (pageId === 'lot_io') { if (typeof initializeLotIO === 'function') initializeLotIO(); }
-            if (pageId === 'auto_review') { if (typeof initializeAutoReviewUI === 'function') initializeAutoReviewUI(); }
-            if (pageId === 'needs') { if (typeof initializeNeedsTab === 'function') initializeNeedsTab(); }
-            if (pageId === 'slash_commands') { if (typeof initializeSlashCommandsUI === 'function') initializeSlashCommandsUI(); }
-            if (pageId === 'telegram') { if (typeof initializeTelegramUI === 'function') initializeTelegramUI(); }
-            if (pageId === 'blacklist') { if (typeof initializeBlacklist === 'function') initializeBlacklist(); }
-            if (pageId === 'tickets') { initTicketsTab(); }
-            if (pageId === 'theme') {
-                initializeWallpaperPresets();
-                const g = document.getElementById('fp-wallpaper-carousel');
-                if (g) g.style.display = 'block';
+            const targetHub = li.dataset.targetHub || li.dataset.hub;
+            const targetSub = li.dataset.targetSub;
+            if (targetHub && targetSub) {
+                switchHubAndSub(targetHub, targetSub);
             } else {
-                const g = document.getElementById('fp-wallpaper-carousel');
-                if (g) g.style.display = 'none';
+                window.openPage(pageId);
             }
-
-            chrome.storage.local.set({ fpToolsLastPage: pageId });
         });
     });
+
+    // Интерактивные карточки статуса дашборда
+    const bumpCard = toolsPopup.querySelector('#fptDashCardBump');
+    if (bumpCard) bumpCard.addEventListener('click', () => window.openPage('autobump'));
+
+    const deliveryCard = toolsPopup.querySelector('#fptDashCardDelivery');
+    if (deliveryCard) deliveryCard.addEventListener('click', () => window.openPage('auto_delivery'));
+
+    const reviewCard = toolsPopup.querySelector('#fptDashCardReview');
+    if (reviewCard) reviewCard.addEventListener('click', () => window.openPage('auto_review'));
+
+    const tgCard = toolsPopup.querySelector('#fptDashCardTg');
+    if (tgCard) tgCard.addEventListener('click', () => window.openPage('telegram'));
+
+    // Быстрые пресеты профиля в 1 клик
+    toolsPopup.querySelectorAll('.fpt-preset-card').forEach(card => {
+        card.addEventListener('click', async () => {
+            const preset = card.dataset.preset;
+            if (preset === 'keys') {
+                await chrome.storage.local.set({
+                    autoBumpEnabled: true,
+                    bumpOnlyAutoDelivery: true,
+                    fpAutoRestoreEnabled: true
+                });
+                const bumpCb = document.getElementById('autoBumpEnabled');
+                if (bumpCb) bumpCb.checked = true;
+                const restCb = document.getElementById('fpAutoRestoreEnabled');
+                if (restCb) restCb.checked = true;
+                if (typeof showNotification === 'function') showNotification('Пресет «Продавец ключей» успешно применён! ✓');
+            } else if (preset === 'currency') {
+                await chrome.storage.local.set({
+                    autoBumpEnabled: true,
+                    showFeeOnLots: true
+                });
+                const bumpCb = document.getElementById('autoBumpEnabled');
+                if (bumpCb) bumpCb.checked = true;
+                if (typeof showNotification === 'function') showNotification('Пресет «Продавец валюты» успешно применён! ✓');
+            } else if (preset === 'buyer') {
+                await chrome.storage.local.set({
+                    fpToolsHideBalance: true,
+                    showRealPrice: true
+                });
+                if (typeof showNotification === 'function') showNotification('Пресет «Покупатель» успешно применён! ✓');
+            } else if (preset === 'minimal') {
+                await chrome.storage.local.set({
+                    fptTextOutlineEnabled: false
+                });
+                if (typeof showNotification === 'function') showNotification('Пресет «Минимализм» успешно применён! ✓');
+            }
+            updateDashboardLiveStatus();
+        });
+    });
+
+    // Быстрые действия на дашборде
+    const tourBtn = toolsPopup.querySelector('#fptQuickStartTour');
+    if (tourBtn) {
+        tourBtn.addEventListener('click', () => {
+            const oldTourBtn = document.getElementById('start-overview-tour-btn');
+            if (oldTourBtn) {
+                oldTourBtn.click();
+            } else if (typeof showNotification === 'function') {
+                showNotification('Запуск интерактивного тура...');
+            }
+        });
+    }
+
+    const exportLotsBtn = toolsPopup.querySelector('#fptQuickExportLots');
+    if (exportLotsBtn) {
+        exportLotsBtn.addEventListener('click', () => {
+            window.openPage('lot_io');
+            setTimeout(() => {
+                const expModal = document.getElementById('lot-io-export-modal');
+                if (expModal) expModal.style.display = 'flex';
+            }, 100);
+        });
+    }
+
+    const backupBtn = toolsPopup.querySelector('#fptQuickBackup');
+    if (backupBtn) {
+        backupBtn.addEventListener('click', () => {
+            window.openPage('settings_io');
+        });
+    }
 
     const promoLink = document.querySelector('a[data-nav-to="support"]');
     if (promoLink) {
         promoLink.addEventListener('click', (e) => {
             e.preventDefault();
-            const supportTabLi = document.querySelector('.fp-tools-nav li[data-page="support"]');
-            if (supportTabLi) supportTabLi.click();
+            window.openPage('support');
         });
     }
 
@@ -1924,14 +2424,7 @@ function setupPopupNavigation() {
     setupNavSearch(toolsPopup);
     setupAccentPicker(toolsPopup);
     attachAutoReplyImageButtons(toolsPopup);
-
-    // Общий чат: подтянуть удалённый конфиг и сразу применить видимость вкладки.
-    // Если чат выключен/скрыт на GitHub - юзер увидит это без обновления расширения.
-    if (typeof fptGcRefreshConfig === 'function') {
-        fptGcRefreshConfig(false).then(() => {
-            if (typeof fptGcApplyVisibility === 'function') fptGcApplyVisibility();
-        });
-    }
+    updateDashboardLiveStatus();
 }
 
 // 3.0: add an image-insert button to every autoreply textarea (greeting, keyword responses,
@@ -2078,11 +2571,13 @@ function setupNavSearch(toolsPopup) {
         const pages = toolsPopup.querySelectorAll('.fp-tools-page-content');
         pages.forEach(page => {
             const pageId = page.dataset.page;
-            const navLi = toolsPopup.querySelector(`.fp-tools-nav li[data-page="${pageId}"]`);
-            const pageLabel = navLi ? (navLi.querySelector('span:last-child')?.textContent || '').trim() : pageId;
+            const route = FPT_PAGE_TO_HUB[pageId];
+            const hubDef = route ? FPT_HUB_CONFIG[route.hub] : null;
+            const subDef = hubDef?.subtabs?.find(s => s.id === pageId);
+            const pageLabel = subDef ? `${hubDef.label} → ${subDef.label}` : (hubDef ? hubDef.label : pageId);
             const seen = new Set();
-            page.querySelectorAll('h3, h4, h5, label > span, .feature-title, .setting-group > h4').forEach(el => {
-                if (el.closest('.fpt-nav-search')) return;
+            page.querySelectorAll('h3, h4, h5, label > span, .feature-title, .setting-group > h4, .fpt-setting-title > span').forEach(el => {
+                if (el.closest('.fpt-nav-search') || el.closest('.fpt-status-hub')) return;
                 const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
                 if (!text || text.length < 3 || text.length > 80) return;
                 const key = pageId + '::' + text.toLowerCase();
@@ -2099,15 +2594,19 @@ function setupNavSearch(toolsPopup) {
     }
 
     function jumpToFeature(item) {
-        const navLi = toolsPopup.querySelector(`.fp-tools-nav li[data-page="${item.pageId}"]`);
-        if (navLi) navLi.click();
+        if (typeof window.openPage === 'function') {
+            window.openPage(item.pageId);
+        } else {
+            const navLi = toolsPopup.querySelector(`.fp-tools-nav li[data-page="${item.pageId}"]`);
+            if (navLi) navLi.click();
+        }
         setTimeout(() => {
             clearHighlights();
-            const target = item.el.closest('.setting-group, .feature-item, .form-group, .template-container') || item.el;
+            const target = item.el.closest('.setting-group, .feature-item, .form-group, .template-container, .fpt-setting-card') || item.el;
             try { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { target.scrollIntoView(); }
             target.classList.add('fpt-search-flash');
             setTimeout(() => target.classList.remove('fpt-search-flash'), 2200);
-        }, 90);
+        }, 110);
     }
 
     // Обновляем список результатов «на месте», не пересоздавая с нуля, чтобы не было
@@ -2202,12 +2701,15 @@ function setupNavSearch(toolsPopup) {
 
 
 async function loadLastActivePage() {
-    const { fpToolsLastPage } = await chrome.storage.local.get('fpToolsLastPage');
-    if (fpToolsLastPage) {
-        const itemToActivate = document.querySelector(`.fp-tools-nav li[data-page="${fpToolsLastPage}"]`);
-        if (itemToActivate) {
-            itemToActivate.click();
+    try {
+        const { fpToolsLastPage } = await chrome.storage.local.get('fpToolsLastPage');
+        if (fpToolsLastPage && typeof window.openPage === 'function') {
+            window.openPage(fpToolsLastPage);
+        } else if (typeof window.openPage === 'function') {
+            window.openPage('dashboard');
         }
+    } catch (_) {
+        if (typeof window.openPage === 'function') window.openPage('dashboard');
     }
 }
 

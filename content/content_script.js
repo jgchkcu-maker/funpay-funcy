@@ -228,7 +228,7 @@
     function initializeDynamicFeatures() {
         document.body.addEventListener('focusin', (event) => {
             if (event.target.matches('.chat-form-input .form-control')) {
-                if (!document.querySelector('.chat-buttons-container') && !document.querySelector('.fp-tools-template-sidebar')) {
+                if (!document.getElementById('fpt-tpl-popover-btn')) {
                     addChatTemplateButtons();
                 }
                 if (!document.getElementById('aiModeToggleBtn')) {
@@ -243,9 +243,6 @@
         });
     
         const checkAndInitFeatures = () => {
-            if (!document.getElementById('fpToolsGenerateImageBtn') && document.querySelector('.attachments-box')) {
-                initializeImageGenerator();
-            }
             if (!document.getElementById('fp-tools-ai-gen-btn')) {
                 const header = document.querySelector('h1.page-header, h1.page-header.page-header-no-hr');
                 if (header && (header.textContent.includes('Добавление предложения') || header.textContent.includes('Редактирование предложения'))) {
@@ -368,32 +365,18 @@
                 await loadSavedSettings();
                 initializeToolsPopup();
                 makePopupInteractive(toolsPopup);
-                initializeImageGenerator();
                 initializeCustomSound();
                 if (typeof initializeCustomSoundEditor === 'function') initializeCustomSoundEditor();
-                initializeMagicStickStyler();
-                initializePiggyBank();
                 initializeHeaderButtonStyler();
                 initializeAnnouncementsFeature();
                 initializeLotIO();
                 initializeAutoReview();
-                initializeAILotAudit();
                 initializeSettingsIO();
                 initBulkLotEditor();
                 initAutoDeliveryUI();
                 initializeResetButtons();
                 initSalesChart();
                 if (typeof initializeOverviewTour === 'function') initializeOverviewTour();
-
-                // Общий чат: опрашиваем public-chat.json раз в 16 минут.
-                // Так active/display/url меняются на лету без обновления расширения.
-                if (typeof fptGcRefreshConfig === 'function' && !window.__fptGcConfigTimer) {
-                    window.__fptGcConfigTimer = setInterval(() => {
-                        fptGcRefreshConfig(true).then(() => {
-                            if (typeof fptGcApplyVisibility === 'function') fptGcApplyVisibility();
-                        });
-                    }, 16 * 60 * 1000);
-                }
 
                 __fpPopupReady = true;
                 return toolsPopup;
@@ -423,11 +406,7 @@
         // immediately without opening the settings popup.
         addChatTemplateButtons();
         initializeExactPrice();
-        // FIX 2.8.4 (№9): применяем кастомные стили редактора сразу, не дожидаясь
-        // открытия меню FP Tools.
-        if (typeof injectMagicStickStylesEarly === 'function') injectMagicStickStylesEarly();
         setupAIChatFeature();
-        initializeFontTools();
         applyHeaderPosition();
         initializeUserNotes();
         initializeAutoDeliveryManager();

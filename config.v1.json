@@ -100,9 +100,7 @@
   },
   "features": {
     "templates": true,
-    "editorMode": true,
     "aiRewrite": true,
-    "cursorFx": true,
     "background": true,
     "slashCommands": true,
     "accounts": true,
@@ -114,12 +112,9 @@
     "openLotButton": true,
     "hideBalance": true,
     "autoBump": true,
-    "epicNicks": true,
     "stats": true,
-    "globalChat": true,
     "chatSearch": true,
     "exactPrice": true,
-    "fontTools": true,
     "customSound": true,
     "lotNotes": true,
     "commission": true,
@@ -132,7 +127,6 @@
     "lotManagement": true,
     "aiLotCreator": true,
     "lotCloning": true,
-    "imageGenerator": true,
     "statsExport": true,
     "featureRegistry": true,
     "identifier": true,
@@ -140,7 +134,6 @@
     "autoReview": true,
     "autoDelivery": true,
     "blacklist": true,
-    "piggyBank": true,
     "lotContextMenu": true,
     "sellerSearch": true,
     "lotOfferActions": true,
@@ -156,16 +149,6 @@
     "profileDesc": true
   },
   "message": null,
-  "epicNicks": {
-    "enabled": true,
-    "url": "https://raw.githubusercontent.com/XaviersDev/FunPayTools-Site/main/donaters.json",
-    "fallbackUrls": [
-      "https://raw.githubusercontent.com/XaviersDev/FunPay-Tools/main/donaters.json",
-      "https://cdn.jsdelivr.net/gh/XaviersDev/FunPayTools-Site@main/donaters.json",
-      "https://cdn.jsdelivr.net/gh/XaviersDev/FunPay-Tools@main/donaters.json"
-    ],
-    "ttl": 60
-  },
   "announcements": [],
   "autoRaise": {
     "url": "https://funpay.com/lots/raise",
@@ -200,11 +183,6 @@
   "themeGallery": {
     "enabled": true,
     "baseUrl": "https://raw.githubusercontent.com/XaviersDev/fpt-themes/main/"
-  },
-  "globalChat": {
-    "active": true,
-    "display": true,
-    "disabledMessage": "Общий чат временно недоступен. Ожидайте."
   },
   "notifySound": {
     "enabled": true,
