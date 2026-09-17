@@ -26,3 +26,12 @@ test('dense legacy settings grids get compact container-query fallbacks', () => 
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-popup\s+\.fpt-appx-grid[\s\S]*?grid-template-columns:\s*1fr/);
   assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-popup\s+\.auto-sender-controls[\s\S]*?grid-template-columns:\s*1fr/);
 });
+
+test('finance, templates, and accounts wrap controls instead of pushing the popup wider', () => {
+  const css = responsiveCss();
+
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-popup\s+\.currency-input-group[\s\S]*?flex-wrap:\s*wrap/);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-popup\s+\.template-settings-list\s+\.template-item-header[\s\S]*?flex-wrap:\s*wrap/);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-popup\s+\.fpt-acc-item[\s\S]*?flex-wrap:\s*wrap/);
+  assert.match(css, /\.fp-tools-popup\s+\.currency-rate-display\s*\{[^}]*min-width:\s*0/s);
+});
