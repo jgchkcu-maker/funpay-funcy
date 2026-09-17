@@ -118,9 +118,8 @@
 }
 
 /*
- * Content transition: main_popup.js still changes pages synchronously, but the
- * motion layer wraps that mutation in a local View Transition. The temporary
- * root class scopes these pseudo-elements to FP Tools switches only.
+ * Content transition: the old snapshot stays opaque beneath the incoming page.
+ * That prevents the white content surface from becoming visible mid-transition.
  */
 html.fpt-subtab-view-transition::view-transition-old(root),
 html.fpt-subtab-view-transition::view-transition-new(root) {
@@ -129,7 +128,7 @@ html.fpt-subtab-view-transition::view-transition-new(root) {
 }
 
 html.fpt-subtab-view-transition::view-transition-group(fpt-settings-page) {
-    animation-duration: 220ms;
+    animation-duration: 190ms;
     animation-timing-function: cubic-bezier(.2, 0, 0, 1);
 }
 
@@ -140,28 +139,35 @@ html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
 }
 
 html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page) {
-    animation: fptSettingsPageOut 150ms cubic-bezier(.4, 0, 1, 1) both;
+    z-index: 1;
+    animation: fptSettingsPageOut 190ms cubic-bezier(.2, 0, 0, 1) both;
 }
 
 html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
-    animation: fptSettingsPageIn 220ms cubic-bezier(.2, 0, 0, 1) both;
+    z-index: 2;
+    animation: fptSettingsPageIn 190ms cubic-bezier(.2, 0, 0, 1) both;
 }
 
 @keyframes fptSettingsPageOut {
     from {
         opacity: 1;
         transform: translate3d(0, 0, 0) scale(1);
+        filter: blur(0);
     }
     to {
-        opacity: 0;
-        transform: translate3d(0, -3px, 0) scale(.997);
+        opacity: 1;
+        transform: translate3d(0, -2px, 0) scale(.998);
+        filter: blur(.18px);
     }
 }
 
 @keyframes fptSettingsPageIn {
     from {
         opacity: 0;
-        transform: translate3d(0, 5px, 0) scale(.997);
+        transform: translate3d(0, 4px, 0) scale(.998);
+    }
+    45% {
+        opacity: .82;
     }
     to {
         opacity: 1;
