@@ -6,6 +6,7 @@
     const TAB_SELECTOR = '.fpt-subtab';
     const ACTIVE_PAGE_SELECTOR = '.fp-tools-page-content.active';
     const VIEW_TRANSITION_NAME = 'fpt-settings-page';
+    const VIEW_TRANSITION_ROOT_CLASS = 'fpt-subtab-view-transition';
 
     const legacyClickBypass = new WeakSet();
     let switchSerial = 0;
@@ -104,10 +105,12 @@
             return;
         }
 
+        const root = document.documentElement;
         const oldInlineName = oldPage.style.viewTransitionName;
         let newPage = null;
         let newInlineName = '';
         oldPage.style.viewTransitionName = VIEW_TRANSITION_NAME;
+        root.classList.add(VIEW_TRANSITION_ROOT_CLASS);
 
         let transition;
         try {
@@ -124,6 +127,7 @@
             });
         } catch (_) {
             oldPage.style.viewTransitionName = oldInlineName;
+            root.classList.remove(VIEW_TRANSITION_ROOT_CLASS);
             runFallbackTransition(bar, tab, serial);
             return;
         }
@@ -132,7 +136,10 @@
         Promise.resolve(transition.finished).catch(() => {}).finally(() => {
             oldPage.style.viewTransitionName = oldInlineName;
             if (newPage) newPage.style.viewTransitionName = newInlineName;
-            if (serial === switchSerial) activeViewTransition = null;
+            if (serial === switchSerial) {
+                root.classList.remove(VIEW_TRANSITION_ROOT_CLASS);
+                activeViewTransition = null;
+            }
         });
     }
 
