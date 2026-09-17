@@ -66,7 +66,7 @@ test('shared settings rows are allowed to shrink and wrap instead of overflowing
   assert.match(css, /\.fp-tools-popup\s+\.setting-group[^}]*min-width:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+\.template-container[^}]*min-width:\s*0/s);
   assert.match(css, /\.fp-tools-popup\s+img[^}]*max-width:\s*100%/s);
-  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-page-content\s+\[style\*=['"]display:flex['"]\]\s*>\s*\*\s*\{[^}]*min-width:\s*0/s);
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-page-content\s+\[style\*=['"]display:\s*flex['"]\]\s*>\s*\*\s*\{[^}]*min-width:\s*0/s);
 });
 
 test('search results and detached settings modals stay inside their own visible area', () => {
