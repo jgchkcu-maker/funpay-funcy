@@ -1,10 +1,4 @@
-/*
- * FP Tools settings responsive guard.
- *
- * Loaded after every legacy settings stylesheet. The FP Tools window can be resized
- * independently from the browser, so its layout must react to the popup itself rather
- * than only to window media queries.
- */
+/* FP Tools settings responsive guard — loaded after all legacy settings CSS. */
 
 .fp-tools-popup {
     container-type: size;
@@ -25,7 +19,6 @@
     max-width: 100%;
 }
 
-/* Intrinsic/fixed-size descendants must never widen the settings scrollport. */
 .fp-tools-content > * {
     min-width: 0;
     max-width: 100%;
@@ -82,14 +75,11 @@
     min-width: 0;
 }
 
-/* Inline flex rows are common in the legacy markup. Make their children shrinkable. */
 .fp-tools-popup .fp-tools-page-content [style*="display:flex"] > *,
 .fp-tools-popup .fp-tools-page-content [style*="display: flex"] > * {
     min-width: 0;
 }
 
-/* Search results are moved from the sidebar into .fp-tools-body by JS. Their width must
- * therefore follow the popup, not the browser viewport. */
 .fpt-nav-search-results {
     width: min(430px, calc(100cqw - 24px));
     max-width: calc(100cqw - 24px);
@@ -97,8 +87,7 @@
     box-sizing: border-box;
 }
 
-/* The catalog preview used to be width:100% + 16:9, producing 600px+ tall previews.
- * Keep a useful media viewport while bounding its vertical footprint. */
+/* Bound the theme catalog instead of letting width:100% + 16:9 become 600px+ tall. */
 .fp-tools-popup #fp-wallpaper-carousel {
     width: 100% !important;
     height: clamp(220px, 42cqh, 420px) !important;
@@ -118,7 +107,6 @@
     object-fit: cover;
 }
 
-/* Shared grids stay mathematically shrinkable before a breakpoint is reached. */
 .fp-tools-popup .color-input-grid,
 .fp-tools-popup .theme-actions-grid,
 .fp-tools-popup .fpt-presets-grid,
@@ -145,8 +133,7 @@
     min-width: 0;
 }
 
-/* Modal overlays are appended to <body>, outside .fp-tools-popup, so they need their own
- * viewport guard. This prevents import/export/category modals from escaping small screens. */
+/* These overlays live outside .fp-tools-popup, so use viewport bounds for them. */
 .fp-tools-modal-overlay {
     box-sizing: border-box;
     padding: 12px;
@@ -184,7 +171,6 @@
     box-sizing: border-box;
 }
 
-/* Medium popup: compact the drawer and dense grids from the actual popup width. */
 @container fpt-popup (max-width: 900px) {
     .fp-tools-nav {
         width: 200px;
@@ -218,15 +204,9 @@
     }
 
     .fp-tools-popup .color-input-grid,
-    .color-input-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }
-
+    .color-input-grid,
     .fp-tools-popup .theme-actions-grid,
-    .theme-actions-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }
-
+    .theme-actions-grid,
     .fp-tools-popup .fpt-presets-grid,
     .fp-tools-popup .fpt-needs-presets-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -257,8 +237,6 @@
     }
 }
 
-/* Narrow popup: keep labels/search discoverable. A compact drawer is safer than an icon-only
- * rail because search remains editable and every destination still has a visible name. */
 @container fpt-popup (max-width: 700px) {
     .fp-tools-nav {
         flex-basis: 164px;
@@ -427,7 +405,6 @@
     }
 }
 
-/* Very narrow browser windows still preserve named navigation instead of hiding features. */
 @container fpt-popup (max-width: 520px) {
     .fp-tools-nav {
         flex-basis: 132px;
@@ -480,7 +457,6 @@
     }
 }
 
-/* Short popup: reduce vertical chrome rather than clipping controls. */
 @container fpt-popup (max-height: 650px) {
     .fp-tools-nav {
         padding-top: 7px;
@@ -511,6 +487,15 @@
     .fp-tools-popup #fp-wallpaper-carousel {
         height: clamp(180px, 40cqh, 280px) !important;
         min-height: 160px;
+    }
+}
+
+/* Width wrapping wins over short-height compaction when both constraints are active. */
+@container fpt-popup (max-width: 520px) and (max-height: 650px) {
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        height: auto;
+        min-height: 48px;
     }
 }
 
