@@ -145,9 +145,9 @@
       ],
       "css": [
         "css/content_styles.css",
-        "css/template_popover_material.css",
         "css/ai_creator.css",
-        "css/fpt_icons_theme.css"
+        "css/fpt_icons_theme.css",
+        "css/template_popover_material.css"
       ],
       "run_at": "document_idle"
     }
