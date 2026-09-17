@@ -111,6 +111,7 @@
         "content/features/slash_telegram_ui.js",
         "content/ui/main_popup.js",
         "content/ui/popup_viewport_guard.js",
+        "content/ui/subtabs_motion.js",
         "content/ui/header_button_styler.js",
         "content/features/lot_notes.js",
         "content/features/lot_note_buttons.js",
@@ -149,7 +150,8 @@
         "css/ai_creator.css",
         "css/fpt_icons_theme.css",
         "css/template_popover_material.css",
-        "css/settings_sidebar_material3.css"
+        "css/settings_sidebar_material3.css",
+        "css/subtabs_material3.css"
       ],
       "run_at": "document_idle"
     }
