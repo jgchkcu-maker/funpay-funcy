@@ -34,6 +34,16 @@ test('motion enhancer tracks the active tab and keeps accessibility state synchr
   assert.match(js, /MutationObserver/);
 });
 
+test('keeping the active subtab visible never scrolls the settings page vertically', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  const helper = js.match(/function keepActiveTabVisible[\s\S]*?\n    \}/)?.[0] || '';
+  assert.ok(helper, 'active-tab visibility helper must exist');
+  assert.doesNotMatch(helper, /scrollIntoView/,
+    'scrollIntoView can scroll the parent settings content vertically');
+  assert.match(helper, /bar\.scrollTo|bar\.scrollLeft/,
+    'only the horizontal subtab bar itself should scroll');
+});
+
 test('tab switch is intercepted before legacy display none/block', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
   assert.match(js, /addEventListener\(['"]click['"],[\s\S]*?true\s*\)/);
@@ -64,36 +74,57 @@ test('settings content clips animated paint only while a subtab transition is ru
   assert.match(js, /classList\.remove\(TRANSITIONING_CLASS\)/);
 });
 
-test('local transition never exposes the page background between old and new content', () => {
+test('local reveal keeps the outgoing page visible underneath the incoming page', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
   const local = js.match(/function runLocalTransition[\s\S]*?\n    \}/)?.[0] || '';
 
   assert.ok(local, 'local transition must exist');
-  assert.match(local, /dispatchLegacyClick\(tab\)[\s\S]*?newPage\.animate/,
-    'switch should happen immediately before animating the new page');
-  assert.match(local, /opacity:\s*0\.9\d*/,
-    'new page should begin near opaque rather than from a blank frame');
-  assert.match(local, /opacity:\s*1/);
-  assert.doesNotMatch(local, /opacity:\s*0(?=\s*[,;}])/,
-    'local transition must never create a fully transparent frame');
+  assert.match(local, /const\s+oldPage\s*=\s*(?:popup\s*&&\s*)?popup\.querySelector\(ACTIVE_PAGE_SELECTOR\)/,
+    'the outgoing page must be captured before the legacy switch');
+  assert.match(local, /oldPage\.style\.display\s*=\s*['"]block['"]/,
+    'the outgoing page should remain visible during the reveal');
+  assert.match(local, /oldPage\.style\.position\s*=\s*['"]absolute['"]/,
+    'the outgoing page must be removed from layout while acting as an underlay');
+  assert.match(local, /oldPage\.style\.pointerEvents\s*=\s*['"]none['"]/,
+    'the underlay must not receive clicks');
 });
 
-test('content transition never changes page geometry or scroll position', () => {
+test('incoming page uses directional clip-path reveal only, with no whole-page fade or movement', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
   const local = js.match(/function runLocalTransition[\s\S]*?\n    \}/)?.[0] || '';
 
   assert.ok(local, 'local transition must exist');
+  assert.match(local, /clipPath/,
+    'incoming page should reveal with clip-path');
+  assert.match(local, /inset\(0\s+0\s+0\s+100%/,
+    'forward navigation should reveal from the right edge');
+  assert.match(local, /inset\(0\s+100%\s+0\s+0/,
+    'backward navigation should reveal from the left edge');
+  assert.doesNotMatch(local, /opacity\s*:/,
+    'whole-page opacity causes visible flashing');
   assert.doesNotMatch(local, /transform\s*:/,
-    'animating transform on the whole settings page causes visible shake');
+    'whole-page transforms cause visible shake');
   assert.doesNotMatch(local, /translate(?:3d|X|Y)?\s*\(|scale\s*\(/,
     'settings content must not move or scale while switching tabs');
-  assert.doesNotMatch(local, /scrollTop\s*=|scrollTo\s*\(/,
-    'tab animation must not rewrite the content scroll position');
+});
+
+test('reveal cleanup restores temporary styles and hides the outgoing page', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  const local = js.match(/function runLocalTransition[\s\S]*?\n    \}/)?.[0] || '';
+
+  assert.ok(local, 'local transition must exist');
+  assert.match(local, /oldPage\.style\.display\s*=\s*['"]none['"]/,
+    'outgoing page must be hidden after the reveal completes');
+  assert.match(local, /newPage\.style\.clipPath\s*=\s*newPageInline\.clipPath/,
+    'incoming clip-path must be restored');
+  assert.match(local, /newPage\.style\.willChange\s*=\s*newPageInline\.willChange/,
+    'temporary compositor hint must be removed');
 });
 
 test('settings content reserves scrollbar space so tab height changes cannot shift layout', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*scrollbar-gutter:\s*stable/s);
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*overflow-anchor:\s*none/s);
 });
 
 test('rapid repeated switches cancel the previous local animation', () => {
