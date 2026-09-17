@@ -78,6 +78,24 @@ test('local transition never exposes the page background between old and new con
     'local transition must never create a fully transparent frame');
 });
 
+test('content transition never changes page geometry or scroll position', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  const local = js.match(/function runLocalTransition[\s\S]*?\n    \}/)?.[0] || '';
+
+  assert.ok(local, 'local transition must exist');
+  assert.doesNotMatch(local, /transform\s*:/,
+    'animating transform on the whole settings page causes visible shake');
+  assert.doesNotMatch(local, /translate(?:3d|X|Y)?\s*\(|scale\s*\(/,
+    'settings content must not move or scale while switching tabs');
+  assert.doesNotMatch(local, /scrollTop\s*=|scrollTo\s*\(/,
+    'tab animation must not rewrite the content scroll position');
+});
+
+test('settings content reserves scrollbar space so tab height changes cannot shift layout', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*scrollbar-gutter:\s*stable/s);
+});
+
 test('rapid repeated switches cancel the previous local animation', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
   assert.match(js, /fallbackAnimations\.forEach/);
