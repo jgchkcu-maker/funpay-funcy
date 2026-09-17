@@ -5,6 +5,7 @@ const path = require('node:path');
 
 const repoRoot = path.resolve(__dirname, '..');
 const cssPath = path.join(repoRoot, 'css', 'settings_sidebar_material3.css');
+const subtabsCssPath = path.join(repoRoot, 'css', 'subtabs_material3.css');
 const guardPath = path.join(repoRoot, 'content', 'ui', 'popup_viewport_guard.js');
 const manifestPath = path.join(repoRoot, 'manifest.json');
 
@@ -60,6 +61,34 @@ test('viewport guard clamps old saved sizes and positions without overflowing', 
     { width: 700, height: 500 }
   );
   assert.deepEqual(smallViewport, { left: 12, top: 12, width: 676, height: 476 });
+
+  const staleNegativePosition = clampPopupRect(
+    { left: -500, top: -300, width: 900, height: 600 },
+    { width: 1366, height: 768 }
+  );
+  assert.deepEqual(staleNegativePosition, { left: 12, top: 12, width: 900, height: 600 });
+});
+
+test('viewport guard uses the actually visible viewport when browser zoom changes it', () => {
+  assert.equal(fs.existsSync(guardPath), true, 'popup viewport guard must exist');
+  const { getViewportSize } = require(guardPath);
+
+  assert.equal(typeof getViewportSize, 'function');
+  assert.deepEqual(
+    getViewportSize({
+      innerWidth: 1440,
+      innerHeight: 900,
+      visualViewport: { width: 1024, height: 700 }
+    }),
+    { width: 1024, height: 700 }
+  );
+  assert.deepEqual(
+    getViewportSize({ innerWidth: 1366, innerHeight: 768 }),
+    { width: 1366, height: 768 }
+  );
+
+  const guardSource = fs.readFileSync(guardPath, 'utf8');
+  assert.match(guardSource, /visualViewport\.addEventListener\(['"]resize['"]/);
 });
 
 test('legacy tiny saved popup sizes are detected for one-time widening', () => {
@@ -72,6 +101,31 @@ test('legacy tiny saved popup sizes are detected for one-time widening', () => {
   assert.equal(shouldResetLegacySize({ width: '760px', height: '520px' }), false);
   assert.equal(shouldResetLegacySize({ width: '1024px', height: '700px' }), false);
   assert.equal(shouldResetLegacySize(null), false);
+});
+
+test('settings responsive breakpoints follow popup width instead of browser width', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  const subtabsCss = fs.readFileSync(subtabsCssPath, 'utf8');
+
+  assert.match(css, /\.fp-tools-popup\s*\{[^}]*container-type:\s*inline-size[^}]*container-name:\s*fpt-popup/s);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*1050px\)/);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*850px\)/);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)/);
+  assert.doesNotMatch(css, /@media\s*\(max-width:\s*1050px\)/);
+  assert.doesNotMatch(css, /@media\s*\(max-width:\s*850px\)/);
+
+  assert.match(subtabsCss, /@container\s+fpt-popup\s*\(max-width:\s*850px\)/);
+  assert.doesNotMatch(subtabsCss, /@media\s*\(max-width:\s*850px\)/);
+});
+
+test('compact popup layout bounds the theme preview and prevents inner panels from overflowing', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+
+  assert.match(css, /#fp-wallpaper-carousel\s*\{[^}]*height:\s*clamp\([^}]*aspect-ratio:\s*auto\s*!important/s);
+  assert.match(css, /\.fp-tools-page-content\s*\{[^}]*min-width:\s*0[^}]*max-width:\s*100%/s);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.theme-actions-grid\s*\{[^}]*grid-template-columns:\s*1fr/s);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?#shareThemeBtn\s*\{[^}]*grid-column:\s*auto/s);
+  assert.match(css, /@container\s+fpt-popup\s*\(max-width:\s*700px\)[\s\S]*?\.fp-tools-popup\s+\.color-input-grid\s*\{[^}]*grid-template-columns:\s*1fr/s);
 });
 
 test('manifest loads the sidebar override last and installs viewport guard after popup code', () => {
