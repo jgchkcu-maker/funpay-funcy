@@ -11,6 +11,7 @@
     const legacyClickBypass = new WeakSet();
     let switchSerial = 0;
     let activeViewTransition = null;
+    let activeViewCleanup = null;
     let fallbackAnimations = [];
 
     function getTabs(bar) {
@@ -83,6 +84,10 @@
         if (activeViewTransition && typeof activeViewTransition.skipTransition === 'function') {
             try { activeViewTransition.skipTransition(); } catch (_) { /* no-op */ }
         }
+        if (activeViewCleanup) {
+            activeViewCleanup();
+            activeViewCleanup = null;
+        }
         activeViewTransition = null;
 
         return switchSerial;
@@ -109,8 +114,19 @@
         const oldInlineName = oldPage.style.viewTransitionName;
         let newPage = null;
         let newInlineName = '';
+        let cleaned = false;
+
+        const cleanup = () => {
+            if (cleaned) return;
+            cleaned = true;
+            oldPage.style.viewTransitionName = oldInlineName;
+            if (newPage) newPage.style.viewTransitionName = newInlineName;
+            root.classList.remove(VIEW_TRANSITION_ROOT_CLASS);
+        };
+
         oldPage.style.viewTransitionName = VIEW_TRANSITION_NAME;
         root.classList.add(VIEW_TRANSITION_ROOT_CLASS);
+        activeViewCleanup = cleanup;
 
         let transition;
         try {
@@ -126,18 +142,17 @@
                 }
             });
         } catch (_) {
-            oldPage.style.viewTransitionName = oldInlineName;
-            root.classList.remove(VIEW_TRANSITION_ROOT_CLASS);
+            cleanup();
+            activeViewCleanup = null;
             runFallbackTransition(bar, tab, serial);
             return;
         }
 
         activeViewTransition = transition;
         Promise.resolve(transition.finished).catch(() => {}).finally(() => {
-            oldPage.style.viewTransitionName = oldInlineName;
-            if (newPage) newPage.style.viewTransitionName = newInlineName;
+            cleanup();
             if (serial === switchSerial) {
-                root.classList.remove(VIEW_TRANSITION_ROOT_CLASS);
+                activeViewCleanup = null;
                 activeViewTransition = null;
             }
         });
