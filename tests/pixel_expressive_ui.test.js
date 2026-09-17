@@ -7,6 +7,7 @@ const repoRoot = path.resolve(__dirname, '..');
 const manifestPath = path.join(repoRoot, 'manifest.json');
 const cssPath = path.join(repoRoot, 'css', 'pixel_expressive.css');
 const shellPath = path.join(repoRoot, 'content', 'ui', 'pixel_expressive_shell.js');
+const guardPath = path.join(repoRoot, 'content', 'ui', 'popup_viewport_guard.js');
 
 function readCss() {
   assert.equal(fs.existsSync(cssPath), true, 'Pixel expressive stylesheet must exist');
@@ -46,8 +47,12 @@ test('expressive shell enhancer adds live hub header without replacing popup beh
 
 test('Pixel expressive shell defaults to the approved wider desktop geometry', () => {
   const css = readCss();
+  const guard = fs.readFileSync(guardPath, 'utf8');
+
   assert.match(css, /--fpt-popup-preferred-width:\s*1360px/);
   assert.match(css, /--fpt-popup-preferred-height:\s*900px/);
+  assert.match(guard, /const\s+PREFERRED_WIDTH\s*=\s*1360/);
+  assert.match(guard, /const\s+PREFERRED_HEIGHT\s*=\s*900/);
   assert.match(css, /\.fp-tools-popup\s*\{[^}]*border-radius:\s*24px/s);
   assert.match(css, /\.fp-tools-content\s*\{[^}]*overflow-x:\s*hidden/s);
 });
