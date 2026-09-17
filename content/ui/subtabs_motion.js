@@ -115,8 +115,9 @@
         content.classList.add(TRANSITIONING_CLASS);
         activeLocalCleanup = cleanup;
 
-        // Keep the switch synchronous so there is never a blank frame. Only the
-        // newly-active real DOM page is animated, inside the popup's paint clip.
+        // Switch synchronously so there is never a blank frame. The new page only
+        // changes opacity: no translate/scale means the settings geometry and text
+        // rasterization stay perfectly still during the transition.
         dispatchLegacyClick(tab);
         if (serial !== switchSerial) {
             cleanup();
@@ -131,10 +132,10 @@
         }
 
         const animation = newPage.animate([
-            { opacity: 0.98, transform: 'translate3d(0, 3px, 0) scale(.999)' },
-            { opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }
+            { opacity: 0.96 },
+            { opacity: 1 }
         ], {
-            duration: 170,
+            duration: 150,
             easing: 'cubic-bezier(.2, 0, 0, 1)',
             fill: 'both'
         });
