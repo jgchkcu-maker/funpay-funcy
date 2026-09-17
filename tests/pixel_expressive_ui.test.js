@@ -6,6 +6,7 @@ const path = require('node:path');
 const repoRoot = path.resolve(__dirname, '..');
 const manifestPath = path.join(repoRoot, 'manifest.json');
 const cssPath = path.join(repoRoot, 'css', 'pixel_expressive.css');
+const shellPath = path.join(repoRoot, 'content', 'ui', 'pixel_expressive_shell.js');
 
 function readCss() {
   assert.equal(fs.existsSync(cssPath), true, 'Pixel expressive stylesheet must exist');
@@ -22,9 +23,25 @@ test('manifest loads Pixel expressive design after responsive guard', () => {
   assert.ok(funpayScript, 'main FunPay content script entry must exist');
   const responsiveIndex = funpayScript.css.indexOf('css/settings_responsive_guard.css');
   const expressiveIndex = funpayScript.css.indexOf('css/pixel_expressive.css');
+  const popupIndex = funpayScript.js.indexOf('content/ui/main_popup.js');
+  const shellIndex = funpayScript.js.indexOf('content/ui/pixel_expressive_shell.js');
 
   assert.ok(expressiveIndex >= 0, 'Pixel expressive stylesheet must be registered');
   assert.ok(expressiveIndex > responsiveIndex, 'Pixel expressive stylesheet must load last');
+  assert.ok(shellIndex > popupIndex, 'Pixel shell enhancer must load after main popup markup');
+});
+
+test('expressive shell enhancer adds live hub header without replacing popup behavior', () => {
+  assert.equal(fs.existsSync(shellPath), true, 'Pixel expressive shell enhancer must exist');
+  const source = fs.readFileSync(shellPath, 'utf8');
+
+  assert.match(source, /const\s+HUB_META\s*=\s*Object\.freeze/);
+  assert.match(source, /dashboard:\s*\{[^}]*title:\s*['"]Дашборд['"]/s);
+  assert.match(source, /appearance:\s*\{[^}]*title:\s*['"]Внешний вид['"]/s);
+  assert.match(source, /system:\s*\{[^}]*title:\s*['"]Система['"]/s);
+  assert.match(source, /MutationObserver/);
+  assert.match(source, /chrome\?\.runtime\?\.getManifest/);
+  assert.doesNotMatch(source, /innerHTML\s*=\s*toolsPopup\.innerHTML/);
 });
 
 test('Pixel expressive shell defaults to the approved wider desktop geometry', () => {
