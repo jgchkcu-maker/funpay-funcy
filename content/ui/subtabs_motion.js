@@ -14,8 +14,7 @@
         bar.setAttribute('role', 'tablist');
         bar.setAttribute('aria-label', 'Разделы настроек');
 
-        const tabs = getTabs(bar);
-        tabs.forEach((tab) => {
+        getTabs(bar).forEach((tab) => {
             const active = tab.classList.contains('is-active');
             tab.setAttribute('role', 'tab');
             tab.setAttribute('aria-selected', active ? 'true' : 'false');
@@ -23,32 +22,25 @@
         });
     }
 
-    function syncIndicator(bar, immediate = false) {
+    function syncIndicator(bar) {
         const active = bar.querySelector(`${TAB_SELECTOR}.is-active`);
         if (!active || active.offsetWidth === 0) {
             bar.removeAttribute('data-fpt-indicator-ready');
             return;
         }
 
-        const x = active.offsetLeft;
-        const width = active.offsetWidth;
-
-        if (immediate) {
-            bar.style.setProperty('--fpt-subtab-motion', '0ms');
-        }
-
-        bar.style.setProperty('--fpt-subtab-indicator-x', `${Math.round(x)}px`);
-        bar.style.setProperty('--fpt-subtab-indicator-width', `${Math.round(width)}px`);
+        bar.style.setProperty('--fpt-subtab-indicator-x', `${Math.round(active.offsetLeft)}px`);
+        bar.style.setProperty('--fpt-subtab-indicator-width', `${Math.round(active.offsetWidth)}px`);
 
         if (!bar.hasAttribute('data-fpt-indicator-ready')) {
             // First paint should not travel in from x=0. Subsequent changes animate.
             bar.getBoundingClientRect();
             bar.setAttribute('data-fpt-indicator-ready', '1');
         }
+    }
 
-        if (immediate) {
-            requestAnimationFrame(() => bar.style.removeProperty('--fpt-subtab-motion'));
-        }
+    function prefersReducedMotion() {
+        return Boolean(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
     }
 
     function keepActiveTabVisible(bar) {
@@ -59,11 +51,10 @@
         const tabRect = active.getBoundingClientRect();
         const isClipped = tabRect.left < barRect.left + 6 || tabRect.right > barRect.right - 6;
         if (isClipped) {
-            const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             active.scrollIntoView({
                 block: 'nearest',
                 inline: 'nearest',
-                behavior: reducedMotion ? 'auto' : 'smooth'
+                behavior: prefersReducedMotion() ? 'auto' : 'smooth'
             });
         }
     }
@@ -74,6 +65,8 @@
         if (!page) return;
 
         page.classList.remove('fpt-page-enter');
+        if (prefersReducedMotion()) return;
+
         // Restart the entrance animation when the selected page changes.
         page.getBoundingClientRect();
         page.classList.add('fpt-page-enter');
