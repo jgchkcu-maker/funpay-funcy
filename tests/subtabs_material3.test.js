@@ -51,6 +51,13 @@ test('fallback transition fades old page before switching and fades new page in'
   assert.match(js, /translate3d\(0,\s*5px/);
 });
 
+test('interrupted view transitions synchronously clean their temporary state', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  assert.match(js, /let\s+activeViewCleanup\s*=\s*null/);
+  assert.match(js, /activeViewCleanup\(\)/);
+  assert.match(js, /classList\.remove\(VIEW_TRANSITION_ROOT_CLASS\)/);
+});
+
 test('view transition styles animate only the settings page snapshot', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /::view-transition-old\(root\)[\s\S]*animation:\s*none/);
