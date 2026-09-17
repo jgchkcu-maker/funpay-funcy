@@ -135,7 +135,7 @@
     isolation: isolate;
 }
 
-@media (max-width: 850px) {
+@container fpt-popup (max-width: 850px) {
     .fp-tools-popup .fpt-subtabs-bar {
         margin-bottom: 16px;
         min-height: 46px;
