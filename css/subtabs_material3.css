@@ -119,12 +119,14 @@
 
 /*
  * Keep the real animated page inside the settings scrollport. Paint containment
- * is enabled only during the ~170ms transition so normal popovers/tooltips are
- * not clipped the rest of the time.
+ * is enabled only during the short transition so normal popovers/tooltips are
+ * not clipped the rest of the time. A stable scrollbar gutter prevents width
+ * jumps when switching between pages with different content heights.
  */
 .fp-tools-popup .fp-tools-content {
     min-height: 0;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
 }
 
 .fp-tools-popup .fp-tools-content.fpt-subtab-transitioning {
