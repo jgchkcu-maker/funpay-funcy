@@ -21,7 +21,7 @@ test('subtabs remain single-line and horizontally usable in narrow windows', () 
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /\.fpt-subtabs-bar\s*\{[^}]*overflow-x:\s*auto/s);
   assert.match(css, /\.fpt-subtab\s*\{[^}]*white-space:\s*nowrap/s);
-  assert.match(css, /\.fpt-subtab\s*\{[^}]*flex:\s*0\s+auto/s);
+  assert.match(css, /\.fpt-subtab\s*\{[^}]*flex:\s*0\s+0\s+auto/s);
 });
 
 test('motion enhancer tracks the active tab and keeps accessibility state synchronized', () => {
