@@ -24,13 +24,13 @@ test('subtabs remain single-line and horizontally usable in narrow windows', () 
   assert.match(css, /\.fpt-subtab\s*\{[^}]*flex:\s*0\s+0\s+auto/s);
 });
 
-test('motion enhancer tracks the active tab and animates incoming page content', () => {
+test('motion enhancer tracks the active tab and keeps accessibility state synchronized', () => {
   assert.ok(fs.existsSync(motionPath), 'subtabs motion enhancer must exist');
   const js = fs.readFileSync(motionPath, 'utf8');
   assert.match(js, /--fpt-subtab-indicator-x/);
   assert.match(js, /--fpt-subtab-indicator-width/);
   assert.match(js, /\.fp-tools-page-content\.active/);
-  assert.match(js, /fpt-page-enter/);
+  assert.match(js, /aria-selected/);
   assert.match(js, /MutationObserver/);
 });
 
@@ -53,6 +53,7 @@ test('fallback transition fades old page before switching and fades new page in'
 
 test('view transition styles animate only the settings page snapshot', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
+  assert.match(css, /::view-transition-old\(root\)[\s\S]*animation:\s*none/);
   assert.match(css, /::view-transition-old\(fpt-settings-page\)/);
   assert.match(css, /::view-transition-new\(fpt-settings-page\)/);
   assert.match(css, /animation-duration:\s*2\d{2}ms/);
