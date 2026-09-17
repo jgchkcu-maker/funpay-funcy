@@ -5,8 +5,8 @@
     const DEFAULT_MARGIN = 12;
     const DEFAULT_MIN_WIDTH = 760;
     const DEFAULT_MIN_HEIGHT = 520;
-    const PREFERRED_WIDTH = 1180;
-    const PREFERRED_HEIGHT = 780;
+    const PREFERRED_WIDTH = 1360;
+    const PREFERRED_HEIGHT = 900;
 
     function finiteOr(value, fallback) {
         const n = Number(value);
