@@ -42,13 +42,15 @@ test('tab switch is intercepted before legacy display none/block to prevent flic
   assert.match(js, /WeakSet/);
 });
 
-test('fallback transition fades old page before switching and fades new page in', () => {
+test('fallback switches immediately and gently settles the new page', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
-  assert.match(js, /\.animate\(/);
-  assert.match(js, /opacity:\s*1/);
-  assert.match(js, /opacity:\s*0/);
-  assert.match(js, /translate3d\(0,\s*-?3px/);
-  assert.match(js, /translate3d\(0,\s*5px/);
+  const fallback = js.match(/function runFallbackTransition[\s\S]*?\n    \}/)?.[0] || '';
+  assert.ok(fallback, 'fallback transition must exist');
+  assert.match(fallback, /dispatchLegacyClick\(tab\)[\s\S]*?newPage\.animate/);
+  assert.match(fallback, /opacity:\s*0\.9/);
+  assert.match(fallback, /opacity:\s*1/);
+  assert.match(fallback, /translate3d\(0,\s*4px/);
+  assert.doesNotMatch(fallback, /opacity:\s*0(?:\D|$)/, 'fallback must not render a fully transparent frame');
 });
 
 test('interrupted view transitions synchronously clean their temporary state', () => {
@@ -63,21 +65,21 @@ test('view transition styles animate only the settings page snapshot', () => {
   assert.match(css, /::view-transition-old\(root\)[\s\S]*animation:\s*none/);
   assert.match(css, /::view-transition-old\(fpt-settings-page\)/);
   assert.match(css, /::view-transition-new\(fpt-settings-page\)/);
-  assert.match(css, /animation-duration:\s*2\d{2}ms/);
+  assert.match(css, /animation-duration:\s*1\d{2}ms/);
 });
 
 test('subtab transition never exposes the page background between old and new content', () => {
   const css = fs.readFileSync(cssPath, 'utf8');
   const js = fs.readFileSync(motionPath, 'utf8');
   const oldKeyframes = css.match(/@keyframes\s+fptSettingsPageOut\s*\{[\s\S]*?\n\}/)?.[0] || '';
-  const fallback = js.match(/async function runFallbackTransition[\s\S]*?\n    \}/)?.[0] || '';
+  const fallback = js.match(/function runFallbackTransition[\s\S]*?\n    \}/)?.[0] || '';
 
   assert.ok(oldKeyframes, 'outgoing View Transition keyframes must exist');
   assert.doesNotMatch(oldKeyframes, /opacity:\s*0(?:\D|$)/, 'outgoing snapshot must not fade to transparent');
   assert.match(oldKeyframes, /opacity:\s*1/, 'outgoing snapshot should remain opaque beneath the incoming page');
 
   assert.ok(fallback, 'fallback transition must exist');
-  assert.doesNotMatch(fallback, /\{\s*opacity:\s*0,\s*transform:\s*['"]translate3d\(0,\s*-3px/, 'fallback must not fade the old page to zero before switching');
+  assert.doesNotMatch(fallback, /\{\s*opacity:\s*0,/, 'fallback must not create a transparent keyframe');
   assert.match(fallback, /dispatchLegacyClick\(tab\)[\s\S]*?newPage\.animate/, 'fallback should switch immediately and animate the new page over a non-blank frame');
 });
 
