@@ -119,31 +119,31 @@
 
 /*
  * Content transition: main_popup.js still changes pages synchronously, but the
- * motion layer wraps that mutation in a local View Transition. Disable the
- * browser's default root crossfade so only the settings page snapshot moves.
+ * motion layer wraps that mutation in a local View Transition. The temporary
+ * root class scopes these pseudo-elements to FP Tools switches only.
  */
-::view-transition-old(root),
-::view-transition-new(root) {
+html.fpt-subtab-view-transition::view-transition-old(root),
+html.fpt-subtab-view-transition::view-transition-new(root) {
     animation: none;
     mix-blend-mode: normal;
 }
 
-::view-transition-group(fpt-settings-page) {
+html.fpt-subtab-view-transition::view-transition-group(fpt-settings-page) {
     animation-duration: 220ms;
     animation-timing-function: cubic-bezier(.2, 0, 0, 1);
 }
 
-::view-transition-old(fpt-settings-page),
-::view-transition-new(fpt-settings-page) {
+html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page),
+html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
     mix-blend-mode: normal;
     transform-origin: 50% 0;
 }
 
-::view-transition-old(fpt-settings-page) {
+html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page) {
     animation: fptSettingsPageOut 150ms cubic-bezier(.4, 0, 1, 1) both;
 }
 
-::view-transition-new(fpt-settings-page) {
+html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page) {
     animation: fptSettingsPageIn 220ms cubic-bezier(.2, 0, 0, 1) both;
 }
 
@@ -198,11 +198,11 @@
         transition: none !important;
     }
 
-    ::view-transition-old(root),
-    ::view-transition-new(root),
-    ::view-transition-old(fpt-settings-page),
-    ::view-transition-new(fpt-settings-page),
-    ::view-transition-group(fpt-settings-page) {
+    html.fpt-subtab-view-transition::view-transition-old(root),
+    html.fpt-subtab-view-transition::view-transition-new(root),
+    html.fpt-subtab-view-transition::view-transition-old(fpt-settings-page),
+    html.fpt-subtab-view-transition::view-transition-new(fpt-settings-page),
+    html.fpt-subtab-view-transition::view-transition-group(fpt-settings-page) {
         animation: none !important;
     }
 }
