@@ -28,11 +28,16 @@
     }
 
     function clampPopupRect(rect, viewport, options = {}) {
-        const margin = Math.max(0, finiteOr(options.margin, DEFAULT_MARGIN));
+        const requestedMargin = Math.max(0, finiteOr(options.margin, DEFAULT_MARGIN));
         const viewportWidth = Math.max(0, finiteOr(viewport && viewport.width, 0));
         const viewportHeight = Math.max(0, finiteOr(viewport && viewport.height, 0));
-        const availableWidth = Math.max(0, viewportWidth - margin * 2);
-        const availableHeight = Math.max(0, viewportHeight - margin * 2);
+
+        // A fixed 12px margin cannot physically fit inside a viewport narrower than 24px.
+        // Degrade each axis independently instead of returning coordinates outside the viewport.
+        const marginX = Math.min(requestedMargin, viewportWidth / 2);
+        const marginY = Math.min(requestedMargin, viewportHeight / 2);
+        const availableWidth = Math.max(0, viewportWidth - marginX * 2);
+        const availableHeight = Math.max(0, viewportHeight - marginY * 2);
 
         const requestedMinWidth = Math.max(0, finiteOr(options.minWidth, DEFAULT_MIN_WIDTH));
         const requestedMinHeight = Math.max(0, finiteOr(options.minHeight, DEFAULT_MIN_HEIGHT));
@@ -44,12 +49,12 @@
         const width = Math.min(Math.max(rawWidth, minWidth), availableWidth);
         const height = Math.min(Math.max(rawHeight, minHeight), availableHeight);
 
-        const maxLeft = Math.max(margin, viewportWidth - margin - width);
-        const maxTop = Math.max(margin, viewportHeight - margin - height);
-        const rawLeft = finiteOr(rect && rect.left, margin);
-        const rawTop = finiteOr(rect && rect.top, margin);
-        const left = Math.min(Math.max(rawLeft, margin), maxLeft);
-        const top = Math.min(Math.max(rawTop, margin), maxTop);
+        const maxLeft = Math.max(marginX, viewportWidth - marginX - width);
+        const maxTop = Math.max(marginY, viewportHeight - marginY - height);
+        const rawLeft = finiteOr(rect && rect.left, marginX);
+        const rawTop = finiteOr(rect && rect.top, marginY);
+        const left = Math.min(Math.max(rawLeft, marginX), maxLeft);
+        const top = Math.min(Math.max(rawTop, marginY), maxTop);
 
         return { left, top, width, height };
     }
@@ -58,8 +63,17 @@
         return Math.abs(a - b) < 0.75;
     }
 
-    function persistClampedState(popup, next) {
+    function safeStorageSet(payload) {
         if (!root.chrome || !root.chrome.storage || !root.chrome.storage.local) return;
+        try {
+            const result = root.chrome.storage.local.set(payload);
+            if (result && typeof result.catch === 'function') result.catch(() => {});
+        } catch (_) {
+            // The extension context may disappear while the page is unloading.
+        }
+    }
+
+    function persistClampedState(popup, next) {
         const payload = {
             fpToolsPopupSize: {
                 width: `${Math.round(next.width)}px`,
@@ -72,7 +86,7 @@
                 top: `${Math.round(next.top)}px`
             };
         }
-        root.chrome.storage.local.set(payload);
+        safeStorageSet(payload);
     }
 
     function clampPopupElement(popup, persist = true) {
