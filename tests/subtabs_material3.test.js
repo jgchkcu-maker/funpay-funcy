@@ -34,61 +34,57 @@ test('motion enhancer tracks the active tab and keeps accessibility state synchr
   assert.match(js, /MutationObserver/);
 });
 
-test('tab switch is intercepted before legacy display none/block to prevent flicker', () => {
+test('tab switch is intercepted before legacy display none/block', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
-  assert.match(js, /startViewTransition/);
   assert.match(js, /addEventListener\(['"]click['"],[\s\S]*?true\s*\)/);
   assert.match(js, /stopImmediatePropagation\(\)/);
   assert.match(js, /WeakSet/);
 });
 
-test('fallback switches immediately and gently settles the new page', () => {
+test('content transition stays local to popup and never uses document View Transitions', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
-  const fallback = js.match(/function runFallbackTransition[\s\S]*?\n    \}/)?.[0] || '';
-  assert.ok(fallback, 'fallback transition must exist');
-  assert.match(fallback, /dispatchLegacyClick\(tab\)[\s\S]*?newPage\.animate/);
-  assert.match(fallback, /opacity:\s*0\.9/);
-  assert.match(fallback, /opacity:\s*1/);
-  assert.match(fallback, /translate3d\(0,\s*4px/);
-  assert.doesNotMatch(fallback, /opacity:\s*0(?:\D|$)/, 'fallback must not render a fully transparent frame');
+  const css = fs.readFileSync(cssPath, 'utf8');
+
+  assert.doesNotMatch(js, /startViewTransition|viewTransitionName|VIEW_TRANSITION_/,
+    'document-level View Transitions escape popup clipping and create ghost content');
+  assert.doesNotMatch(css, /::view-transition-/,
+    'subtab animation must not render top-layer view-transition snapshots');
+  assert.match(js, /newPage\.animate\(/,
+    'the real active page should be animated locally');
 });
 
-test('interrupted view transitions synchronously clean their temporary state', () => {
+test('settings content is a paint containment boundary so animation cannot escape the window', () => {
+  const css = fs.readFileSync(cssPath, 'utf8');
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*min-height:\s*0/s);
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*overflow-x:\s*hidden/s);
+  assert.match(css, /\.fp-tools-popup\s+\.fp-tools-content\s*\{[^}]*contain:\s*paint/s);
+});
+
+test('local transition never exposes the page background between old and new content', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
-  assert.match(js, /let\s+activeViewCleanup\s*=\s*null/);
-  assert.match(js, /activeViewCleanup\(\)/);
-  assert.match(js, /classList\.remove\(VIEW_TRANSITION_ROOT_CLASS\)/);
+  const local = js.match(/function runLocalTransition[\s\S]*?\n    \}/)?.[0] || '';
+
+  assert.ok(local, 'local transition must exist');
+  assert.match(local, /dispatchLegacyClick\(tab\)[\s\S]*?newPage\.animate/,
+    'switch should happen immediately before animating the new page');
+  assert.match(local, /opacity:\s*0\.9\d*/,
+    'new page should begin near opaque rather than from a blank frame');
+  assert.match(local, /opacity:\s*1/);
+  assert.doesNotMatch(local, /opacity:\s*0(?:\D|$)/,
+    'local transition must never create a fully transparent frame');
 });
 
-test('view transition styles animate only the settings page snapshot', () => {
-  const css = fs.readFileSync(cssPath, 'utf8');
-  assert.match(css, /::view-transition-old\(root\)[\s\S]*animation:\s*none/);
-  assert.match(css, /::view-transition-old\(fpt-settings-page\)/);
-  assert.match(css, /::view-transition-new\(fpt-settings-page\)/);
-  assert.match(css, /animation-duration:\s*1\d{2}ms/);
-});
-
-test('subtab transition never exposes the page background between old and new content', () => {
-  const css = fs.readFileSync(cssPath, 'utf8');
+test('rapid repeated switches cancel the previous local animation', () => {
   const js = fs.readFileSync(motionPath, 'utf8');
-  const outSection = css.split('@keyframes fptSettingsPageOut')[1]?.split('@keyframes fptSettingsPageIn')[0] || '';
-  const fallback = js.match(/function runFallbackTransition[\s\S]*?\n    \}/)?.[0] || '';
-
-  assert.ok(outSection, 'outgoing View Transition keyframes must exist');
-  assert.doesNotMatch(outSection, /opacity:\s*0(?:\D|$)/, 'outgoing snapshot must not fade to transparent');
-  assert.match(outSection, /from\s*\{[\s\S]*?opacity:\s*1[\s\S]*?to\s*\{[\s\S]*?opacity:\s*1/, 'outgoing snapshot should stay opaque for the full transition');
-
-  assert.ok(fallback, 'fallback transition must exist');
-  assert.doesNotMatch(fallback, /\{\s*opacity:\s*0,/, 'fallback must not create a transparent keyframe');
-  assert.match(fallback, /dispatchLegacyClick\(tab\)[\s\S]*?newPage\.animate/, 'fallback should switch immediately and animate the new page over a non-blank frame');
+  assert.match(js, /fallbackAnimations\.forEach/);
+  assert.match(js, /animation\.cancel\(\)/);
+  assert.match(js, /switchSerial/);
 });
 
-test('reduced-motion disables tab and page animations', () => {
-  assert.ok(fs.existsSync(cssPath), 'subtabs Material stylesheet must exist');
-  const css = fs.readFileSync(cssPath, 'utf8');
-  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-  assert.match(css, /transition:\s*none\s*!important/);
-  assert.match(css, /animation:\s*none\s*!important/);
+test('reduced-motion bypasses content animation', () => {
+  const js = fs.readFileSync(motionPath, 'utf8');
+  assert.match(js, /prefersReducedMotion\(\)/);
+  assert.match(js, /if\s*\(prefersReducedMotion\(\)\)\s*\{[\s\S]*?dispatchLegacyClick\(tab\)/);
 });
 
 test('manifest loads the shared subtabs layers after the legacy popup styles', () => {
