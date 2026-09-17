@@ -5,13 +5,11 @@
     const BAR_SELECTOR = '#fptTopSubtabsBar';
     const TAB_SELECTOR = '.fpt-subtab';
     const ACTIVE_PAGE_SELECTOR = '.fp-tools-page-content.active';
-    const VIEW_TRANSITION_NAME = 'fpt-settings-page';
-    const VIEW_TRANSITION_ROOT_CLASS = 'fpt-subtab-view-transition';
+    const TRANSITIONING_CLASS = 'fpt-subtab-transitioning';
 
     const legacyClickBypass = new WeakSet();
     let switchSerial = 0;
-    let activeViewTransition = null;
-    let activeViewCleanup = null;
+    let activeLocalCleanup = null;
     let fallbackAnimations = [];
 
     function getTabs(bar) {
@@ -81,14 +79,10 @@
         });
         fallbackAnimations = [];
 
-        if (activeViewTransition && typeof activeViewTransition.skipTransition === 'function') {
-            try { activeViewTransition.skipTransition(); } catch (_) { /* no-op */ }
+        if (activeLocalCleanup) {
+            activeLocalCleanup();
+            activeLocalCleanup = null;
         }
-        if (activeViewCleanup) {
-            activeViewCleanup();
-            activeViewCleanup = null;
-        }
-        activeViewTransition = null;
 
         return switchSerial;
     }
@@ -102,93 +96,57 @@
         }
     }
 
-    function runViewTransition(bar, tab, serial) {
+    function runLocalTransition(bar, tab, serial) {
         const popup = bar.closest('.fp-tools-popup');
-        const oldPage = popup && popup.querySelector(ACTIVE_PAGE_SELECTOR);
-        if (!popup || !oldPage) {
+        const content = bar.closest('.fp-tools-content') || (popup && popup.querySelector('.fp-tools-content'));
+
+        if (!popup || !content) {
             dispatchLegacyClick(tab);
             return;
         }
 
-        const root = document.documentElement;
-        const oldInlineName = oldPage.style.viewTransitionName;
-        let newPage = null;
-        let newInlineName = '';
         let cleaned = false;
-
         const cleanup = () => {
             if (cleaned) return;
             cleaned = true;
-            oldPage.style.viewTransitionName = oldInlineName;
-            if (newPage) newPage.style.viewTransitionName = newInlineName;
-            root.classList.remove(VIEW_TRANSITION_ROOT_CLASS);
+            content.classList.remove(TRANSITIONING_CLASS);
         };
 
-        oldPage.style.viewTransitionName = VIEW_TRANSITION_NAME;
-        root.classList.add(VIEW_TRANSITION_ROOT_CLASS);
-        activeViewCleanup = cleanup;
+        content.classList.add(TRANSITIONING_CLASS);
+        activeLocalCleanup = cleanup;
 
-        let transition;
-        try {
-            transition = document.startViewTransition(() => {
-                // The old snapshot is captured before this callback. Hand the same
-                // transition name to the newly-active page for a local crossfade.
-                oldPage.style.viewTransitionName = oldInlineName;
-                dispatchLegacyClick(tab);
-                newPage = popup.querySelector(ACTIVE_PAGE_SELECTOR);
-                if (newPage) {
-                    newInlineName = newPage.style.viewTransitionName;
-                    newPage.style.viewTransitionName = VIEW_TRANSITION_NAME;
-                }
-            });
-        } catch (_) {
-            cleanup();
-            activeViewCleanup = null;
-            runFallbackTransition(bar, tab, serial);
-            return;
-        }
-
-        activeViewTransition = transition;
-        Promise.resolve(transition.finished).catch(() => {}).finally(() => {
-            cleanup();
-            if (serial === switchSerial) {
-                activeViewCleanup = null;
-                activeViewTransition = null;
-            }
-        });
-    }
-
-    function runFallbackTransition(bar, tab, serial) {
-        const popup = bar.closest('.fp-tools-popup');
-        if (!popup) {
-            dispatchLegacyClick(tab);
-            return;
-        }
-
-        // Never fade the old page to zero before swapping. The old implementation
-        // produced a visible white frame between pages. Swap immediately, then
-        // settle the already-visible new page from near-opaque to fully opaque.
+        // Keep the switch synchronous so there is never a blank frame. Only the
+        // newly-active real DOM page is animated, inside the popup's paint clip.
         dispatchLegacyClick(tab);
-        if (serial !== switchSerial) return;
+        if (serial !== switchSerial) {
+            cleanup();
+            return;
+        }
 
         const newPage = popup.querySelector(ACTIVE_PAGE_SELECTOR);
-        if (!newPage || typeof newPage.animate !== 'function') return;
+        if (!newPage || typeof newPage.animate !== 'function') {
+            cleanup();
+            if (serial === switchSerial) activeLocalCleanup = null;
+            return;
+        }
 
-        const inAnimation = newPage.animate([
-            { opacity: 0.9, transform: 'translate3d(0, 4px, 0) scale(.998)' },
+        const animation = newPage.animate([
+            { opacity: 0.98, transform: 'translate3d(0, 3px, 0) scale(.999)' },
             { opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }
         ], {
             duration: 170,
             easing: 'cubic-bezier(.2, 0, 0, 1)',
             fill: 'both'
         });
-        fallbackAnimations = [inAnimation];
+        fallbackAnimations = [animation];
 
-        Promise.resolve(inAnimation.finished).catch(() => {}).finally(() => {
-            if (serial === switchSerial) {
-                try { inAnimation.cancel(); } catch (_) { /* no-op */ }
-                fallbackAnimations = [];
-            }
+        Promise.resolve(animation.finished).catch(() => {}).finally(() => {
+            if (serial !== switchSerial) return;
+
+            try { animation.cancel(); } catch (_) { /* no-op */ }
+            fallbackAnimations = [];
+            cleanup();
+            activeLocalCleanup = null;
         });
     }
 
@@ -200,11 +158,7 @@
             return;
         }
 
-        if (typeof document.startViewTransition === 'function') {
-            runViewTransition(bar, tab, serial);
-        } else {
-            runFallbackTransition(bar, tab, serial);
-        }
+        runLocalTransition(bar, tab, serial);
     }
 
     function install(bar) {
@@ -221,7 +175,7 @@
         };
 
         // Capture the click before main_popup.js can instantly flip display:none/block.
-        // The legacy click is replayed inside our transition callback.
+        // The legacy click is replayed inside our local transition wrapper.
         bar.addEventListener('click', (event) => {
             const tab = event.target.closest(TAB_SELECTOR);
             if (!tab || !bar.contains(tab) || legacyClickBypass.has(tab)) return;
