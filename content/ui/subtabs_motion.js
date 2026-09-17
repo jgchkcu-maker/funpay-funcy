@@ -158,51 +158,38 @@
         });
     }
 
-    async function runFallbackTransition(bar, tab, serial) {
+    function runFallbackTransition(bar, tab, serial) {
         const popup = bar.closest('.fp-tools-popup');
-        const oldPage = popup && popup.querySelector(ACTIVE_PAGE_SELECTOR);
-        if (!popup || !oldPage || typeof oldPage.animate !== 'function') {
+        if (!popup) {
             dispatchLegacyClick(tab);
             return;
         }
 
-        const outAnimation = oldPage.animate([
-            { opacity: 1, transform: 'translate3d(0, 0, 0)' },
-            { opacity: 0, transform: 'translate3d(0, -3px, 0)' }
-        ], {
-            duration: 90,
-            easing: 'cubic-bezier(.4, 0, 1, 1)',
-            fill: 'both'
-        });
-        fallbackAnimations = [outAnimation];
-
-        try { await outAnimation.finished; } catch (_) { return; }
+        // Never fade the old page to zero before swapping. The old implementation
+        // produced a visible white frame between pages. Swap immediately, then
+        // settle the already-visible new page from near-opaque to fully opaque.
+        dispatchLegacyClick(tab);
         if (serial !== switchSerial) return;
 
-        dispatchLegacyClick(tab);
         const newPage = popup.querySelector(ACTIVE_PAGE_SELECTOR);
-        if (!newPage || typeof newPage.animate !== 'function') {
-            outAnimation.cancel();
-            fallbackAnimations = [];
-            return;
-        }
+        if (!newPage || typeof newPage.animate !== 'function') return;
 
         const inAnimation = newPage.animate([
-            { opacity: 0, transform: 'translate3d(0, 5px, 0)' },
-            { opacity: 1, transform: 'translate3d(0, 0, 0)' }
+            { opacity: 0.9, transform: 'translate3d(0, 4px, 0) scale(.998)' },
+            { opacity: 1, transform: 'translate3d(0, 0, 0) scale(1)' }
         ], {
-            duration: 180,
+            duration: 170,
             easing: 'cubic-bezier(.2, 0, 0, 1)',
             fill: 'both'
         });
-        fallbackAnimations = [outAnimation, inAnimation];
+        fallbackAnimations = [inAnimation];
 
-        try { await inAnimation.finished; } catch (_) { /* cancelled by a newer switch */ }
-        if (serial === switchSerial) {
-            outAnimation.cancel();
-            inAnimation.cancel();
-            fallbackAnimations = [];
-        }
+        Promise.resolve(inAnimation.finished).catch(() => {}).finally(() => {
+            if (serial === switchSerial) {
+                try { inAnimation.cancel(); } catch (_) { /* no-op */ }
+                fallbackAnimations = [];
+            }
+        });
     }
 
     function runTabTransition(bar, tab) {
