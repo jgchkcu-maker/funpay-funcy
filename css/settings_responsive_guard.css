@@ -1,0 +1,345 @@
+/*
+ * FP Tools settings responsive guard.
+ *
+ * This file is intentionally loaded after the legacy settings styles. The settings
+ * window is resizable independently from the browser viewport, so layout decisions
+ * here use container queries tied to the popup itself instead of window media queries.
+ */
+
+.fp-tools-popup {
+    container-type: size;
+    container-name: fpt-popup;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup,
+.fp-tools-popup .fp-tools-body,
+.fp-tools-popup .fp-tools-content,
+.fp-tools-popup .fp-tools-page-content {
+    min-width: 0;
+    min-height: 0;
+}
+
+.fp-tools-popup .fp-tools-body,
+.fp-tools-popup .fp-tools-content {
+    max-width: 100%;
+}
+
+/* A child with an intrinsic/fixed width must never be able to widen the scrollport. */
+.fp-tools-content > * {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup .setting-group,
+.fp-tools-popup .template-container,
+.fp-tools-popup .fpt-setting-card,
+.fp-tools-popup .fpt-status-card,
+.fp-tools-popup .fpt-card,
+.fp-tools-popup .support-promo,
+.fp-tools-popup .fpt-subpanel,
+.fp-tools-popup .fpt-needs-ai-box,
+.fp-tools-popup .fpt-needs-ai-result,
+.fp-tools-popup .fpt-needs-list,
+.fp-tools-popup .fpt-acc-item {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup img,
+.fp-tools-popup canvas,
+.fp-tools-popup video,
+.fp-tools-popup svg {
+    max-width: 100%;
+}
+
+.fp-tools-popup input,
+.fp-tools-popup textarea,
+.fp-tools-popup select,
+.fp-tools-popup button {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup .template-info,
+.fp-tools-popup .fpt-setting-desc,
+.fp-tools-popup .support-promo,
+.fp-tools-popup .fpt-card,
+.fp-tools-popup .fpt-status-card {
+    overflow-wrap: anywhere;
+}
+
+/*
+ * The catalog preview used to inherit width:100% + aspect-ratio:16/9 from inline
+ * markup, so a wide settings window produced a 600px+ tall image. Keep the media
+ * crop, but bound the viewport footprint to a useful range.
+ */
+.fp-tools-popup #fp-wallpaper-carousel {
+    width: 100% !important;
+    height: clamp(220px, 42cqh, 420px) !important;
+    min-height: 180px;
+    max-height: 420px;
+    aspect-ratio: auto !important;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup #fp-wp-img-slot,
+.fp-tools-popup #fp-wp-img-slot > img {
+    width: 100%;
+    height: 100%;
+}
+
+.fp-tools-popup #fp-wp-img-slot > img {
+    object-fit: cover;
+}
+
+/* Keep shared grids mathematically shrinkable even before a breakpoint is reached. */
+.fp-tools-popup .color-input-grid,
+.fp-tools-popup .theme-actions-grid,
+.fp-tools-popup .fpt-presets-grid,
+.fp-tools-popup .fpt-needs-presets-grid {
+    min-width: 0;
+}
+
+.fp-tools-popup .color-input-grid > *,
+.fp-tools-popup .theme-actions-grid > *,
+.fp-tools-popup .fpt-presets-grid > *,
+.fp-tools-popup .fpt-needs-presets-grid > * {
+    min-width: 0;
+}
+
+/* Medium popup: compact the drawer and dense grids based on popup width. */
+@container fpt-popup (max-width: 900px) {
+    .fp-tools-nav {
+        width: 200px;
+        flex: 0 0 200px;
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+
+    .fp-tools-content {
+        padding: 20px 18px 24px;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        gap: 8px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .fp-tools-nav .nav-icon,
+    .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 9px;
+        font-size: 18px;
+    }
+
+    .fp-tools-nav li[data-page] a > span:last-child {
+        font-size: 12.5px;
+    }
+
+    .fp-tools-popup .color-input-grid,
+    .color-input-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup .theme-actions-grid,
+    .theme-actions-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup .fpt-presets-grid,
+    .fp-tools-popup .fpt-needs-presets-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup .fpt-subtabs-bar {
+        min-height: 46px;
+        margin-bottom: 16px;
+        border-radius: 14px;
+    }
+
+    .fp-tools-popup .fpt-subtab {
+        min-height: 36px;
+        padding: 0 12px !important;
+        border-radius: 10px !important;
+        font-size: 12.5px !important;
+    }
+}
+
+/*
+ * Narrow popup: switch the navigation drawer to an icon rail. Labels are hidden,
+ * but every hub stays reachable through its icon/title and no content is removed.
+ */
+@container fpt-popup (max-width: 700px) {
+    .fp-tools-nav {
+        flex-basis: 72px;
+        width: 72px;
+        padding: 8px 7px 12px;
+        overflow-x: hidden;
+    }
+
+    .fp-tools-content {
+        padding: 14px 12px 18px;
+    }
+
+    .fp-tools-nav li.fp-nav-divider {
+        height: 1px;
+        min-height: 1px;
+        margin: 9px 8px 7px !important;
+        overflow: hidden;
+        color: transparent !important;
+        background: var(--fptm-border, rgba(127,127,127,.16));
+    }
+
+    .fp-tools-nav li.fp-nav-divider:first-child {
+        margin-top: 3px !important;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        justify-content: center;
+        gap: 0;
+        height: 46px;
+        min-height: 46px;
+        padding: 5px !important;
+    }
+
+    .fp-tools-nav li[data-page] a > span:last-child {
+        display: none;
+    }
+
+    .fp-tools-nav .nav-icon,
+    .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+        width: 36px;
+        height: 36px;
+        min-width: 36px;
+        border-radius: 11px;
+        font-size: 20px;
+    }
+
+    .fpt-nav-search {
+        justify-content: center;
+        min-height: 44px;
+        padding: 2px 0 6px;
+    }
+
+    .fpt-nav-search-input {
+        width: 42px !important;
+        min-width: 42px !important;
+    }
+
+    .fpt-nav-search:focus-within .fpt-nav-search-input {
+        width: 56px !important;
+        padding: 0 8px !important;
+        color: transparent !important;
+        caret-color: var(--fptm-accent, #1b75bb);
+    }
+
+    .fpt-nav-search::before,
+    .fpt-nav-search:focus-within::before {
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+    }
+
+    .fp-tools-popup .fpt-nav-search .fpt-nav-search-clear {
+        display: none !important;
+    }
+
+    .fp-tools-popup .color-input-grid,
+    .color-input-grid,
+    .fp-tools-popup .theme-actions-grid,
+    .theme-actions-grid,
+    .fp-tools-popup .fpt-presets-grid,
+    .fp-tools-popup .fpt-needs-presets-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    .theme-actions-grid > *,
+    .theme-actions-grid #shareThemeBtn,
+    .theme-actions-grid #resetThemeBtn {
+        grid-column: auto !important;
+        width: 100%;
+    }
+
+    .fp-tools-popup #fp-wallpaper-carousel {
+        height: clamp(190px, 36cqh, 300px) !important;
+        min-height: 170px;
+    }
+
+    .fp-tools-popup .fpt-subtabs-bar {
+        gap: 2px;
+        padding: 4px;
+        margin-bottom: 12px;
+        scroll-padding-inline: 4px;
+    }
+
+    .fp-tools-popup .fpt-subtab {
+        gap: 6px;
+        min-height: 36px;
+        padding: 0 10px !important;
+    }
+
+    .fp-tools-popup .fpt-setting-card,
+    .fp-tools-popup .fpt-status-card,
+    .fp-tools-popup .fpt-setting-title-row,
+    .fp-tools-popup .fpt-needs-header-bar,
+    .fp-tools-popup .autobump-modal-controls {
+        min-width: 0;
+        flex-wrap: wrap;
+    }
+
+    .fp-tools-popup .fpt-setting-info,
+    .fp-tools-popup .fpt-status-card-left {
+        min-width: 0;
+        flex: 1 1 240px;
+    }
+}
+
+/* Very short popup: reduce vertical chrome rather than clipping controls. */
+@container fpt-popup (max-height: 650px) {
+    .fp-tools-nav {
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        min-height: 40px;
+        height: 40px;
+    }
+
+    .fpt-nav-search {
+        min-height: 40px;
+        padding-bottom: 4px;
+    }
+
+    .fp-tools-nav li.fp-nav-divider {
+        margin-top: 7px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .fp-tools-content {
+        padding-top: 14px;
+        padding-bottom: 16px;
+    }
+
+    .fp-tools-popup #fp-wallpaper-carousel {
+        height: clamp(180px, 40cqh, 280px) !important;
+        min-height: 160px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup #fp-wallpaper-carousel,
+    .fp-tools-popup #fp-wp-img-slot > img {
+        transition: none !important;
+    }
+}
