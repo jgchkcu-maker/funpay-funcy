@@ -34,13 +34,13 @@
         },
         appearance: {
             title: 'Внешний вид',
-            description: 'Настройте внешний вид FP Tools под свой стиль',
+            description: 'Настройте внешний вид FunPay Funcy под свой стиль',
             icon: 'palette',
             copy: 'Ваш стиль.\nВаш FunPay.'
         },
         system: {
             title: 'Система',
-            description: 'Настройте параметры, интеграции и сервисы FP Tools',
+            description: 'Настройте параметры, интеграции и сервисы FunPay Funcy',
             icon: 'settings_suggest',
             copy: 'Стабильная работа.\nБольше возможностей.'
         }
@@ -191,12 +191,62 @@
         }
     }
 
+
+    function decorateReferenceLayout(root) {
+        const addClass = (selector, className) => {
+            root.querySelectorAll(selector).forEach((node) => node.classList.add(className));
+        };
+
+        // Page-level hooks used only by the presentation layer. No nodes are moved,
+        // so feature scripts that rely on the existing DOM structure keep working.
+        addClass('.fp-tools-page-content[data-page="dashboard"]', 'fpt-reference-dashboard');
+        addClass('.fp-tools-page-content[data-page="theme"]', 'fpt-reference-appearance');
+        addClass('.fp-tools-page-content[data-page="needs"]', 'fpt-reference-customization');
+        addClass('.fp-tools-page-content[data-page="general"]', 'fpt-reference-system');
+        addClass('.fp-tools-page-content[data-page="calculator"]', 'fpt-reference-calculator');
+        addClass('.fp-tools-page-content[data-page="currency_calc"]', 'fpt-reference-currency');
+
+        const themePage = root.querySelector('.fp-tools-page-content[data-page="theme"]');
+        if (themePage) {
+            themePage.querySelector('#fp-wallpaper-carousel')?.classList.add('fpt-layout-wide');
+            themePage.querySelector('#bg-image-preview')?.closest('.template-container')?.classList.add('fpt-layout-half');
+            themePage.querySelector('.color-input-grid')?.classList.add('fpt-layout-half');
+
+            ['#themeFontSelect', '#themeBgBlur', '#themeBgBrightness', '#themeBorderRadius'].forEach((selector) => {
+                themePage.querySelector(selector)?.closest('.template-container')?.classList.add('fpt-layout-quarter');
+            });
+
+            ['#enableGlassmorphism', '#enableCustomScrollbar'].forEach((selector) => {
+                themePage.querySelector(selector)?.closest('.setting-group')?.classList.add('fpt-layout-half');
+            });
+
+            themePage.querySelector('#circlePreview')?.closest('.setting-group')?.classList.add('fpt-layout-half');
+            themePage.querySelector('#enableImprovedSeparators')?.closest('.setting-group')?.classList.add('fpt-layout-quarter');
+            themePage.querySelector('#headerPositionSelect')?.closest('.setting-group')?.classList.add('fpt-layout-quarter');
+            themePage.querySelector('#fptTextOutlineGroup')?.classList.add('fpt-layout-half');
+            themePage.querySelector('.theme-actions-grid')?.classList.add('fpt-layout-full');
+        }
+
+        const systemPage = root.querySelector('.fp-tools-page-content[data-page="general"]');
+        if (systemPage) {
+            systemPage.querySelector('#notificationSoundGroup')?.classList.add('fpt-reference-sound-grid');
+            systemPage.querySelector('#notificationVolume')?.closest('.template-container')?.classList.add('fpt-reference-volume');
+            systemPage.querySelector('#discordLogEnabled')?.closest('.fpt-setting-card')?.classList.add('fpt-reference-integration-card');
+            systemPage.querySelector('#fptIdentifierEnabled')?.closest('.fpt-setting-card')?.classList.add('fpt-reference-integration-card');
+        }
+
+        addClass('.feature-list-container', 'fpt-reference-feature-list');
+        addClass('.template-settings-list .template-item', 'fpt-reference-list-row');
+        addClass('.fpt-needs-list > *', 'fpt-reference-list-row');
+    }
+
     function install(root) {
         if (!(root instanceof HTMLElement) || root.dataset.fptPixelEnhanced === '1') return;
         root.dataset.fptPixelEnhanced = '1';
 
         ensureVersionBadge(root);
         ensureSupportLink(root);
+        decorateReferenceLayout(root);
         syncHero(root);
 
         let scheduled = false;
