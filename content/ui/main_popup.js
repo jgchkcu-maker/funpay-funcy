@@ -2052,7 +2052,8 @@ const FPT_HUB_CONFIG = {
         subtabs: [
             { id: 'autobump', label: 'Авто-поднятие', icon: 'rocket_launch' },
             { id: 'auto_delivery', label: 'Авто-доставка', icon: 'local_shipping' },
-            { id: 'auto_review', label: 'Авто-отзывы', icon: 'smart_toy' }
+            { id: 'auto_review', label: 'Авто-отзывы', icon: 'star' },
+            { id: 'scenarios', label: 'Сценарии', icon: 'account_tree' }
         ]
     },
     chat: {
@@ -2064,26 +2065,30 @@ const FPT_HUB_CONFIG = {
             { id: 'templates', label: 'Шаблоны', icon: 'dashboard_customize' },
             { id: 'slash_commands', label: 'Слэш-команды', icon: 'terminal' },
             { id: 'notes', label: 'Заметки', icon: 'edit_note' },
-            { id: 'blacklist', label: 'Чёрный список', icon: 'block' }
+            { id: 'blacklist', label: 'Чёрный список', icon: 'block' },
+            { id: 'chat_search', label: 'Поиск', icon: 'search' }
         ]
     },
     lots: {
         id: 'lots',
         label: 'Товары и рынок',
         icon: 'inventory_2',
-        defaultSub: 'lot_io',
+        defaultSub: 'lot_manage',
         subtabs: [
-            { id: 'lot_io', label: 'Импорт / Экспорт', icon: 'inventory_2' },
-            { id: 'pricing', label: 'Цены и комиссии', icon: 'price_change' }
+            { id: 'lot_manage', label: 'Управление лотами', icon: 'inventory_2' },
+            { id: 'pricing', label: 'Аналитика рынка', icon: 'monitoring' },
+            { id: 'lot_clone', label: 'Клонирование', icon: 'content_copy' },
+            { id: 'lot_io', label: 'Импорт/экспорт', icon: 'upload' }
         ]
     },
     finance: {
         id: 'finance',
         label: 'Финансы',
         icon: 'monitoring',
-        defaultSub: 'sales_stats',
+        defaultSub: 'finance_overview',
         subtabs: [
-            { id: 'sales_stats', label: 'Статистика', icon: 'monitoring' },
+            { id: 'finance_overview', label: 'Обзор', icon: 'monitoring' },
+            { id: 'sales_stats', label: 'Статистика', icon: 'pie_chart' },
             { id: 'calculator', label: 'Калькулятор', icon: 'calculate' },
             { id: 'currency_calc', label: 'Конвертер', icon: 'currency_exchange' }
         ]
@@ -2110,8 +2115,7 @@ const FPT_HUB_CONFIG = {
             { id: 'accounts', label: 'Аккаунты', icon: 'manage_accounts' },
             { id: 'telegram', label: 'Telegram бот', icon: 'send' },
             { id: 'settings_io', label: 'Резервные копии', icon: 'backup' },
-            { id: 'tickets', label: 'Поддержка FunPay', icon: 'help_outline' },
-            { id: 'support', label: 'О расширении', icon: 'info' }
+            { id: 'tickets', label: 'Поддержка FunPay', icon: 'help_outline' }
         ]
     }
 };
@@ -2123,15 +2127,20 @@ const FPT_PAGE_TO_HUB = {
     autobump: { hub: 'automation', sub: 'autobump' },
     auto_delivery: { hub: 'automation', sub: 'auto_delivery' },
     auto_review: { hub: 'automation', sub: 'auto_review' },
+    scenarios: { hub: 'automation', sub: 'scenarios' },
     chat: { hub: 'chat', sub: 'templates' },
     templates: { hub: 'chat', sub: 'templates' },
     slash_commands: { hub: 'chat', sub: 'slash_commands' },
     notes: { hub: 'chat', sub: 'notes' },
     blacklist: { hub: 'chat', sub: 'blacklist' },
-    lots: { hub: 'lots', sub: 'lot_io' },
+    chat_search: { hub: 'chat', sub: 'chat_search' },
+    lots: { hub: 'lots', sub: 'lot_manage' },
+    lot_manage: { hub: 'lots', sub: 'lot_manage' },
     lot_io: { hub: 'lots', sub: 'lot_io' },
     pricing: { hub: 'lots', sub: 'pricing' },
-    finance: { hub: 'finance', sub: 'sales_stats' },
+    lot_clone: { hub: 'lots', sub: 'lot_clone' },
+    finance: { hub: 'finance', sub: 'finance_overview' },
+    finance_overview: { hub: 'finance', sub: 'finance_overview' },
     sales_stats: { hub: 'finance', sub: 'sales_stats' },
     calculator: { hub: 'finance', sub: 'calculator' },
     currency_calc: { hub: 'finance', sub: 'currency_calc' },
@@ -2151,7 +2160,7 @@ function setupPopupNavigation() {
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (!toolsPopup) return;
     const navItems = toolsPopup.querySelectorAll('.fp-tools-nav li, .fp-tools-header-tab');
-    const contentPages = toolsPopup.querySelectorAll('.fp-tools-page-content');
+    const getContentPages = () => toolsPopup.querySelectorAll('.fp-tools-page-content');
     const subtabsBar = toolsPopup.querySelector('#fptTopSubtabsBar');
 
     async function updateDashboardLiveStatus() {
@@ -2274,7 +2283,7 @@ function setupPopupNavigation() {
         }
 
         // 3. Отображаем выбранную страницу
-        contentPages.forEach(page => {
+        getContentPages().forEach(page => {
             const isActive = page.dataset.page === targetSub;
             page.classList.toggle('active', isActive);
             page.style.display = isActive ? 'block' : 'none';
