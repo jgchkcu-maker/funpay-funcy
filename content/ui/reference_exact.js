@@ -385,11 +385,20 @@
             header.insertBefore(mini, close || null);
         }
         const forceLight = () => {
+            // IMPORTANT: this callback is observed on the same class attribute.
+            // Only mutate when the state actually needs changing; an unconditional
+            // classList.add() can continuously retrigger MutationObserver and lock
+            // the FunPay tab when the settings panel is opened.
             if (root.classList.contains('fptm-dark')) root.classList.remove('fptm-dark');
-            root.classList.add('fptm-light');
+            if (!root.classList.contains('fptm-light')) root.classList.add('fptm-light');
         };
         forceLight();
-        new MutationObserver(forceLight).observe(root, { attributes: true, attributeFilter: ['class'] });
+        const lightModeObserver = new MutationObserver(() => {
+            if (root.classList.contains('fptm-dark') || !root.classList.contains('fptm-light')) {
+                forceLight();
+            }
+        });
+        lightModeObserver.observe(root, { attributes: true, attributeFilter: ['class'] });
     }
 
     function compose(root) {
