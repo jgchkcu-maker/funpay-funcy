@@ -1,7 +1,7 @@
 {
   "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
-  "name": "FunPay Tools",
+  "name": "FunPay Funcy",
   "version": "2.9.9",
   "description": "Глобальное расширение для FunPay ⚡ 299+ инструментов • ИИ-помощник • Автоответчик • Аналитика • Автоматизация • Больше продаж",
   "permissions": [
@@ -23,7 +23,6 @@
     "https://funpay.tools/*",
     "https://cdn.jsdelivr.net/*",
     "https://raw.githubusercontent.com/*",
-    "https://fpt-chat.starobinskiy01.workers.dev/*",
     "https://fpt-descs.starobinskiy01.workers.dev/*",
     "https://fonts.googleapis.com/*",
     "https://translate.googleapis.com/*",
@@ -33,7 +32,7 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "FP Tools"
+    "default_title": "FunPay Funcy"
   },
   "icons": {
     "128": "icons/icon128.png"
@@ -58,8 +57,7 @@
         "https://funpay.com/*"
       ],
       "js": [
-        "content/theme_flash_fix.js",
-        "content/early_custom_styles.js"
+        "content/theme_flash_fix.js"
       ],
       "run_at": "document_start",
       "all_frames": true
@@ -77,9 +75,7 @@
         "content/utils.js",
         "content/features/feature_registry.js",
         "content/features/feature_disabler.js",
-        "content/features/cursor_fx.js",
         "content/ui/settings_loader.js",
-        "content/features/font_tools.js",
         "content/features/accounts.js",
         "content/features/ai_chat.js",
         "content/features/auto_delivery.js",
@@ -88,7 +84,9 @@
         "content/features/lot_management.js",
         "content/features/inline_price_editor.js",
         "content/features/quick_lot_search.js",
+        "content/features/template_popover_layout.js",
         "content/features/templates.js",
+        "content/features/template_popover_viewport.js",
         "content/features/theme.js",
         "content/features/exact_price.js",
         "content/features/buyer_price_field.js",
@@ -97,7 +95,6 @@
         "content/features/profile_descriptions.js",
         "content/features/profile_raise_all.js",
         "content/features/user_notes.js",
-        "content/features/image_generator.js",
         "content/features/custom_sound.js",
         "content/features/custom_sound_editor.js",
         "content/features/misc.js",
@@ -106,22 +103,22 @@
         "content/features/ai_lot_creator.js",
         "content/features/currency_calculator.js",
         "content/features/notes.js",
-        "content/features/global_chat.js",
         "content/features/overview_tour.js",
-        "content/features/magicstick.js",
-        "content/features/piggy_bank.js",
         "content/features/lot_io.js",
         "content/features/auto_review.js",
         "content/features/fpt_identifier.js",
         "content/features/needs_tab.js",
         "content/features/slash_telegram_ui.js",
         "content/ui/main_popup.js",
+        "content/ui/popup_viewport_guard.js",
+        "content/ui/subtabs_motion.js",
         "content/ui/header_button_styler.js",
+        "content/ui/pixel_expressive_shell.js",
+        "content/ui/reference_layout.js",
         "content/features/lot_notes.js",
         "content/features/lot_note_buttons.js",
         "content/features/chat_lot_note.js",
         "content/features/lot_context_menu.js",
-        "content/features/ai_lot_audit.js",
         "content/features/settings_io.js",
         "content/features/bulk_lot_editor.js",
         "content/features/buyer_history.js",
@@ -131,7 +128,6 @@
         "content/features/chat_search.js",
         "content/features/order_enhancements.js",
         "content/features/blacklist.js",
-        "content/features/epic_nicknames.js",
         "content/features/auto_delivery_ui.js",
         "content/features/rmthub_search.js",
         "content/features/new_chat_starter.js",
@@ -153,10 +149,14 @@
       ],
       "css": [
         "css/content_styles.css",
-        "css/image_generator.css",
         "css/ai_creator.css",
-        "css/live_styler.css",
-        "css/fpt_icons_theme.css"
+        "css/fpt_icons_theme.css",
+        "css/template_popover_material.css",
+        "css/settings_sidebar_material3.css",
+        "css/subtabs_material3.css",
+        "css/settings_responsive_guard.css",
+        "css/pixel_expressive.css",
+        "css/reference_layout.css"
       ],
       "run_at": "document_idle"
     }

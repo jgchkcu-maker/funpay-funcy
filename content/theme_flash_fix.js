@@ -52,7 +52,9 @@
         if (disabled.length) {
             const SELECTOR_MAP = {
                 rmthub_seller_search: '#fp-rmthub-form',
+                chat_custom_attach: '.fpt-attach-btn',
                 chat_ai_rewrite_btn: '#aiModeToggleBtn',
+                chat_reply: '.fpt-msg-tools, .fpt-reply-bar, .fpt-reply-card',
                 chat_char_counter: '#fp-chat-char-count',
                 profanity_warning: '#fpToolsProfanityWarning',
                 chat_read_all_btn: '#fp-tools-read-all-btn',
@@ -61,23 +63,29 @@
                 chat_menu_translate: '#fp-translate-menu-btn',
                 chat_menu_export: '#fp-export-chat-menu-btn',
                 chat_menu_blacklist: '#fp-blacklist-menu-btn',
-                chat_image_generator_btn: '#fpToolsGenerateImageBtn, .generate-btn-container',
                 lot_ai_gen_btn: '#fp-tools-ai-gen-btn-wrapper',
-                lot_font_controls: '.fp-tools-font-controls, .fp-tools-symbols-panel',
-                lot_keyboard_btn: '#fpToolsKeyboardToggleBtn',
                 lot_translate_btn: '#fp-tools-translate-btn',
                 lot_exact_price_btn: '.set-exact-price',
                 lot_paste_bar: '#fp-tools-paste-bar',
                 lot_clone_btn: '.fp-tools-clone-btn',
                 lot_import_btn: '.fp-tools-import-btn',
+                lot_category_peek: '#fpt-peek-toggle, .fpt-peek-panel',
                 lot_public_clone_btn: '#fp-tools-public-clone-btn',
+                multi_clone_foreign: '.actions .clone-lots',
+                lot_notes_chat_btn: '.fpt-chat-note-btn',
+                lot_delete_btn: '.fpt-lot-del-btn',
                 lot_search_bar: '#fp-lot-search-bar',
                 lot_select_btn: '#fp-tools-select-lots-btn',
                 lot_reactivate_btn: '#fp-tools-reactivate-lots-btn',
+                open_lot_buttons: '.fpt-open-lot',
+                raise_all_lots_btn: '#fpt-raise-all-btn',
+                buyer_price_field: '#fpt-buyer-price-group',
                 lot_pinned_container: '#fp-tools-pinned-lots-container',
                 market_analytics_btn: '#fpTools-market-analytics-btn-wrapper',
                 sales_stats_expand: '#fpTools-stats-extra, #fpTools-stats-expand-btn',
-                notes_add_status_btn: '#fp-tools-add-status-btn'
+                notes_add_status_btn: '#fp-tools-add-status-btn',
+                order_copy_lot_btn: '#fpt-olc-btn',
+                order_copy_chip: '.fp-order-copy-chip'
             };
             const selectors = disabled
                 .map(id => SELECTOR_MAP[id])

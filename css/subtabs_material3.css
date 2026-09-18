@@ -1,0 +1,166 @@
+/*
+ * Shared FP Tools subtabs — Material 3 segmented navigation.
+ * Loaded after the legacy styles so every hub uses the same visual language.
+ */
+.fp-tools-popup .fpt-subtabs-bar {
+    --fpt-subtab-indicator-x: 0px;
+    --fpt-subtab-indicator-width: 0px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
+    margin: 0 0 22px;
+    padding: 5px;
+    box-sizing: border-box;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+    border: 1px solid var(--fptm-border, rgba(127, 127, 127, .20));
+    border-radius: 16px;
+    background: var(--fptm-surface, rgba(127, 127, 127, .08));
+    box-shadow: none;
+    isolation: isolate;
+}
+
+.fp-tools-popup .fpt-subtabs-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.fp-tools-popup .fpt-subtabs-bar::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    top: 5px;
+    bottom: 5px;
+    left: 0;
+    width: var(--fpt-subtab-indicator-width);
+    box-sizing: border-box;
+    border: 1px solid var(--fptm-accent-border, rgba(27, 117, 187, .30));
+    border-radius: 12px;
+    background: var(--fptm-accent-soft, rgba(27, 117, 187, .14));
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+    opacity: 0;
+    transform: translate3d(var(--fpt-subtab-indicator-x), 0, 0);
+    transition: transform 220ms cubic-bezier(.2, 0, 0, 1),
+                width 220ms cubic-bezier(.2, 0, 0, 1),
+                opacity 120ms ease;
+    pointer-events: none;
+}
+
+.fp-tools-popup .fpt-subtabs-bar[data-fpt-indicator-ready='1']::before {
+    opacity: 1;
+}
+
+.fp-tools-popup .fpt-subtab {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 40px;
+    margin: 0 !important;
+    padding: 0 14px !important;
+    box-sizing: border-box;
+    white-space: nowrap;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--fptm-muted, #7a7f8f) !important;
+    font: inherit;
+    font-size: 13px !important;
+    font-weight: 560 !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    cursor: pointer;
+    transform: none !important;
+    transition: color 160ms ease, background-color 160ms ease !important;
+}
+
+.fp-tools-popup .fpt-subtab::before,
+.fp-tools-popup .fpt-subtab::after {
+    content: none !important;
+    display: none !important;
+}
+
+.fp-tools-popup .fpt-subtab .material-symbols-rounded,
+.fp-tools-popup .fpt-subtab .material-icons {
+    flex: 0 0 auto;
+    margin: 0 !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    color: currentColor !important;
+    transition: color 160ms ease !important;
+}
+
+.fp-tools-popup .fpt-subtab:hover:not(.is-active) {
+    background: var(--fptm-hover, rgba(127, 127, 127, .09)) !important;
+    color: var(--fptm-text, #e7e8ec) !important;
+}
+
+.fp-tools-popup .fpt-subtab.is-active {
+    background: transparent !important;
+    color: var(--fptm-accent, #1b75bb) !important;
+    font-weight: 650 !important;
+}
+
+.fp-tools-popup .fpt-subtab:focus-visible {
+    outline: 2px solid var(--fptm-accent, #1b75bb);
+    outline-offset: -2px;
+}
+
+/*
+ * The reveal stays inside the settings scrollport. The content geometry itself
+ * never moves; only the incoming page's clip-path changes. A stable scrollbar
+ * gutter and disabled scroll anchoring prevent layout jumps between tall/short tabs.
+ */
+.fp-tools-popup .fp-tools-content {
+    min-height: 0;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    overflow-anchor: none;
+}
+
+.fp-tools-popup .fp-tools-content.fpt-subtab-transitioning {
+    position: relative;
+    contain: paint;
+    isolation: isolate;
+}
+
+@media (max-width: 850px) {
+    .fp-tools-popup .fpt-subtabs-bar {
+        margin-bottom: 16px;
+        min-height: 46px;
+        border-radius: 14px;
+    }
+
+    .fp-tools-popup .fpt-subtab {
+        min-height: 36px;
+        padding: 0 12px !important;
+        border-radius: 10px !important;
+        font-size: 12.5px !important;
+    }
+
+    .fp-tools-popup .fpt-subtabs-bar::before {
+        border-radius: 10px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup .fpt-subtabs-bar {
+        scroll-behavior: auto;
+    }
+
+    .fp-tools-popup .fpt-subtabs-bar::before,
+    .fp-tools-popup .fpt-subtab {
+        transition: none !important;
+    }
+}

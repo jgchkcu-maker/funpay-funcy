@@ -1,0 +1,1522 @@
+/*
+ * FunPay Funcy — reference-layout layer
+ * Mirrors the supplied desktop references while keeping the original functional DOM.
+ * Loaded after the legacy and expressive styles.
+ */
+
+.fp-tools-popup.fpf-reference-layout {
+    --fpf-bg: #f6f9fe;
+    --fpf-surface: #ffffff;
+    --fpf-surface-soft: #f7faff;
+    --fpf-surface-tint: #eef6ff;
+    --fpf-border: #dde7f3;
+    --fpf-border-strong: #cbd9e9;
+    --fpf-text: #101828;
+    --fpf-muted: #75849b;
+    --fpf-faint: #9aa8bb;
+    --fpf-accent: var(--fptm-accent, var(--fpt-accent, #1688ff));
+    --fpf-accent-soft: color-mix(in srgb, var(--fpf-accent) 10%, #fff);
+    --fpf-accent-faint: color-mix(in srgb, var(--fpf-accent) 5%, #fff);
+    --fpf-success: #13a864;
+    --fpf-success-soft: #eaf9f1;
+    --fpf-warn: #e79b1a;
+    --fpf-warn-soft: #fff6df;
+    --fpf-danger: #eb5168;
+    --fpf-danger-soft: #fff0f3;
+    --fpf-purple: #8059ef;
+    --fpf-purple-soft: #f2edff;
+    --fpf-shadow: 0 1px 2px rgba(41, 66, 103, .025), 0 8px 24px rgba(41, 66, 103, .035);
+
+    width: min(1500px, calc(100vw - 18px)) !important;
+    height: min(1120px, calc(100vh - 18px)) !important;
+    max-width: calc(100vw - 18px) !important;
+    max-height: calc(100vh - 18px) !important;
+    border: 1px solid rgba(201, 216, 234, .72) !important;
+    border-radius: 22px !important;
+    background: var(--fpf-bg) !important;
+    box-shadow: 0 26px 80px rgba(47, 75, 114, .17), 0 8px 26px rgba(47, 75, 114, .07) !important;
+    color: var(--fpf-text) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout.fptm-dark {
+    --fpf-bg: #0f141a;
+    --fpf-surface: #161c24;
+    --fpf-surface-soft: #1b2430;
+    --fpf-surface-tint: #202c3b;
+    --fpf-border: #283649;
+    --fpf-border-strong: #34475e;
+    --fpf-text: #f0f5fc;
+    --fpf-muted: #a6b3c5;
+    --fpf-faint: #7e8ca2;
+    --fpf-accent-soft: color-mix(in srgb, var(--fpf-accent) 18%, #161c24);
+    --fpf-accent-faint: color-mix(in srgb, var(--fpf-accent) 9%, #161c24);
+    --fpf-success-soft: rgba(19, 168, 100, .14);
+    --fpf-warn-soft: rgba(231, 155, 26, .14);
+    --fpf-danger-soft: rgba(235, 81, 104, .14);
+    --fpf-purple-soft: rgba(128, 89, 239, .14);
+    --fpf-shadow: 0 1px 2px rgba(0,0,0,.17), 0 10px 26px rgba(0,0,0,.13);
+}
+
+/* Exact shell proportions from the references. */
+.fp-tools-popup.fpf-reference-layout .fp-tools-header {
+    height: 62px !important;
+    min-height: 62px !important;
+    padding: 0 18px 0 22px !important;
+    gap: 12px !important;
+    background: color-mix(in srgb, var(--fpf-surface) 97%, transparent) !important;
+    border-bottom: 1px solid var(--fpf-border) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-body {
+    background: var(--fpf-bg) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav {
+    width: 278px !important;
+    flex: 0 0 278px !important;
+    padding: 17px 14px 14px !important;
+    background: color-mix(in srgb, var(--fpf-surface) 88%, var(--fpf-bg)) !important;
+    border-right: 1px solid var(--fpf-border) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-content {
+    padding: 19px 22px 24px !important;
+    background:
+        radial-gradient(540px 235px at 98% -3%, color-mix(in srgb, var(--fpf-accent) 9%, transparent), transparent 68%),
+        var(--fpf-bg) !important;
+}
+
+/* Header branding. */
+.fp-tools-popup.fpf-reference-layout .fp-tools-title-wrap::before {
+    width: 34px !important;
+    height: 34px !important;
+    flex: 0 0 34px !important;
+    border-radius: 11px !important;
+    font-size: 20px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-site-link {
+    font-size: 22px !important;
+    font-weight: 790 !important;
+    letter-spacing: -.04em !important;
+    color: var(--fpf-text) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-version {
+    height: 20px !important;
+    padding-inline: 7px !important;
+    background: var(--fpf-surface-soft) !important;
+    border-color: var(--fpf-border) !important;
+    color: var(--fpf-muted) !important;
+    font-size: 9.5px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-social-btn,
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-support-link {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0 9px !important;
+    border-radius: 9px !important;
+    color: #4e5c73 !important;
+    font-size: 11.5px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout.fptm-dark .fp-tools-social-btn,
+.fp-tools-popup.fpf-reference-layout.fptm-dark .fpt-pixel-support-link {
+    color: var(--fpf-muted) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .close-btn {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+}
+
+/* Sidebar search — same full-width field + compact shortcut chip. */
+.fp-tools-popup.fpf-reference-layout .fpt-nav-search {
+    min-height: 43px !important;
+    margin: 0 0 11px !important;
+    padding: 0 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-nav-search-input {
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 67px 0 38px !important;
+    border: 1px solid var(--fpf-border-strong) !important;
+    border-radius: 11px !important;
+    background: var(--fpf-surface) !important;
+    color: var(--fpf-text) !important;
+    font-size: 12px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.7) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-nav-search::before {
+    left: 12px !important;
+    right: auto !important;
+    top: 12px !important;
+    font-size: 18px !important;
+    color: #7d8ba0 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-nav-search:has(.fpt-nav-search-input:placeholder-shown):not(:focus-within)::after {
+    content: 'Ctrl K';
+    position: absolute;
+    z-index: 3;
+    right: 9px;
+    top: 10px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 6px;
+    border: 1px solid var(--fpf-border);
+    border-radius: 6px;
+    background: var(--fpf-surface-soft);
+    color: var(--fpf-faint);
+    font-size: 9px;
+    font-weight: 700;
+    pointer-events: none;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-nav-search:focus-within .fpt-nav-search-input {
+    padding-left: 38px !important;
+    border-color: color-mix(in srgb, var(--fpf-accent) 45%, var(--fpf-border-strong)) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fpf-accent) 8%, transparent) !important;
+}
+
+/* Sidebar category rhythm. */
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav ul {
+    gap: 2px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav li.fp-nav-divider {
+    margin: 13px 8px 4px !important;
+    font-size: 9px !important;
+    line-height: 16px !important;
+    font-weight: 760 !important;
+    letter-spacing: .14em !important;
+    color: #95a2b6 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav li[data-page] a {
+    min-height: 44px !important;
+    height: 44px !important;
+    gap: 10px !important;
+    padding: 5px 9px !important;
+    border-radius: 11px !important;
+    color: #26334a !important;
+}
+
+.fp-tools-popup.fpf-reference-layout.fptm-dark .fp-tools-nav li[data-page] a {
+    color: var(--fpf-text) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav .nav-icon {
+    width: 31px !important;
+    height: 31px !important;
+    min-width: 31px !important;
+    border-radius: 9px !important;
+    background: transparent !important;
+    color: #44536c !important;
+    font-size: 19px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav li[data-page].active a {
+    border-color: color-mix(in srgb, var(--fpf-accent) 12%, var(--fpf-border)) !important;
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--fpf-accent) 12%, var(--fpf-surface)),
+        color-mix(in srgb, var(--fpf-accent) 7%, var(--fpf-surface))) !important;
+    color: var(--fpf-accent) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav li[data-page].active a .nav-icon {
+    background: color-mix(in srgb, var(--fpf-accent) 8%, transparent) !important;
+    color: var(--fpf-accent) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-nav::after {
+    min-height: 174px !important;
+    margin: auto 2px 0 !important;
+    padding: 18px 16px !important;
+    border: 1px solid color-mix(in srgb, var(--fpf-accent) 12%, var(--fpf-border)) !important;
+    border-radius: 15px !important;
+    background:
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--fpf-accent) 38%, white) 0 7px, transparent 8px),
+        radial-gradient(120% 70% at 100% 112%, color-mix(in srgb, var(--fpf-accent) 18%, transparent) 0 48%, transparent 49%),
+        linear-gradient(150deg, #fbfdff, color-mix(in srgb, var(--fpf-accent) 9%, white)) !important;
+    color: #174878 !important;
+    font-size: 11px !important;
+    line-height: 1.43 !important;
+    font-weight: 620 !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout.fptm-dark .fp-tools-nav::after {
+    background:
+        radial-gradient(circle at 86% 18%, color-mix(in srgb, var(--fpf-accent) 38%, transparent) 0 7px, transparent 8px),
+        linear-gradient(150deg, var(--fpf-surface-soft), color-mix(in srgb, var(--fpf-accent) 11%, var(--fpf-surface))) !important;
+    color: var(--fpf-muted) !important;
+}
+
+/* Hero: title + soft blue illustration region. */
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-hero {
+    min-height: 91px !important;
+    margin: 0 0 8px !important;
+    padding: 2px 310px 7px 4px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-hero h1 {
+    margin: 0 0 4px !important;
+    font-size: clamp(29px, 2.35cqw, 35px) !important;
+    line-height: 1.04 !important;
+    font-weight: 800 !important;
+    letter-spacing: -.045em !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-hero p {
+    color: #7c8aa1 !important;
+    font-size: 12.75px !important;
+    line-height: 1.38 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-hero-art {
+    top: -38px !important;
+    right: -22px !important;
+    width: 315px !important;
+    height: 146px !important;
+    border-radius: 58% 0 0 74% !important;
+    transform: none !important;
+    opacity: .92 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-hero-art::before {
+    right: 70px !important;
+    top: 43px !important;
+    width: 64px !important;
+    height: 53px !important;
+    border-radius: 15px !important;
+    font-size: 28px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-pixel-hero-art::after {
+    right: 9px !important;
+    bottom: 14px !important;
+    max-width: 110px !important;
+    color: #1b76d4 !important;
+    font-size: 10.25px !important;
+}
+
+/* Compact top tabs with selected blue pill. */
+.fp-tools-popup.fpf-reference-layout .fpt-subtabs-bar {
+    min-height: 43px !important;
+    margin: 0 0 12px !important;
+    padding: 3px !important;
+    gap: 2px !important;
+    border: 0 !important;
+    border-radius: 11px !important;
+    background: color-mix(in srgb, var(--fpf-surface-soft) 88%, transparent) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-subtabs-bar::before {
+    top: 3px !important;
+    bottom: 3px !important;
+    border-radius: 9px !important;
+    border-color: color-mix(in srgb, var(--fpf-accent) 22%, var(--fpf-border)) !important;
+    background: color-mix(in srgb, var(--fpf-accent) 9%, var(--fpf-surface)) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-subtab {
+    min-height: 37px !important;
+    padding: 0 14px !important;
+    border-radius: 9px !important;
+    color: #66758c !important;
+    font-size: 12px !important;
+    font-weight: 640 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-subtab.is-active {
+    color: var(--fpf-accent) !important;
+    font-weight: 720 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-subtab .material-symbols-rounded {
+    font-size: 17px !important;
+}
+
+/* Source headings remain in DOM for semantics but the reference composition supplies its own headers. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-source-heading {
+    display: none !important;
+}
+
+/* Shared panel language. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel {
+    min-width: 0;
+    border: 1px solid var(--fpf-border);
+    border-radius: 13px;
+    background: var(--fpf-surface);
+    box-shadow: var(--fpf-shadow);
+    overflow: hidden;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel + .fpf-ref-panel,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel + .fpf-ref-two-column,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-two-column + .fpf-ref-panel,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-control-grid + .fpf-ref-panel {
+    margin-top: 10px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel-head {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px 7px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel-icon {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--fpf-accent-soft);
+    color: var(--fpf-accent);
+    font-size: 18px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel-title {
+    min-width: 0;
+    color: var(--fpf-text);
+    font-size: 13px;
+    line-height: 1.2;
+    font-weight: 750;
+    letter-spacing: -.01em;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel-body {
+    min-width: 0;
+    padding: 0 12px 12px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-two-column {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    min-width: 0;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-card-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-action-cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+}
+
+/* Flatten legacy boxes inside our new panels so they don't become "card in card". */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel-body > :is(.fpt-setting-card, .template-container, .setting-group, .support-promo, .template-variables-guide),
+.fp-tools-popup.fpf-reference-layout .fpf-ref-control-card .fpf-ref-panel-body > :is(.template-container, .setting-group) {
+    margin: 0 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-panel-body > .fpt-setting-card {
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-card-grid > .fpt-setting-card {
+    min-height: 72px !important;
+    margin: 0 !important;
+}
+
+/* Inputs and controls: smaller, calmer, no legacy uppercase/pill excess. */
+.fp-tools-popup.fpf-reference-layout :is(input[type="text"], input[type="number"], input[type="search"], textarea, select) {
+    min-height: 37px !important;
+    margin-bottom: 9px !important;
+    padding: 8px 10px !important;
+    border: 1px solid var(--fpf-border-strong) !important;
+    border-radius: 9px !important;
+    background: #fbfdff !important;
+    color: var(--fpf-text) !important;
+    font-size: 11.75px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.72) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout.fptm-dark :is(input[type="text"], input[type="number"], input[type="search"], textarea, select) {
+    background: var(--fpf-surface-soft) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout textarea {
+    line-height: 1.42 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .btn,
+.fp-tools-popup.fpf-reference-layout button.btn {
+    min-height: 35px !important;
+    padding: 7px 12px !important;
+    border: 1px solid color-mix(in srgb, var(--fpf-accent) 26%, var(--fpf-border)) !important;
+    border-radius: 9px !important;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--fpf-accent) 94%, white), var(--fpf-accent)) !important;
+    color: #fff !important;
+    font-size: 11.25px !important;
+    line-height: 1.15 !important;
+    font-weight: 680 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    box-shadow: 0 4px 10px color-mix(in srgb, var(--fpf-accent) 12%, transparent) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .btn.btn-default,
+.fp-tools-popup.fpf-reference-layout button.btn-default {
+    border-color: var(--fpf-border) !important;
+    background: var(--fpf-surface-soft) !important;
+    color: #42516a !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout.fptm-dark .btn.btn-default,
+.fp-tools-popup.fpf-reference-layout.fptm-dark button.btn-default {
+    color: var(--fpf-text) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout button::before,
+.fp-tools-popup.fpf-reference-layout .btn::before {
+    display: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-setting-card {
+    min-height: 64px !important;
+    padding: 11px 12px !important;
+    border-radius: 11px !important;
+    border-color: var(--fpf-border) !important;
+    background: var(--fpf-surface) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-setting-title,
+.fp-tools-popup.fpf-reference-layout .fpt-setting-title-row {
+    color: var(--fpf-text) !important;
+    font-size: 11.75px !important;
+    line-height: 1.25 !important;
+    font-weight: 720 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-setting-desc,
+.fp-tools-popup.fpf-reference-layout .template-info,
+.fp-tools-popup.fpf-reference-layout small {
+    color: var(--fpf-muted) !important;
+    font-size: 10.75px !important;
+    line-height: 1.4 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-badge {
+    min-height: 18px !important;
+    padding: 0 6px !important;
+    font-size: 9px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .checkbox-label-inline {
+    min-height: 34px !important;
+    margin: 0 !important;
+    gap: 8px !important;
+    font-size: 11.5px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout input[type="checkbox"]:not(.fpt-switch input) {
+    width: 18px !important;
+    height: 18px !important;
+    min-width: 18px !important;
+    margin: 0 8px 0 0 !important;
+    border: 1px solid #b9c7d9 !important;
+    border-radius: 5px !important;
+    background: var(--fpf-surface) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout input[type="checkbox"]:not(.fpt-switch input):checked {
+    border-color: var(--fpf-accent) !important;
+    background: var(--fpf-accent) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-switch {
+    width: 42px !important;
+    height: 24px !important;
+    min-width: 42px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-switch input {
+    position: absolute !important;
+    opacity: 0 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-switch :is(.fpt-switch-slider, .fpt-slider) {
+    position: relative !important;
+    inset: auto !important;
+    display: block !important;
+    width: 42px !important;
+    height: 24px !important;
+    border: 1px solid #c3cfdd !important;
+    border-radius: 999px !important;
+    background: #d4deea !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-switch :is(.fpt-switch-slider, .fpt-slider)::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 3px !important;
+    top: 3px !important;
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    box-shadow: 0 1px 3px rgba(27,48,78,.18) !important;
+    transform: translateX(0) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-switch input:checked + :is(.fpt-switch-slider, .fpt-slider) {
+    border-color: var(--fpf-accent) !important;
+    background: var(--fpf-accent) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-switch input:checked + :is(.fpt-switch-slider, .fpt-slider)::before {
+    transform: translateX(18px) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout input[type="range"] {
+    min-height: 22px !important;
+    height: 22px !important;
+    margin: 2px 0 4px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout input[type="range"]::-webkit-slider-runnable-track {
+    height: 5px !important;
+    border-radius: 999px !important;
+    background: #dce7f3 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout input[type="range"]::-webkit-slider-thumb {
+    width: 18px !important;
+    height: 18px !important;
+    margin-top: -6.5px !important;
+    border: 3px solid white !important;
+    border-radius: 50% !important;
+    background: var(--fpf-accent) !important;
+    box-shadow: 0 1px 5px rgba(28,110,212,.25) !important;
+}
+
+/* Dashboard exactly follows the reference cadence: status strip -> presets -> actions -> dense details. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-dashboard-page {
+    display: grid;
+    gap: 10px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-hub,
+.fp-tools-popup.fpf-reference-layout .fpt-presets-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-card {
+    min-height: 88px !important;
+    margin: 0 !important;
+    padding: 11px !important;
+    border-radius: 11px !important;
+    border-color: var(--fpf-border) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-card-left {
+    gap: 8px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-icon {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    border-radius: 9px !important;
+    background: var(--fpf-accent-soft) !important;
+    color: var(--fpf-accent) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-card-title {
+    color: var(--fpf-text) !important;
+    font-size: 11.25px !important;
+    font-weight: 720 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-card-sub {
+    color: var(--fpf-muted) !important;
+    font-size: 10px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-badge {
+    margin-top: 6px !important;
+    background: var(--fpf-success-soft) !important;
+    color: var(--fpf-success) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-status-badge.status-off {
+    background: #f0f4f8 !important;
+    color: #7f8da1 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-preset-card {
+    min-height: 82px !important;
+    margin: 0 !important;
+    padding: 11px !important;
+    border-radius: 11px !important;
+    border-color: var(--fpf-border) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-preset-header {
+    gap: 6px !important;
+    color: var(--fpf-text) !important;
+    font-size: 10.75px !important;
+    font-weight: 720 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-preset-desc {
+    margin-top: 6px !important;
+    color: var(--fpf-muted) !important;
+    font-size: 9.75px !important;
+    line-height: 1.35 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-quick-actions-bar {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-quick-action-btn {
+    min-height: 39px !important;
+    justify-content: flex-start !important;
+    gap: 7px !important;
+    padding: 0 10px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface) !important;
+    color: #44536c !important;
+    box-shadow: none !important;
+    font-size: 10.75px !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpt-quick-action-btn .material-symbols-rounded {
+    color: var(--fpf-accent) !important;
+    font-size: 17px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .feature-list-container {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .feature-list-container > h3 {
+    display: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .feature-item {
+    min-width: 0;
+    margin: 0 !important;
+    padding: 9px 10px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface-soft) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .feature-title {
+    gap: 6px !important;
+    margin: 0 0 4px !important;
+    color: var(--fpf-text) !important;
+    font-size: 10.5px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .feature-location {
+    margin: 0 0 4px !important;
+    padding: 2px 5px !important;
+    border-radius: 5px !important;
+    background: var(--fpf-surface) !important;
+    color: var(--fpf-muted) !important;
+    font-size: 9px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .feature-desc {
+    color: var(--fpf-muted) !important;
+    font-size: 9.5px !important;
+    line-height: 1.35 !important;
+}
+
+/* Automation reference: master block, rules left, log right, tip below. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-master-card {
+    min-height: 76px !important;
+    margin: 0 0 10px !important;
+    border-radius: 13px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-master-card .fpt-setting-title {
+    font-size: 14px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-log-panel .fp-tools-console {
+    min-height: 185px !important;
+    max-height: 260px !important;
+    margin: 0 !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface-soft) !important;
+    color: var(--fpf-text) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-rules-panel .fpt-setting-card + .fpt-setting-card {
+    margin-top: 8px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-top: 10px;
+    padding: 10px 12px;
+    border: 1px solid color-mix(in srgb, var(--fpf-accent) 14%, var(--fpf-border));
+    border-radius: 11px;
+    background: color-mix(in srgb, var(--fpf-accent) 5%, var(--fpf-surface));
+    color: #496078;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-tip > .material-symbols-rounded {
+    color: var(--fpf-accent);
+    font-size: 20px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-tip b,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-tip span {
+    display: block;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-tip b {
+    color: var(--fpf-text);
+    margin-bottom: 2px;
+    font-size: 11.25px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-tip span {
+    font-size: 10.5px;
+    line-height: 1.35;
+}
+
+/* Chat: left controls, main editor, right helper column exactly like the reference hierarchy. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-chat-grid {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr) 260px;
+    gap: 10px;
+    min-width: 0;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-chat-editor {
+    min-width: 0;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-inline-search {
+    position: relative;
+    margin-bottom: 8px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-inline-search .material-symbols-rounded {
+    position: absolute;
+    left: 10px;
+    top: 9px;
+    z-index: 2;
+    color: var(--fpf-muted);
+    font-size: 17px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-template-filter {
+    width: 100%;
+    padding-left: 34px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .template-settings-list {
+    min-width: 0;
+}
+
+.fp-tools-popup.fpf-reference-layout .template-settings-list .template-item,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-live-row {
+    margin-bottom: 7px !important;
+    padding: 9px 10px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface-soft) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .template-settings-list .template-item-header {
+    margin-bottom: 6px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .template-settings-list .template-label {
+    color: var(--fpf-text) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .template-variables-guide,
+.fp-tools-popup.fpf-reference-layout .image-upload-warning {
+    margin: 0 !important;
+    padding: 10px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface-soft) !important;
+    box-shadow: none !important;
+    color: var(--fpf-muted) !important;
+    font-size: 9.75px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .template-variables-guide ul {
+    margin: 7px 0 0 !important;
+    padding-left: 15px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .variable-code {
+    font-size: 9.5px !important;
+}
+
+/* Lots: four reference action tiles. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-lots-overview {
+    margin: 0 0 10px !important;
+    padding: 10px 12px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 10px !important;
+    background: var(--fpf-surface) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-compact-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px 16px;
+    margin: 7px 0 0 !important;
+    padding-left: 17px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-action-card .fpf-ref-panel-head {
+    align-items: flex-start;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-action-card .fpf-ref-panel-body {
+    min-height: 96px;
+}
+
+.fp-tools-popup.fpf-reference-layout .lot-io-buttons {
+    display: flex !important;
+    gap: 7px !important;
+    flex-wrap: wrap;
+}
+
+.fp-tools-popup.fpf-reference-layout #convert-cardinal-lots-btn {
+    display: inline-flex !important;
+    margin: 0 !important;
+    padding: 7px 10px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface-soft) !important;
+    color: var(--fpf-accent) !important;
+    text-decoration: none !important;
+    font-size: 10.5px !important;
+}
+
+/* Finance settings laid out as compact KPI-like setting cards. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-finance-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-finance-grid > .fpt-setting-card {
+    margin: 0 !important;
+    min-height: 76px !important;
+}
+
+/* Calculator / converter resemble the reference lower cards. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-calculator-panel {
+    max-width: 820px;
+    margin: 0 auto;
+}
+
+.fp-tools-popup.fpf-reference-layout .calc-subtabs {
+    max-width: 410px !important;
+    margin: 0 auto 8px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calc-subtab {
+    min-height: 33px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 8px !important;
+    background: var(--fpf-surface-soft) !important;
+    color: var(--fpf-muted) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calc-subtab.is-active {
+    border-color: color-mix(in srgb, var(--fpf-accent) 28%, var(--fpf-border)) !important;
+    background: var(--fpf-accent-soft) !important;
+    color: var(--fpf-accent) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calculator-container {
+    max-width: 410px !important;
+    margin: 0 auto !important;
+    padding: 13px !important;
+    border-radius: 14px !important;
+    background: var(--fpf-surface) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calculator-display {
+    height: 62px !important;
+    margin-bottom: 8px !important;
+    color: var(--fpf-text) !important;
+    font-size: 44px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calculator-buttons {
+    gap: 7px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calc-btn {
+    height: 49px !important;
+    min-height: 49px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 13px !important;
+    background: var(--fpf-surface-soft) !important;
+    color: var(--fpf-text) !important;
+    box-shadow: none !important;
+    font-size: 18px !important;
+    text-transform: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calc-btn.calc-btn-light {
+    background: #e9f0f7 !important;
+    color: #324157 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .calc-btn.calc-btn-operator {
+    background: var(--fpf-accent) !important;
+    color: #fff !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-currency-panel {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.fp-tools-popup.fpf-reference-layout .currency-converter-container {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 12px !important;
+    gap: 9px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 10px !important;
+    background: var(--fpf-surface-soft) !important;
+    box-shadow: none !important;
+}
+
+/* Theme page: same visual composition as the supplied reference. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-page.active {
+    display: grid !important;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 10px;
+    align-content: start;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-page.active > * {
+    min-width: 0;
+    grid-column: 1 / -1;
+    margin: 0 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-master .fpf-ref-panel-body {
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-master .checkbox-label-inline {
+    width: 100%;
+    justify-content: flex-end;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-presets {
+    grid-column: 1 / -1;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-presets .fpf-ref-panel-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+}
+
+.fp-tools-popup.fpf-reference-layout #fp-wallpaper-carousel {
+    width: 100% !important;
+    height: 190px !important;
+    min-height: 190px !important;
+    max-height: 190px !important;
+    margin: 0 !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 11px !important;
+    background: var(--fpf-surface-soft) !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout #fp-wp-label {
+    padding: 6px 9px !important;
+    background: linear-gradient(transparent, rgba(10, 19, 33, .72)) !important;
+    font-size: 10px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-media-grid {
+    grid-column: 1 / -1;
+}
+
+.fp-tools-popup.fpf-reference-layout #bg-image-preview {
+    height: 105px !important;
+    margin: 5px 0 8px !important;
+    border-radius: 10px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .color-input-grid {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .color-input-grid > div {
+    padding: 8px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface-soft) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .theme-color-input {
+    height: 29px !important;
+    min-height: 29px !important;
+    margin: 5px 0 0 !important;
+    padding: 2px !important;
+    border-radius: 7px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-control-card .fpf-ref-panel-head {
+    min-height: 39px;
+    padding-bottom: 4px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-control-card .fpf-ref-panel-body {
+    padding: 0 10px 10px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-control-card .setting-group,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-control-card .template-container {
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout #circlePreviewContainer {
+    min-height: 82px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout #circlePreview {
+    width: 72px !important;
+    height: 72px !important;
+    max-width: 72px !important;
+    max-height: 72px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-actions .theme-actions-grid {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    margin: 0 !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-theme-actions .theme-actions-grid > * {
+    grid-column: auto !important;
+    width: auto !important;
+}
+
+/* System page mirrors the reference: sound, webhook/integration, identifier, status strip. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-page {
+    display: grid;
+    gap: 10px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-sound .fp-tools-radio-group {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    margin: 0 0 8px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-radio-option {
+    min-height: 35px !important;
+    justify-content: center;
+    gap: 6px !important;
+    margin: 0 !important;
+    padding: 5px 8px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface) !important;
+    color: #42516a !important;
+    font-size: 10.5px !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fp-tools-radio-option:has(input:checked) {
+    border-color: color-mix(in srgb, var(--fpf-accent) 34%, var(--fpf-border)) !important;
+    background: var(--fpf-accent-soft) !important;
+    color: var(--fpf-accent) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout #fptCustomSoundBlock {
+    margin-top: 8px !important;
+    padding: 10px !important;
+    border: 1px solid var(--fpf-border) !important;
+    border-radius: 9px !important;
+    background: var(--fpf-surface-soft) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout #fptWaveWrap {
+    border-color: var(--fpf-border) !important;
+    background: var(--fpf-surface) !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-integration .fpt-setting-card,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-identifier .fpt-setting-card {
+    margin: 0 !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-status {
+    min-height: 58px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, var(--fpf-success) 24%, var(--fpf-border));
+    border-radius: 11px;
+    background: var(--fpf-success-soft);
+    color: #2f7451;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-status > .material-symbols-rounded {
+    width: 33px;
+    height: 33px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--fpf-success);
+    color: white;
+    font-size: 20px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-status div {
+    min-width: 0;
+    flex: 1;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-status b,
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-status div span {
+    display: block;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-status b {
+    color: #287149;
+    font-size: 11.5px;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-system-status div span {
+    margin-top: 2px;
+    font-size: 9.75px;
+    opacity: .8;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-status-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--fpf-success);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--fpf-success) 12%, transparent);
+}
+
+/* Notes and blacklist. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-notes-panel textarea {
+    min-height: 420px !important;
+    height: min(54vh, 520px) !important;
+    margin: 0 !important;
+    resize: none !important;
+}
+
+.fp-tools-popup.fpf-reference-layout .fpf-ref-simple-page .fpf-ref-two-column {
+    align-items: start;
+}
+
+/* Account page. */
+.fp-tools-popup.fpf-reference-layout .fpf-ref-accounts-page > div:not(.fpf-ref-panel) {
+    margin-top: 8px;
+}
+
+.fp-tools-popup.fpf-reference-layout #fpToolsAccountsList {
+    display: grid;
+    gap: 7px;
+}
+
+/* Modals in the same light-blue card language. */
+.fp-tools-modal-overlay {
+    background: rgba(38, 55, 78, .28) !important;
+    backdrop-filter: blur(10px) saturate(118%) !important;
+}
+
+.fp-tools-modal-content {
+    border: 1px solid #d8e4f1 !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    color: #101828 !important;
+    box-shadow: 0 28px 82px rgba(31, 52, 82, .24) !important;
+}
+
+.fp-tools-modal-header,
+.fp-tools-modal-footer {
+    background: #f8fbff !important;
+    border-color: #e2ebf5 !important;
+}
+
+/* Scrollbars. */
+.fp-tools-popup.fpf-reference-layout :is(.fp-tools-content, .fp-tools-nav, .fpt-nav-search-results) {
+    scrollbar-width: thin;
+    scrollbar-color: #c5d3e4 transparent;
+}
+
+.fp-tools-popup.fpf-reference-layout :is(.fp-tools-content, .fp-tools-nav, .fpt-nav-search-results)::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+
+.fp-tools-popup.fpf-reference-layout :is(.fp-tools-content, .fp-tools-nav, .fpt-nav-search-results)::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.fp-tools-popup.fpf-reference-layout :is(.fp-tools-content, .fp-tools-nav, .fpt-nav-search-results)::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: #c5d3e4;
+    background-clip: padding-box;
+}
+
+/* Responsive degradation preserves the same information hierarchy. */
+@container fpt-popup (max-width: 1180px) {
+    .fp-tools-popup.fpf-reference-layout .fp-tools-nav {
+        width: 228px !important;
+        flex-basis: 228px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero {
+        padding-right: 215px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero-art {
+        width: 225px !important;
+        opacity: .74 !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-status-hub,
+    .fp-tools-popup.fpf-reference-layout .fpt-presets-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-chat-grid {
+        grid-template-columns: 190px minmax(0, 1fr);
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-chat-help {
+        grid-column: 1 / -1;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-action-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-system-sound .fp-tools-radio-group {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-theme-actions .theme-actions-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+}
+
+@container fpt-popup (max-width: 900px) {
+    .fp-tools-popup.fpf-reference-layout .fp-tools-nav {
+        width: 184px !important;
+        flex-basis: 184px !important;
+        padding-inline: 9px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fp-tools-content {
+        padding: 15px 13px 19px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fp-tools-social-btn::after,
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-support-link span:last-child {
+        display: none !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero {
+        min-height: 76px !important;
+        padding-right: 120px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero-art {
+        width: 145px !important;
+        right: -28px !important;
+        opacity: .52 !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero-art::after {
+        display: none !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-two-column,
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-finance-grid,
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-chat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-control-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-card-grid-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .color-input-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+}
+
+@container fpt-popup (max-width: 680px) {
+    .fp-tools-popup.fpf-reference-layout .fp-tools-header {
+        padding-inline: 12px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fp-tools-site-link {
+        font-size: 18px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fp-tools-nav {
+        width: 148px !important;
+        flex-basis: 148px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-nav-search:has(.fpt-nav-search-input:placeholder-shown):not(:focus-within)::after,
+    .fp-tools-popup.fpf-reference-layout .fp-tools-nav::after,
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero-art {
+        display: none !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero {
+        min-height: 66px !important;
+        padding-right: 0 !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-status-hub,
+    .fp-tools-popup.fpf-reference-layout .fpt-presets-grid,
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-action-cards,
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-control-grid,
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-card-grid,
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-system-sound .fp-tools-radio-group {
+        grid-template-columns: 1fr !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-compact-list {
+        grid-template-columns: 1fr;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpf-ref-theme-actions .theme-actions-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@container fpt-popup (max-height: 700px) {
+    .fp-tools-popup.fpf-reference-layout .fp-tools-header {
+        height: 56px !important;
+        min-height: 56px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fp-tools-nav {
+        padding-top: 8px !important;
+        padding-bottom: 8px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fp-tools-nav::after {
+        display: none !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero {
+        min-height: 64px !important;
+        margin-bottom: 5px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout .fpt-pixel-hero h1 {
+        font-size: 25px !important;
+    }
+
+    .fp-tools-popup.fpf-reference-layout #fp-wallpaper-carousel {
+        height: 160px !important;
+        min-height: 160px !important;
+        max-height: 160px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup.fpf-reference-layout *,
+    .fp-tools-popup.fpf-reference-layout *::before,
+    .fp-tools-popup.fpf-reference-layout *::after {
+        transition-duration: .001ms !important;
+        animation-duration: .001ms !important;
+    }
+}

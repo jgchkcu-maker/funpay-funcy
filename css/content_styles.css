@@ -7473,56 +7473,357 @@ a.contact-item:hover {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   POPOVER ШАБЛОНОВ у кнопки-скрепки
+   POPOVER ШАБЛОНОВ (кнопка ⚡ с быстрым всплывающим меню)
    ════════════════════════════════════════════════════════════════════════ */
-.fpt-tpl-popover-btn{ position:relative; }
-.fpt-tpl-popover-btn .material-symbols-rounded{ font-size:20px;vertical-align:middle;line-height:1; }
-.fpt-tpl-popover-cell{ display:flex;align-items:center; }
+.fpt-tpl-popover-btn { position: relative; }
+.fpt-tpl-popover-btn .material-symbols-rounded {
+    font-size: 22px;
+    color: #f59e0b;
+    vertical-align: middle;
+    line-height: 1;
+    transition: transform .18s cubic-bezier(0.16, 1, 0.3, 1), color .18s ease;
+}
+.fpt-tpl-popover-btn:hover .material-symbols-rounded {
+    transform: scale(1.18);
+    color: #fbbf24;
+}
+.fpt-tpl-popover-btn:active .material-symbols-rounded {
+    transform: scale(0.92);
+}
+.fpt-tpl-popover-cell { display: flex; align-items: center; }
 
 /* ── Унификация кнопок композера: скрепка, шаблоны, ИИ - один размер, по центру ── */
 .chat-form .chat-btn-image,
 #fpt-tpl-popover-btn,
-#aiModeToggleBtn{
-    width:36px !important;height:36px !important;min-width:36px;padding:0 !important;
-    display:inline-flex !important;align-items:center;justify-content:center;
-    border-radius:50% !important;flex-shrink:0;align-self:center;margin:0 2px !important;
-    box-sizing:border-box;
+#aiModeToggleBtn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50% !important;
+    flex-shrink: 0;
+    align-self: center;
+    margin: 0 2px !important;
+    box-sizing: border-box;
 }
-.chat-form-attach{ display:flex;align-items:center; }
+.chat-form-attach { display: flex; align-items: center; }
 /* иконка-скрепка по центру кружка */
 .chat-form .chat-btn-image > i,
-.chat-form .chat-btn-image .fa{ margin:0;line-height:1; }
+.chat-form .chat-btn-image .fa { margin: 0; line-height: 1; }
 /* кнопка ИИ ровно в ряд, без наложения */
-#aiModeToggleBtn{ position:relative;z-index:1; }
-#aiModeToggleBtn .ai-magic-icon{ width:20px;height:20px;display:block; }
-.fpt-tpl-popover{
-    position:fixed;z-index:10050;min-width:230px;max-width:300px;
-    background:var(--fpt-surface, #15161d);border:1px solid var(--fpt-border, #2a2d44);border-radius:12px;
-    box-shadow:0 12px 36px rgba(0,0,0,.55);overflow:hidden;
-    opacity:0;transform:translateY(6px) scale(.98);transition:opacity .12s ease,transform .12s ease;
-    font-family:Inter,'Segoe UI',sans-serif;
+#aiModeToggleBtn { position: relative; z-index: 1; }
+#aiModeToggleBtn .ai-magic-icon { width: 20px; height: 20px; display: block; }
+
+/* ── Всплывающее меню ── */
+.fpt-tpl-popover {
+    position: fixed;
+    z-index: 10050;
+    width: 290px;
+    max-width: calc(100vw - 20px);
+    background: var(--fpt-surface, #141622);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.12));
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(8px) scale(.96);
+    transition: opacity .18s cubic-bezier(0.16, 1, 0.3, 1), transform .18s cubic-bezier(0.16, 1, 0.3, 1);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--fpt-text, #e2e8f0);
 }
-.fpt-tpl-popover.open{ opacity:1;transform:translateY(0) scale(1); }
-.fpt-tpl-popover-head{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:10px 14px;border-bottom:1px solid var(--fpt-border, #23263a);
-    font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--fpt-text-muted, #9aa0c2);
+.fpt-tpl-popover.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
-.fpt-tpl-popover-gear{
-    background:transparent;border:none;color:var(--fpt-text-muted, #8a90b5);cursor:pointer;border-radius:6px;
-    width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;transition:all .15s;
+
+/* Шапка */
+.fpt-tpl-popover-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.08));
 }
-.fpt-tpl-popover-gear .material-symbols-rounded{ font-size:18px; }
-.fpt-tpl-popover-gear:hover{ background:var(--fpt-accent-soft, rgba(27,117,187,.18));color:var(--fpt-accent, #1b75bb); }
-.fpt-tpl-popover-list{ max-height:260px;overflow-y:auto;padding:6px; }
-.fpt-tpl-popover-item{
-    width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border:none;border-radius:8px;
-    background:transparent;color:var(--fpt-text, #d8dae8);cursor:pointer;font-size:13px;text-align:left;transition:background .12s;
+.fpt-tpl-popover-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--fpt-text, #f8fafc);
 }
-.fpt-tpl-popover-item:hover{ background:var(--fpt-accent-soft, rgba(27,117,187,.14)); }
-.fpt-tpl-popover-dot{ width:9px;height:9px;border-radius:50%;flex-shrink:0;box-shadow:0 0 0 1px rgba(255,255,255,.2); }
-.fpt-tpl-popover-label{ flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
-.fpt-tpl-popover-empty{ padding:16px;text-align:center;color:var(--fpt-text-muted, #6b7194);font-size:12px; }
+.fpt-bolt-icon {
+    font-size: 18px;
+    color: #f59e0b;
+}
+.fpt-tpl-popover-head-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.fpt-tpl-btn-add {
+    display: inline-flex;
+    align-items: center;
+    background: var(--fpt-accent-soft, rgba(27, 117, 187, 0.16));
+    border: 1px solid var(--fpt-accent, rgba(27, 117, 187, 0.4));
+    color: var(--fpt-text, #e2e8f0);
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+.fpt-tpl-btn-add:hover,
+.fpt-tpl-btn-add.active {
+    background: var(--fpt-accent, #1b75bb);
+    color: #fff;
+}
+.fpt-tpl-popover-gear {
+    background: transparent;
+    border: none;
+    color: var(--fpt-text-muted, #94a3b8);
+    cursor: pointer;
+    border-radius: 6px;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all .15s;
+}
+.fpt-tpl-popover-gear .material-symbols-rounded { font-size: 18px; }
+.fpt-tpl-popover-gear:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Поиск */
+.fpt-tpl-search-wrap {
+    position: relative;
+    padding: 8px 10px 6px;
+}
+.fpt-tpl-search-wrap .fpt-search-ico {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: var(--fpt-text-muted, #94a3b8);
+    pointer-events: none;
+}
+.fpt-tpl-search-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.1));
+    border-radius: 8px;
+    padding: 6px 26px 6px 30px;
+    font-size: 12px;
+    color: var(--fpt-text, #fff);
+    outline: none;
+    transition: border-color .15s, background .15s;
+}
+.fpt-tpl-search-input:focus {
+    border-color: var(--fpt-accent, #1b75bb);
+    background: rgba(0, 0, 0, 0.35);
+}
+.fpt-tpl-search-clear {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--fpt-text-muted, #94a3b8);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 2px 4px;
+    line-height: 1;
+}
+.fpt-tpl-search-clear:hover { color: #fff; }
+
+/* Категории (чипы) */
+.fpt-tpl-cats {
+    display: flex;
+    gap: 4px;
+    padding: 0 10px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+.fpt-tpl-cats::-webkit-scrollbar { display: none; }
+.fpt-tpl-cat {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.08));
+    border-radius: 12px;
+    padding: 3px 8px;
+    font-size: 11px;
+    color: var(--fpt-text-muted, #94a3b8);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .12s ease;
+}
+.fpt-tpl-cat:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--fpt-text, #e2e8f0);
+}
+.fpt-tpl-cat.active {
+    background: var(--fpt-accent-soft, rgba(27, 117, 187, 0.22));
+    border-color: var(--fpt-accent, #1b75bb);
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Форма быстрого добавления */
+.fpt-tpl-quick-add {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.08));
+    border-top: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.08));
+}
+.fpt-tpl-add-row {
+    display: flex;
+    gap: 6px;
+}
+.fpt-tpl-add-name {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 12px;
+    color: #fff;
+    outline: none;
+}
+.fpt-tpl-add-name:focus,
+.fpt-tpl-add-text:focus {
+    border-color: var(--fpt-accent, #1b75bb);
+}
+.fpt-tpl-add-cat {
+    background: var(--fpt-surface, #1e202f);
+    border: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    padding: 4px 6px;
+    font-size: 11px;
+    color: #cbd5e1;
+    outline: none;
+}
+.fpt-tpl-add-text {
+    width: 100%;
+    box-sizing: border-box;
+    height: 52px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--fpt-border, rgba(255, 255, 255, 0.12));
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 11.5px;
+    color: #fff;
+    resize: none;
+    outline: none;
+}
+.fpt-tpl-add-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.fpt-tpl-add-hint {
+    font-size: 10px;
+    color: var(--fpt-text-muted, #64748b);
+}
+.fpt-tpl-add-btns {
+    display: flex;
+    gap: 4px;
+}
+.fpt-tpl-btn-cancel,
+.fpt-tpl-btn-save {
+    padding: 3px 8px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.fpt-tpl-btn-cancel {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+}
+.fpt-tpl-btn-cancel:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+.fpt-tpl-btn-save {
+    background: var(--fpt-accent, #1b75bb);
+    border: 1px solid transparent;
+    color: #fff;
+}
+.fpt-tpl-btn-save:hover { filter: brightness(1.1); }
+
+/* Список шаблонов */
+.fpt-tpl-popover-list {
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 4px 6px;
+}
+.fpt-tpl-popover-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--fpt-text, #e2e8f0);
+    cursor: pointer;
+    font-size: 12.5px;
+    text-align: left;
+    transition: background .10s ease, color .10s ease;
+}
+.fpt-tpl-popover-item:hover,
+.fpt-tpl-popover-item.fpt-active {
+    background: var(--fpt-accent-soft, rgba(27, 117, 187, 0.18));
+    color: #fff;
+}
+.fpt-tpl-popover-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.fpt-tpl-popover-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+}
+.fpt-tpl-item-del {
+    opacity: 0;
+    font-size: 14px;
+    color: #ef4444;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: opacity .12s ease;
+}
+.fpt-tpl-item-del .material-symbols-rounded { font-size: 15px; }
+.fpt-tpl-popover-item:hover .fpt-tpl-item-del { opacity: 0.7; }
+.fpt-tpl-item-del:hover {
+    opacity: 1 !important;
+    background: rgba(239, 68, 68, 0.18);
+}
+.fpt-tpl-popover-empty {
+    padding: 18px 12px;
+    text-align: center;
+    color: var(--fpt-text-muted, #64748b);
+    font-size: 12px;
+}
 
 /* ════════════════════════════════════════════════════════════════════════
    ПАНЕЛЬ НАСТРОЕК «Внешний вид кнопок» - крупнее, читаемее, без лагов

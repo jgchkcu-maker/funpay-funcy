@@ -1,4 +1,4 @@
-// C:\Users\AlliSighs\Desktop\◘FUNPAY ◘\FunPay Tools 2.6\content\content_script.js 
+// C:\Users\AlliSighs\Desktop\◘FUNPAY ◘\FunPay Funcy 2.6\content\content_script.js 
 
 (function() {
     'use strict';
@@ -105,7 +105,7 @@
         }
 
         const toolsMenu = createElement('li');
-        toolsMenu.innerHTML = `<a style="font-weight: bold; cursor: pointer; user-select: none;" id="fpToolsButton">FP Tools<span></span></a>`;
+        toolsMenu.innerHTML = `<a style="font-weight: bold; cursor: pointer; user-select: none;" id="fpToolsButton">FunPay Funcy<span></span></a>`;
         anchor.insertAdjacentElement('afterend', toolsMenu);
 
         const button = toolsMenu.querySelector('#fpToolsButton');
@@ -147,7 +147,7 @@
             }
         });
 
-        console.log("FP Tools: Кнопка в хедере успешно добавлена.");
+        console.log("FunPay Funcy: Кнопка в хедере успешно добавлена.");
         return true;
     }
 
@@ -218,7 +218,7 @@
     
         } catch (error) {
             showNotification(`Ошибка ИИ: ${error.message}`, true);
-            console.error('FP Tools AI Review Reply Error:', error);
+            console.error('FunPay Funcy AI Review Reply Error:', error);
         } finally {
             button.disabled = false;
             button.innerHTML = originalText;
@@ -228,7 +228,7 @@
     function initializeDynamicFeatures() {
         document.body.addEventListener('focusin', (event) => {
             if (event.target.matches('.chat-form-input .form-control')) {
-                if (!document.querySelector('.chat-buttons-container') && !document.querySelector('.fp-tools-template-sidebar')) {
+                if (!document.getElementById('fpt-tpl-popover-btn')) {
                     addChatTemplateButtons();
                 }
                 if (!document.getElementById('aiModeToggleBtn')) {
@@ -243,9 +243,6 @@
         });
     
         const checkAndInitFeatures = () => {
-            if (!document.getElementById('fpToolsGenerateImageBtn') && document.querySelector('.attachments-box')) {
-                initializeImageGenerator();
-            }
             if (!document.getElementById('fp-tools-ai-gen-btn')) {
                 const header = document.querySelector('h1.page-header, h1.page-header.page-header-no-hr');
                 if (header && (header.textContent.includes('Добавление предложения') || header.textContent.includes('Редактирование предложения'))) {
@@ -368,32 +365,18 @@
                 await loadSavedSettings();
                 initializeToolsPopup();
                 makePopupInteractive(toolsPopup);
-                initializeImageGenerator();
                 initializeCustomSound();
                 if (typeof initializeCustomSoundEditor === 'function') initializeCustomSoundEditor();
-                initializeMagicStickStyler();
-                initializePiggyBank();
                 initializeHeaderButtonStyler();
                 initializeAnnouncementsFeature();
                 initializeLotIO();
                 initializeAutoReview();
-                initializeAILotAudit();
                 initializeSettingsIO();
                 initBulkLotEditor();
                 initAutoDeliveryUI();
                 initializeResetButtons();
                 initSalesChart();
                 if (typeof initializeOverviewTour === 'function') initializeOverviewTour();
-
-                // Общий чат: опрашиваем public-chat.json раз в 16 минут.
-                // Так active/display/url меняются на лету без обновления расширения.
-                if (typeof fptGcRefreshConfig === 'function' && !window.__fptGcConfigTimer) {
-                    window.__fptGcConfigTimer = setInterval(() => {
-                        fptGcRefreshConfig(true).then(() => {
-                            if (typeof fptGcApplyVisibility === 'function') fptGcApplyVisibility();
-                        });
-                    }, 16 * 60 * 1000);
-                }
 
                 __fpPopupReady = true;
                 return toolsPopup;
@@ -423,11 +406,7 @@
         // immediately without opening the settings popup.
         addChatTemplateButtons();
         initializeExactPrice();
-        // FIX 2.8.4 (№9): применяем кастомные стили редактора сразу, не дожидаясь
-        // открытия меню FP Tools.
-        if (typeof injectMagicStickStylesEarly === 'function') injectMagicStickStylesEarly();
         setupAIChatFeature();
-        initializeFontTools();
         applyHeaderPosition();
         initializeUserNotes();
         initializeAutoDeliveryManager();
@@ -440,7 +419,7 @@
         initializeBlacklist();
         initializeUnconfirmedBalanceDisplay();
         initializeSalesFilters();
-        // Apply saved FP Tools button colour/size at load (panel itself builds with popup).
+        // Apply saved FunPay Funcy button colour/size at load (panel itself builds with popup).
         if (typeof applyHeaderButtonStylesEarly === 'function') applyHeaderButtonStylesEarly();
         // order_page_enhancements.js, lot_context_menu.js, auto_restore_lots.js self-initialize
         // New 3.0 features (self-initializing modules loaded separately)

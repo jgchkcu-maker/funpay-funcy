@@ -27,10 +27,10 @@ const DEFAULT_TEMPLATE_DISPLAY = {
 };
 
 const DEFAULT_STANDARD_TEMPLATES = {
-    greeting: { enabled: true, label: 'Приветствие', color: '#1b75bb', text: '{welcome}, {buyername}! Чем могу помочь?' },
-    completed: { enabled: true, label: 'Заказ выполнен', color: '#1b75bb', text: 'Заказ выполнен. Пожалуйста, зайдите в раздел «Покупки», выберите его в списке и нажмите кнопку «Подтвердить выполнение заказа».' },
-    review: { enabled: true, label: 'Попросить отзыв', color: '#FF6B6B', text: 'Спасибо за покупку! Буду очень благодарен, если вы оставите отзыв о сделке.' },
-    thanks: { enabled: true, label: 'Спасибо за заказ', color: '#FF6B6B', text: 'Спасибо за заказ, {buyername}! Обращайтесь еще. {date}' }
+    greeting: { enabled: true, label: 'Приветствие', color: '#1b75bb', category: 'greeting', text: '{welcome}, {buyername}! Чем могу помочь?' },
+    completed: { enabled: true, label: 'Заказ выполнен', color: '#10b981', category: 'deal', text: 'Заказ выполнен. Пожалуйста, зайдите в раздел «Покупки», выберите его в списке и нажмите кнопку «Подтвердить выполнение заказа».' },
+    review: { enabled: true, label: 'Попросить отзыв', color: '#f59e0b', category: 'review', text: 'Спасибо за покупку! Буду очень благодарен, если вы оставите отзыв о сделке.' },
+    thanks: { enabled: true, label: 'Спасибо за заказ', color: '#8b5cf6', category: 'deal', text: 'Спасибо за заказ, {buyername}! Обращайтесь еще. {date}' }
 };
 
 async function loadTemplateSettings() {
@@ -38,9 +38,7 @@ async function loadTemplateSettings() {
     const saved = data.fpToolsTemplateSettings || {};
     
     templateSettings.enabled = saved.enabled !== false;
-    let pos = saved.buttonPosition || 'bottom';
-    if (pos === 'sidebar') pos = 'sidebar_top'; // migrate old single sidebar option
-    templateSettings.buttonPosition = pos;
+    templateSettings.buttonPosition = 'popover'; // Always use the modern lightning popover
     templateSettings.sendTemplatesImmediately = saved.sendTemplatesImmediately !== false;
     templateSettings.custom = saved.custom || [];
     templateSettings.display = { ...DEFAULT_TEMPLATE_DISPLAY, ...(saved.display || {}) };
@@ -439,105 +437,15 @@ async function addChatTemplateButtons() {
     // Master switch: templates fully off → leave the chat untouched.
     if (templateSettings.enabled === false) return;
 
-    const position = templateSettings.buttonPosition;
-
-    // ── 4th layout: popover button to the LEFT of the attach (paperclip) button ──
-    if (position === 'popover') {
-        setupTemplatePopover();
-        return;
-    }
-
-    let buttonsContainer;
-
-    if (position === 'sidebar_top' || position === 'sidebar_bottom') {
-        // On the orders page (/orders/), when one of the "в панели" layouts is active,
-        // ALSO drop the paperclip popover trigger into the composer so the quick
-        // templates "скрепка" button is reachable right next to the message box.
-        if (window.location.pathname.includes('/orders/')) {
-            setupTemplatePopover();
-        }
-        let chatDetail = document.querySelector('.chat-detail-list');
-        if (!chatDetail) {
-             const detailContainer = document.querySelector('.chat-detail');
-             if(detailContainer) {
-                chatDetail = createElement('div', {class: 'chat-detail-list custom-scroll'});
-                detailContainer.appendChild(chatDetail);
-             } else {
-                return;
-             }
-        }
-        buttonsContainer = createElement('div', { class: 'fp-tools-template-sidebar' });
-        applyTemplateDisplayAttrs(buttonsContainer);
-        const head = createElement('div', { class: 'fpt-sidebar-head' });
-        head.textContent = 'Быстрые ответы';
-        buttonsContainer.appendChild(head);
-        fillTemplateContainer(buttonsContainer);
-
-        if (position === 'sidebar_top') {
-            buttonsContainer.setAttribute('data-fpt-pin', 'top');
-            chatDetail.prepend(buttonsContainer);
-        } else {
-            // "В панели снизу" - pin to the very FLOOR of the right panel (like the
-            // competitor's #bind-right: panel becomes position:relative and the strip is
-            // absolutely anchored to bottom:0). Borderless/transparent per the screenshot.
-            buttonsContainer.setAttribute('data-fpt-pin', 'bottom');
-            chatDetail.style.position = 'relative';
-            // ensure the panel reserves room so pinned buttons don't overlap content
-            chatDetail.classList.add('fpt-has-bottom-binds');
-            chatDetail.appendChild(buttonsContainer);
-            // reserve bottom padding equal to the strip height so info isn't covered
-            requestAnimationFrame(() => {
-                const h = buttonsContainer.offsetHeight;
-                if (h) chatDetail.style.paddingBottom = (h + 12) + 'px';
-            });
-        }
-        return;
-    }
-
-    buttonsContainer = createElement('div', { class: 'chat-buttons-container' });
-    applyTemplateDisplayAttrs(buttonsContainer);
-
-    // FunPay chat form structure:
-    //   .chat-form > form > (.chat-form-input, .chat-form-attach, .chat-form-btn)
-    // The three cells are a flex row. To avoid breaking that row, we place our strip
-    // as a full-width block OUTSIDE the flex: right before the <form> (above) or right
-    // after it (below). This is robust regardless of FunPay's flex settings.
-    const formEl   = chatInput.closest('form');
-    const chatForm = chatInput.closest('.chat-form') || formEl;
-    if (!chatForm || !chatForm.parentNode) {
-        chatInput.parentElement.insertBefore(buttonsContainer, chatInput);
-        fillTemplateContainer(buttonsContainer);
-        return;
-    }
-
-    if (position === 'above') {
-        buttonsContainer.setAttribute('data-fpt-pos', 'above');
-        // Insert as a sibling directly BEFORE the whole composer (.chat-form), exactly
-        // mirroring how "below" inserts after it. This keeps it outside the composer's
-        // inner padding so there's no phantom left gap.
-        chatForm.parentNode.insertBefore(buttonsContainer, chatForm);
-    } else {
-        buttonsContainer.setAttribute('data-fpt-pos', 'bottom');
-        // Below the whole composer.
-        chatForm.parentNode.insertBefore(buttonsContainer, chatForm.nextSibling);
-    }
-
-    fillTemplateContainer(buttonsContainer);
-
-    // Let the mouse wheel scroll the horizontal strip (only when it actually overflows
-    // and we're not in full-width/column mode).
-    buttonsContainer.addEventListener('wheel', (e) => {
-        if (buttonsContainer.getAttribute('data-fpt-fullwidth') === '1') return;
-        if (buttonsContainer.scrollWidth <= buttonsContainer.clientWidth) return;
-        if (e.deltaY === 0) return;
-        e.preventDefault();
-        buttonsContainer.scrollLeft += e.deltaY;
-    }, { passive: false });
+    setupTemplatePopover();
 }
+
 function setupTemplatePopover() {
     document.querySelectorAll('.fpt-tpl-popover-cell').forEach(el => el.remove());
     document.getElementById('fpt-tpl-popover-btn')?.remove();
     document.getElementById('fpt-tpl-popover')?.remove();
+
+    if (templateSettings.enabled === false) return;
 
     const attachBtn = document.querySelector('.chat-btn-image:not(.fpt-tpl-popover-btn)');
     const attachWrap = attachBtn ? (attachBtn.closest('.chat-form-attach') || attachBtn.parentElement) : null;
@@ -547,15 +455,12 @@ function setupTemplatePopover() {
         type: 'button',
         id: 'fpt-tpl-popover-btn',
         class: 'btn btn-default chat-btn-image fpt-tpl-popover-btn',
-        title: 'Шаблоны ответов'
+        title: 'Быстрые ответы (⚡)'
     });
-    trigger.innerHTML = '<span class="material-symbols-rounded">description</span>';
+    trigger.innerHTML = '<span class="material-symbols-rounded">bolt</span>';
 
-    // Place the trigger to the LEFT of the paperclip. If the attach button sits in its
-    // own .chat-form-attach cell, insert our trigger as a sibling right before that cell
-    // so it visually appears to the left; otherwise insert before the attach button.
+    // Place the trigger to the LEFT of the paperclip.
     if (attachBtn.closest('.chat-form-attach') === attachWrap && attachWrap.parentNode) {
-        // make a tiny wrapper cell so flex layout keeps it inline to the left
         const cell = createElement('div', { class: 'chat-form-attach fpt-tpl-popover-cell' });
         cell.appendChild(trigger);
         attachWrap.parentNode.insertBefore(cell, attachWrap);
@@ -572,77 +477,353 @@ function setupTemplatePopover() {
 
 function toggleTemplatePopover(trigger) {
     const existing = document.getElementById('fpt-tpl-popover');
-    if (existing) { existing.remove(); return; }
+    if (existing) {
+        existing.classList.remove('open');
+        setTimeout(() => existing.remove(), 160);
+        return;
+    }
 
     const pop = createElement('div', { id: 'fpt-tpl-popover', class: 'fpt-tpl-popover' });
 
+    // ── 1. Шапка ──
     const header = createElement('div', { class: 'fpt-tpl-popover-head' });
-    const title = createElement('span', {});
-    title.textContent = 'Шаблоны';
-    const gear = createElement('button', { type: 'button', class: 'fpt-tpl-popover-gear', title: 'Настройки шаблонов' });
+
+    const titleBox = createElement('div', { class: 'fpt-tpl-popover-title' });
+    const boltIcon = createElement('span', { class: 'material-symbols-rounded fpt-bolt-icon' });
+    boltIcon.textContent = 'bolt';
+    const titleText = createElement('span', { class: 'fpt-tpl-head-text' });
+    titleText.textContent = 'Быстрые ответы';
+    titleBox.appendChild(boltIcon);
+    titleBox.appendChild(titleText);
+
+    const headActions = createElement('div', { class: 'fpt-tpl-popover-head-actions' });
+    const addBtn = createElement('button', {
+        type: 'button',
+        class: 'fpt-tpl-btn-add',
+        title: 'Создать новый шаблон'
+    });
+    addBtn.innerHTML = '<span class="material-symbols-rounded" style="font-size:15px;margin-right:2px;vertical-align:-2px;">add</span><span>Добавить</span>';
+
+    const gear = createElement('button', {
+        type: 'button',
+        class: 'fpt-tpl-popover-gear',
+        title: 'Настройки шаблонов'
+    });
     gear.innerHTML = '<span class="material-symbols-rounded">settings</span>';
     gear.addEventListener('click', (e) => {
         e.stopPropagation();
-        pop.remove();
+        closePopover();
         openTemplateSettings();
     });
-    header.appendChild(title);
-    header.appendChild(gear);
+
+    headActions.appendChild(addBtn);
+    headActions.appendChild(gear);
+    header.appendChild(titleBox);
+    header.appendChild(headActions);
     pop.appendChild(header);
 
-    const list = createElement('div', { class: 'fpt-tpl-popover-list custom-scroll' });
-    const addItem = (config) => {
-        const item = createElement('button', { type: 'button', class: 'fpt-tpl-popover-item' });
-        const dot = createElement('span', { class: 'fpt-tpl-popover-dot' });
-        dot.style.backgroundColor = config.color;
-        const lbl = createElement('span', { class: 'fpt-tpl-popover-label' });
-        lbl.textContent = config.label;
-        item.appendChild(dot);
-        item.appendChild(lbl);
-        item.addEventListener('click', () => {
-            pop.remove();
-            useTemplate(config);
+    // ── 2. Поиск ──
+    const searchWrap = createElement('div', { class: 'fpt-tpl-search-wrap' });
+    searchWrap.innerHTML = `
+        <span class="material-symbols-rounded fpt-search-ico">search</span>
+        <input type="text" class="fpt-tpl-search-input" placeholder="Поиск по шаблонам..." autocomplete="off">
+        <button type="button" class="fpt-tpl-search-clear" style="display:none;" title="Очистить">✕</button>
+    `;
+    pop.appendChild(searchWrap);
+    const searchInput = searchWrap.querySelector('.fpt-tpl-search-input');
+    const searchClear = searchWrap.querySelector('.fpt-tpl-search-clear');
+
+    // ── 3. Категории ──
+    const catsBar = createElement('div', { class: 'fpt-tpl-cats' });
+    const categories = [
+        { id: 'all', label: 'Все' },
+        { id: 'greeting', label: 'Приветствие' },
+        { id: 'deal', label: 'Сделка' },
+        { id: 'review', label: 'Отзывы' },
+        { id: 'custom', label: 'Свои' }
+    ];
+    let activeCategory = 'all';
+
+    categories.forEach(cat => {
+        const catBtn = createElement('button', {
+            type: 'button',
+            class: `fpt-tpl-cat ${cat.id === activeCategory ? 'active' : ''}`,
+            'data-cat': cat.id
         });
-        list.appendChild(item);
+        catBtn.textContent = cat.label;
+        catBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            activeCategory = cat.id;
+            catsBar.querySelectorAll('.fpt-tpl-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === activeCategory));
+            activeIndex = 0;
+            renderList();
+        });
+        catsBar.appendChild(catBtn);
+    });
+    pop.appendChild(catsBar);
+
+    // ── 4. Форма быстрого добавления (в 1 клик) ──
+    const quickAddBox = createElement('div', { class: 'fpt-tpl-quick-add', style: 'display: none;' });
+    quickAddBox.innerHTML = `
+        <div class="fpt-tpl-add-row">
+            <input type="text" class="fpt-tpl-add-name" placeholder="Название (напр. Реквизиты)">
+            <select class="fpt-tpl-add-cat">
+                <option value="custom" selected>Свои</option>
+                <option value="deal">Сделка</option>
+                <option value="greeting">Приветствие</option>
+                <option value="review">Отзывы</option>
+            </select>
+        </div>
+        <textarea class="fpt-tpl-add-text" placeholder="Текст шаблона..."></textarea>
+        <div class="fpt-tpl-add-footer">
+            <span class="fpt-tpl-add-hint">{buyername}, {welcome}</span>
+            <div class="fpt-tpl-add-btns">
+                <button type="button" class="fpt-tpl-btn-cancel">Отмена</button>
+                <button type="button" class="fpt-tpl-btn-save">Сохранить</button>
+            </div>
+        </div>
+    `;
+    pop.appendChild(quickAddBox);
+
+    const addNameInput = quickAddBox.querySelector('.fpt-tpl-add-name');
+    const addCatSelect = quickAddBox.querySelector('.fpt-tpl-add-cat');
+    const addTextInput = quickAddBox.querySelector('.fpt-tpl-add-text');
+    const addCancelBtn = quickAddBox.querySelector('.fpt-tpl-btn-cancel');
+    const addSaveBtn = quickAddBox.querySelector('.fpt-tpl-btn-save');
+
+    const toggleQuickAdd = (show) => {
+        const isVisible = quickAddBox.style.display !== 'none';
+        const willShow = show !== undefined ? show : !isVisible;
+        quickAddBox.style.display = willShow ? 'flex' : 'none';
+        addBtn.classList.toggle('active', willShow);
+        if (willShow) {
+            const chatInput = document.querySelector('.chat-form-input .form-control');
+            if (chatInput && chatInput.value && chatInput.value.trim() && !addTextInput.value) {
+                addTextInput.value = chatInput.value.trim();
+            }
+            addNameInput.focus();
+        } else {
+            searchInput.focus();
+        }
     };
 
-    let any = false;
-    for (const key in templateSettings.standard) {
-        const c = templateSettings.standard[key];
-        if (c.enabled) { addItem({ ...c, key, isCustom: false }); any = true; }
-    }
-    templateSettings.custom.forEach(c => {
-        if (c.enabled) { addItem({ ...c, isCustom: true }); any = true; }
+    addBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleQuickAdd();
     });
-    if (!any) {
-        const empty = createElement('div', { class: 'fpt-tpl-popover-empty' });
-        empty.textContent = 'Нет активных шаблонов';
-        list.appendChild(empty);
-    }
+
+    addCancelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleQuickAdd(false);
+    });
+
+    addSaveBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const label = addNameInput.value.trim();
+        const text = addTextInput.value.trim();
+        const cat = addCatSelect.value;
+        if (!label) {
+            addNameInput.focus();
+            return;
+        }
+        const colorsByCat = {
+            greeting: '#1b75bb',
+            deal: '#10b981',
+            review: '#f59e0b',
+            custom: '#8b5cf6'
+        };
+        const newTemplate = {
+            id: Date.now().toString(),
+            label: label,
+            text: text,
+            category: cat,
+            color: colorsByCat[cat] || '#8b5cf6',
+            enabled: true
+        };
+        templateSettings.custom.push(newTemplate);
+        await saveTemplateSettings();
+        addNameInput.value = '';
+        addTextInput.value = '';
+        toggleQuickAdd(false);
+        renderList();
+    });
+
+    // ── 5. Список шаблонов ──
+    const list = createElement('div', { class: 'fpt-tpl-popover-list custom-scroll' });
     pop.appendChild(list);
 
-    document.body.appendChild(pop);
+    let activeIndex = 0;
 
-    // Position the popover anchored to the trigger, opening upward.
+    const getItems = () => {
+        const query = searchInput.value.trim().toLowerCase();
+        const allItems = [];
+
+        for (const key in templateSettings.standard) {
+            const c = templateSettings.standard[key];
+            if (c.enabled) {
+                const cat = c.category || (key === 'greeting' ? 'greeting' : key === 'review' ? 'review' : 'deal');
+                allItems.push({ ...c, key, isCustom: false, category: cat });
+            }
+        }
+        templateSettings.custom.forEach(c => {
+            if (c.enabled) {
+                allItems.push({ ...c, isCustom: true, category: c.category || 'custom' });
+            }
+        });
+
+        return allItems.filter(item => {
+            if (activeCategory !== 'all') {
+                if (activeCategory === 'custom' && !item.isCustom && item.category !== 'custom') return false;
+                if (activeCategory !== 'custom' && item.category !== activeCategory) return false;
+            }
+            if (query) {
+                const matchLabel = item.label.toLowerCase().includes(query);
+                const matchText = (item.text || '').toLowerCase().includes(query);
+                return matchLabel || matchText;
+            }
+            return true;
+        });
+    };
+
+    const closePopover = () => {
+        pop.classList.remove('open');
+        setTimeout(() => pop.remove(), 160);
+        document.removeEventListener('mousedown', onDoc);
+        document.removeEventListener('keydown', onKey);
+    };
+
+    const renderList = () => {
+        list.innerHTML = '';
+        const items = getItems();
+
+        if (items.length === 0) {
+            const empty = createElement('div', { class: 'fpt-tpl-popover-empty' });
+            empty.textContent = searchInput.value.trim() ? 'Ничего не найдено' : 'Нет активных шаблонов';
+            list.appendChild(empty);
+            return;
+        }
+
+        if (activeIndex >= items.length) activeIndex = 0;
+
+        items.forEach((item, idx) => {
+            const row = createElement('button', {
+                type: 'button',
+                class: `fpt-tpl-popover-item ${idx === activeIndex ? 'fpt-active' : ''}`
+            });
+
+            // Цветной индикатор
+            const dot = createElement('span', { class: 'fpt-tpl-popover-dot' });
+            dot.style.backgroundColor = item.color || '#1b75bb';
+            row.appendChild(dot);
+
+            // ТОЛЬКО название шаблона (без подстрочника описания)
+            const lbl = createElement('span', { class: 'fpt-tpl-popover-label' });
+            lbl.textContent = item.label;
+            row.appendChild(lbl);
+
+            // Быстрое удаление своих шаблонов
+            if (item.isCustom) {
+                const delBtn = createElement('span', {
+                    class: 'fpt-tpl-item-del',
+                    title: 'Удалить шаблон'
+                });
+                delBtn.innerHTML = '<span class="material-symbols-rounded">close</span>';
+                delBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    templateSettings.custom = templateSettings.custom.filter(t => t.id !== item.id);
+                    await saveTemplateSettings();
+                    renderList();
+                });
+                row.appendChild(delBtn);
+            }
+
+            row.addEventListener('click', () => {
+                closePopover();
+                useTemplate(item);
+            });
+
+            row.addEventListener('mouseenter', () => {
+                list.querySelectorAll('.fpt-tpl-popover-item').forEach(el => el.classList.remove('fpt-active'));
+                row.classList.add('fpt-active');
+                activeIndex = idx;
+            });
+
+            list.appendChild(row);
+        });
+    };
+
+    // Поиск
+    searchInput.addEventListener('input', () => {
+        searchClear.style.display = searchInput.value ? 'block' : 'none';
+        activeIndex = 0;
+        renderList();
+    });
+
+    searchClear.addEventListener('click', (e) => {
+        e.stopPropagation();
+        searchInput.value = '';
+        searchClear.style.display = 'none';
+        searchInput.focus();
+        renderList();
+    });
+
+    // Клавиатурная навигация
+    const onKey = (ev) => {
+        if (ev.key === 'Escape') {
+            closePopover();
+            return;
+        }
+
+        const visibleItems = list.querySelectorAll('.fpt-tpl-popover-item');
+        if (!visibleItems.length) return;
+
+        if (ev.key === 'ArrowDown') {
+            ev.preventDefault();
+            activeIndex = (activeIndex + 1) % visibleItems.length;
+            visibleItems.forEach((el, i) => el.classList.toggle('fpt-active', i === activeIndex));
+            visibleItems[activeIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (ev.key === 'ArrowUp') {
+            ev.preventDefault();
+            activeIndex = (activeIndex - 1 + visibleItems.length) % visibleItems.length;
+            visibleItems.forEach((el, i) => el.classList.toggle('fpt-active', i === activeIndex));
+            visibleItems[activeIndex]?.scrollIntoView({ block: 'nearest' });
+        } else if (ev.key === 'Enter') {
+            if (quickAddBox.style.display !== 'none' && (document.activeElement === addNameInput || document.activeElement === addTextInput)) {
+                return;
+            }
+            ev.preventDefault();
+            const selected = getItems()[activeIndex];
+            if (selected) {
+                closePopover();
+                useTemplate(selected);
+            }
+        }
+    };
+
+    const onDoc = (ev) => {
+        if (!pop.contains(ev.target) && ev.target !== trigger && !trigger.contains(ev.target)) {
+            closePopover();
+        }
+    };
+
+    document.body.appendChild(pop);
+    renderList();
+
+    // Позиционирование
     const r = trigger.getBoundingClientRect();
     const popRect = pop.getBoundingClientRect();
     let left = r.left + r.width / 2 - popRect.width / 2;
-    left = Math.max(8, Math.min(left, window.innerWidth - popRect.width - 8));
+    left = Math.max(10, Math.min(left, window.innerWidth - popRect.width - 10));
     let top = r.top - popRect.height - 10;
-    if (top < 8) top = r.bottom + 10; // not enough room above → open below
-    pop.style.left = `${left}px`;
-    pop.style.top = `${top}px`;
-    pop.classList.add('open');
+    if (top < 10) top = r.bottom + 10;
+    pop.style.left = `${Math.round(left)}px`;
+    pop.style.top = `${Math.round(top)}px`;
 
-    // Close on outside click / escape
-    const onDoc = (ev) => {
-        if (!pop.contains(ev.target) && ev.target !== trigger && !trigger.contains(ev.target)) {
-            pop.remove();
-            document.removeEventListener('mousedown', onDoc);
-            document.removeEventListener('keydown', onKey);
-        }
-    };
-    const onKey = (ev) => { if (ev.key === 'Escape') { pop.remove(); document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); } };
+    requestAnimationFrame(() => {
+        pop.classList.add('open');
+        searchInput.focus();
+    });
+
     setTimeout(() => {
         document.addEventListener('mousedown', onDoc);
         document.addEventListener('keydown', onKey);

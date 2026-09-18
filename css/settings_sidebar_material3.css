@@ -1,0 +1,309 @@
+/*
+ * FP Tools settings shell — Material 3 desktop navigation override.
+ * Loaded after legacy menu styles so the settings window has one predictable layout.
+ */
+
+.fp-tools-popup {
+    --fpt-popup-preferred-width: 1180px;
+    --fpt-popup-preferred-height: 780px;
+    --fpt-sidebar-width: 248px;
+    --fpt-nav-row-height: 48px;
+    --fpt-nav-radius: 14px;
+
+    width: min(var(--fpt-popup-preferred-width), calc(100vw - 24px));
+    height: min(var(--fpt-popup-preferred-height), calc(100vh - 24px));
+    min-width: min(760px, calc(100vw - 24px));
+    min-height: min(520px, calc(100vh - 24px));
+    max-width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+    border-radius: 20px;
+}
+
+.fp-tools-body {
+    min-width: 0;
+}
+
+/* Sidebar shell */
+.fp-tools-nav {
+    width: var(--fpt-sidebar-width);
+    flex: 0 0 var(--fpt-sidebar-width);
+    padding: 14px 12px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    background: var(--fptm-nav, var(--fptm-surface-2, #111318));
+    border-right: 1px solid var(--fptm-border, rgba(255,255,255,.10));
+    scrollbar-gutter: stable;
+}
+
+/* Search is an icon at rest and expands in-place when focused. */
+.fpt-nav-search {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    min-height: 46px;
+    padding: 2px 4px 10px;
+    margin: 0 0 2px;
+}
+
+.fpt-nav-search::before {
+    content: 'search';
+    position: absolute;
+    right: 15px;
+    top: 13px;
+    z-index: 2;
+    width: 20px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    font-family: 'Material Symbols Rounded';
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--fptm-muted, #9096a8);
+    pointer-events: none;
+    transition: left .18s ease, right .18s ease, color .18s ease;
+}
+
+.fpt-nav-search-input {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 21px !important;
+    border: 1px solid transparent !important;
+    background: var(--fptm-surface, rgba(255,255,255,.06)) !important;
+    color: transparent !important;
+    caret-color: transparent;
+    cursor: text;
+    transition: width .2s cubic-bezier(.2,0,0,1), background .18s ease, border-color .18s ease !important;
+}
+
+.fpt-nav-search-input::placeholder {
+    opacity: 0;
+}
+
+.fpt-nav-search:focus-within .fpt-nav-search-input {
+    width: 100%;
+    min-width: 0;
+    padding: 0 38px 0 40px !important;
+    border-color: var(--fptm-accent-border, rgba(27,117,187,.4)) !important;
+    background: var(--fptm-field, rgba(255,255,255,.08)) !important;
+    color: var(--fptm-text, #e7e8ec) !important;
+    caret-color: var(--fptm-accent, #1b75bb);
+}
+
+.fpt-nav-search:focus-within::before {
+    left: 16px;
+    right: auto;
+    color: var(--fptm-accent, #1b75bb);
+}
+
+.fpt-nav-search:focus-within .fpt-nav-search-input::placeholder {
+    opacity: .72;
+}
+
+.fp-tools-popup .fpt-nav-search .fpt-nav-search-clear {
+    right: 14px !important;
+    top: 23px !important;
+    z-index: 3;
+}
+
+.fpt-nav-search-results {
+    left: 4px;
+    top: 54px;
+    width: min(430px, calc(100vw - 48px));
+    max-width: none;
+    border-radius: 16px;
+    padding: 6px;
+}
+
+/* Main categories: always one ordered vertical list. */
+.fp-tools-nav ul {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.fp-tools-nav li.fp-nav-divider {
+    display: block;
+    width: auto;
+    max-height: none;
+    margin: 14px 10px 4px !important;
+    padding: 0 !important;
+    border: 0;
+    color: var(--fptm-faint, rgba(231,232,236,.54)) !important;
+    font-size: 10px !important;
+    line-height: 18px;
+    font-weight: 700 !important;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.fp-tools-nav li.fp-nav-divider:first-child {
+    margin-top: 2px !important;
+}
+
+.fp-tools-nav li[data-page],
+.fp-tools-nav li[data-page].fpt-nav-wide {
+    width: 100%;
+    margin: 0;
+}
+
+.fp-tools-nav li[data-page] a,
+.fp-tools-nav li[data-page].fpt-nav-wide a {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
+    height: var(--fpt-nav-row-height);
+    min-height: var(--fpt-nav-row-height);
+    margin: 0;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    overflow: hidden;
+    border: 1px solid transparent;
+    border-radius: var(--fpt-nav-radius);
+    background: transparent;
+    color: var(--fptm-muted, #aeb2bf) !important;
+    text-align: left;
+    box-shadow: none !important;
+}
+
+.fp-tools-nav li[data-page] a > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13.5px;
+    line-height: 1.2;
+    font-weight: 560;
+    letter-spacing: 0;
+}
+
+.fp-tools-nav .nav-icon,
+.fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 11px;
+    background: var(--fptm-surface, rgba(255,255,255,.055));
+    color: var(--fptm-muted, #9da2b2) !important;
+    font-size: 20px;
+    opacity: 1;
+    transition: background .16s ease, color .16s ease;
+}
+
+.fp-tools-nav li[data-page] a:hover {
+    background: var(--fptm-hover, rgba(255,255,255,.065)) !important;
+    border-color: transparent !important;
+    color: var(--fptm-text, #eef0f5) !important;
+    transform: none !important;
+}
+
+.fp-tools-nav li[data-page] a:hover .nav-icon {
+    background: var(--fptm-surface-2, rgba(255,255,255,.09));
+    color: var(--fptm-text, #eef0f5) !important;
+    transform: none !important;
+}
+
+.fp-tools-nav li[data-page].active a {
+    background: var(--fptm-accent-soft, rgba(27,117,187,.15)) !important;
+    border-color: var(--fptm-accent-border, rgba(27,117,187,.34)) !important;
+    color: var(--fptm-accent, #4a9fd4) !important;
+    font-weight: 650;
+}
+
+.fp-tools-nav li[data-page].active a .nav-icon {
+    background: color-mix(in srgb, var(--fptm-accent, #1b75bb) 18%, transparent);
+    color: var(--fptm-accent, #4a9fd4) !important;
+}
+
+/* Hidden compatibility proxy links stay hidden despite generic nav rules. */
+.fp-tools-nav li.fpt-proxy-nav {
+    display: none !important;
+}
+
+/* Old decorative cloud wastes navigation space in the desktop drawer. */
+.fp-tools-nav-cloud {
+    display: none !important;
+}
+
+/* Content gets the space gained by the wider window. */
+.fp-tools-content {
+    min-width: 0;
+    padding: 26px 32px 30px;
+}
+
+/* Medium desktop: keep the same information architecture, just tighten spacing. */
+@media (max-width: 1050px) {
+    .fp-tools-popup {
+        --fpt-sidebar-width: 224px;
+    }
+    .fp-tools-content {
+        padding: 24px 26px 28px;
+    }
+}
+
+/* Compact desktop: sidebar stays vertical and readable, never falls back to a card grid. */
+@media (max-width: 850px) {
+    .fp-tools-popup {
+        --fpt-sidebar-width: 196px;
+        --fpt-nav-row-height: 44px;
+        --fpt-nav-radius: 12px;
+    }
+    .fp-tools-nav {
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+    .fp-tools-nav li[data-page] a,
+    .fp-tools-nav li[data-page].fpt-nav-wide a {
+        gap: 8px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    .fp-tools-nav .nav-icon,
+    .fp-tools-nav li[data-page].fpt-nav-wide a .nav-icon {
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        border-radius: 9px;
+        font-size: 18px;
+    }
+    .fp-tools-nav li[data-page] a > span:last-child {
+        font-size: 12.5px;
+    }
+    .fp-tools-content {
+        padding: 20px 18px 24px;
+    }
+}
+
+/* Short laptop screens: reduce vertical chrome rather than hiding categories. */
+@media (max-height: 650px) {
+    .fp-tools-popup {
+        --fpt-nav-row-height: 42px;
+    }
+    .fp-tools-nav {
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+    .fpt-nav-search {
+        min-height: 42px;
+        padding-bottom: 6px;
+    }
+    .fp-tools-nav li.fp-nav-divider {
+        margin-top: 8px !important;
+        margin-bottom: 2px !important;
+    }
+}

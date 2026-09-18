@@ -63,38 +63,6 @@ const SCENES = [
         duration: 6000
     },
     {
-        title: "Волшебная палочка (Live Styler)",
-        icon: "auto_fix_normal",
-        description: "Редактируйте любой элемент сайта в реальном времени. Меняйте цвета, размеры или скрывайте ненужное, сохраняя стили навсегда.",
-        visualization: `
-            <div class="tour-magicstick-mockup">
-                <div class="tour-ms-element" id="tour-ms-target">Кнопка</div>
-                <div class="tour-ms-panel">
-                    <span>Цвет:</span> <input type="color" value="#1b75bb" disabled>
-                </div>
-                <div class="tour-ms-cursor"></div>
-            </div>`,
-        duration: 7000
-    },
-    {
-        title: "Встроенный генератор изображений",
-        icon: "add_photo_alternate",
-        description: "Создавайте привлекательные превью для своих лотов прямо в редакторе, в том числе с помощью ИИ.",
-        visualization: `
-            <div class="tour-image-gen-mockup">
-                <div class="tour-image-gen-ui">
-                    <div class="tour-image-gen-control">AI: <span>огненный значок клана</span></div>
-                </div>
-                <div class="tour-image-gen-preview">
-                    <div class="tour-preview-content">
-                        <span class="material-icons">local_fire_department</span>
-                        <span>FIRE SQUAD</span>
-                    </div>
-                </div>
-            </div>`,
-        duration: 7000
-    },
-    {
         title: "Продвинутое клонирование лотов",
         icon: "control_point_duplicate",
         description: "Копируйте лоты не только целиком, но и с изменением категорий, создавая десятки вариаций за раз.",
@@ -123,20 +91,6 @@ const SCENES = [
                 <div class="tour-stat-card"><span>Всего заработано</span><p>15 230 ₽</p></div>
             </div>`,
         duration: 7000
-    },
-    {
-        title: "Финансовые Копилки",
-        icon: "savings",
-        description: "Ставьте цели и отслеживайте прогресс их достижения. Копилка синхронизируется с вашим балансом на FunPay.",
-        visualization: `
-            <div class="tour-piggy-mockup">
-                <h4>На новый ПК</h4>
-                <div class="tour-piggy-progress">
-                    <div class="tour-piggy-fill"></div>
-                </div>
-                <span>Собрано 45 000 из 100 000 ₽</span>
-            </div>`,
-        duration: 6000
     },
     {
         title: "Автоматизация рутины",

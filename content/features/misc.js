@@ -441,17 +441,6 @@ function initializeToolsPopup() {
             }
         });
     }
-    
-    const resetCursorFxBtn = document.getElementById('resetCursorFxBtn');
-    if (resetCursorFxBtn) {
-        resetCursorFxBtn.addEventListener('click', async () => {
-             if (confirm('Вы уверены, что хотите сбросить настройки эффектов курсора?')) {
-                await chrome.storage.local.remove('fpToolsCursorFx');
-                await loadSavedSettings();
-                showNotification('Настройки эффектов курсора сброшены.');
-            }
-        });
-    }
 
     const configureBtn = document.getElementById('configureSelectiveBumpBtn');
     const modalOverlay = document.getElementById('autobump-category-modal-overlay');
@@ -516,7 +505,6 @@ function initializeToolsPopup() {
     if (typeof renderCustomTemplatesList === 'function') renderCustomTemplatesList();
     if (typeof setupThemeCustomizationHandlers === 'function') setupThemeCustomizationHandlers();
     if (typeof updateThemePreview === 'function') updateThemePreview();
-    if (typeof setupCursorFxHandlers === 'function') setupCursorFxHandlers();
     if (typeof renderAccountsList === 'function') renderAccountsList();
     
     if (typeof setupAccountManagementHandlers === 'function') setupAccountManagementHandlers();

@@ -64,41 +64,25 @@ async function setupTemplateSettingsHandlers() {
     const templatesPage = document.querySelector('.fp-tools-page-content[data-page="templates"]');
     if (!container || !templatesPage) return;
     
-    const posRadio = templatesPage.querySelector(`input[name="templatePos"][value="${templateSettings.buttonPosition}"]`);
-    if(posRadio) posRadio.checked = true;
-
-    // Popover hint visible only when the «popover» layout is selected.
-    const popoverHint = document.getElementById('fpt-popover-hint');
-    const isSidebarPos = () => templateSettings.buttonPosition === 'sidebar_top' || templateSettings.buttonPosition === 'sidebar_bottom';
-    const syncPopoverHint = () => {
-        if (popoverHint) popoverHint.style.display = (templateSettings.buttonPosition === 'popover') ? 'block' : 'none';
-    };
-    // Sidebar-only settings block appears (not just dims) when a sidebar position is chosen.
-    const sidebarExtra = document.getElementById('fpt-sidebar-extra');
-    const syncSidebarExtra = () => {
-        if (sidebarExtra) sidebarExtra.style.display = isSidebarPos() ? '' : 'none';
-    };
-    syncPopoverHint();
-    syncSidebarExtra();
-
-    // Master enable toggle - hides the whole config block when off.
+    // Master enable toggle
     const enabledChk = document.getElementById('templatesEnabled');
-    const configBlock = document.getElementById('fpt-templates-config');
-    const syncEnabled = () => {
-        if (configBlock) configBlock.style.display = (templateSettings.enabled === false) ? 'none' : '';
-    };
     if (enabledChk) {
         enabledChk.checked = templateSettings.enabled !== false;
         enabledChk.onchange = async (e) => {
             templateSettings.enabled = e.target.checked;
-            syncEnabled();
             await saveTemplateSettings();
             await addChatTemplateButtons();
         };
     }
-    syncEnabled();
 
-    document.getElementById('sendTemplatesImmediately').checked = templateSettings.sendTemplatesImmediately;
+    const sendImmediatelyChk = document.getElementById('sendTemplatesImmediately');
+    if (sendImmediatelyChk) {
+        sendImmediatelyChk.checked = templateSettings.sendTemplatesImmediately !== false;
+        sendImmediatelyChk.onchange = async (e) => {
+            templateSettings.sendTemplatesImmediately = e.target.checked;
+            await saveTemplateSettings();
+        };
+    }
 
     // 3.0: debounce to stop per-keystroke lag. Previously every character typed triggered a
     // full settings save AND a full rebuild of all chat template buttons in the DOM, which made
@@ -199,89 +183,13 @@ async function setupTemplateSettingsHandlers() {
         await saveTemplateSettings();
         await renderTemplateSettings(); // Re-render to add the new item (delegation handles events)
     };
-
-    templatesPage.querySelectorAll('input[name="templatePos"]').forEach(radio => {
-        radio.onchange = async (e) => {
-            templateSettings.buttonPosition = e.target.value;
-            syncPopoverHint();
-            syncSidebarExtra();
-            await saveTemplateSettings();
-            await addChatTemplateButtons();
-        };
-    });
-
-    document.getElementById('sendTemplatesImmediately').onchange = async (e) => {
-        templateSettings.sendTemplatesImmediately = e.target.checked;
-        await saveTemplateSettings();
-    };
-
-    // ── Button appearance ─────────────────────────────────────────────────────
-    const appx = templatesPage.querySelector('.fpt-appx');
-    const dispRef = () => (templateSettings.display = templateSettings.display || { ...DEFAULT_TEMPLATE_DISPLAY });
-
-    const writePreviewAttrs = () => {
-        const preview = document.getElementById('fpt-appearance-preview');
-        if (!preview) return;
-        const disp = dispRef();
-        preview.setAttribute('data-fpt-shape', disp.shape);
-        preview.setAttribute('data-fpt-size', disp.size);
-        preview.setAttribute('data-fpt-fill', disp.fill);
-        preview.setAttribute('data-fpt-align', disp.align);
-        preview.setAttribute('data-fpt-fullwidth', disp.fullWidth ? '1' : '0');
-        preview.setAttribute('data-fpt-uppercase', disp.uppercase ? '1' : '0');
-        preview.setAttribute('data-fpt-compact', disp.compact ? '1' : '0');
-    };
-
-    const syncAppxUI = () => {
-        if (!appx) return;
-        const disp = dispRef();
-        appx.querySelectorAll('.fpt-seg').forEach(seg => {
-            const opt = seg.dataset.fptOpt;
-            seg.querySelectorAll('button').forEach(b =>
-                b.classList.toggle('active', b.dataset.val === String(disp[opt])));
-        });
-        appx.querySelectorAll('.fpt-chip-toggle').forEach(chip =>
-            chip.classList.toggle('active', !!disp[chip.dataset.fptToggle]));
-        // Alignment only matters when buttons span the full width - otherwise they're
-        // content-sized and alignment is invisible. Hide the control unless fullWidth.
-        const alignBlock = document.getElementById('fpt-align-block');
-        if (alignBlock) alignBlock.classList.toggle('fpt-disabled', !disp.fullWidth);
-        writePreviewAttrs();
-    };
-
-    if (appx && !appx.dataset.fptBound) {
-        appx.dataset.fptBound = '1';
-        const persist = async () => {
-            await saveTemplateSettings();
-            await addChatTemplateButtons();
-        };
-        appx.querySelectorAll('.fpt-seg').forEach(seg => {
-            const opt = seg.dataset.fptOpt;
-            seg.addEventListener('click', async (e) => {
-                const btn = e.target.closest('button[data-val]');
-                if (!btn) return;
-                dispRef()[opt] = btn.dataset.val;
-                syncAppxUI();
-                await persist();
-            });
-        });
-        appx.querySelectorAll('.fpt-chip-toggle').forEach(chip => {
-            chip.addEventListener('click', async () => {
-                const key = chip.dataset.fptToggle;
-                dispRef()[key] = !dispRef()[key];
-                syncAppxUI();
-                await persist();
-            });
-        });
-    }
-    syncAppxUI();
 }
 
 
 async function loadSavedSettings() {
     const settings = await chrome.storage.local.get([
         'fpToolsTemplateSettings', 'enableCustomTheme', 'fpToolsTheme', 'aiModeActive',
-        'autoBumpEnabled', 'fpToolsCursorFx', 'fpToolsCustomCursor',
+        'autoBumpEnabled',
         'fpToolsPopupPosition', 'fpToolsPopupSize', 'fpToolsPopupDragged', 'fpToolsAccentColor',
         'fpToolsAccounts', 'showSalesStats', 'showFinanceStats', 'hideBalance', 'viewSellersPromo', 'notificationSound', 'notificationVolume',
         'fpToolsDiscord',
@@ -313,10 +221,6 @@ async function loadSavedSettings() {
         });
     }
 
-    if (typeof initializePiggyBank === 'function') {
-        initializePiggyBank();
-    }
-    
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (settings.fpToolsPopupDragged && settings.fpToolsPopupPosition) {
         toolsPopup.style.left = settings.fpToolsPopupPosition.left;
@@ -377,44 +281,6 @@ async function loadSavedSettings() {
     document.getElementById('autoBumpEnabled').checked = settings.autoBumpEnabled === true;
     document.getElementById('selectiveBumpEnabled').checked = settings.fpToolsSelectiveBumpEnabled === true;
     document.getElementById('bumpOnlyAutoDelivery').checked = settings.fpToolsBumpOnlyAutoDelivery === true;
-
-    const cursorFxSettings = settings.fpToolsCursorFx || {};
-    const cursorFxDefaults = { enabled: false, type: 'sparkle', color1: '#FF6B6B', color2: '#1b75bb', rgb: false, count: 50 };
-    const finalCursorFxSettings = { ...cursorFxDefaults, ...cursorFxSettings };
-
-    document.getElementById('cursorFxEnabled').checked = finalCursorFxSettings.enabled;
-    document.getElementById('cursorFxType').value = finalCursorFxSettings.type;
-    document.getElementById('cursorFxColor1').value = finalCursorFxSettings.color1;
-    document.getElementById('cursorFxColor2').value = finalCursorFxSettings.color2;
-    document.getElementById('cursorFxRgb').checked = finalCursorFxSettings.rgb;
-    document.getElementById('cursorFxCount').value = finalCursorFxSettings.count;
-    document.getElementById('cursorFxCountValue').textContent = `${finalCursorFxSettings.count}%`;
-    cursorFx.updateConfig(finalCursorFxSettings);
-    
-    const customCursorSettings = settings.fpToolsCustomCursor || {};
-    const customCursorDefaults = { enabled: false, image: null, size: 32, opacity: 100, hideSystem: true };
-    const finalCustomCursorSettings = { ...customCursorDefaults, ...customCursorSettings };
-
-    document.getElementById('customCursorEnabled').checked = finalCustomCursorSettings.enabled;
-    const controlsDiv = document.getElementById('customCursorControls');
-    if (controlsDiv) controlsDiv.style.display = finalCustomCursorSettings.enabled ? 'block' : 'none';
-    
-    document.getElementById('hideSystemCursor').checked = finalCustomCursorSettings.hideSystem;
-    
-    document.getElementById('customCursorSize').value = finalCustomCursorSettings.size;
-    document.getElementById('customCursorSizeValue').textContent = `${finalCustomCursorSettings.size}px`;
-    document.getElementById('customCursorOpacity').value = finalCustomCursorSettings.opacity;
-    document.getElementById('customCursorOpacityValue').textContent = `${finalCustomCursorSettings.opacity}%`;
-    
-    const preview = document.getElementById('cursor-image-preview');
-    if (finalCustomCursorSettings.image) {
-        preview.style.backgroundImage = `url(${finalCustomCursorSettings.image})`;
-        preview.textContent = '';
-    } else {
-        preview.style.backgroundImage = 'none';
-        preview.textContent = 'Нет';
-    }
-    cursorFx.updateCustomCursor(finalCustomCursorSettings);
 
     document.getElementById('showSalesStatsCheckbox').checked = settings.showSalesStats !== false;
     { const _fs=document.getElementById('showFinanceStatsCheckbox'); if(_fs) _fs.checked = settings.showFinanceStats !== false; }
