@@ -75,7 +75,7 @@ function createMainPopup() {
     toolsPopup.className = 'fp-tools-popup';
     toolsPopup.innerHTML = `
         <div class="fp-tools-header">
-            <h2 class="fp-tools-title-wrap"><a href="https://funpay.tools" target="_blank" class="fp-tools-site-link">FunPay Funcy</a><button type="button" id="fptAccentBtn" class="fpt-accent-btn" title="Цвет акцента" aria-label="Цвет акцента"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.36-.6-.36-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="15" cy="8" r="1.1" fill="currentColor"/><circle cx="16.8" cy="12" r="1.1" fill="currentColor"/></svg><input type="color" id="fptAccentInput" class="fpt-accent-input" value="#1b75bb" aria-hidden="true" tabindex="-1"></button></h2>
+            <h2 class="fp-tools-title-wrap"><a href="https://github.com/jgchkcu-maker/funpay-funcy" target="_blank" class="fp-tools-site-link">FunPay Funcy</a><button type="button" id="fptAccentBtn" class="fpt-accent-btn" title="Цвет акцента" aria-label="Цвет акцента"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.36-.6-.36-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="15" cy="8" r="1.1" fill="currentColor"/><circle cx="16.8" cy="12" r="1.1" fill="currentColor"/></svg><input type="color" id="fptAccentInput" class="fpt-accent-input" value="#1b75bb" aria-hidden="true" tabindex="-1"></button></h2>
             <div class="fp-tools-social">
                 <a class="fp-tools-social-btn" href="https://t.me/FPTOOLS" target="_blank" rel="noopener" title="Telegram" aria-label="Telegram"><img class="fp-tools-social-ico" data-icon="telegram" alt="Telegram"></a>
                 <a class="fp-tools-social-btn" href="https://discord.gg/c8A9v58CQw" target="_blank" rel="noopener" title="Discord" aria-label="Discord"><img class="fp-tools-social-ico" data-icon="discord" alt="Discord"></a>
@@ -914,7 +914,7 @@ function createMainPopup() {
                         <button id="fp-wp-apply-cur" style="position:absolute;top:6px;right:6px;background:var(--fpt-accent, #1b75bb);border:none;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:12px;cursor:pointer;z-index:2;display:none;">Применить</button>
                     </div>
                     <div id="fp-wp-desc" style="font-size:12px;color:#9aa0b8;margin:6px 0 2px;line-height:1.4;min-height:16px;"></div>
-                    <div style="font-size:11px;color:var(--fptm-faint, #5a5f7a);margin:6px 0 12px;line-height:1.4;">Хотите добавить свою тему в этот каталог? Загрузите её в Telegram-боте <a href="https://t.me/FPToolsBot" target="_blank" rel="noopener noreferrer" style="color:#1b75bb;">@FPToolsBot</a> → «Загрузить тему».</div>
+                    <div style="font-size:11px;color:var(--fptm-faint, #5a5f7a);margin:6px 0 12px;line-height:1.4;">Хотите добавить свою тему в этот каталог? Загрузите её в <a href="https://t.me/FPToolsBot" target="_blank" rel="noopener noreferrer" style="color:#1b75bb;">Telegram-боте</a> → «Загрузить тему».</div>
                     <div class="template-container">
                         <label>Фоновое изображение:</label>
                         <div id="bg-image-preview" style="width:100%; height:60px; background-color:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:10px; background-size:cover; background-position:center; display:flex; align-items:center; justify-content:center; color: var(--fptm-muted, #888); font-size:12px;">Нет изображения</div>
@@ -1042,7 +1042,7 @@ function createMainPopup() {
                         <button id="fp-reset-april-btn" class="btn btn-default" style="width:auto;padding:8px 14px;">Сбросить счётчик даты</button>
                     </div>
                     <div style="margin-top:24px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
-                        <a href="https://funpay.tools" target="_blank" class="fp-site-footer-link"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px;margin-right:4px;">link</span>funpay.tools</a>
+                        <a href="https://github.com/jgchkcu-maker/funpay-funcy" target="_blank" class="fp-site-footer-link"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px;margin-right:4px;">link</span>FunPay Funcy</a>
                     </div>
                 </div>
 
@@ -1248,7 +1248,7 @@ function createMainPopup() {
                         <a href="https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/reviews" target="_blank" class="btn review-btn"><span class="material-icons" style="font-size: 20px; margin-right: 8px;">rate_review</span>Оставить отзыв в Chrome Store</a>
                     </div>
                     <div style="margin-top:24px;text-align:center;border-top:1px solid rgba(255,255,255,0.06);padding-top:16px;">
-                        <a href="https://funpay.tools" target="_blank" class="fp-site-footer-link"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px;margin-right:4px;">link</span>funpay.tools</a>
+                        <a href="https://github.com/jgchkcu-maker/funpay-funcy" target="_blank" class="fp-site-footer-link"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px;margin-right:4px;">link</span>FunPay Funcy</a>
                     </div>
                 </div>
             </main>
@@ -1927,7 +1927,7 @@ async function initializeWallpaperPresets() {
         return;
     }
     if (!_fpThemeCatalog.length) {
-        if (slot) slot.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--fptm-faint, #5a5f7a);font-size:12px;text-align:center;padding:10px;">Каталог пока пуст.<br>Темы добавляются через @FPToolsBot.</div>';
+        if (slot) slot.innerHTML = '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--fptm-faint, #5a5f7a);font-size:12px;text-align:center;padding:10px;">Каталог пока пуст.<br>Темы добавляются через Telegram-бота.</div>';
         if (loaderEl) loaderEl.style.display = 'none';
         return;
     }
