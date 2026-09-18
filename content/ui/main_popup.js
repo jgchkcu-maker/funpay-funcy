@@ -85,7 +85,7 @@ function createMainPopup() {
         <div class="fp-tools-body">
             <nav class="fp-tools-nav">
                 <div class="fpt-nav-search">
-                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">
+                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск настроек..." autocomplete="off" spellcheck="false">
                     <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>
                     <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>
                 </div>
