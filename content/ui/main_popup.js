@@ -85,7 +85,7 @@ function createMainPopup() {
         <div class="fp-tools-body">
             <nav class="fp-tools-nav">
                 <div class="fpt-nav-search">
-                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">
+                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск настроек..." autocomplete="off" spellcheck="false">
                     <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>
                     <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>
                 </div>
@@ -466,7 +466,7 @@ function createMainPopup() {
                         </div>
                     </div>
 
-                    <h4 style="margin-top: 25px; margin-bottom: 8px;">Идентификатор FPT</h4>
+                    <h4 style="margin-top: 25px; margin-bottom: 8px;">Идентификатор FunPay Funcy</h4>
                     <div class="fpt-setting-card">
                         <div class="fpt-setting-info">
                             <div class="fpt-setting-title-row">
@@ -482,7 +482,7 @@ function createMainPopup() {
                             </label>
                         </div>
                     </div>
-                    <p class="template-info">При включении к исходящим сообщениям добавляется невидимый символ. Если собеседник тоже использует FPT - рядом с его ником появится пометка. Символ не виден обычным пользователям. Не добавляется в ссылки и скопированный текст.</p>
+                    <p class="template-info">При включении к исходящим сообщениям добавляется невидимый символ. Если собеседник тоже использует FunPay Funcy — рядом с его ником появится пометка. Символ не виден обычным пользователям. Не добавляется в ссылки и скопированный текст.</p>
 
                     <div class="support-promo" style="background: rgba(255, 152, 0, 0.1); border-color: rgba(255, 152, 0, 0.3); margin-top: 15px;">
                         <span class="nav-icon material-symbols-rounded" style="color: #ff9800;">warning</span>
