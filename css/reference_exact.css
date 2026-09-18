@@ -111,3 +111,121 @@
 
 @container fpt-popup (max-width:1250px){.fp-tools-popup.fpf-exact-ui .fp-tools-nav{width:235px!important;flex-basis:235px!important}.fp-tools-popup.fpf-exact-ui .fpf-chat-upper{grid-template-columns:180px minmax(0,1fr) 260px!important}.fp-tools-popup.fpf-exact-ui .fpf-status-grid,.fp-tools-popup.fpf-exact-ui .fpf-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.fp-tools-popup.fpf-exact-ui .fpf-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.fp-tools-popup.fpf-exact-ui .fpf-theme-tiles{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @container fpt-popup (max-width:980px){.fp-tools-popup.fpf-exact-ui .fp-tools-nav{width:185px!important;flex-basis:185px!important}.fp-tools-popup.fpf-exact-ui .fp-tools-content{padding:15px 13px 18px!important}.fp-tools-popup.fpf-exact-ui .fpt-pixel-hero{padding-right:150px!important}.fp-tools-popup.fpf-exact-ui .fpt-pixel-hero-art{width:170px!important;opacity:.55!important}.fp-tools-popup.fpf-exact-ui .fpf-dashboard-lower,.fp-tools-popup.fpf-exact-ui .fpf-finance-main,.fp-tools-popup.fpf-exact-ui .fpf-finance-bottom,.fp-tools-popup.fpf-exact-ui .fpf-auto-columns,.fp-tools-popup.fpf-exact-ui .fpf-chat-upper,.fp-tools-popup.fpf-exact-ui .fpf-chat-bottom,.fp-tools-popup.fpf-exact-ui .fpf-market-grid,.fp-tools-popup.fpf-exact-ui .fpf-theme-row{grid-template-columns:1fr!important}.fp-tools-popup.fpf-exact-ui .fpf-market-actions,.fp-tools-popup.fpf-exact-ui .fpf-theme-controls.three,.fp-tools-popup.fpf-exact-ui .fpf-theme-bottom{grid-template-columns:repeat(2,minmax(0,1fr))!important}.fp-tools-popup.fpf-exact-ui .fpf-sound-options{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+
+
+.fp-tools-popup.fpf-exact-ui .fp-tools-social-btn{
+  width:auto!important;min-width:max-content!important;overflow:visible!important;
+}
+.fp-tools-popup.fpf-exact-ui .fp-tools-social{gap:8px!important}
+.fp-tools-popup.fpf-exact-ui .fpt-subtabs-bar::before{display:none!important}
+.fp-tools-popup.fpf-exact-ui .fpt-subtab.is-active{
+  border:1px solid #b9dafa!important;
+  background:#e7f4ff!important;
+  box-shadow:0 1px 2px rgba(42,96,148,.03)!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpt-pixel-hero-art::after{
+  right:14px!important;bottom:16px!important;width:94px!important;max-width:94px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-bg-preview,
+.fp-tools-popup.fpf-exact-ui .fpf-circle-preview>i{
+  background:
+    linear-gradient(165deg,transparent 0 54%,rgba(14,39,57,.75) 55% 100%),
+    linear-gradient(195deg,transparent 0 51%,rgba(27,64,85,.92) 52% 100%),
+    radial-gradient(circle at 75% 22%,rgba(244,249,255,.85) 0 3px,transparent 4px),
+    linear-gradient(180deg,#315d79,#142f45)!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-bg-preview>span,
+.fp-tools-popup.fpf-exact-ui .fpf-circle-preview>i::before{display:none!important}
+
+/* Pass 3: tune vertical rhythm against the 1536×1152 references. */
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard{gap:12px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-status-section{padding-bottom:14px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-status-tile{min-height:120px!important;padding:13px 11px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-status-tile small{margin-top:12px!important;font-size:9.8px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-kpi{min-height:116px!important;padding:14px 12px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-kpi>div>span{font-size:11px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-kpi>div>strong{font-size:25px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-quick-section{padding-bottom:13px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-quick-grid{gap:9px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-action{min-height:59px!important;padding:8px 10px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-action span:last-child{font-size:10.2px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-card-head{min-height:45px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-chart-wrap{height:208px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-exact-dashboard .fpf-activity-list>div{min-height:57px!important}
+
+/* Automation: reference uses a much taller configuration card. */
+.fp-tools-popup.fpf-exact-ui .fpf-auto-master{padding:15px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-master-head{min-height:82px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-title b{font-size:17px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-title span{font-size:11px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-schedule{min-height:104px!important;padding:13px 0!important}
+.fp-tools-popup.fpf-exact-ui .fpf-setting-block{min-height:88px!important;padding:10px 10px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-settings{min-height:92px!important;padding-top:14px!important;padding-bottom:5px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-settings label{font-size:10px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-columns{margin-top:12px!important;gap:12px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-rules .fpf-card-head,
+.fp-tools-popup.fpf-exact-ui .fpf-auto-stats .fpf-card-head,
+.fp-tools-popup.fpf-exact-ui .fpf-run-log .fpf-card-head{min-height:48px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-rule-row{min-height:72px!important;margin-bottom:8px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-stat-grid>div{min-height:89px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-log-row{min-height:33px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-tip-card{min-height:86px!important;margin-top:12px!important}
+
+/* Finance: make KPI and lower calculation blocks match reference proportions. */
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-kpi{
+  min-height:148px!important;padding:17px 13px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-kpi>div>span{font-size:11.5px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-kpi>div>strong{font-size:26px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-spark{height:45px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-finance-main{gap:12px!important;margin-bottom:12px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-finance-bottom{gap:12px!important;margin-bottom:12px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-profit-calc,
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-currency-card{min-height:252px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-card-head{min-height:46px!important}
+
+/* System page reference fills almost the full content height. */
+.fp-tools-popup.fpf-exact-ui .fpf-system-view{gap:12px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-sound-card{min-height:194px!important;padding:14px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-sound-options{margin-top:14px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-sound-options label{min-height:42px!important;font-size:10px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-volume{min-height:56px!important;margin-top:13px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-webhook-card{min-height:184px!important;padding:14px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-webhook-input{margin:14px 0 10px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-webhook-input input{height:42px!important;min-height:42px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-webhook-input button{min-height:42px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-webhook-card .fpf-info-strip{min-height:58px!important;padding:10px 12px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-discord-card{min-height:132px!important;padding:14px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-identifier-card{min-height:132px!important;padding:14px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-integration-row{min-height:68px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-system-ok{min-height:70px!important}
+
+/* Chat top zone needs slightly more breathing room; remove icon-ligature overflow. */
+.fp-tools-popup.fpf-exact-ui .fpf-chat-upper{min-height:472px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-template-library,
+.fp-tools-popup.fpf-exact-ui .fpf-template-center,
+.fp-tools-popup.fpf-exact-ui .fpf-chat-side{min-height:472px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-template-cats button{min-height:42px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-template-list>div{min-height:61px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-recent>div:not(.fpf-card-head){min-height:55px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-chat-bottom{margin-top:12px!important}
+
+/* Lots and theme need only small vertical expansion. */
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="lot_manage"] .fpf-market-actions article{min-height:134px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="lot_manage"] .fpf-product-search{padding:12px!important;margin-bottom:12px!important}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="lot_manage"] .fpf-market-grid{margin-bottom:12px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-master{min-height:238px!important;padding:12px 14px 13px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-tiles button{height:142px!important;grid-template-rows:105px 1fr!important}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-tiles button i{height:105px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-row{min-height:198px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-bg-card,
+.fp-tools-popup.fpf-exact-ui .fpf-colors-card{min-height:198px!important}
+
+/* Native-looking checked boxes for customization. */
+.fp-tools-popup.fpf-exact-ui .fpf-custom-row input[type="checkbox"]{
+  appearance:none!important;-webkit-appearance:none!important;position:relative!important;
+  width:19px!important;height:19px!important;border:1px solid #1688f8!important;border-radius:5px!important;background:#1688f8!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-custom-row input[type="checkbox"]::after{
+  content:"✓"!important;position:absolute!important;inset:0!important;display:grid!important;place-items:center!important;color:#fff!important;font-size:12px!important;font-weight:800!important;
+}
