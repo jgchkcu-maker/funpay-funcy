@@ -38,7 +38,7 @@ function fixture(port) {
     + '<link rel="stylesheet" href="/css/subtabs_material3.css">'
     + '<link rel="stylesheet" href="/css/settings_responsive_guard.css">'
     + '<link rel="stylesheet" href="/css/pixel_expressive.css">'
-    + '<link rel="stylesheet" href="/css/reference_layout.css">'
+    + '<link rel="stylesheet" href="/css/reference_layout.css"><link rel="stylesheet" href="/css/reference_exact.css">'
     + '<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#e5effb;background-image:radial-gradient(900px 420px at 8% 0%,#eaf4ff,transparent 70%),linear-gradient(180deg,#f8fbff,#edf4fb);font-family:Inter,"Segoe UI",Arial,sans-serif}body::before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(rgba(255,255,255,.45),rgba(255,255,255,.2))}.fp-tools-popup{resize:none!important}</style>'
     + '<script>(function(){'
     + 'const store={autoBumpEnabled:true,autoBumpInterval:30,fpAutoRestoreEnabled:true,fpAutoDisableEnabled:true,fpToolsAutoDeliveryLots:{"Steam Wallet 1000 RUB":{enabled:true}},fpToolsAutoReplies:{greeting:true,orderConfirmed:true},telegramBotToken:"preview-token",discordWebhookUrl:"https://example.invalid/webhook",notificationVolume:72};'
@@ -49,7 +49,7 @@ function fixture(port) {
     + '</head><body>'
     + '<script src="/content/ui/main_popup.js"><\/script>'
     + '<script src="/content/ui/pixel_expressive_shell.js"><\/script>'
-    + '<script src="/content/ui/reference_layout.js"><\/script>'
+    + '<script src="/content/ui/reference_layout.js"><\/script><script src="/content/ui/reference_exact.js"><\/script>'
     + '<script>(function(){'
     + 'const popup=createMainPopup();popup.classList.add("active");document.body.appendChild(popup);setupPopupNavigation();'
     + 'const sampleRow=(title,subtitle,badge="Активно")=>{const row=document.createElement("div");row.className="fpt-setting-card fpf-preview-row";row.innerHTML="<div class=\\"fpt-setting-info\\"><div class=\\"fpt-setting-title-row\\"><span class=\\"fpt-setting-title\\">"+title+"</span><span class=\\"fpt-badge fpt-badge-location\\">"+badge+"</span></div><div class=\\"fpt-setting-desc\\">"+subtitle+"</div></div><label class=\\"fpt-switch\\"><input type=\\"checkbox\\" checked><span class=\\"fpt-switch-slider\\"></span></label>";return row};'
@@ -94,23 +94,28 @@ const labels = {
   autobump: '02-automation-auto-bump',
   auto_delivery: '03-automation-auto-delivery',
   auto_review: '04-automation-auto-reviews',
-  templates: '05-chat-templates',
-  slash_commands: '06-chat-slash-commands',
-  notes: '07-chat-notes',
-  blacklist: '08-chat-blacklist',
-  lot_io: '09-lots-management',
-  pricing: '10-lots-pricing',
-  sales_stats: '11-finance-statistics',
-  calculator: '12-finance-calculator',
-  currency_calc: '13-finance-currency',
-  theme: '14-appearance-theme',
-  needs: '15-appearance-customization',
-  general: '16-system-notifications',
-  accounts: '17-system-accounts',
-  telegram: '18-system-telegram',
-  settings_io: '19-system-backups',
-  tickets: '20-system-support',
-  support: '21-about'
+  scenarios: '05-automation-scenarios',
+  templates: '06-chat-templates',
+  slash_commands: '07-chat-slash-commands',
+  notes: '08-chat-notes',
+  blacklist: '09-chat-blacklist',
+  chat_search: '10-chat-search',
+  lot_manage: '11-lots-management',
+  pricing: '12-lots-market',
+  lot_clone: '13-lots-cloning',
+  lot_io: '14-lots-import-export',
+  finance_overview: '15-finance-overview',
+  sales_stats: '16-finance-statistics',
+  calculator: '17-finance-calculator',
+  currency_calc: '18-finance-currency',
+  theme: '19-appearance-theme',
+  needs: '20-appearance-customization',
+  general: '21-system-notifications',
+  accounts: '22-system-accounts',
+  telegram: '23-system-telegram',
+  settings_io: '24-system-backups',
+  tickets: '25-system-support',
+  support: '26-about'
 };
 
 const gallery = [];

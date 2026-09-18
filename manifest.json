@@ -115,6 +115,7 @@
         "content/ui/header_button_styler.js",
         "content/ui/pixel_expressive_shell.js",
         "content/ui/reference_layout.js",
+        "content/ui/reference_exact.js",
         "content/features/lot_notes.js",
         "content/features/lot_note_buttons.js",
         "content/features/chat_lot_note.js",
@@ -156,7 +157,8 @@
         "css/subtabs_material3.css",
         "css/settings_responsive_guard.css",
         "css/pixel_expressive.css",
-        "css/reference_layout.css"
+        "css/reference_layout.css",
+        "css/reference_exact.css"
       ],
       "run_at": "document_idle"
     }
