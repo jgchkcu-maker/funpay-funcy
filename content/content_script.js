@@ -1,4 +1,4 @@
-// C:\Users\AlliSighs\Desktop\◘FUNPAY ◘\FunPay Tools 2.6\content\content_script.js 
+// C:\Users\AlliSighs\Desktop\◘FUNPAY ◘\FunPay Funcy 2.6\content\content_script.js 
 
 (function() {
     'use strict';
@@ -105,7 +105,7 @@
         }
 
         const toolsMenu = createElement('li');
-        toolsMenu.innerHTML = `<a style="font-weight: bold; cursor: pointer; user-select: none;" id="fpToolsButton">FP Tools<span></span></a>`;
+        toolsMenu.innerHTML = `<a style="font-weight: bold; cursor: pointer; user-select: none;" id="fpToolsButton">FunPay Funcy<span></span></a>`;
         anchor.insertAdjacentElement('afterend', toolsMenu);
 
         const button = toolsMenu.querySelector('#fpToolsButton');
@@ -147,7 +147,7 @@
             }
         });
 
-        console.log("FP Tools: Кнопка в хедере успешно добавлена.");
+        console.log("FunPay Funcy: Кнопка в хедере успешно добавлена.");
         return true;
     }
 
@@ -218,7 +218,7 @@
     
         } catch (error) {
             showNotification(`Ошибка ИИ: ${error.message}`, true);
-            console.error('FP Tools AI Review Reply Error:', error);
+            console.error('FunPay Funcy AI Review Reply Error:', error);
         } finally {
             button.disabled = false;
             button.innerHTML = originalText;
@@ -419,7 +419,7 @@
         initializeBlacklist();
         initializeUnconfirmedBalanceDisplay();
         initializeSalesFilters();
-        // Apply saved FP Tools button colour/size at load (panel itself builds with popup).
+        // Apply saved FunPay Funcy button colour/size at load (panel itself builds with popup).
         if (typeof applyHeaderButtonStylesEarly === 'function') applyHeaderButtonStylesEarly();
         // order_page_enhancements.js, lot_context_menu.js, auto_restore_lots.js self-initialize
         // New 3.0 features (self-initializing modules loaded separately)
