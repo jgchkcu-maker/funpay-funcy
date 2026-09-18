@@ -229,3 +229,55 @@
 .fp-tools-popup.fpf-exact-ui .fpf-custom-row input[type="checkbox"]::after{
   content:"✓"!important;position:absolute!important;inset:0!important;display:grid!important;place-items:center!important;color:#fff!important;font-size:12px!important;font-weight:800!important;
 }
+
+
+/* Pass 4: pixel-align the major panel boundaries to the supplied 1536×1152 references. */
+.fp-tools-popup.fpf-exact-ui .fp-tools-nav{
+  width:310px!important;
+  flex-basis:310px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-auto-master{
+  min-height:328px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-kpi{
+  min-height:170px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-profit-calc,
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-currency-card{
+  min-height:280px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-system-view{
+  padding-top:10px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-sound-card{
+  min-height:204px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-webhook-card{
+  min-height:214px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-discord-card{
+  min-height:147px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-identifier-card{
+  min-height:137px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-system-ok{
+  min-height:75px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-chat-upper,
+.fp-tools-popup.fpf-exact-ui .fpf-template-library,
+.fp-tools-popup.fpf-exact-ui .fpf-template-center,
+.fp-tools-popup.fpf-exact-ui .fpf-chat-side{
+  min-height:490px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-master{
+  min-height:276px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-row{
+  min-height:214px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-bottom>section{
+  height:132px!important;
+  min-height:132px!important;
+  overflow:hidden!important;
+}
