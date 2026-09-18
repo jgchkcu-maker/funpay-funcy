@@ -1,8 +1,8 @@
 <div align="center">
 
-[![Header](https://capsule-render.vercel.app/api?type=waving&height=200&color=gradient&customColorList=12,20,24&text=FunPay%20Tools&section=header&reversal=false&textBg=false&animation=twinkling&fontColor=c084fc&fontAlign=50&desc=Лучшее%20расширение%20для%20продавцов%20FunPay&descSize=18&fontAlignY=30&descAlignY=52)](https://github.com/XaviersDev/FunPay-Tools)
+[![Header](https://capsule-render.vercel.app/api?type=waving&height=200&color=gradient&customColorList=12,20,24&text=FunPay%20Funcy&section=header&reversal=false&textBg=false&animation=twinkling&fontColor=c084fc&fontAlign=50&desc=Лучшее%20расширение%20для%20продавцов%20FunPay&descSize=18&fontAlignY=30&descAlignY=52)](https://github.com/jgchkcu-maker/funpay-funcy)
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=600&size=18&pause=1000&color=A855F7&center=true&vCenter=true&width=700&lines=ИИ-ассистент+%E2%80%A2+Автоматизация+%E2%80%A2+Полная+кастомизация;Открытый+исходный+код+%E2%80%A2+Бесплатно+%E2%80%A2+Для+продавцов)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=600&size=18&pause=1000&color=A855F7&center=true&vCenter=true&width=700&lines=ИИ-ассистент+%E2%80%A2+Автоматизация+%E2%80%A2+Полная+кастомизация;Открытый+исходный+код+%E2%80%A2+Бесплатно+%E2%80%A2+Для+продавцов)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -13,7 +13,7 @@
   <a href="https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/">
     <img src="https://img.shields.io/badge/Chrome_Web_Store-Установить-22C55E?style=for-the-badge&logo=googlechrome&logoColor=white&color=a855f7&labelColor=1a1a2e" alt="Chrome"/>
   </a>
-  <a href="https://github.com/XaviersDev/FunPay-Tools">
+  <a href="https://github.com/jgchkcu-maker/funpay-funcy">
     <img src="https://img.shields.io/badge/Open_Source-MIT-FFD700?style=for-the-badge&logo=github&logoColor=white&color=a855f7&labelColor=1a1a2e" alt="MIT"/>
   </a>
   <a href="#">
@@ -23,8 +23,8 @@
 
 <div align="center">
 
-[![GitHub stars](https://img.shields.io/github/stars/XaviersDev/FunPay-Tools?style=social)](https://github.com/XaviersDev/FunPay-Tools/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/XaviersDev/FunPay-Tools?style=social)](https://github.com/XaviersDev/FunPay-Tools/network)
+[![GitHub stars](https://img.shields.io/github/stars/jgchkcu-maker/funpay-funcy?style=social)](https://github.com/jgchkcu-maker/funpay-funcy/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/jgchkcu-maker/funpay-funcy?style=social)](https://github.com/jgchkcu-maker/funpay-funcy/network)
 
 </div>
 
@@ -36,18 +36,18 @@
 
 <br>
 
-**FunPay Tools** - это полностью бесплатное браузерное расширение с открытым исходным кодом, созданное для продавцов на FunPay. Оно добавляет мощные инструменты на базе AI, полную кастомизацию интерфейса, автоматизацию рутинных задач и множество других функций, которые упрощают работу и помогают увеличить продажи.
+**FunPay Funcy** - это полностью бесплатное браузерное расширение с открытым исходным кодом, созданное для продавцов на FunPay. Оно добавляет мощные инструменты на базе AI, полную кастомизацию интерфейса, автоматизацию рутинных задач и множество других функций, которые упрощают работу и помогают увеличить продажи.
 
 ---
 
 > [!NOTE]
-> Также доступна мобильная версия: **[FunPay Tools для Android](https://github.com/XaviersDev/FunPay-Tools-Android)** - полноценное приложение с мессенджером, автоответчиком, авто-поднятием и XD Dumper прямо на телефоне.
+> Также доступна мобильная версия: **[FunPay Funcy для Android](https://github.com/XaviersDev/FunPay-Tools-Android)** - полноценное приложение с мессенджером, автоответчиком, авто-поднятием и XD Dumper прямо на телефоне.
 
 ---
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🤖+ИИ-Функции)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🤖+ИИ-Функции)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -66,7 +66,7 @@
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🎨+Кастомизация)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🎨+Кастомизация)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -77,7 +77,7 @@
 | Функция | Описание |
 | :--- | :--- |
 | **Умная настройка интерфейса** | Напишите словами, что скрыть (например, "убери скрепку в чате"), и нейросеть снимет нужные галочки. Также доступен ручной каталог всех элементов с предпросмотром для их отключения. |
-| **Новый дизайн меню** | Строгий, тёмный, без лишних теней интерфейс. Открывается за миллисекунды, не грузит систему. Локальные иконки грузятся мгновенно даже без интернета. Цвет кнопки FP Tools можно настраивать. |
+| **Новый дизайн меню** | Строгий, тёмный, без лишних теней интерфейс. Открывается за миллисекунды, не грузит систему. Локальные иконки грузятся мгновенно даже без интернета. Цвет кнопки FunPay Funcy можно настраивать. |
 | **Темы и фоны** | Анимированные GIF-фоны, статичные обои, настройка цветов и прозрачности. Галерея из 10+ готовых тем применяются в один клик. Ваша тема и цвета теперь применяются и к support.funpay.com. |
 | **Тёмная тема** | Кнопка мгновенного включения идеальной тёмной темы. Исправлена вспышка белого экрана при загрузке. |
 | **Экспорт и импорт тем** | Делитесь темами с другими пользователями одним файлом. |
@@ -86,7 +86,7 @@
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🛠️+Инструменты+продавца)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🛠️+Инструменты+продавца)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -108,13 +108,13 @@
 | **Поиск по лотам** | Мгновенная фильтрация без перезагрузки. Escape сбрасывает. |
 | **Поиск продавца по нику** | Строка в шапке сайта: карточка с выручкой, отзывами, средним чеком и топ-3 категориями. |
 | **Заметки о пользователях** | Цветные метки прямо в чате. Фильтрация чатов по меткам. |
-| **Конвертер Cardinal** | Переносите лоты из Cardinal в FP Tools в один клик. |
+| **Конвертер Cardinal** | Переносите лоты из Cardinal в FunPay Funcy в один клик. |
 
 ---
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=⚙️+Автоматизация)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=⚙️+Автоматизация)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -139,7 +139,7 @@
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🤖+Автоответчик)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=🤖+Автоответчик)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -164,7 +164,7 @@
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=⚡+Авто-выдача)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=⚡+Авто-выдача)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -181,7 +181,7 @@
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=💬+Чат)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=500&lines=💬+Чат)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -198,7 +198,7 @@
 *   **История покупок** - Меню чата → "📦 История покупок" → количество заказов, общая сумма, что и когда покупал.
 *   **Перевод сообщений** - Все входящие не на русском переводятся прямо под оригиналом.
 *   **Экспорт переписки** - Меню чата → "💾 Экспортировать чат" → сохраняет всю историю в `.txt`.
-*   **Ответы на сообщения** - Отвечайте на конкретные сообщения или выделяйте фрагмент для ответа. У пользователей FP Tools ответы кликабельны и ведут к оригиналу.
+*   **Ответы на сообщения** - Отвечайте на конкретные сообщения или выделяйте фрагмент для ответа. У пользователей FunPay Funcy ответы кликабельны и ведут к оригиналу.
 *   **Слеш-команды** - Настраиваемые `/команды` прямо в поле чата для мгновенной вставки нужного текста.
 *   **Заметки** - Встроенный блокнот с автосохранением прямо в меню расширения.
 *   **Кнопка "Прочитать всё"** - Сбрасывает все непрочитанные сообщения одним кликом.
@@ -207,7 +207,7 @@
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=600&lines=👥+Аккаунты+и+поддержка)](https://github.com/XaviersDev/FunPay-Tools)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=600&lines=👥+Аккаунты+и+поддержка)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
 
@@ -218,13 +218,13 @@
 *   **Менеджер аккаунтов** - Добавляйте и переключайте аккаунты в любом порядке. *(Внимание: используйте осторожно; для защиты от связывания и цепочных банов рекомендуется использовать раздельные профили браузера с индивидуальными прокси).*
 *   **Тикеты прямо в меню** - Список обращений с цветными статусами, переписка, создание и закрытие одной кнопкой. На support.funpay.com больше заходить не нужно.
 *   **Чёрный список** - Гибкие настройки для каждого человека: отключить автовыдачу, автоответы или уведомления по отдельности. Кнопка в меню чата.
-*   **Опознаватель "Свой-Чужой"** - Метка в шапке чата, если собеседник тоже использует FP Tools.
+*   **Опознаватель "Свой-Чужой"** - Метка в шапке чата, если собеседник тоже использует FunPay Funcy.
 
 ---
 
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=600&lines=📱+FunPay+Tools+для+Android)](https://github.com/XaviersDev/FunPay-Tools-Android)
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Inter&weight=700&size=26&pause=1000&color=A855F7&center=true&vCenter=true&width=600&lines=📱+FunPay+Funcy+для+Android)](https://github.com/XaviersDev/FunPay-Tools-Android)
 
 </div>
 
@@ -233,7 +233,7 @@
 </div>
 
 > [!NOTE]
-> Хочешь управлять продажами со смартфона? Встречай **FunPay Tools для Android** - отдельное нативное приложение с полноценным мессенджером, автоответчиком, XD Dumper (авто-снижение цены), вечным онлайном и виджетами на рабочий стол.
+> Хочешь управлять продажами со смартфона? Встречай **FunPay Funcy для Android** - отдельное нативное приложение с полноценным мессенджером, автоответчиком, XD Dumper (авто-снижение цены), вечным онлайном и виджетами на рабочий стол.
 
 <div align="center">
 
@@ -262,7 +262,7 @@
 
 1.  Перейдите в [**Chrome Web Store**](https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/)
 2.  Нажмите кнопку "Установить".
-3.  После установки на панели инструментов браузера появится иконка FP Tools.
+3.  После установки на панели инструментов браузера появится иконка FunPay Funcy.
 
 ---
 
@@ -271,7 +271,7 @@
 ### 🚀 Как начать
 
 1.  Зайдите на сайт [FunPay](https://funpay.com/).
-2.  В верхней панели навигации (хедере) появится новая кнопка **"FP Tools"**.
+2.  В верхней панели навигации (хедере) появится новая кнопка **"FunPay Funcy"**.
 3.  Нажмите на нее, чтобы открыть главное меню расширения и настроить все функции под себя.
 
 ---
@@ -279,8 +279,8 @@
 <div align="center">
 
 [![Telegram](https://img.shields.io/badge/Сообщество_Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white&color=a855f7&labelColor=1a1a2e)](https://t.me/FPTools)
-[![GitHub Stars](https://img.shields.io/badge/Поставить_⭐_Star-FFD700?style=for-the-badge&logo=github&logoColor=white&color=a855f7&labelColor=1a1a2e)](https://github.com/XaviersDev/FunPay-Tools/stargazers)
-[![Issues](https://img.shields.io/badge/Сообщить_о_баге-FF4081?style=for-the-badge&logo=github&logoColor=white&color=a855f7&labelColor=1a1a2e)](https://github.com/XaviersDev/FunPay-Tools/issues)
+[![GitHub Stars](https://img.shields.io/badge/Поставить_⭐_Star-FFD700?style=for-the-badge&logo=github&logoColor=white&color=a855f7&labelColor=1a1a2e)](https://github.com/jgchkcu-maker/funpay-funcy/stargazers)
+[![Issues](https://img.shields.io/badge/Сообщить_о_баге-FF4081?style=for-the-badge&logo=github&logoColor=white&color=a855f7&labelColor=1a1a2e)](https://github.com/jgchkcu-maker/funpay-funcy/issues)
 
 </div>
 
@@ -294,6 +294,6 @@
 
 <div align="center">
 
-[![Footer](https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,20,24&height=82&section=footer)](https://github.com/XaviersDev/FunPay-Tools)
+[![Footer](https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,20,24&height=82&section=footer)](https://github.com/jgchkcu-maker/funpay-funcy)
 
 </div>
