@@ -2051,7 +2051,7 @@ const FPT_HUB_CONFIG = {
         defaultSub: 'autobump',
         subtabs: [
             { id: 'autobump', label: 'Авто-поднятие', icon: 'rocket_launch' },
-            { id: 'auto_delivery', label: 'Авто-выдача', icon: 'bolt' },
+            { id: 'auto_delivery', label: 'Авто-доставка', icon: 'local_shipping' },
             { id: 'auto_review', label: 'Авто-отзывы', icon: 'smart_toy' }
         ]
     },
@@ -2061,10 +2061,10 @@ const FPT_HUB_CONFIG = {
         icon: 'chat',
         defaultSub: 'templates',
         subtabs: [
-            { id: 'templates', label: 'Шаблоны ответов', icon: 'chat' },
+            { id: 'templates', label: 'Шаблоны', icon: 'dashboard_customize' },
             { id: 'slash_commands', label: 'Слэш-команды', icon: 'terminal' },
-            { id: 'notes', label: 'Заметки о клиентах', icon: 'edit_note' },
-            { id: 'blacklist', label: 'Черный список', icon: 'block' }
+            { id: 'notes', label: 'Заметки', icon: 'edit_note' },
+            { id: 'blacklist', label: 'Чёрный список', icon: 'block' }
         ]
     },
     lots: {
@@ -2083,9 +2083,9 @@ const FPT_HUB_CONFIG = {
         icon: 'monitoring',
         defaultSub: 'sales_stats',
         subtabs: [
-            { id: 'sales_stats', label: 'Статистика продаж', icon: 'monitoring' },
+            { id: 'sales_stats', label: 'Статистика', icon: 'monitoring' },
             { id: 'calculator', label: 'Калькулятор', icon: 'calculate' },
-            { id: 'currency_calc', label: 'Валютный калькулятор', icon: 'currency_exchange' }
+            { id: 'currency_calc', label: 'Конвертер', icon: 'currency_exchange' }
         ]
     },
     appearance: {
@@ -2108,7 +2108,7 @@ const FPT_HUB_CONFIG = {
         subtabs: [
             { id: 'general', label: 'Уведомления и Webhook', icon: 'notifications' },
             { id: 'accounts', label: 'Аккаунты', icon: 'manage_accounts' },
-            { id: 'telegram', label: 'Telegram Бот', icon: 'send' },
+            { id: 'telegram', label: 'Telegram бот', icon: 'send' },
             { id: 'settings_io', label: 'Резервные копии', icon: 'backup' },
             { id: 'tickets', label: 'Поддержка FunPay', icon: 'help_outline' },
             { id: 'support', label: 'О расширении', icon: 'info' }
