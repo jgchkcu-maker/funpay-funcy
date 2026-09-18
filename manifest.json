@@ -1,7 +1,7 @@
 {
   "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
-  "name": "FunPay Tools",
+  "name": "FunPay Funcy",
   "version": "2.9.9",
   "description": "Глобальное расширение для FunPay ⚡ 299+ инструментов • ИИ-помощник • Автоответчик • Аналитика • Автоматизация • Больше продаж",
   "permissions": [
@@ -32,7 +32,7 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "FP Tools"
+    "default_title": "FunPay Funcy"
   },
   "icons": {
     "128": "icons/icon128.png"
