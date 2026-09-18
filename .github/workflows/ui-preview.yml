@@ -14,7 +14,7 @@ on:
       - '.github/workflows/ui-preview.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   preview:
@@ -47,7 +47,7 @@ jobs:
             COUNT=$(find ui-preview -maxdepth 1 -name '*.png' | wc -l)
             echo 'Generated **'"$COUNT"' screenshots** plus an index.html gallery.' >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Download the **funpay-funcy-ui-preview** artifact below the run to view the full gallery." >> "$GITHUB_STEP_SUMMARY"
+            echo "Browser preview: https://raw.githack.com/jgchkcu-maker/funpay-funcy/ui-preview/index.html" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "Preview generation did not produce the output directory." >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -60,3 +60,16 @@ jobs:
           path: ui-preview/
           if-no-files-found: error
           retention-days: 14
+
+
+      - name: Publish browser preview branch
+        if: success()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./ui-preview
+          publish_branch: ui-preview
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+          commit_message: "Update FunPay Funcy UI preview"
