@@ -1,0 +1,62 @@
+name: UI Preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'content/**'
+      - 'css/**'
+      - 'popup/**'
+      - 'manifest.json'
+      - 'scripts/generate-ui-preview.mjs'
+      - '.github/workflows/ui-preview.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    name: Render extension UI
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+
+      - name: Generate screenshots
+        run: node scripts/generate-ui-preview.mjs
+
+      - name: Preview summary
+        if: always()
+        run: |
+          echo "## FunPay Funcy UI Preview" >> "$GITHUB_STEP_SUMMARY"
+          if [ -d ui-preview ]; then
+            COUNT=$(find ui-preview -maxdepth 1 -name '*.png' | wc -l)
+            echo "Generated **$COUNT screenshots** plus an `index.html` gallery." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Download the **funpay-funcy-ui-preview** artifact below the run to view the full gallery." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Preview generation did not produce the output directory." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload UI preview
+        if: always() && hashFiles('ui-preview/**') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: funpay-funcy-ui-preview
+          path: ui-preview/
+          if-no-files-found: error
+          retention-days: 14
