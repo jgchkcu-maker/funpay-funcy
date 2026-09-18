@@ -67,13 +67,95 @@
 
     function bindValue(visible, source, eventName = 'input') {
         if (!visible || !source) return;
-        visible.value = source.value;
-        visible.addEventListener(eventName, () => {
+
+        const updateRangeLabel = () => {
+            if (visible.type === 'range') {
+                const parent = visible.parentElement;
+                const span = parent ? parent.querySelector('span') : null;
+                if (span) {
+                    const isPercent = visible.dataset.syncValue === '#themeBgBrightness' || visible.dataset.syncValue === '#notificationVolume';
+                    span.textContent = `${visible.value}${isPercent ? '%' : 'px'}`;
+                }
+            }
+        };
+
+        if (source.value !== undefined && source.value !== '') {
+            visible.value = source.value;
+        } else if (visible.value !== undefined && visible.value !== '') {
+            source.value = visible.value;
+        }
+        updateRangeLabel();
+
+        const onInput = () => {
             source.value = visible.value;
             source.dispatchEvent(new Event(eventName, { bubbles: true }));
             if (eventName !== 'change') source.dispatchEvent(new Event('change', { bubbles: true }));
+            updateRangeLabel();
+        };
+
+        visible.addEventListener('input', onInput);
+        if (eventName !== 'input') visible.addEventListener(eventName, onInput);
+
+        const onSourceUpdate = () => {
+            visible.value = source.value;
+            updateRangeLabel();
+        };
+        source.addEventListener('input', onSourceUpdate);
+        source.addEventListener('change', onSourceUpdate);
+    }
+
+    function bindSelect(visible, source) {
+        if (!visible || !source) return;
+        const syncOptions = () => {
+            if (source.options.length > 0) {
+                visible.innerHTML = '';
+                Array.from(source.options).forEach(opt => {
+                    const copy = document.createElement('option');
+                    copy.value = opt.value;
+                    copy.textContent = opt.textContent;
+                    visible.appendChild(copy);
+                });
+            } else if (visible.options.length <= 1) {
+                const defaultFonts = [
+                    { value: 'Helvetica Neue', text: 'Системный (Helvetica Neue)' },
+                    { value: 'Inter', text: 'Inter' },
+                    { value: 'Roboto', text: 'Roboto' },
+                    { value: 'Open Sans', text: 'Open Sans' },
+                    { value: 'Montserrat', text: 'Montserrat' }
+                ];
+                visible.innerHTML = '';
+                source.innerHTML = '';
+                defaultFonts.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.value;
+                    opt.textContent = f.text;
+                    visible.appendChild(opt);
+                    const sOpt = document.createElement('option');
+                    sOpt.value = f.value;
+                    sOpt.textContent = f.text;
+                    source.appendChild(sOpt);
+                });
+            }
+            const targetVal = source.value || visible.value || 'Helvetica Neue';
+            visible.value = targetVal;
+            source.value = targetVal;
+            if (visible.selectedIndex < 0 && visible.options.length > 0) {
+                visible.selectedIndex = 0;
+                source.selectedIndex = 0;
+            }
+        };
+
+        syncOptions();
+        const obs = new MutationObserver(syncOptions);
+        obs.observe(source, { childList: true });
+
+        visible.addEventListener('change', () => {
+            source.value = visible.value;
+            source.dispatchEvent(new Event('change', { bubbles: true }));
         });
-        source.addEventListener(eventName, () => { visible.value = source.value; });
+        source.addEventListener('change', () => {
+            visible.value = source.value;
+        });
     }
 
     function navButton(label, iconName, page, primary = false) {
@@ -83,6 +165,23 @@
     function wireNav(page) {
         qa(page, '[data-fpf-page]').forEach(btn => btn.addEventListener('click', () => {
             if (typeof window.openPage === 'function') window.openPage(btn.dataset.fpfPage);
+        }));
+        qa(page, '[data-fpf-quick]').forEach(btn => btn.addEventListener('click', () => {
+            const target = btn.dataset.fpfQuick;
+            if (target === 'autobump') {
+                const src = document.querySelector('#autoBumpEnabled');
+                if (src) {
+                    src.checked = true;
+                    src.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            } else if (target === 'auto_delivery') {
+                const src = document.querySelector('#fpAutoRestoreEnabled');
+                if (src) {
+                    src.checked = true;
+                    src.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+            if (typeof window.openPage === 'function') window.openPage(target);
         }));
     }
 
@@ -97,29 +196,29 @@
             <section class="fpf-card fpf-status-section">
                 <div class="fpf-card-head"><div class="fpf-card-title">${icon('widgets')}<span>Статус модулей</span></div><button class="fpf-text-link" data-fpf-page="general">Все системы →</button></div>
                 <div class="fpf-status-grid">
-                    <button class="fpf-status-tile" data-fpf-page="autobump">${icon('rocket_launch')}<div><b>Авто-поднятие</b><span class="fpf-ok">● Работает</span><small>Следующий запуск<br><strong>через 12 мин</strong></small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
-                    <button class="fpf-status-tile" data-fpf-page="auto_delivery">${icon('inventory_2')}<div><b>Авто-выдача</b><span class="fpf-ok">● Работает</span><small>Обработано сегодня<br><strong>48 заказов</strong></small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
-                    <button class="fpf-status-tile" data-fpf-page="templates">${icon('chat')}<div><b>Чат и клиенты</b><span class="fpf-ok">● Работает</span><small>Новых сообщений<br><strong>7</strong></small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
-                    <button class="fpf-status-tile" data-fpf-page="finance_overview">${icon('bar_chart')}<div><b>Финансы</b><span class="fpf-ok">● Работает</span><small>Синхронизировано<br><strong>2 мин назад</strong></small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
+                    <button class="fpf-status-tile fpf-tile-autobump" data-fpf-page="autobump">${icon('rocket_launch')}<div><b>Авто-поднятие</b><span class="fpf-ok">● Работает</span><small>Интервал: ~30 мин</small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
+                    <button class="fpf-status-tile fpf-tile-delivery" data-fpf-page="auto_delivery">${icon('inventory_2')}<div><b>Авто-выдача</b><span class="fpf-ok">● Работает</span><small>Нажмите для настройки</small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
+                    <button class="fpf-status-tile fpf-tile-templates" data-fpf-page="templates">${icon('chat')}<div><b>Чат и клиенты</b><span class="fpf-ok">● Работает</span><small>Шаблоны сообщений</small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
+                    <button class="fpf-status-tile fpf-tile-finance" data-fpf-page="finance_overview">${icon('bar_chart')}<div><b>Финансы</b><span class="fpf-ok">● Работает</span><small>Сводка и аналитика</small></div><span class="material-symbols-rounded fpf-chevron">chevron_right</span></button>
                 </div>
             </section>
 
             <div class="fpf-kpi-grid">
-                <article class="fpf-kpi">${icon('shopping_cart','blue')}<div><span>Всего заказов</span><strong>128</strong><small class="up">↑ +12%</small><em>За последние 24 часа</em></div>${spark('0,31 12,25 20,28 29,18 37,23 46,9 54,18 63,5 72,14 80,2 89,12 100,5','blue')}</article>
-                <article class="fpf-kpi">${icon('paid','green')}<div><span>Выручка</span><strong>47 320 ₽</strong><small class="up">↑ +18%</small><em>За последние 24 часа</em></div>${spark('0,29 10,22 20,26 30,14 39,21 48,10 56,18 65,4 75,12 84,6 92,14 100,2','green')}</article>
-                <article class="fpf-kpi">${icon('group','purple')}<div><span>Новых клиентов</span><strong>32</strong><small class="up">↑ +6%</small><em>За последние 24 часа</em></div>${spark('0,29 12,25 20,18 30,24 40,12 50,19 60,8 70,15 80,4 90,11 100,5','purple')}</article>
-                <article class="fpf-kpi">${icon('star','yellow')}<div><span>Рейтинг магазина</span><strong>4.9</strong><small class="up">↑ +0.1</small><em>На основе 342 отзывов</em></div>${spark('0,31 11,24 21,27 31,15 41,23 52,10 61,17 70,7 80,13 90,2 100,9','yellow')}</article>
+                <article class="fpf-kpi">${icon('shopping_cart','blue')}<div><span>Всего заказов</span><strong>—</strong><em>Нет данных за 24 часа</em></div>${spark('0,31 12,25 20,28 29,18 37,23 46,9 54,18 63,5 72,14 80,2 89,12 100,5','blue')}</article>
+                <article class="fpf-kpi">${icon('paid','green')}<div><span>Выручка</span><strong>—</strong><em>Нет данных за 24 часа</em></div>${spark('0,29 10,22 20,26 30,14 39,21 48,10 56,18 65,4 75,12 84,6 92,14 100,2','green')}</article>
+                <article class="fpf-kpi">${icon('group','purple')}<div><span>Новых клиентов</span><strong>—</strong><em>Нет данных за 24 часа</em></div>${spark('0,29 12,25 20,18 30,24 40,12 50,19 60,8 70,15 80,4 90,11 100,5','purple')}</article>
+                <article class="fpf-kpi">${icon('star','yellow')}<div><span>Рейтинг магазина</span><strong>—</strong><em>Нет данных</em></div>${spark('0,31 11,24 21,27 31,15 41,23 52,10 61,17 70,7 80,13 90,2 100,9','yellow')}</article>
             </div>
 
             <section class="fpf-card fpf-quick-section">
                 <div class="fpf-card-head"><div class="fpf-card-title">${icon('bolt')}<span>Быстрые действия</span></div></div>
                 <div class="fpf-quick-grid">
-                    ${navButton('Запустить авто-поднятие','rocket_launch','autobump')}
-                    ${navButton('Запустить авто-выдачу','play_circle','auto_delivery')}
-                    ${navButton('Открыть чат с клиентами','chat','templates')}
-                    ${navButton('Открыть финансы','bar_chart','finance_overview')}
-                    ${navButton('Создать товар','add','lot_manage')}
-                    ${navButton('Открыть настройки','settings','general')}
+                    <button class="fpf-action" type="button" data-fpf-quick="autobump">${icon('rocket_launch')}<span>Запустить авто-поднятие</span></button>
+                    <button class="fpf-action" type="button" data-fpf-quick="auto_delivery">${icon('play_circle')}<span>Запустить авто-выдачу</span></button>
+                    <button class="fpf-action" type="button" data-fpf-page="templates">${icon('chat')}<span>Открыть шаблоны</span></button>
+                    <button class="fpf-action" type="button" data-fpf-page="finance_overview">${icon('bar_chart')}<span>Открыть финансы</span></button>
+                    <button class="fpf-action" type="button" data-fpf-page="lot_manage">${icon('add')}<span>Создать товар</span></button>
+                    <button class="fpf-action" type="button" data-fpf-page="general">${icon('settings')}<span>Открыть настройки</span></button>
                 </div>
             </section>
 
@@ -149,6 +248,23 @@
         `);
         page.insertBefore(view, legacy);
         wireNav(page);
+
+        const updateDashboardTiles = () => {
+            const bumpCb = document.querySelector('#autoBumpEnabled');
+            const bumpTileStatus = q(view, '.fpf-tile-autobump span');
+            const bumpTileSub = q(view, '.fpf-tile-autobump small');
+            const isBump = bumpCb ? bumpCb.checked : false;
+            if (bumpTileStatus) {
+                bumpTileStatus.className = isBump ? 'fpf-ok' : 'fpf-off';
+                bumpTileStatus.textContent = isBump ? '● Работает' : '○ Отключено';
+            }
+            if (bumpTileSub) {
+                bumpTileSub.textContent = isBump ? 'Интервал: ~30 мин' : 'Нажмите для настройки';
+            }
+        };
+        updateDashboardTiles();
+        const bumpInput = document.querySelector('#autoBumpEnabled');
+        if (bumpInput) bumpInput.addEventListener('change', updateDashboardTiles);
     }
 
     function composeAutomation(root) {
@@ -200,6 +316,40 @@
         `);
         page.insertBefore(view, legacy);
         qa(view, '[data-sync-check]').forEach(input => bindCheckbox(input, q(legacy, input.dataset.syncCheck)));
+
+        const bumpInput = q(view, '.fpf-auto-state input');
+        const bumpB = q(view, '.fpf-auto-state b');
+        const bumpEm = q(view, '.fpf-auto-state em');
+        const updateAutoState = (checked) => {
+            if (bumpB) bumpB.textContent = checked ? 'Включено' : 'Выключено';
+            if (bumpEm) {
+                bumpEm.textContent = checked ? '● Работает' : '○ Остановлено';
+                bumpEm.className = checked ? 'fpf-ok' : 'fpf-off';
+            }
+        };
+        if (bumpInput) {
+            bumpInput.addEventListener('change', () => updateAutoState(bumpInput.checked));
+            updateAutoState(bumpInput.checked);
+        }
+        const srcBump = q(legacy, '#autoBumpEnabled');
+        if (srcBump) {
+            srcBump.addEventListener('change', () => updateAutoState(srcBump.checked));
+            updateAutoState(srcBump.checked);
+        }
+
+        const intervalSelect = q(view, '.fpf-auto-settings select');
+        if (intervalSelect) {
+            intervalSelect.innerHTML = '<option value="30">30 минут</option><option value="60">60 минут</option><option value="120">120 минут</option>';
+            try {
+                chrome.storage?.local?.get('autoBumpInterval', res => {
+                    if (res?.autoBumpInterval) intervalSelect.value = String(res.autoBumpInterval);
+                });
+            } catch (_) {}
+            intervalSelect.addEventListener('change', () => {
+                const val = parseInt(intervalSelect.value, 10) || 30;
+                try { chrome.storage?.local?.set({ autoBumpInterval: val }); } catch (_) {}
+            });
+        }
     }
 
     function composeFinance(root) {
@@ -276,13 +426,19 @@
         const view = h('div', 'fpf-exact-view fpf-theme-view', `
             <section class="fpf-card fpf-theme-master"><div class="fpf-card-head"><div class="fpf-card-title">${icon('palette')}<div><b>Кастомизация темы</b><span>Включите, чтобы использовать собственную тему оформления</span></div></div><div class="fpf-master-actions"><label class="fpf-switch-ui"><input type="checkbox" data-sync-check="#enableCustomThemeCheckbox"><span></span></label><span>Включить кастомную тему</span><button class="fpf-primary-mini">Применить</button></div></div><div class="fpf-ready-label">Готовые темы</div><div class="fpf-theme-tiles"><button class="active"><i class="firewatch"></i><span>Firewatch Blue</span><em>✓</em></button><button><i class="cyber"></i><span>Cyber Purple</span></button><button><i class="midnight"></i><span>Midnight</span></button><button><i class="ocean"></i><span>Ocean</span></button><button><i class="forest"></i><span>Forest</span></button><button><i class="sunset"></i><span>Sunset</span></button><button class="upload"><i>＋</i><span>Загрузить тему</span></button></div><small class="fpf-theme-note">Тема из игры Firewatch, сделанная в синих оттенках</small></section>
             <div class="fpf-theme-row"><section class="fpf-card fpf-bg-card"><div class="fpf-card-title">${icon('image')}<span>Фоновое изображение</span></div><div class="fpf-bg-preview"><button>×</button><span></span></div><div class="fpf-bg-buttons"><button class="primary" data-click-source="#uploadBgImageBtn">↥ &nbsp; Загрузить</button><button data-click-source="#removeBgImageBtn">▱ &nbsp; Удалить</button></div><a>Откуда брать анимации? ⓘ</a></section><section class="fpf-card fpf-colors-card"><div class="fpf-card-title">${icon('palette')}<span>Цвета интерфейса</span></div><div class="fpf-color-grid"><label>Основной цвет<input type="color" value="#ffa567" data-sync-value="#themeColor1"></label><label>Акцентный цвет<input type="color" value="#ffe49a" data-sync-value="#themeColor2"></label><label>Фон блоков<input type="color" value="#9aa8ba" data-sync-value="#themeContainerBgColor"></label><label>Цвет текста<input type="color" value="#f0f1f2" data-sync-value="#themeTextColor"></label><label>Цвет ссылок<input type="color" value="#59aef1" data-sync-value="#themeLinkColor"></label></div></section></div>
-            <div class="fpf-theme-controls three"><section class="fpf-card"><div class="fpf-card-title">${icon('text_fields')}<span>Шрифт</span></div><select data-sync-value="#themeFontSelect"><option>Системный (Helvetica Neue)</option></select></section><section class="fpf-card"><div class="fpf-card-title">${icon('water_drop')}<span>Размытие фона</span></div><div class="fpf-range-row"><input type="range" min="0" max="20" value="0" data-sync-value="#themeBgBlur"><span>0px</span></div></section><section class="fpf-card"><div class="fpf-card-title">${icon('light_mode')}<span>Яркость фона</span></div><div class="fpf-range-row"><input type="range" min="20" max="150" value="100" data-sync-value="#themeBgBrightness"><span>100%</span></div></section></div>
+            <div class="fpf-theme-controls three"><section class="fpf-card"><div class="fpf-card-title">${icon('text_fields')}<span>Шрифт</span></div><select data-sync-value="#themeFontSelect"><option value="Helvetica Neue">Системный (Helvetica Neue)</option></select></section><section class="fpf-card"><div class="fpf-card-title">${icon('water_drop')}<span>Размытие фона</span></div><div class="fpf-range-row"><input type="range" min="0" max="20" value="0" data-sync-value="#themeBgBlur"><span>0px</span></div></section><section class="fpf-card"><div class="fpf-card-title">${icon('light_mode')}<span>Яркость фона</span></div><div class="fpf-range-row"><input type="range" min="20" max="150" value="100" data-sync-value="#themeBgBrightness"><span>100%</span></div></section></div>
             <div class="fpf-theme-controls three"><section class="fpf-card"><div class="fpf-card-title">${icon('rounded_corner')}<span>Закругление углов</span></div><div class="fpf-range-row"><input type="range" min="0" max="30" value="8" data-sync-value="#themeBorderRadius"><span>8px</span></div></section><section class="fpf-card fpf-toggle-card"><div class="fpf-card-title">${icon('blur_on')}<span>Эффект "матового стекла"</span></div><label class="fpf-switch-ui"><input type="checkbox" data-sync-check="#enableGlassmorphism"><span></span></label></section><section class="fpf-card fpf-toggle-card"><div class="fpf-card-title">${icon('scrollable_header')}<span>Кастомный скроллбар</span></div><label class="fpf-switch-ui"><input type="checkbox" data-sync-check="#enableCustomScrollbar"><span></span></label></section></div>
             <div class="fpf-theme-bottom"><section class="fpf-card fpf-circles-card"><div class="fpf-card-title">${icon('sentiment_satisfied')}<span>Кругляшки</span></div><div class="fpf-circle-preview"><span>Предпросмотр:</span><i></i><label><input type="checkbox" data-sync-check="#enableCircleCustomization"> Включить кастомизацию</label></div></section><section class="fpf-card fpf-separators-card"><div class="fpf-card-title">${icon('format_list_bulleted')}<span>Разделители</span></div><label><input type="checkbox" data-sync-check="#enableImprovedSeparators"> Включить улучшенные</label></section><section class="fpf-card fpf-theme-actions-card"><div class="fpf-card-title">${icon('share')}<span>Действия с темой</span></div><button data-click-source="#shareThemeBtn">↗ &nbsp; Поделиться темой</button><div><button data-click-source="#exportThemeBtn">⇩ &nbsp; Экспорт</button><button data-click-source="#importThemeBtn">↥ &nbsp; Импорт</button></div><button class="danger" data-click-source="#resetThemeBtn">↶ &nbsp; СБРОСИТЬ ТЕМУ</button></section></div>
         `);
         page.insertBefore(view, legacy);
         qa(view, '[data-sync-check]').forEach(input => bindCheckbox(input, q(legacy, input.dataset.syncCheck)));
-        qa(view, '[data-sync-value]').forEach(input => bindValue(input, q(legacy, input.dataset.syncValue), input.tagName === 'SELECT' || input.type === 'color' ? 'change' : 'input'));
+        qa(view, '[data-sync-value]').forEach(input => {
+            if (input.tagName === 'SELECT') {
+                bindSelect(input, q(legacy, input.dataset.syncValue));
+            } else {
+                bindValue(input, q(legacy, input.dataset.syncValue), input.type === 'color' ? 'change' : 'input');
+            }
+        });
         qa(view, '[data-click-source]').forEach(btn => btn.addEventListener('click', () => q(legacy, btn.dataset.clickSource)?.click()));
     }
 
@@ -299,12 +455,24 @@
             ['Заказы и покупки','shopping_cart',[['Кнопка «Показать ещё» в статистике','Разворачивает дополнительную статистику на странице продаж.']]],
             ['Меню профиля','person',[['Пункт «Добавить новую метку»','Добавляет пункт в меню статусов собеседника.']]]
         ];
+
+        let optIdx = 0;
+        const renderRow = (t, d) => {
+            optIdx++;
+            const id = `fpf-custom-item-${optIdx}`;
+            return `<div class="fpf-custom-row">
+                <label class="fpf-custom-checkbox-wrap" for="${id}"><input type="checkbox" id="${id}" aria-label="${t}" checked></label>
+                <p><label for="${id}"><b>${t}</b></label><span>${d}</span></p>
+                <button type="button" aria-label="Предпросмотр: ${t}" title="Предпросмотр: ${t}"><span aria-hidden="true">◉</span></button>
+            </div>`;
+        };
+
         const view = h('div', 'fpf-exact-view fpf-custom-view', `
             <section class="fpf-card fpf-ai-card"><div class="fpf-ai-title">${icon('auto_awesome','purple')}<div><b>Создайте идеальный интерфейс с помощью AI</b><span>Опишите, какие элементы вам нужны на сайте, и мы подберём оптимальные настройки</span></div></div><div class="fpf-ai-input"><input placeholder="Например: «Скрыть аналитику, оставить только чат и создание лотов»"><button>✧ &nbsp; Подобрать настройки</button></div><div class="fpf-ai-presets"><span>Быстрые пресеты:</span><button data-preset-click="buyer">👤 &nbsp; Для новичков</button><button data-preset-click="seller">🛒 &nbsp; Только продажи</button><button data-preset-click="minimal">🍃 &nbsp; Минимализм</button><button data-preset-click="default">⭐ &nbsp; Полный функционал</button></div></section>
-            <section class="fpf-card fpf-custom-filter"><div class="fpf-filter-top"><div class="fpf-search">${icon('search')}<input placeholder="Поиск по элементам..."></div><div class="fpf-filter-pills"><button class="active">Все</button><button>▢ Чат</button><button>▣ Лоты</button><button>✎ Редактор</button><button>🛒 Заказы</button><button>♙ Профиль</button></div><b>АКТИВНО: 14 из 18</b></div><div class="fpf-selection-bar"><span>□ &nbsp; Выбрано: 0 элементов</span><div><button>✓ &nbsp; Включить выбранные</button><button>× &nbsp; Отключить выбранные</button><button>↻ &nbsp; Сбросить настройки</button></div></div></section>
+            <section class="fpf-card fpf-custom-filter"><div class="fpf-filter-top"><div class="fpf-search">${icon('search')}<input placeholder="Поиск по элементам..."></div><div class="fpf-filter-pills"><button class="active">Все</button><button>▢ Чат</button><button>▣ Лоты</button><button>✎ Редактор</button><button>🛒 Заказы</button><button>♙ Профиль</button></div><b>АКТИВНО: 14 из 18</b></div><div class="fpf-selection-bar"><span>□ &nbsp; Выбрано: 0 элементов</span><div><button class="fpf-bulk-enable">✓ &nbsp; Включить выбранные</button><button class="fpf-bulk-disable">× &nbsp; Отключить выбранные</button><button class="fpf-bulk-reset">↻ &nbsp; Сбросить настройки</button></div></div></section>
             <div class="fpf-custom-groups">
-                <div class="fpf-custom-column">${[groups[0],groups[2]].map(([title,ico,rows])=>`<section class="fpf-card"><div class="fpf-custom-group-head">${icon(ico)}<b>${title}</b><span>${Math.min(rows.length,2)} из ${rows.length}</span><i>⌃</i></div>${rows.map(([t,d])=>`<div class="fpf-custom-row"><label><input type="checkbox" checked></label><p><b>${t}</b><span>${d}</span></p><button>◉</button></div>`).join('')}</section>`).join('')}</div>
-                <div class="fpf-custom-column">${[groups[1],groups[3],groups[4]].map(([title,ico,rows])=>`<section class="fpf-card"><div class="fpf-custom-group-head">${icon(ico)}<b>${title}</b><span>${Math.min(rows.length,2)} из ${rows.length}</span><i>⌃</i></div>${rows.map(([t,d])=>`<div class="fpf-custom-row"><label><input type="checkbox" checked></label><p><b>${t}</b><span>${d}</span></p><button>◉</button></div>`).join('')}</section>`).join('')}</div>
+                <div class="fpf-custom-column">${[groups[0],groups[2]].map(([title,ico,rows])=>`<section class="fpf-card" data-cat="${ico}"><div class="fpf-custom-group-head">${icon(ico)}<b>${title}</b><span>${Math.min(rows.length,2)} из ${rows.length}</span><i aria-hidden="true">⌃</i></div>${rows.map(([t,d])=>renderRow(t,d)).join('')}</section>`).join('')}</div>
+                <div class="fpf-custom-column">${[groups[1],groups[3],groups[4]].map(([title,ico,rows])=>`<section class="fpf-card" data-cat="${ico}"><div class="fpf-custom-group-head">${icon(ico)}<b>${title}</b><span>${Math.min(rows.length,2)} из ${rows.length}</span><i aria-hidden="true">⌃</i></div>${rows.map(([t,d])=>renderRow(t,d)).join('')}</section>`).join('')}</div>
             </div>
         `);
         page.insertBefore(view, legacy);
@@ -315,6 +483,101 @@
             q(legacy, '#fptNeedsAskBtn')?.click();
         });
         qa(view, '[data-preset-click]').forEach(btn => btn.addEventListener('click', () => q(legacy, `.fpt-preset-btn[data-preset="${btn.dataset.presetClick}"]`)?.click()));
+
+        // Filtering and search logic
+        const filterInput = q(view, '.fpf-custom-filter input');
+        const pillButtons = qa(view, '.fpf-filter-pills button');
+        const sections = qa(view, '.fpf-custom-groups section.fpf-card');
+        const rows = qa(view, '.fpf-custom-row');
+        let activeCat = 'all';
+
+        const filterCustomization = () => {
+            const query = (filterInput?.value || '').trim().toLowerCase();
+            let anyMatches = false;
+
+            sections.forEach(sec => {
+                const secTitle = q(sec, '.fpf-custom-group-head b')?.textContent?.toLowerCase() || '';
+                const catMatches = activeCat === 'all' ||
+                    (activeCat === 'chat' && (secTitle.includes('чат') || secTitle.includes('коммуникац'))) ||
+                    (activeCat === 'lots' && (secTitle.includes('лот') || secTitle.includes('профиль'))) ||
+                    (activeCat === 'editor' && (secTitle.includes('редактор') || secTitle.includes('создание'))) ||
+                    (activeCat === 'orders' && (secTitle.includes('заказ') || secTitle.includes('покупк'))) ||
+                    (activeCat === 'profile' && secTitle.includes('профил'));
+
+                let visibleRowsInSec = 0;
+                const secRows = qa(sec, '.fpf-custom-row');
+                secRows.forEach(r => {
+                    const text = r.textContent.toLowerCase();
+                    const match = catMatches && (!query || text.includes(query));
+                    r.style.display = match ? '' : 'none';
+                    if (match) visibleRowsInSec++;
+                });
+
+                sec.style.display = visibleRowsInSec > 0 ? '' : 'none';
+                if (visibleRowsInSec > 0) anyMatches = true;
+            });
+
+            let emptyBanner = q(view, '.fpf-custom-empty-msg');
+            if (!anyMatches) {
+                if (!emptyBanner) {
+                    emptyBanner = h('div', 'fpf-custom-empty-msg', 'Ничего не найдено по вашему запросу');
+                    emptyBanner.style.cssText = 'grid-column: 1 / -1; padding: 24px; text-align: center; color: #8491a5; font-size: 13px;';
+                    q(view, '.fpf-custom-groups')?.appendChild(emptyBanner);
+                }
+                emptyBanner.style.display = 'block';
+            } else if (emptyBanner) {
+                emptyBanner.style.display = 'none';
+            }
+
+            const activeCountBadge = q(view, '.fpf-filter-top > b');
+            const total = rows.length;
+            const checked = qa(view, '.fpf-custom-row input[type="checkbox"]:checked').length;
+            if (activeCountBadge) activeCountBadge.textContent = `АКТИВНО: ${checked} из ${total}`;
+        };
+
+        filterInput?.addEventListener('input', filterCustomization);
+
+        pillButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                pillButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const t = btn.textContent || '';
+                if (t.includes('Все')) activeCat = 'all';
+                else if (t.includes('Чат')) activeCat = 'chat';
+                else if (t.includes('Лоты')) activeCat = 'lots';
+                else if (t.includes('Редактор')) activeCat = 'editor';
+                else if (t.includes('Заказы')) activeCat = 'orders';
+                else if (t.includes('Профиль')) activeCat = 'profile';
+                filterCustomization();
+            });
+        });
+
+        q(view, '.fpf-bulk-enable')?.addEventListener('click', () => {
+            qa(view, '.fpf-custom-row:not([style*="display: none"]) input[type="checkbox"]').forEach(cb => {
+                cb.checked = true;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            filterCustomization();
+        });
+
+        q(view, '.fpf-bulk-disable')?.addEventListener('click', () => {
+            qa(view, '.fpf-custom-row:not([style*="display: none"]) input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            filterCustomization();
+        });
+
+        q(view, '.fpf-bulk-reset')?.addEventListener('click', () => {
+            qa(view, '.fpf-custom-row input[type="checkbox"]').forEach(cb => {
+                cb.checked = true;
+                cb.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            if (filterInput) filterInput.value = '';
+            activeCat = 'all';
+            pillButtons.forEach((b, i) => b.classList.toggle('active', i === 0));
+            filterCustomization();
+        });
     }
 
     function composeSystem(root) {
@@ -384,21 +647,9 @@
             mini.addEventListener('click', () => root.classList.toggle('fpf-collapsed'));
             header.insertBefore(mini, close || null);
         }
-        const forceLight = () => {
-            // IMPORTANT: this callback is observed on the same class attribute.
-            // Only mutate when the state actually needs changing; an unconditional
-            // classList.add() can continuously retrigger MutationObserver and lock
-            // the FunPay tab when the settings panel is opened.
-            if (root.classList.contains('fptm-dark')) root.classList.remove('fptm-dark');
-            if (!root.classList.contains('fptm-light')) root.classList.add('fptm-light');
-        };
-        forceLight();
-        const lightModeObserver = new MutationObserver(() => {
-            if (root.classList.contains('fptm-dark') || !root.classList.contains('fptm-light')) {
-                forceLight();
-            }
-        });
-        lightModeObserver.observe(root, { attributes: true, attributeFilter: ['class'] });
+        if (!root.classList.contains('fptm-dark') && !root.classList.contains('fptm-light')) {
+            root.classList.add('fptm-light');
+        }
     }
 
     function compose(root) {

@@ -1,0 +1,113 @@
+{
+  "dashboard": "shopping_cart\nВсего заказов\n128\n↑ +12%\nЗа последние 24 часа\npaid\nВыручка\n47 320 ₽\n↑ +18%\nЗа последние 24 часа\ngroup\nНовых клиентов\n32\n↑ +6%\nЗа последние 24 часа\nstar\nРейтинг магазина\n4.9\n↑ +0.1\nНа основе 342 отзывов",
+  "quickAction": {
+    "page": [
+      "autobump"
+    ],
+    "enabled": false
+  },
+  "autoState": "Включено\n● Работает\n•••",
+  "font": {
+    "value": "",
+    "selected": -1,
+    "options": [
+      {
+        "value": "Системный (Helvetica Neue)",
+        "text": "Системный (Helvetica Neue)"
+      }
+    ]
+  },
+  "blur": {
+    "value": "7",
+    "label": "0px",
+    "source": "7"
+  },
+  "dark": "fp-tools-popup fptm-themed active fpf-reference-layout fpf-exact-ui fptm-light",
+  "a11yNeeds": "- text: auto_awesome Создайте идеальный интерфейс с помощью AI Опишите, какие элементы вам нужны на сайте, и мы подберём оптимальные настройки\n- 'textbox \"Например: «Скрыть аналитику, оставить только чат и создание лотов»\"'\n- button \"✧ Подобрать настройки\"\n- text: \"Быстрые пресеты:\"\n- button \"👤 Для новичков\"\n- button \"🛒 Только продажи\"\n- button \"🍃 Минимализм\"\n- button \"⭐ Полный функционал\"\n- text: search\n- textbox \"Поиск по элементам...\"\n- button \"Все\"\n- button \"▢ Чат\"\n- button \"▣ Лоты\"\n- button \"✎ Редактор\"\n- button \"🛒 Заказы\"\n- button \"♙ Профиль\"\n- text: \"АКТИВНО: 14 из 18 □ Выбрано: 0 элементов\"\n- button \"✓ Включить выбранные\"\n- button \"× Отключить выбранные\"\n- button \"↻ Сбросить настройки\"\n- text: chat Чат и коммуникации 2 из 2 ⌃\n- checkbox [checked]: ✓\n- paragraph: Кнопка «Заметка» в чате Показывает кнопку заметок под панелью «Покупатель смотрит» в чате.\n- button \"◉\"\n- checkbox [checked]: ✓\n- paragraph: Блок быстрых действий в чате Дополнительные инструменты и кнопки для работы с клиентами.\n- button \"◉\"\n- text: inventory_2 Лоты и профиль 2 из 4 ⌃\n- checkbox [checked]: ✓\n- paragraph: Кнопка «Копировать лот» Кнопка под блоком товара на странице заказа для быстрого создания копии лота.\n- button \"◉\"\n- checkbox [checked]: ✓\n- paragraph: Копирование номера заказа Кликабельный номер заказа в заголовке страницы.\n- button \"◉\"\n- checkbox [checked]: ✓\n- paragraph: Кнопка «Выбрать» лоты Режим выделения нескольких лотов для массовых действий.\n- button \"◉\"\n- checkbox [checked]: ✓\n- paragraph: Кнопка «Включить лоты» Массовое включение/выключение выбранных лотов.\n- button \"◉\"\n- text: edit Редактор и создание лотов 2 из 2 ⌃\n- checkbox [checked]: ✓\n- paragraph: Кнопки «Открыть лот» Переход к лоту и его редактированию со страницы категории.\n- button \"◉\"\n- checkbox [checked]: ✓\n- paragraph: Кнопка «Поднять все лоты» Массово поднимает все лоты на вашем профиле.\n- button \"◉\"\n- text: shopping_cart Заказы и покупки 1 из 1 ⌃\n- checkbox [checked]: ✓\n- paragraph: Кнопка «Показать ещё» в статистике Разворачивает дополнительную статистику на странице продаж.\n- button \"◉\"\n- text: person Меню профиля 1 из 1 ⌃\n- checkbox [checked]: ✓\n- paragraph: Пункт «Добавить новую метку» Добавляет пункт в меню статусов собеседника.\n- button \"◉\"",
+  "searchUnchanged": true,
+  "layout1366": {
+    "popup": {
+      "x": 9,
+      "y": 9,
+      "width": 1348,
+      "height": 750
+    },
+    "content": {
+      "client": 1026,
+      "scroll": 1026
+    },
+    "overflow": []
+  },
+  "layout768": {
+    "popup": {
+      "x": 9,
+      "y": 9,
+      "width": 750,
+      "height": 750
+    },
+    "content": {
+      "client": 428,
+      "scroll": 463
+    },
+    "overflow": []
+  },
+  "layout320": {
+    "popup": {
+      "x": 9,
+      "y": 9,
+      "width": 302,
+      "height": 750
+    },
+    "content": {
+      "client": 26,
+      "scroll": 463
+    },
+    "overflow": [
+      "Все системы →",
+      "rocket_launch\nАвто-поднятие\n● Работает\nСледующий запуск\nчерез 12 мин\nchevron_right",
+      "inventory_2\nАвто-выдача\n● Работает\nОбработано сегодня\n48 заказов\nchevron_right",
+      "chat\nЧат и клиенты\n● Работает\nНовых сообщений\n7\nchevron_right",
+      "bar_chart\nФинансы\n● Работает\nСинхронизировано\n2 мин назад\nchevron_right",
+      "rocket_launch\nЗапустить авто-поднятие",
+      "play_circle\nЗапустить авто-выдачу",
+      "chat\nОткрыть чат с клиентами",
+      "bar_chart\nОткрыть финансы",
+      "add\nСоздать товар",
+      "settings\nОткрыть настройки",
+      "Сегодня",
+      "7 дней",
+      "30 дней",
+      "Все время",
+      "Выручка⌄",
+      "За 7 дней⌄",
+      "Все события →"
+    ]
+  },
+  "popup": {
+    "animation": "fadeIn",
+    "text": "FunPay Funcy\nv2.9.9\n\nВсе настройки находятся прямо на сайте FunPay - ищите кнопку в шапке.\n\nОткрыть FunPay\nПОДНЯТИЕ\nВыкл\nВЫДАЧА\nВыкл\nОТВЕТЫ\nВыкл\nСообщество\nОценить\nЧто нового\nMade with ♥ by AlliSighs · v2.9.9\nЧто нового в 2.8\n✕\nНОВОЕ\nВы можете посмотреть всегда на сайте GitHub: https://github.com/jgchkcu-maker/funpay-funcy",
+    "pairs": [
+      {
+        "sel": ".instruction-text",
+        "color": "rgb(107, 112, 146)",
+        "background": "rgb(19, 20, 26)",
+        "size": "13px",
+        "contrast": 3.813787217929406
+      },
+      {
+        "sel": ".quick-links a",
+        "color": "rgb(74, 79, 104)",
+        "background": "rgb(19, 20, 26)",
+        "size": "12px",
+        "contrast": 2.283653048785166
+      },
+      {
+        "sel": ".stat-label",
+        "color": "rgb(74, 79, 104)",
+        "background": "rgb(19, 20, 26)",
+        "size": "10px",
+        "contrast": 2.283653048785166
+      }
+    ]
+  }
+}

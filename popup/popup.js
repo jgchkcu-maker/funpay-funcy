@@ -5,8 +5,10 @@ document.addEventListener('DOMContentLoaded', async function () {
     const version = manifest.version;
     const versionEl = document.getElementById('version-display');
     const footerVerEl = document.getElementById('footer-version');
-    if (versionEl)   versionEl.textContent   = `v${version}`;
-    if (footerVerEl) footerVerEl.textContent  = version;
+    const changelogVerEl = document.getElementById('changelog-version');
+    if (versionEl)      versionEl.textContent      = `v${version}`;
+    if (footerVerEl)    footerVerEl.textContent     = version;
+    if (changelogVerEl) changelogVerEl.textContent  = version;
 
     // ─── Status dot: check if FunPay tab is open + user is logged in ─
     const statusDot = document.getElementById('status-dot');
@@ -92,6 +94,12 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     document.getElementById('changelog-close')?.addEventListener('click', () => {
         if (changelogPanel) changelogPanel.style.display = 'none';
+    });
+
+    document.getElementById('changelogExternalLink')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'https://github.com/jgchkcu-maker/funpay-funcy/releases' });
+        window.close();
     });
 
     // Auto-show changelog once for new version

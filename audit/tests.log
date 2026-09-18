@@ -1,0 +1,47 @@
+✔ manifest loads Pixel expressive design after responsive guard (0.8132ms)
+✔ expressive shell enhancer adds live hub header without replacing popup behavior (0.5126ms)
+✔ Pixel expressive shell defaults to the approved wider desktop geometry (0.6298ms)
+✔ sidebar search stays expanded and navigation uses expressive selected states (0.6793ms)
+✔ common legacy and modern settings surfaces share one card system (1.2888ms)
+✔ appearance previews are bounded and dense controls use responsive grids (0.5397ms)
+✔ expressive layer protects compact layouts and supports dark and reduced-motion modes (0.4665ms)
+✔ dashboard and finance grids collapse from popup width instead of browser width (1.0221ms)
+✔ dense legacy settings grids get compact container-query fallbacks (0.4199ms)
+✔ finance, templates, and accounts wrap controls instead of pushing the popup wider (0.3578ms)
+✔ short and very narrow popup does not reintroduce fixed nav-row height (0.2569ms)
+✔ settings navigation uses a single vertical Material-style sidebar (1.0544ms)
+✔ popup defaults to a wider desktop layout and search starts as an icon (0.3445ms)
+✔ settings responsiveness is driven by popup container width, not only browser viewport (0.8175ms)
+✔ compact popup keeps navigation labels and search usable while freeing content width (0.4643ms)
+✔ theme preview is bounded and dense settings grids collapse in compact popup (0.5231ms)
+✔ shared settings rows are allowed to shrink and wrap instead of overflowing (0.4819ms)
+✔ search results and detached settings modals stay inside their own visible area (0.3244ms)
+✔ viewport guard clamps old saved sizes and positions without overflowing (1.4292ms)
+✔ viewport guard normalizes restored geometry and preserves safe margins (0.1649ms)
+✔ viewport guard degrades margins safely even for an extremely small viewport (0.216ms)
+✔ legacy tiny saved popup sizes are detected for one-time widening (6.7679ms)
+✔ manifest loads responsive guard after all legacy settings styles (0.3463ms)
+✔ shared subtabs use Material 3 surface and a sliding active indicator (1.168ms)
+✔ subtabs remain single-line and horizontally usable in narrow windows (0.4632ms)
+✔ motion enhancer tracks the active tab and keeps accessibility state synchronized (0.3315ms)
+✔ keeping the active subtab visible never scrolls the settings page vertically (0.3943ms)
+✔ tab switch is intercepted before legacy display none/block (0.3602ms)
+✔ content transition stays local to popup and never uses document View Transitions (0.3899ms)
+✔ settings content clips animated paint only while a subtab transition is running (0.4023ms)
+✔ local reveal keeps the outgoing page visible underneath the incoming page (0.3332ms)
+✔ incoming page uses directional clip-path reveal only, with no whole-page fade or movement (0.379ms)
+✔ reveal cleanup restores temporary styles and hides the outgoing page (0.3707ms)
+✔ settings content reserves scrollbar space so tab height changes cannot shift layout (0.2237ms)
+✔ rapid repeated switches cancel the previous local animation (0.1548ms)
+✔ reduced-motion bypasses content animation (0.1763ms)
+✔ manifest loads the shared subtabs layers after the legacy popup styles (1.1405ms)
+template_popover_layout.test.js: ok
+✔ tests\template_popover_layout.test.js (42.6246ms)
+ℹ tests 38
+ℹ suites 0
+ℹ pass 38
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 89.4177

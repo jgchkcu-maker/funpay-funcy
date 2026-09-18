@@ -72,7 +72,7 @@ main {
 
 .instruction-text {
     font-size: 13px;
-    color: #6b7092;
+    color: #9ca3cf;
     line-height: 1.5;
     margin-bottom: 14px;
     text-align: center;
@@ -139,7 +139,7 @@ main {
 
 .stat-label {
     font-size: 10px;
-    color: #4a4f68;
+    color: #9aa1c6;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     font-weight: 600;
@@ -152,7 +152,7 @@ main {
 }
 
 .stat-value.on  { color: #4caf82; }
-.stat-value.off { color: #5a5f7a; }
+.stat-value.off { color: #888ea8; }
 
 /* ─── Footer ────────────────────────────────────────────────────── */
 footer {
@@ -171,7 +171,7 @@ footer {
     display: flex;
     align-items: center;
     gap: 5px;
-    color: #4a4f68;
+    color: #9aa1c6;
     text-decoration: none;
     font-size: 12px;
     font-weight: 500;
@@ -183,7 +183,7 @@ footer {
 .credits {
     text-align: center;
     font-size: 11px;
-    color: #32364a;
+    color: #7b819e;
 }
 
 /* ─── Changelog panel ───────────────────────────────────────────── */
@@ -197,6 +197,20 @@ footer {
 @keyframes slideDown {
     from { opacity: 0; transform: translateY(-6px); }
     to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .popup-wrapper,
+    .changelog-panel {
+        animation: none !important;
+        transform: none !important;
+    }
 }
 
 .changelog-header {
@@ -236,8 +250,19 @@ footer {
     align-items: flex-start;
     gap: 7px;
     font-size: 12px;
-    color: #7a7f9a;
+    color: #9aa0bc;
     line-height: 1.4;
+}
+
+.changelog-external-link {
+    color: #9cb4ff;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: color 0.15s;
+}
+
+.changelog-external-link:hover {
+    color: #c4d2ff;
 }
 
 .changelog-list code {
