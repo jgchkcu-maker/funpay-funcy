@@ -2062,7 +2062,7 @@ const FPT_HUB_CONFIG = {
         icon: 'chat',
         defaultSub: 'templates',
         subtabs: [
-            { id: 'templates', label: 'Шаблоны', icon: 'dashboard_customize' },
+            { id: 'templates', label: 'Шаблоны', icon: 'chat' },
             { id: 'slash_commands', label: 'Слэш-команды', icon: 'terminal' },
             { id: 'notes', label: 'Заметки', icon: 'edit_note' },
             { id: 'blacklist', label: 'Чёрный список', icon: 'block' },
