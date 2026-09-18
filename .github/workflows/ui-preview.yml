@@ -45,7 +45,7 @@ jobs:
           echo "## FunPay Funcy UI Preview" >> "$GITHUB_STEP_SUMMARY"
           if [ -d ui-preview ]; then
             COUNT=$(find ui-preview -maxdepth 1 -name '*.png' | wc -l)
-            echo "Generated **$COUNT screenshots** plus an `index.html` gallery." >> "$GITHUB_STEP_SUMMARY"
+            echo 'Generated **'"$COUNT"' screenshots** plus an index.html gallery.' >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Download the **funpay-funcy-ui-preview** artifact below the run to view the full gallery." >> "$GITHUB_STEP_SUMMARY"
           else
