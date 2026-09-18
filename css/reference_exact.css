@@ -281,3 +281,68 @@
   min-height:132px!important;
   overflow:hidden!important;
 }
+
+
+/* Pass 5: final geometry corrections after screenshot comparison. */
+.fp-tools-popup.fpf-exact-ui .fpf-auto-master{
+  min-height:368px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-system-view{
+  gap:14px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-sound-card{min-height:216px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-discord-card{min-height:156px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-identifier-card{min-height:140px!important}
+.fp-tools-popup.fpf-exact-ui .fpf-system-ok{min-height:77px!important}
+
+.fp-tools-popup.fpf-exact-ui .fp-tools-page-content[data-page="finance_overview"] .fpf-exact-view{
+  padding-top:6px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-finance-actions{
+  margin-top:8px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-finance-actions button{
+  min-height:44px!important;
+}
+
+.fp-tools-popup.fpf-exact-ui .fpf-theme-master{
+  min-height:296px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-row + .fpf-theme-controls + .fpf-theme-controls>section{
+  height:65px!important;
+  min-height:65px!important;
+  padding-top:8px!important;
+  padding-bottom:8px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-row + .fpf-theme-controls + .fpf-theme-controls{
+  margin-bottom:10px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-actions-card>button,
+.fp-tools-popup.fpf-exact-ui .fpf-theme-actions-card>div button{
+  min-height:27px!important;
+  height:27px!important;
+  font-size:8.5px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-actions-card>button,
+.fp-tools-popup.fpf-exact-ui .fpf-theme-actions-card>div{
+  margin-top:4px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-theme-actions-card .fpf-card-title{
+  font-size:11px!important;
+}
+
+.fp-tools-popup.fpf-exact-ui .fpf-custom-groups{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-custom-column{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:10px!important;
+}
+.fp-tools-popup.fpf-exact-ui .fpf-custom-column>section{
+  width:100%!important;
+  flex:0 0 auto!important;
+}
