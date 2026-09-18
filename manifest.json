@@ -1,0 +1,140 @@
+{
+  "generatedAt": "2026-09-18T09:25:56.376Z",
+  "screenshots": [
+    {
+      "id": "browser-popup",
+      "file": "00-browser-popup.png",
+      "title": "browser popup"
+    },
+    {
+      "id": "dashboard",
+      "file": "01-dashboard.png",
+      "title": "01 dashboard"
+    },
+    {
+      "id": "autobump",
+      "file": "02-automation-auto-bump.png",
+      "title": "02 automation auto bump"
+    },
+    {
+      "id": "auto_delivery",
+      "file": "03-automation-auto-delivery.png",
+      "title": "03 automation auto delivery"
+    },
+    {
+      "id": "auto_review",
+      "file": "04-automation-auto-reviews.png",
+      "title": "04 automation auto reviews"
+    },
+    {
+      "id": "scenarios",
+      "file": "05-automation-scenarios.png",
+      "title": "05 automation scenarios"
+    },
+    {
+      "id": "templates",
+      "file": "06-chat-templates.png",
+      "title": "06 chat templates"
+    },
+    {
+      "id": "slash_commands",
+      "file": "07-chat-slash-commands.png",
+      "title": "07 chat slash commands"
+    },
+    {
+      "id": "notes",
+      "file": "08-chat-notes.png",
+      "title": "08 chat notes"
+    },
+    {
+      "id": "blacklist",
+      "file": "09-chat-blacklist.png",
+      "title": "09 chat blacklist"
+    },
+    {
+      "id": "chat_search",
+      "file": "10-chat-search.png",
+      "title": "10 chat search"
+    },
+    {
+      "id": "lot_manage",
+      "file": "11-lots-management.png",
+      "title": "11 lots management"
+    },
+    {
+      "id": "pricing",
+      "file": "12-lots-market.png",
+      "title": "12 lots market"
+    },
+    {
+      "id": "lot_clone",
+      "file": "13-lots-cloning.png",
+      "title": "13 lots cloning"
+    },
+    {
+      "id": "lot_io",
+      "file": "14-lots-import-export.png",
+      "title": "14 lots import export"
+    },
+    {
+      "id": "finance_overview",
+      "file": "15-finance-overview.png",
+      "title": "15 finance overview"
+    },
+    {
+      "id": "sales_stats",
+      "file": "16-finance-statistics.png",
+      "title": "16 finance statistics"
+    },
+    {
+      "id": "calculator",
+      "file": "17-finance-calculator.png",
+      "title": "17 finance calculator"
+    },
+    {
+      "id": "currency_calc",
+      "file": "18-finance-currency.png",
+      "title": "18 finance currency"
+    },
+    {
+      "id": "theme",
+      "file": "19-appearance-theme.png",
+      "title": "19 appearance theme"
+    },
+    {
+      "id": "needs",
+      "file": "20-appearance-customization.png",
+      "title": "20 appearance customization"
+    },
+    {
+      "id": "general",
+      "file": "21-system-notifications.png",
+      "title": "21 system notifications"
+    },
+    {
+      "id": "accounts",
+      "file": "22-system-accounts.png",
+      "title": "22 system accounts"
+    },
+    {
+      "id": "telegram",
+      "file": "23-system-telegram.png",
+      "title": "23 system telegram"
+    },
+    {
+      "id": "settings_io",
+      "file": "24-system-backups.png",
+      "title": "24 system backups"
+    },
+    {
+      "id": "tickets",
+      "file": "25-system-support.png",
+      "title": "25 system support"
+    },
+    {
+      "id": "support",
+      "file": "26-about.png",
+      "title": "26 about"
+    }
+  ]
+}
