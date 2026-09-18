@@ -44,7 +44,7 @@ function fixture(port) {
     + 'const store={autoBumpEnabled:true,autoBumpInterval:30,fpAutoRestoreEnabled:true,fpAutoDisableEnabled:true,fpToolsAutoDeliveryLots:{"Steam Wallet 1000 RUB":{enabled:true}},fpToolsAutoReplies:{greeting:true,orderConfirmed:true},telegramBotToken:"preview-token",discordWebhookUrl:"https://example.invalid/webhook",notificationVolume:72};'
     + 'const pick=(keys)=>{if(keys==null)return Object.assign({},store);if(typeof keys==="string")return {[keys]:store[keys]};if(Array.isArray(keys))return Object.fromEntries(keys.map(k=>[k,store[k]]));if(typeof keys==="object")return Object.fromEntries(Object.entries(keys).map(([k,v])=>[k,store[k]??v]));return {}};'
     + 'window.chrome={runtime:{id:"funpay-funcy-preview",getURL:(p)=>"http://127.0.0.1:' + port + '/"+(String(p).startsWith("/")?String(p).slice(1):String(p)),sendMessage:async()=>({ok:true}),onMessage:{addListener(){},removeListener(){}}},storage:{local:{get:async(keys)=>pick(keys),set:async(obj)=>Object.assign(store,obj||{}),remove:async(keys)=>{for(const k of [].concat(keys||[]))delete store[k]}},sync:{get:async(keys)=>pick(keys),set:async(obj)=>Object.assign(store,obj||{})},onChanged:{addListener(){},removeListener(){}}},tabs:{create:async()=>({}),query:async()=>[],sendMessage:async()=>({})},alarms:{create(){},clear:async()=>true,onAlarm:{addListener(){}}},notifications:{create:async()=>"preview"},cookies:{getAll:async()=>[]}};'
-    + 'window.alert=()=>{};window.confirm=()=>true;window.prompt=()=>"";'
+    + 'window.initializeCurrencyCalculator=()=>{};'
     + '})();<\/script>'
     + '</head><body>'
     + '<script src="/content/ui/main_popup.js"><\/script>'
