@@ -75,6 +75,7 @@
         "content/features/finance_data.js",
         "content/features/cost_basis_store.js",
         "content/features/finance_potential.js",
+        "content/features/profit_engine.js",
         "content/error_page_reload.js",
         "content/scripts/jquery.js",
         "content/utils.js",

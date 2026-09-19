@@ -975,6 +975,33 @@
         return calculateOperationsAggregation(list, options);
     }
 
+    /**
+     * Агрегация реализованной прибыли и покрытия (T07B).
+     * Делегирует в чистый модуль FPTProfitEngine.
+     * @param {Array<Object>|Object} [ordersOrOptions]
+     * @param {Object} [options]
+     * @returns {Promise<Object>|Object}
+     */
+    function aggregateProfit(ordersOrOptions, options) {
+        const engine = (typeof FPTProfitEngine !== 'undefined' && FPTProfitEngine)
+            ? FPTProfitEngine
+            : (typeof window !== 'undefined' && window.FPTProfitEngine)
+            ? window.FPTProfitEngine
+            : (typeof root !== 'undefined' && root.FPTProfitEngine)
+            ? root.FPTProfitEngine
+            : null;
+
+        if (!engine) {
+            throw new Error('[FPTFinanceData] FPTProfitEngine is not loaded');
+        }
+
+        if (Array.isArray(ordersOrOptions)) {
+            return engine.calculateProfitAggregates(ordersOrOptions, options);
+        }
+
+        return engine.getRealisedProfit(ordersOrOptions || options);
+    }
+
     const api = {
         // Core сырые методы (T02A)
         getSalesRaw,
@@ -993,10 +1020,11 @@
         getPurchases,
         getOperations,
 
-        // Методы агрегации (T02B)
+        // Методы агрегации (T02B + T07B)
         aggregateSales,
         aggregatePurchases,
-        aggregateOperations
+        aggregateOperations,
+        aggregateProfit
     };
 
     root.FPTFinanceData = api;
