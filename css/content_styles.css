@@ -497,10 +497,13 @@
     font-family: 'Inter', 'Segoe UI', sans-serif;
     color: var(--fpt-text, #d8dae8);
     transition: opacity 0.25s ease, visibility 0.25s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-    max-width: 900px;
-    width: 90vw;
+    box-sizing: border-box;
+    width: min(1160px, 94vw);
+    height: min(780px, 90vh);
+    max-width: 1160px;
     max-height: 90vh;
-    height: 720px;
+    min-width: min(760px, 94vw);
+    min-height: min(560px, 90vh);
     resize: both;
     overflow: hidden;
 }
@@ -679,7 +682,7 @@
 }
 
 .fp-tools-nav {
-    width: 200px;
+    width: 220px;
     flex-shrink: 0;
     padding: 20px 10px;
     border-right: 1px solid var(--fpt-border, #22253a);
@@ -726,8 +729,13 @@
 
 .fp-tools-content {
     flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
     padding: 25px 30px;
     overflow-y: auto;
+    overflow-x: hidden;
+    container-type: inline-size;
+    container-name: fpt-content;
 }
 
 .fp-tools-content::-webkit-scrollbar {
@@ -8679,7 +8687,7 @@ textarea.fp-cw-input { line-height:1.4; }
     grid-column: span 12;
 }
 
-@media (max-width: 900px) {
+@container (max-width: 720px) {
     .fpt-fin-col-3 {
         grid-column: span 6;
     }
@@ -8691,7 +8699,7 @@ textarea.fp-cw-input { line-height:1.4; }
     }
 }
 
-@media (max-width: 600px) {
+@container (max-width: 480px) {
     .fpt-fin-col-3,
     .fpt-fin-col-4,
     .fpt-fin-col-6,

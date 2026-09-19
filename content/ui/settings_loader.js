@@ -278,6 +278,186 @@ async function setupTemplateSettingsHandlers() {
 }
 
 
+// ── POPUP GEOMETRY & VIEWPORT NORMALIZATION ────────────────────────────────
+function getPopupViewportLimits() {
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+
+    const maxWidth = Math.max(320, Math.min(1160, Math.floor(winW * 0.94)));
+    const maxHeight = Math.max(300, Math.floor(winH * 0.90));
+
+    const desiredMinWidth = 760;
+    const desiredMinHeight = 560;
+
+    const minWidth = Math.min(desiredMinWidth, maxWidth);
+    const minHeight = Math.min(desiredMinHeight, maxHeight);
+
+    const defaultWidth = Math.min(Math.max(1160, minWidth), maxWidth);
+    const defaultHeight = Math.min(Math.max(780, minHeight), maxHeight);
+
+    return {
+        winW,
+        winH,
+        maxWidth,
+        maxHeight,
+        minWidth,
+        minHeight,
+        defaultWidth,
+        defaultHeight
+    };
+}
+
+function parsePopupDimension(val) {
+    if (typeof val === 'number') {
+        return Number.isFinite(val) && val > 0 ? val : null;
+    }
+    if (typeof val === 'string') {
+        const trimmed = val.trim();
+        const parsed = parseFloat(trimmed);
+        if (Number.isFinite(parsed) && parsed > 0) {
+            if (trimmed.endsWith('vw')) return (parsed / 100) * window.innerWidth;
+            if (trimmed.endsWith('vh')) return (parsed / 100) * window.innerHeight;
+            return parsed;
+        }
+    }
+    return null;
+}
+
+function normalizePopupSize(savedSize) {
+    const limits = getPopupViewportLimits();
+    if (!savedSize || typeof savedSize !== 'object') {
+        return { width: limits.defaultWidth, height: limits.defaultHeight };
+    }
+
+    const rawW = parsePopupDimension(savedSize.width);
+    const rawH = parsePopupDimension(savedSize.height);
+
+    if (rawW === null || rawH === null) {
+        return { width: limits.defaultWidth, height: limits.defaultHeight };
+    }
+
+    // Auto-migrate exact old default 900x720 to new default
+    if (Math.round(rawW) === 900 && Math.round(rawH) === 720) {
+        return { width: limits.defaultWidth, height: limits.defaultHeight };
+    }
+
+    // Otherwise preserve custom user preferences, safely clamped within limits
+    const width = Math.min(Math.max(rawW, limits.minWidth), limits.maxWidth);
+    const height = Math.min(Math.max(rawH, limits.minHeight), limits.maxHeight);
+
+    return {
+        width: Math.round(width),
+        height: Math.round(height)
+    };
+}
+
+function clampPopupPosition(left, top, popupWidth, popupHeight) {
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+
+    const maxLeft = Math.max(0, winW - popupWidth);
+    const maxTop = Math.max(0, winH - popupHeight);
+
+    return {
+        left: Math.max(0, Math.min(Math.round(left), maxLeft)),
+        top: Math.max(0, Math.min(Math.round(top), maxTop))
+    };
+}
+
+function applySavedPopupGeometry(toolsPopup, settings) {
+    if (!toolsPopup) return;
+
+    // 1 & 2 & 3: Normalize and apply safe dimensions
+    const size = normalizePopupSize(settings?.fpToolsPopupSize);
+    toolsPopup.style.width = `${size.width}px`;
+    toolsPopup.style.height = `${size.height}px`;
+
+    // 4 & 5 & 6 & 7: Physical size and position clamp
+    if (settings?.fpToolsPopupDragged && settings?.fpToolsPopupPosition) {
+        const rawLeft = parsePopupDimension(settings.fpToolsPopupPosition.left);
+        const rawTop = parsePopupDimension(settings.fpToolsPopupPosition.top);
+
+        if (rawLeft !== null && rawTop !== null) {
+            const currentW = toolsPopup.offsetWidth || size.width;
+            const currentH = toolsPopup.offsetHeight || size.height;
+
+            const clamped = clampPopupPosition(rawLeft, rawTop, currentW, currentH);
+            toolsPopup.style.left = `${clamped.left}px`;
+            toolsPopup.style.top = `${clamped.top}px`;
+            toolsPopup.classList.add('no-transform');
+            return;
+        }
+    }
+
+    // Default: centered via CSS translate(-50%, -50%)
+    toolsPopup.classList.remove('no-transform');
+    toolsPopup.style.left = '';
+    toolsPopup.style.top = '';
+}
+
+function ensurePopupInsideViewport(toolsPopup) {
+    if (!toolsPopup) return;
+
+    const limits = getPopupViewportLimits();
+    let currentW = toolsPopup.offsetWidth;
+    let currentH = toolsPopup.offsetHeight;
+
+    if (!currentW || !currentH) {
+        currentW = parsePopupDimension(toolsPopup.style.width) || limits.defaultWidth;
+        currentH = parsePopupDimension(toolsPopup.style.height) || limits.defaultHeight;
+    }
+
+    let needsSizeUpdate = false;
+    let newW = currentW;
+    let newH = currentH;
+
+    if (currentW > limits.maxWidth) {
+        newW = limits.maxWidth;
+        needsSizeUpdate = true;
+    } else if (currentW < limits.minWidth) {
+        newW = limits.minWidth;
+        needsSizeUpdate = true;
+    }
+
+    if (currentH > limits.maxHeight) {
+        newH = limits.maxHeight;
+        needsSizeUpdate = true;
+    } else if (currentH < limits.minHeight) {
+        newH = limits.minHeight;
+        needsSizeUpdate = true;
+    }
+
+    if (needsSizeUpdate) {
+        toolsPopup.style.width = `${Math.round(newW)}px`;
+        toolsPopup.style.height = `${Math.round(newH)}px`;
+        currentW = Math.round(newW);
+        currentH = Math.round(newH);
+    }
+
+    // Clamp position if dragged / no-transform
+    if (toolsPopup.classList.contains('no-transform')) {
+        let curLeft = parsePopupDimension(toolsPopup.style.left);
+        let curTop = parsePopupDimension(toolsPopup.style.top);
+        if (curLeft === null) curLeft = toolsPopup.offsetLeft;
+        if (curTop === null) curTop = toolsPopup.offsetTop;
+
+        const clamped = clampPopupPosition(curLeft, curTop, currentW, currentH);
+        if (toolsPopup.style.left !== `${clamped.left}px` || toolsPopup.style.top !== `${clamped.top}px`) {
+            toolsPopup.style.left = `${clamped.left}px`;
+            toolsPopup.style.top = `${clamped.top}px`;
+        }
+    }
+}
+
+// Expose globally for main_popup.js and content_script.js
+window.getPopupViewportLimits = getPopupViewportLimits;
+window.parsePopupDimension = parsePopupDimension;
+window.normalizePopupSize = normalizePopupSize;
+window.clampPopupPosition = clampPopupPosition;
+window.applySavedPopupGeometry = applySavedPopupGeometry;
+window.ensurePopupInsideViewport = ensurePopupInsideViewport;
+
+
 async function loadSavedSettings() {
     const settings = await chrome.storage.local.get([
         'fpToolsTemplateSettings', 'enableCustomTheme', 'fpToolsTheme', 'aiModeActive',
@@ -318,14 +498,8 @@ async function loadSavedSettings() {
     }
     
     const toolsPopup = document.querySelector('.fp-tools-popup');
-    if (settings.fpToolsPopupDragged && settings.fpToolsPopupPosition) {
-        toolsPopup.style.left = settings.fpToolsPopupPosition.left;
-        toolsPopup.style.top = settings.fpToolsPopupPosition.top;
-        toolsPopup.classList.add('no-transform');
-    }
-    if (settings.fpToolsPopupSize) {
-        toolsPopup.style.width = settings.fpToolsPopupSize.width;
-        toolsPopup.style.height = settings.fpToolsPopupSize.height;
+    if (toolsPopup) {
+        applySavedPopupGeometry(toolsPopup, settings);
     }
 
     const discordSettings = settings.fpToolsDiscord || { enabled: false, webhookUrl: '', pingEveryone: false, pingHere: false };

@@ -3074,15 +3074,15 @@ function makePopupInteractive(popupEl) {
 
     let isDragging = false;
     let offset = { x: 0, y: 0 };
-    let hasBeenDragged = false;
+    let hasBeenDragged = popupEl.classList.contains('no-transform');
 
     header.addEventListener('mousedown', (e) => {
         if (e.target !== header) return;
         isDragging = true;
         if (!hasBeenDragged) {
             const rect = popupEl.getBoundingClientRect();
-            popupEl.style.left = `${rect.left}px`;
-            popupEl.style.top = `${rect.top}px`;
+            popupEl.style.left = `${Math.round(rect.left)}px`;
+            popupEl.style.top = `${Math.round(rect.top)}px`;
             popupEl.classList.add('no-transform');
             hasBeenDragged = true;
         }
@@ -3094,16 +3094,16 @@ function makePopupInteractive(popupEl) {
 
     window.addEventListener('mousemove', (e) => {
         if (isDragging) {
-            let left = e.clientX - offset.x;
-            let top = e.clientY - offset.y;
-            const winWidth = window.innerWidth;
-            const winHeight = window.innerHeight;
             const popupWidth = popupEl.offsetWidth;
             const popupHeight = popupEl.offsetHeight;
-            left = Math.max(0, Math.min(left, winWidth - popupWidth));
-            top = Math.max(0, Math.min(top, winHeight - popupHeight));
-            popupEl.style.left = `${left}px`;
-            popupEl.style.top = `${top}px`;
+            const clamped = typeof clampPopupPosition === 'function'
+                ? clampPopupPosition(e.clientX - offset.x, e.clientY - offset.y, popupWidth, popupHeight)
+                : {
+                    left: Math.max(0, Math.min(e.clientX - offset.x, Math.max(0, window.innerWidth - popupWidth))),
+                    top: Math.max(0, Math.min(e.clientY - offset.y, Math.max(0, window.innerHeight - popupHeight)))
+                };
+            popupEl.style.left = `${clamped.left}px`;
+            popupEl.style.top = `${clamped.top}px`;
         }
     });
 
@@ -3111,10 +3111,12 @@ function makePopupInteractive(popupEl) {
         if (isDragging) {
             isDragging = false;
             document.body.style.userSelect = '';
-            await chrome.storage.local.set({ 
-                fpToolsPopupPosition: { top: popupEl.style.top, left: popupEl.style.left },
-                fpToolsPopupDragged: true 
-            });
+            if (chrome.runtime?.id) {
+                await chrome.storage.local.set({ 
+                    fpToolsPopupPosition: { top: popupEl.style.top, left: popupEl.style.left },
+                    fpToolsPopupDragged: true 
+                });
+            }
         }
     });
 
@@ -3136,9 +3138,29 @@ function makePopupInteractive(popupEl) {
         if (__fptSizeSaveTimer) clearTimeout(__fptSizeSaveTimer);
         __fptSizeSaveTimer = setTimeout(() => {
             if (chrome.runtime?.id) {
-                chrome.storage.local.set({ fpToolsPopupSize: { width: newWidth, height: newHeight } });
+                const norm = typeof normalizePopupSize === 'function'
+                    ? normalizePopupSize({ width: newWidth, height: newHeight })
+                    : { width: parseFloat(newWidth), height: parseFloat(newHeight) };
+                const saveW = norm.width ? `${norm.width}px` : newWidth;
+                const saveH = norm.height ? `${norm.height}px` : newHeight;
+                chrome.storage.local.set({ fpToolsPopupSize: { width: saveW, height: saveH } });
+                if (typeof ensurePopupInsideViewport === 'function') {
+                    ensurePopupInsideViewport(popupEl);
+                }
             }
         }, 300);
     });
     resizeObserver.observe(popupEl, { attributes: true, attributeFilter: ['style'] });
+
+    // Clamp popup safely inside viewport when browser window resizes or changes monitor
+    let __fptWinResizeTimer = null;
+    window.addEventListener('resize', () => {
+        if (__fptWinResizeTimer) clearTimeout(__fptWinResizeTimer);
+        __fptWinResizeTimer = setTimeout(() => {
+            if (!document.body.contains(popupEl)) return;
+            if (typeof ensurePopupInsideViewport === 'function') {
+                ensurePopupInsideViewport(popupEl);
+            }
+        }, 150);
+    });
 }
