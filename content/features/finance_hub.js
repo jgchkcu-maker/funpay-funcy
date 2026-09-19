@@ -1226,8 +1226,374 @@
         });
     }
 
+    // ── РЕНДЕРИНГ ДИАГРАММЫ ОПЕРАЦИЙ (BAR CHART) ───────────────────────────
+
+    function renderOperationsBarChartSVG(keys, dataMap) {
+        if (!keys.length) {
+            return `<div class="fpt-fin-chart-empty">Нет операций за выбранный период</div>`;
+        }
+
+        const maxVal = niceMax(Math.max(1, ...keys.map(k => Math.max(dataMap[k] ? dataMap[k].in || 0 : 0, dataMap[k] ? dataMap[k].out || 0 : 0))));
+
+        const W = 680, H = 220, PAD = { t: 20, r: 20, b: 35, l: 55 };
+        const cw = W - PAD.l - PAD.r;
+        const ch = H - PAD.t - PAD.b;
+        const slot = cw / Math.max(keys.length, 1);
+        const barW = Math.max(2, Math.min(18, Math.floor(slot / 2) - 2));
+        const baseY = PAD.t + ch;
+
+        let grid = '', yLabels = '';
+        const steps = 4;
+        for (let i = 0; i <= steps; i++) {
+            const y = baseY - (i / steps) * ch;
+            grid += `<line x1="${PAD.l}" y1="${y}" x2="${W - PAD.r}" y2="${y}" stroke="var(--fptm-border, rgba(255,255,255,0.08))" stroke-width="1" />`;
+            const v = (maxVal / steps) * i;
+            yLabels += `<text x="${PAD.l - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--fptm-muted, #9099b8)">${fmtAxis(v)}</text>`;
+        }
+
+        let bars = '', xLabels = '';
+        const stepX = Math.ceil(keys.length / 10);
+
+        keys.forEach((k, i) => {
+            const entry = dataMap[k] || { in: 0, out: 0, net: 0 };
+            const slotX = PAD.l + i * slot + slot / 2;
+
+            const inH = Math.max(0, (entry.in / maxVal) * ch);
+            const outH = Math.max(0, (entry.out / maxVal) * ch);
+
+            const inY = baseY - inH;
+            const outY = baseY - outH;
+
+            const inX = slotX - barW - 1;
+            const outX = slotX + 1;
+
+            bars += `
+                <g class="fpt-fin-chart-bar-group" tabindex="0">
+                    <title>${k}: Приход: +${fmtMoney(entry.in, 'RUB')}, Расход: −${fmtMoney(entry.out, 'RUB')}, Нетто: ${entry.net >= 0 ? '+' : ''}${fmtMoney(entry.net, 'RUB')}</title>
+                    ${inH > 0 ? `<rect x="${inX}" y="${inY}" width="${barW}" height="${inH}" fill="#4caf82" rx="2" opacity="0.85" />` : ''}
+                    ${outH > 0 ? `<rect x="${outX}" y="${outY}" width="${barW}" height="${outH}" fill="#e57373" rx="2" opacity="0.85" />` : ''}
+                </g>
+            `;
+
+            if (i % stepX === 0 || i === keys.length - 1) {
+                const label = k.slice(5); // MM или DD
+                xLabels += `<text x="${slotX}" y="${H - 6}" text-anchor="middle" font-size="10" fill="var(--fptm-muted, #9099b8)">${label}</text>`;
+            }
+        });
+
+        return `
+            <svg class="fpt-fin-svg-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:100%;display:block;overflow:visible;">
+                ${grid}
+                ${yLabels}
+                ${xLabels}
+                ${bars}
+            </svg>
+        `;
+    }
+
+    // ── РЕНДЕРИНГ ВКЛАДКИ «ОПЕРАЦИИ» ────────────────────────────────────────
+
     async function renderOperations() {
-        // Будет реализовано в commit 4
+        const pane = getPane('operations');
+        if (!pane) return;
+
+        state.loading.operations = true;
+
+        const dataLayer = root.FPTFinanceData;
+        if (!dataLayer) {
+            pane.innerHTML = `<div class="fpt-fin-empty-state"><p class="fpt-fin-empty-desc">Служба данных не загружена</p></div>`;
+            state.loading.operations = false;
+            return;
+        }
+
+        const period = state.period || '7d';
+        const typeFilter = state.operations.typeFilter;
+        const search = state.operations.search;
+        const sort = state.operations.sort;
+
+        const { txns, count, totalCount } = await dataLayer.getOperations({
+            period,
+            typeFilter,
+            search,
+            sort
+        });
+
+        const agg = dataLayer.aggregateOperations(txns);
+        state.loading.operations = false;
+
+        if (totalCount === 0) {
+            pane.innerHTML = `
+                <div class="fpt-fin-empty-state">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon">account_balance</span>
+                    <h4 class="fpt-fin-empty-title">Операции баланса не найдены</h4>
+                    <p class="fpt-fin-empty-desc">Нажмите кнопку ниже или «Обновить» вверху, чтобы синхронизировать историю операций баланса с FunPay.</p>
+                    <button type="button" class="btn btn-primary fpt-fin-btn" id="fptFinOperationsInitialSyncBtn">
+                        <span class="material-symbols-rounded">sync</span>
+                        <span>Синхронизировать баланс</span>
+                    </button>
+                </div>
+            `;
+            const syncBtn = pane.querySelector('#fptFinOperationsInitialSyncBtn');
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => refresh());
+            }
+            return;
+        }
+
+        const chartInterval = state.operations.chartInterval; // 'month' | 'day'
+        const intervalMap = chartInterval === 'month' ? agg.byMonth : agg.byDay;
+        const intervalKeys = Object.keys(intervalMap).sort();
+
+        // Разбивка по типам для пончика
+        const TYPE_NAMES = {
+            order: 'Заказы',
+            payment: 'Пополнения',
+            withdraw: 'Выводы',
+            withdraw_cancel: 'Отмены выводов',
+            other: 'Другое'
+        };
+
+        const typeEntries = Object.entries(agg.byType)
+            .map(([k, d]) => ({ label: TYPE_NAMES[k] || k, value: d.count }))
+            .sort((a, b) => b.value - a.value);
+
+        const visibleTxns = txns.slice(0, state.operations.visibleCount);
+
+        const netClass = agg.totalNetRUB >= 0 ? '#4caf82' : '#e57373';
+        const netPrefix = agg.totalNetRUB >= 0 ? '+' : '';
+
+        pane.innerHTML = `
+            <!-- Фильтры по типам и поиск -->
+            <div class="fpt-fin-toolbar">
+                <div class="fpt-fin-filter-group">
+                    <button type="button" class="fpt-fin-filter-chip ${typeFilter === 'all' ? 'active' : ''}" data-opt-type="all">Все</button>
+                    <button type="button" class="fpt-fin-filter-chip ${typeFilter === 'order' ? 'active' : ''}" data-opt-type="order">Заказы</button>
+                    <button type="button" class="fpt-fin-filter-chip ${typeFilter === 'payment' ? 'active' : ''}" data-opt-type="payment">Пополнения</button>
+                    <button type="button" class="fpt-fin-filter-chip ${typeFilter === 'withdraw' ? 'active' : ''}" data-opt-type="withdraw">Выводы</button>
+                    <button type="button" class="fpt-fin-filter-chip ${typeFilter === 'other' ? 'active' : ''}" data-opt-type="other">Прочее</button>
+                </div>
+                <div class="fpt-fin-search-box">
+                    <span class="material-symbols-rounded fpt-fin-search-icon">search</span>
+                    <input type="text" class="fpt-fin-search-input" id="fptFinOperationsSearch" placeholder="Поиск по описанию, ID..." value="${esc(search)}" autocomplete="off" />
+                    ${search ? `<button type="button" class="fpt-fin-search-clear" id="fptFinOperationsSearchClear">×</button>` : ''}
+                </div>
+            </div>
+
+            <!-- Сетка KPI -->
+            <div class="fpt-fin-grid">
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Поступления (+)</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">arrow_circle_down</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${fmtRevenueMulti(agg.inByCur)}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>В рублях: +${fmtMoney(agg.totalInRUB, 'RUB')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Расходы (−)</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">arrow_circle_up</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${fmtRevenueMulti(agg.outByCur)}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>В рублях: −${fmtMoney(agg.totalOutRUB, 'RUB')}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Чистый поток (нетто)</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:var(--fptm-accent, #1b75bb);">account_balance</span>
+                        </div>
+                        <div class="fpt-fin-card-value" style="color:${netClass}!important;">${netPrefix}${fmtMoney(agg.totalNetRUB, 'RUB')}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Изменение баланса за период</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Операции и сборы</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#f4c84a;">price_check</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${agg.count} оп.</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Комиссии: ~${fmtMoney(agg.commissionsRUB, 'RUB')}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- График динамики и Разбивка по типам -->
+                <div class="fpt-fin-col-8">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <div style="display:flex;align-items:center;gap:12px;">
+                                <h5 class="fpt-fin-card-title">Динамика баланса</h5>
+                                <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--fptm-muted,#888);">
+                                    <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:2px;background:#4caf82;"></span> Приход</span>
+                                    <span style="display:inline-flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;border-radius:2px;background:#e57373;"></span> Расход</span>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-chart-toggles" role="group">
+                                <button type="button" class="fpt-fin-chart-toggle ${chartInterval === 'month' ? 'active' : ''}" data-op-interval="month">По месяцам</button>
+                                <button type="button" class="fpt-fin-chart-toggle ${chartInterval === 'day' ? 'active' : ''}" data-op-interval="day">По дням</button>
+                            </div>
+                        </div>
+                        <div class="fpt-fin-chart-wrap" style="height:220px;position:relative;">
+                            ${renderOperationsBarChartSVG(intervalKeys, intervalMap)}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpt-fin-col-4">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Разбивка операций</h5>
+                        </div>
+                        ${renderDonutSVG('Типы операций', typeEntries)}
+                    </div>
+                </div>
+
+                <!-- Таблица операций -->
+                <div class="fpt-fin-col-12">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <h5 class="fpt-fin-card-title">История операций баланса</h5>
+                                <span class="fpt-fin-mini-badge">Показано ${visibleTxns.length} из ${txns.length}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <select class="fpt-fin-sort-select" id="fptFinOperationsSortSelect" aria-label="Сортировка операций">
+                                    <option value="date-desc" ${sort === 'date-desc' ? 'selected' : ''}>Сначала новые</option>
+                                    <option value="date-asc" ${sort === 'date-asc' ? 'selected' : ''}>Сначала старые</option>
+                                    <option value="amount-desc" ${sort === 'amount-desc' ? 'selected' : ''}>Сумма (макс)</option>
+                                    <option value="amount-asc" ${sort === 'amount-asc' ? 'selected' : ''}>Сумма (мин)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="fpt-fin-table-wrap">
+                            <table class="fpt-fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Дата</th>
+                                        <th>Тип</th>
+                                        <th>Описание / Реквизиты</th>
+                                        <th style="text-align:right;">Сумма</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${visibleTxns.length ? visibleTxns.map(t => {
+                                        const d = t.date ? new Date(t.date) : null;
+                                        const dateStr = d ? `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '—';
+                                        const isPos = (t.signed || 0) >= 0;
+                                        const amtStr = `${isPos ? '+' : '−'}${fmtMoney(Math.abs(t.signed || 0), t.currency)}`;
+                                        const amtColor = isPos ? '#4caf82' : '#e57373';
+                                        const typeLabel = TYPE_NAMES[t.type] || t.type || 'Операция';
+                                        const statusBadge = (t.status === 'complete' || !t.status)
+                                            ? `<span class="fpt-fin-badge-pill fpt-fin-badge-closed">Выполнено</span>`
+                                            : `<span class="fpt-fin-badge-pill fpt-fin-badge-refunded">${esc(t.status)}</span>`;
+
+                                        return `
+                                            <tr>
+                                                <td style="font-family:monospace;font-weight:600;color:var(--fptm-muted,#888);">#${esc(t.id || '—')}</td>
+                                                <td style="color:var(--fptm-muted,#888);font-size:11px;">${dateStr}</td>
+                                                <td><span class="fpt-fin-subcat-badge">${esc(typeLabel)}</span></td>
+                                                <td class="fpt-fin-desc-cell" title="${esc(t.description || '')}">${esc(t.description || '—')}</td>
+                                                <td style="text-align:right;font-weight:700;color:${amtColor};font-variant-numeric:tabular-nums;">${amtStr}</td>
+                                                <td>${statusBadge}</td>
+                                            </tr>
+                                        `;
+                                    }).join('') : `
+                                        <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--fptm-muted,#888);">Нет операций по текущим фильтрам</td></tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        ${txns.length > visibleTxns.length ? `
+                            <div class="fpt-fin-table-footer">
+                                <button type="button" class="btn btn-default fpt-fin-btn" id="fptFinOperationsLoadMoreBtn">
+                                    <span>Показать ещё ${Math.min(50, txns.length - visibleTxns.length)} операций</span>
+                                </button>
+                                <button type="button" class="btn btn-default fpt-fin-btn" id="fptFinOperationsLoadAllBtn">
+                                    <span>Показать все (${txns.length})</span>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        wireOperationsEvents(pane, txns, agg);
+    }
+
+    function wireOperationsEvents(pane, txns, agg) {
+        pane.querySelectorAll('.fpt-fin-filter-chip[data-opt-type]').forEach(chip => {
+            chip.addEventListener('click', () => {
+                state.operations.typeFilter = chip.getAttribute('data-opt-type');
+                renderOperations();
+            });
+        });
+
+        const searchInput = pane.querySelector('#fptFinOperationsSearch');
+        if (searchInput) {
+            let timeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    state.operations.search = e.target.value.trim();
+                    renderOperations();
+                }, 300);
+            });
+        }
+        const clearSearchBtn = pane.querySelector('#fptFinOperationsSearchClear');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                state.operations.search = '';
+                renderOperations();
+            });
+        }
+
+        pane.querySelectorAll('.fpt-fin-chart-toggle[data-op-interval]').forEach(t => {
+            t.addEventListener('click', () => {
+                state.operations.chartInterval = t.getAttribute('data-op-interval');
+                renderOperations();
+            });
+        });
+
+        const sortSelect = pane.querySelector('#fptFinOperationsSortSelect');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                state.operations.sort = e.target.value;
+                renderOperations();
+            });
+        }
+
+        const loadMoreBtn = pane.querySelector('#fptFinOperationsLoadMoreBtn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                state.operations.visibleCount += 50;
+                renderOperations();
+            });
+        }
+        const loadAllBtn = pane.querySelector('#fptFinOperationsLoadAllBtn');
+        if (loadAllBtn) {
+            loadAllBtn.addEventListener('click', () => {
+                state.operations.visibleCount = txns.length;
+                renderOperations();
+            });
+        }
     }
 
     async function renderOverview() {
