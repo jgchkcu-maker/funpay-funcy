@@ -73,6 +73,7 @@
         "content/purchases_db.js",
         "content/finance_db.js",
         "content/features/finance_data.js",
+        "content/features/cost_basis_store.js",
         "content/error_page_reload.js",
         "content/scripts/jquery.js",
         "content/utils.js",
