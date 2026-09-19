@@ -78,6 +78,13 @@
         profitCurrency: 'RUB',
         profitLastUpdate: null,
 
+        overviewRenderToken: 0,
+        isOverviewLoading: false,
+        overviewMetric: 'revenue',
+        cachedOverviewData: null,
+        cachedOverviewPeriod: null,
+        overviewLastUpdate: null,
+
         tooltipEl: null
     };
 
@@ -1166,6 +1173,17 @@
         if (!state.container) return;
         const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
         if (!lastUpdatedEl) return;
+
+        if (subtab === 'overview') {
+            if (state.overviewLastUpdate) {
+                const d = new Date(state.overviewLastUpdate);
+                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            } else {
+                lastUpdatedEl.textContent = 'Обновлено: только что';
+            }
+            return;
+        }
 
         if (subtab === 'profit') {
             if (state.profitLastUpdate) {
@@ -2626,12 +2644,682 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
+    // ПОДВКЛАДКА: ОБЗОР (T08)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    function renderOverviewSubtabLoading(pane) {
+        if (!pane) return;
+        const valueSelectors = [
+            '#fptFinOverviewRevenue', '#fptFinOverviewRevenueSub',
+            '#fptFinOverviewProfit', '#fptFinOverviewProfitSub',
+            '#fptFinOverviewOrders', '#fptFinOverviewOrdersSub',
+            '#fptFinOverviewAvgCheck', '#fptFinOverviewAvgCheckSub',
+            '#fptFinOverviewPotRevenue', '#fptFinOverviewPotRevenueSub',
+            '#fptFinOverviewPotProfit', '#fptFinOverviewPotProfitSub',
+            '#fptFinOverviewPotCost', '#fptFinOverviewPotCostSub',
+            '#fptFinOverviewPotOffers', '#fptFinOverviewPotOffersSub'
+        ];
+        valueSelectors.forEach(sel => {
+            const el = pane.querySelector(sel);
+            if (el) {
+                el.innerHTML = sel.endsWith('Sub')
+                    ? '<div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>'
+                    : '<div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>';
+            }
+        });
+        const chart = pane.querySelector('#fptFinOverviewChart');
+        if (chart) chart.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>';
+        const cats = pane.querySelector('#fptFinOverviewCategoriesChart');
+        if (cats) cats.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>';
+        const topP = pane.querySelector('#fptFinOverviewTopProducts');
+        if (topP) topP.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>';
+        const topC = pane.querySelector('#fptFinOverviewTopCategories');
+        if (topC) topC.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>';
+        const ops = pane.querySelector('#fptFinOverviewOperations');
+        if (ops) ops.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>';
+    }
+
+    function renderOverviewRow1(pane, salesAgg, profitData, primaryCurrency) {
+        if (!pane) return;
+
+        // 1. Выручка
+        const revEl = pane.querySelector('#fptFinOverviewRevenue');
+        if (revEl) {
+            revEl.textContent = salesAgg ? formatRevenueMulti(salesAgg.byCurrency) : '—';
+        }
+        const revSubEl = pane.querySelector('#fptFinOverviewRevenueSub');
+        if (revSubEl) {
+            if (salesAgg && salesAgg.closedRevenue) {
+                const closedStr = formatRevenueMulti(salesAgg.closedRevenue);
+                revSubEl.textContent = `Завершено: ${closedStr}`;
+            } else {
+                revSubEl.textContent = '—';
+            }
+        }
+
+        // 2. Реализованная чистая прибыль + покрытие
+        const profitEl = pane.querySelector('#fptFinOverviewProfit');
+        const profitSubEl = pane.querySelector('#fptFinOverviewProfitSub');
+        const profitTotals = (profitData && profitData.byCurrency)
+            ? (profitData.byCurrency[primaryCurrency] || Object.values(profitData.byCurrency)[0])
+            : null;
+
+        if (profitEl) {
+            if (profitTotals && typeof profitTotals.realisedNetProfit === 'number') {
+                profitEl.textContent = formatMoney(profitTotals.realisedNetProfit, profitTotals.currency || primaryCurrency);
+                profitEl.className = 'fpt-fin-card-value' + (profitTotals.realisedNetProfit > 0 ? ' fpt-fin-operation-in' : (profitTotals.realisedNetProfit < 0 ? ' fpt-fin-operation-out' : ''));
+            } else {
+                profitEl.textContent = '—';
+                profitEl.className = 'fpt-fin-card-value';
+            }
+        }
+        if (profitSubEl) {
+            if (profitTotals) {
+                const orderCov = typeof profitTotals.orderCoverage === 'number' ? `${profitTotals.orderCoverage}%` : '—';
+                const revCov = typeof profitTotals.revenueCoverage === 'number' ? `${profitTotals.revenueCoverage}%` : '—';
+                profitSubEl.textContent = `Покрытие: ${orderCov} зак. (${revCov} выр.)`;
+            } else {
+                profitSubEl.textContent = '—';
+            }
+        }
+
+        // 3. Заказы
+        const ordersEl = pane.querySelector('#fptFinOverviewOrders');
+        if (ordersEl) {
+            ordersEl.textContent = salesAgg ? `${salesAgg.count} зак.` : '—';
+        }
+        const ordersSubEl = pane.querySelector('#fptFinOverviewOrdersSub');
+        if (ordersSubEl) {
+            if (salesAgg) {
+                const refCount = (salesAgg.byStatus && salesAgg.byStatus.refunded) || 0;
+                ordersSubEl.textContent = `Всего: ${salesAgg.total || 0} (возвратов: ${refCount})`;
+            } else {
+                ordersSubEl.textContent = '—';
+            }
+        }
+
+        // 4. Средний чек
+        const avgEl = pane.querySelector('#fptFinOverviewAvgCheck');
+        if (avgEl) {
+            avgEl.textContent = salesAgg ? formatAvgCheckMulti(salesAgg.averageCheck) : '—';
+        }
+        const avgSubEl = pane.querySelector('#fptFinOverviewAvgCheckSub');
+        if (avgSubEl) {
+            avgSubEl.textContent = salesAgg ? 'Средний чек покупателя' : '—';
+        }
+    }
+
+    function renderOverviewRow2(pane, potTotals, potCurrency) {
+        if (!pane) return;
+
+        // 1. Потенциал выручки
+        const revEl = pane.querySelector('#fptFinOverviewPotRevenue');
+        if (revEl) {
+            revEl.textContent = (potTotals && typeof potTotals.sellerRevenue === 'number')
+                ? formatMoney(potTotals.sellerRevenue, potCurrency)
+                : '—';
+        }
+        const revSubEl = pane.querySelector('#fptFinOverviewPotRevenueSub');
+        if (revSubEl) {
+            if (potTotals && typeof potTotals.buyerGmv === 'number') {
+                revSubEl.textContent = `Покупательский GMV: ${formatMoney(potTotals.buyerGmv, potCurrency)}`;
+            } else {
+                revSubEl.textContent = '—';
+            }
+        }
+
+        // 2. Потенциал прибыли
+        const profEl = pane.querySelector('#fptFinOverviewPotProfit');
+        if (profEl) {
+            if (potTotals && potTotals.knownPotentialProfit !== null && typeof potTotals.knownPotentialProfit === 'number') {
+                profEl.textContent = formatMoney(potTotals.knownPotentialProfit, potCurrency);
+                profEl.className = 'fpt-fin-card-value' + (potTotals.knownPotentialProfit > 0 ? ' fpt-fin-operation-in' : (potTotals.knownPotentialProfit < 0 ? ' fpt-fin-operation-out' : ''));
+            } else {
+                profEl.textContent = '—';
+                profEl.className = 'fpt-fin-card-value';
+            }
+        }
+        const profSubEl = pane.querySelector('#fptFinOverviewPotProfitSub');
+        if (profSubEl) {
+            if (potTotals) {
+                const marginText = potTotals.knownMargin !== null ? `${potTotals.knownMargin}%` : '—';
+                const roiText = potTotals.knownRoi !== null ? `${potTotals.knownRoi}%` : '—';
+                profSubEl.textContent = `Маржа: ${marginText} • ROI: ${roiText}`;
+            } else {
+                profSubEl.textContent = '—';
+            }
+        }
+
+        // 3. Стоимость склада
+        const costEl = pane.querySelector('#fptFinOverviewPotCost');
+        if (costEl) {
+            costEl.textContent = (potTotals && potTotals.knownInventoryCost !== null && typeof potTotals.knownInventoryCost === 'number')
+                ? formatMoney(potTotals.knownInventoryCost, potCurrency)
+                : '—';
+        }
+        const costSubEl = pane.querySelector('#fptFinOverviewPotCostSub');
+        if (costSubEl) {
+            if (potTotals) {
+                const covText = potTotals.costCoveragePercent !== null ? `${potTotals.costCoveragePercent}%` : '—';
+                costSubEl.textContent = `Покрытие себестоимости: ${covText}`;
+            } else {
+                costSubEl.textContent = '—';
+            }
+        }
+
+        // 4. Активные лоты
+        const offersEl = pane.querySelector('#fptFinOverviewPotOffers');
+        if (offersEl) {
+            offersEl.textContent = (potTotals && typeof potTotals.finiteOffers === 'number')
+                ? `${potTotals.finiteOffers} с остатком`
+                : '—';
+        }
+        const offersSubEl = pane.querySelector('#fptFinOverviewPotOffersSub');
+        if (offersSubEl) {
+            if (potTotals) {
+                offersSubEl.innerHTML = potTotals.unknownStockOffers > 0
+                    ? `<span class="fpt-fin-mini-badge">+ ${potTotals.unknownStockOffers} без остатка</span>`
+                    : '<span class="fpt-fin-mini-badge">Все остатки известны</span>';
+            } else {
+                offersSubEl.innerHTML = '<span class="fpt-fin-mini-badge">—</span>';
+            }
+        }
+    }
+
+    function renderOverviewDynamicChart(wrapEl, salesOrders, profitData, metric, currency) {
+        if (!wrapEl) return;
+        wrapEl.innerHTML = '';
+
+        const W = 680;
+        const H = 200;
+        const PAD = { t: 20, r: 20, b: 36, l: 56 };
+        const cw = W - PAD.l - PAD.r;
+        const ch = H - PAD.t - PAD.b;
+        const baseY = PAD.t + ch;
+
+        let buckets = [];
+        let accent = '#4caf82';
+        let stopColor = '#4caf82';
+        let valLabel = 'Выручка';
+        let emptyTitle = 'Нет данных о динамике';
+        let emptyDesc = 'За выбранный период нет данных для графика.';
+
+        if (metric === 'profit') {
+            accent = 'var(--fptm-accent, var(--fpt-accent, #1b75bb))';
+            stopColor = '#1b75bb';
+            valLabel = 'Чистая прибыль';
+            emptyTitle = 'Нет данных о прибыли';
+            emptyDesc = 'За выбранный период нет закрытых заказов с известной себестоимостью.';
+
+            const pOrders = (profitData && Array.isArray(profitData.orders)) ? profitData.orders : [];
+            const bucketsMap = {};
+            for (const o of pOrders) {
+                const info = o.profitInfo;
+                if (!info || !info.isClosed) continue;
+                const ts = typeof o.orderDate === 'number' ? o.orderDate : (Date.parse(o.orderDate || o.date) || 0);
+                const d = new Date(ts);
+                if (isNaN(d.getTime())) continue;
+
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                const label = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+                if (!bucketsMap[key]) {
+                    bucketsMap[key] = { key, label, val: 0, count: 0, knownCostCount: 0, orders: [] };
+                }
+                bucketsMap[key].count++;
+                bucketsMap[key].orders.push(o);
+                if (info.netProfit !== null && typeof info.netProfit === 'number') {
+                    bucketsMap[key].val += info.netProfit;
+                    bucketsMap[key].knownCostCount++;
+                }
+            }
+            const keys = Object.keys(bucketsMap).sort();
+            buckets = keys.map(k => bucketsMap[k]);
+        } else if (metric === 'orders') {
+            accent = '#f4c84a';
+            stopColor = '#f4c84a';
+            valLabel = 'Заказы';
+            emptyTitle = 'Нет заказов';
+            emptyDesc = 'За выбранный период нет закрытых или оплаченных заказов.';
+
+            const rawBuckets = groupOrdersByStep(salesOrders, 'day');
+            buckets = rawBuckets.map(b => ({
+                key: b.key,
+                label: b.label,
+                val: b.count,
+                count: b.count,
+                revenueByCur: b.revenueByCur,
+                orders: b.orders
+            }));
+        } else {
+            // metric === 'revenue' (по умолчанию)
+            accent = '#4caf82';
+            stopColor = '#4caf82';
+            valLabel = 'Выручка';
+            emptyTitle = 'Нет данных о выручке';
+            emptyDesc = 'За выбранный период нет закрытых или оплаченных заказов.';
+
+            const rawBuckets = groupOrdersByStep(salesOrders, 'day');
+            buckets = rawBuckets.map(b => ({
+                key: b.key,
+                label: b.label,
+                val: b.revenue,
+                count: b.count,
+                revenueByCur: b.revenueByCur,
+                orders: b.orders
+            }));
+        }
+
+        if (!buckets.length) {
+            wrapEl.innerHTML = `
+                <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:30px;">show_chart</span>
+                    <div class="fpt-fin-empty-title">${esc(emptyTitle)}</div>
+                    <div class="fpt-fin-empty-desc">${esc(emptyDesc)}</div>
+                </div>`;
+            return;
+        }
+
+        const slot = cw / Math.max(1, buckets.length);
+        const vals = buckets.map(b => b.val);
+
+        let minV = Math.min(0, ...vals);
+        let rawMax = Math.max(1, ...vals);
+        let maxV = niceMax(rawMax);
+
+        if (minV < 0) {
+            const symMax = niceMax(Math.max(Math.abs(minV), maxV));
+            minV = -symMax;
+            maxV = symMax;
+        }
+
+        const vRange = maxV - minV || 1;
+        const zeroY = baseY - (-minV / vRange) * ch;
+
+        // Grid & Y labels
+        let grid = '';
+        let yLabels = '';
+        const steps = 4;
+        for (let i = 0; i <= steps; i++) {
+            const v = minV + (vRange / steps) * i;
+            const y = baseY - ((v - minV) / vRange) * ch;
+            const isZero = Math.abs(v) < 0.001;
+            grid += `<line x1="${PAD.l}" y1="${y}" x2="${W - PAD.r}" y2="${y}" stroke="var(--fptm-border, rgba(255,255,255,0.08))" stroke-width="${isZero ? '1.5' : '1'}" opacity="${isZero ? 0.9 : 0.4}"/>`;
+            yLabels += `<text x="${PAD.l - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--fptm-muted, #9099b8)" font-family="inherit">${fmtAxis(v)}</text>`;
+        }
+
+        const pts = buckets.map((b, i) => ({
+            x: PAD.l + slot * i + slot / 2,
+            y: baseY - ((b.val - minV) / vRange) * ch,
+            bucket: b
+        }));
+
+        const line = smoothPath(pts);
+        const area = pts.length > 1
+            ? `${line} L${pts[pts.length - 1].x},${zeroY} L${pts[0].x},${zeroY} Z`
+            : '';
+
+        const uid = 'fptFinOverGrad_' + Math.random().toString(36).slice(2, 8);
+
+        // X labels
+        const MIN_GAP = 54;
+        let lastX = -Infinity;
+        let xLabels = '';
+        pts.forEach((p, i) => {
+            const isLast = i === pts.length - 1;
+            if (isLast || (p.x - lastX >= MIN_GAP)) {
+                xLabels += `<text x="${p.x}" y="${H - 12}" text-anchor="middle" font-size="11" fill="var(--fptm-muted, #9099b8)" font-family="inherit">${esc(p.bucket.label)}</text>`;
+                lastX = p.x;
+            }
+        });
+
+        // Visible circle points
+        let dots = '';
+        if (pts.length === 1) {
+            dots = `<circle cx="${pts[0].x}" cy="${pts[0].y}" r="5" fill="${accent}" stroke="var(--fptm-surface, #171922)" stroke-width="2"/>`;
+        } else if (pts.length <= 45) {
+            dots = pts.map(p =>
+                `<circle class="fpt-fin-chart-dot" cx="${p.x}" cy="${p.y}" r="${pts.length <= 20 ? 3.5 : 2.5}" fill="${accent}" opacity="0.85"/>`
+            ).join('');
+        }
+
+        // Hit zones
+        const hits = pts.map((p, i) => {
+            return `<rect class="fpt-fin-svg-hit" data-idx="${i}" x="${p.x - slot / 2}" y="${PAD.t}" width="${slot}" height="${ch}" fill="transparent" style="cursor:pointer;" tabindex="0"></rect>`;
+        }).join('');
+
+        wrapEl.innerHTML = `
+            <svg class="fpt-fin-chart-svg" viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible;">
+                <defs>
+                    <linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="${stopColor}" stop-opacity="0.28"/>
+                        <stop offset="100%" stop-color="${stopColor}" stop-opacity="0.01"/>
+                    </linearGradient>
+                </defs>
+                ${grid}
+                ${area ? `<path d="${area}" fill="url(#${uid})" stroke="none"/>` : ''}
+                ${line ? `<path d="${line}" fill="none" stroke="${accent}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+                ${dots}
+                ${yLabels}
+                ${xLabels}
+                ${hits}
+            </svg>`;
+
+        // Tooltip & drilldown events
+        wrapEl.querySelectorAll('.fpt-fin-svg-hit').forEach(hit => {
+            const idx = Number(hit.dataset.idx);
+            const b = buckets[idx];
+            if (!b) return;
+
+            const makeTooltipHtml = () => {
+                if (metric === 'profit') {
+                    const profStr = formatMoney(b.val, currency);
+                    return `<strong>${esc(b.label)}</strong><br/>Чистая прибыль: ${esc(profStr)}<br/>С себестоимостью: ${b.knownCostCount} из ${b.count} зак.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
+                } else if (metric === 'orders') {
+                    const revStr = b.revenueByCur ? formatRevenueMulti(b.revenueByCur) : '';
+                    return `<strong>${esc(b.label)}</strong><br/>Заказов: ${b.count} шт.<br/>${revStr ? `Выручка: ${esc(revStr)}<br/>` : ''}<span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
+                } else {
+                    const revStr = b.revenueByCur ? formatRevenueMulti(b.revenueByCur) : formatMoney(b.val, currency);
+                    return `<strong>${esc(b.label)}</strong><br/>Выручка: ${esc(revStr)}<br/>Заказов: ${b.count} шт.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
+                }
+            };
+
+            hit.addEventListener('mouseenter', (e) => showTooltip(makeTooltipHtml(), e.clientX, e.clientY));
+            hit.addEventListener('mousemove', (e) => showTooltip(makeTooltipHtml(), e.clientX, e.clientY));
+            hit.addEventListener('mouseleave', () => hideTooltip());
+            hit.addEventListener('click', () => {
+                hideTooltip();
+                const drillTitle = metric === 'profit' ? `Прибыль за ${b.label}` : (metric === 'orders' ? `Заказы за ${b.label}` : `Выручка за ${b.label}`);
+                const subTitle = `${b.count} зак.`;
+                openDrilldown(drillTitle, subTitle, b.orders);
+            });
+        });
+    }
+
+    function renderOverviewCharts(pane, salesOrders, profitData, currency) {
+        if (!pane) return;
+        const chartWrap = pane.querySelector('#fptFinOverviewChart');
+        if (chartWrap) {
+            renderOverviewDynamicChart(chartWrap, salesOrders || [], profitData, state.overviewMetric, currency);
+        }
+        const catsWrap = pane.querySelector('#fptFinOverviewCategoriesChart');
+        if (catsWrap) {
+            renderCategoryDonut(catsWrap, salesOrders || [], state.cachedOverviewData ? state.cachedOverviewData.salesAgg : null);
+        }
+    }
+
+    function renderOverviewTopProducts(pane, salesOrders, agg, currency) {
+        if (!pane) return;
+        const topEl = pane.querySelector('#fptFinOverviewTopProducts');
+        if (!topEl) return;
+
+        const topProducts = (agg && Array.isArray(agg.topProducts)) ? agg.topProducts.slice(0, 5) : [];
+        if (!topProducts.length) {
+            topEl.innerHTML = '<div class="fpt-fin-empty-state" style="padding:20px 12px;"><div class="fpt-fin-empty-title">Нет данных о товарах</div></div>';
+            return;
+        }
+
+        const rows = topProducts.map((p, i) => `
+            <div class="fpt-fin-top-row" data-prod-name="${esc(p.name)}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s;font-size:12px;">
+                <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+                    <span style="font-weight:700;color:var(--fptm-muted, #9099b8);width:20px;">#${i + 1}</span>
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fptm-text, #fff);" title="${esc(p.name)}">${esc(p.name)}</span>
+                </div>
+                <span style="font-weight:600;color:var(--fptm-muted, #9099b8);margin-left:8px;flex-shrink:0;">${p.count} зак.</span>
+            </div>
+        `).join('');
+
+        topEl.innerHTML = `<div class="fpt-fin-top-list" style="display:flex;flex-direction:column;gap:4px;">${rows}</div>`;
+
+        topEl.querySelectorAll('[data-prod-name]').forEach(row => {
+            const pName = row.dataset.prodName;
+            row.addEventListener('mouseenter', () => { row.style.background = 'var(--fptm-hover, rgba(255, 255, 255, 0.06))'; });
+            row.addEventListener('mouseleave', () => { row.style.background = 'transparent'; });
+            row.addEventListener('click', () => {
+                const orders = Array.isArray(salesOrders) ? salesOrders : [];
+                const filtered = orders.filter(o => (o.description || '-') === pName);
+                openDrilldown(`Товар: ${pName}`, `${filtered.length} продаж`, filtered);
+            });
+        });
+    }
+
+    function renderOverviewTopCategories(pane, salesOrders, agg, currency) {
+        if (!pane) return;
+        const topEl = pane.querySelector('#fptFinOverviewTopCategories');
+        if (!topEl) return;
+
+        const topCategories = (agg && Array.isArray(agg.topCategories)) ? agg.topCategories.slice(0, 5) : [];
+        if (!topCategories.length) {
+            topEl.innerHTML = '<div class="fpt-fin-empty-state" style="padding:20px 12px;"><div class="fpt-fin-empty-title">Нет данных о категориях</div></div>';
+            return;
+        }
+
+        const rows = topCategories.map((c, i) => {
+            const revByCur = (agg && agg.byCategoryRevenue && agg.byCategoryRevenue[c.name]) || {};
+            const revStr = formatRevenueMulti(revByCur);
+            return `
+                <div class="fpt-fin-top-row" data-cat-name="${esc(c.name)}" style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;border-radius:6px;cursor:pointer;transition:background .12s;font-size:12px;">
+                    <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+                        <span style="font-weight:700;color:var(--fptm-muted, #9099b8);width:20px;">#${i + 1}</span>
+                        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fptm-text, #fff);" title="${esc(c.name)}">${esc(c.name)}</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:12px;margin-left:8px;flex-shrink:0;">
+                        <span style="color:var(--fptm-muted, #9099b8);">${c.count} зак.</span>
+                        <span style="font-weight:600;color:var(--fptm-text, #fff);">${esc(revStr)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        topEl.innerHTML = `<div class="fpt-fin-top-list" style="display:flex;flex-direction:column;gap:4px;">${rows}</div>`;
+
+        topEl.querySelectorAll('[data-cat-name]').forEach(row => {
+            const cName = row.dataset.catName;
+            row.addEventListener('mouseenter', () => { row.style.background = 'var(--fptm-hover, rgba(255, 255, 255, 0.06))'; });
+            row.addEventListener('mouseleave', () => { row.style.background = 'transparent'; });
+            row.addEventListener('click', () => {
+                const orders = Array.isArray(salesOrders) ? salesOrders : [];
+                const filtered = orders.filter(o => (o.subcategoryName || 'Без категории') === cName);
+                openDrilldown(`Категория: ${cName}`, `${filtered.length} заказов`, filtered);
+            });
+        });
+    }
+
+    function renderOverviewOperations(pane, operations, currency) {
+        if (!pane) return;
+        const opsEl = pane.querySelector('#fptFinOverviewOperations');
+        if (!opsEl) return;
+
+        const list = Array.isArray(operations) ? operations.slice(0, 5) : [];
+        if (!list.length) {
+            opsEl.innerHTML = '<div class="fpt-fin-empty-state" style="padding:20px 12px;"><div class="fpt-fin-empty-title">Нет последних событий за выбранный период</div></div>';
+            return;
+        }
+
+        const rows = list.map((txn, index) => {
+            const value = operationSignedValue(txn);
+            const cur = String(txn.currency || 'RUB').toUpperCase();
+            const title = txn.title || txn.description || operationTypeLabel(txn.type);
+            const id = txn.id || txn.operationId || txn.transactionId || '—';
+            return `
+                <tr class="fpt-fin-operation-row" data-fin-op-idx="${index}" style="cursor:pointer;">
+                    <td>${esc(id)}</td>
+                    <td>${esc(operationDateLabel(txn))}</td>
+                    <td>${esc(operationTypeLabel(txn.type))}</td>
+                    <td>${esc(title)}</td>
+                    <td class="${value >= 0 ? 'fpt-fin-operation-in' : 'fpt-fin-operation-out'}">${value >= 0 ? '+' : '−'} ${esc(formatMoney(Math.abs(value), cur))}</td>
+                    <td>${esc(operationStatusLabel(txn.status))}</td>
+                </tr>
+            `;
+        }).join('');
+
+        opsEl.innerHTML = `
+            <div class="fpt-fin-table-wrap">
+                <table class="fpt-fin-table fpt-fin-operation-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Дата</th>
+                            <th>Тип операции</th>
+                            <th>Описание / Реквизиты</th>
+                            <th>Сумма</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>
+        `;
+
+        opsEl.querySelectorAll('[data-fin-op-idx]').forEach(row => {
+            row.addEventListener('click', () => {
+                const opsBtn = state.container && state.container.querySelector('.fpt-fin-subtab-btn[data-subtab="operations"]');
+                if (opsBtn) opsBtn.click();
+            });
+        });
+    }
+
+    function bindOverviewChartToggles(pane) {
+        if (!pane) return;
+        const toggles = pane.querySelector('#fptFinOverviewChartToggles');
+        if (!toggles || toggles.dataset.bound === 'true') return;
+        toggles.dataset.bound = 'true';
+
+        toggles.querySelectorAll('.fpt-fin-chart-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const metric = btn.dataset.metric;
+                if (!metric || metric === state.overviewMetric) return;
+
+                toggles.querySelectorAll('.fpt-fin-chart-toggle').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                state.overviewMetric = metric;
+
+                const chartWrap = pane.querySelector('#fptFinOverviewChart');
+                if (chartWrap && state.cachedOverviewData) {
+                    const d = state.cachedOverviewData;
+                    renderOverviewDynamicChart(chartWrap, d.sales || [], d.profitData, state.overviewMetric, state.profitCurrency || 'RUB');
+                }
+            });
+        });
+    }
+
+    async function renderOverviewSubtab(forceReload) {
+        const pane = state.container && state.container.querySelector('.fpt-fin-tab-pane[data-subtab="overview"]');
+        if (!pane) return;
+
+        const currentToken = ++state.overviewRenderToken;
+
+        if (forceReload || state.cachedOverviewPeriod !== state.period || !state.cachedOverviewData) {
+            state.isOverviewLoading = true;
+            renderOverviewSubtabLoading(pane);
+
+            try {
+                const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+                const profitEngine = (typeof window !== 'undefined' && window.FPTProfitEngine) || root.FPTProfitEngine;
+                const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+
+                const salesPromise = (finData && typeof finData.getSales === 'function')
+                    ? finData.getSales({ period: state.period, sort: 'date-desc' })
+                    : Promise.resolve([]);
+
+                const profitPromise = (profitEngine && typeof profitEngine.getRealisedProfit === 'function')
+                    ? profitEngine.getRealisedProfit({ period: state.period })
+                    : Promise.resolve(null);
+
+                const potentialPromise = (potentialEngine && typeof potentialEngine.getInventory === 'function')
+                    ? potentialEngine.getInventory({ enrichPotential: true, forceRefresh: forceReload })
+                    : Promise.resolve(null);
+
+                const opsPromise = (finData && typeof finData.getOperations === 'function')
+                    ? finData.getOperations({ period: state.period, sort: 'date-desc', useMsk: true })
+                    : Promise.resolve([]);
+
+                const [salesRes, profitRes, potRes, opsRes] = await Promise.allSettled([
+                    salesPromise,
+                    profitPromise,
+                    potentialPromise,
+                    opsPromise
+                ]);
+
+                if (currentToken !== state.overviewRenderToken) return;
+
+                const sales = salesRes.status === 'fulfilled' && Array.isArray(salesRes.value) ? salesRes.value : [];
+                const salesAgg = (finData && typeof finData.aggregateSales === 'function')
+                    ? finData.aggregateSales(sales)
+                    : null;
+
+                const profitData = profitRes.status === 'fulfilled' ? profitRes.value : null;
+
+                let potTotals = null;
+                let potCurrency = 'RUB';
+                if (potRes.status === 'fulfilled' && potRes.value) {
+                    try {
+                        const lots = Array.isArray(potRes.value) ? potRes.value : (potRes.value.lots || []);
+                        if (Array.isArray(lots) && potentialEngine && typeof potentialEngine.calculatePotentialAggregates === 'function') {
+                            const enriched = (typeof potentialEngine.calculateRowPotential === 'function')
+                                ? lots.map(l => (l && l.stockKind) ? l : Object.assign({}, l, potentialEngine.calculateRowPotential(l)))
+                                : lots;
+                            const potAggs = potentialEngine.calculatePotentialAggregates(enriched);
+                            potCurrency = potAggs[state.profitCurrency] ? state.profitCurrency : (Object.keys(potAggs)[0] || 'RUB');
+                            potTotals = potAggs[potCurrency] || null;
+                        }
+                    } catch (potErr) {
+                        console.warn('[FPTFinanceHub] Failed to aggregate potential data:', potErr);
+                        potTotals = null;
+                    }
+                }
+
+                const operations = opsRes.status === 'fulfilled' && Array.isArray(opsRes.value) ? opsRes.value : [];
+
+                state.cachedOverviewData = {
+                    sales,
+                    salesAgg,
+                    profitData,
+                    potTotals,
+                    potCurrency,
+                    operations
+                };
+                state.cachedOverviewPeriod = state.period;
+                state.overviewLastUpdate = Date.now();
+                updateLastUpdatedText('overview');
+            } catch (err) {
+                console.error('[FPTFinanceHub] Error loading overview data:', err);
+                if (currentToken !== state.overviewRenderToken) return;
+                state.isOverviewLoading = false;
+                return;
+            }
+            state.isOverviewLoading = false;
+        }
+
+        if (currentToken !== state.overviewRenderToken) return;
+
+        const data = state.cachedOverviewData || {};
+        const primaryCurrency = (data.salesAgg && data.salesAgg.byCurrency && Object.keys(data.salesAgg.byCurrency)[0]) || state.profitCurrency || 'RUB';
+
+        renderOverviewRow1(pane, data.salesAgg, data.profitData, primaryCurrency);
+        renderOverviewRow2(pane, data.potTotals, data.potCurrency || 'RUB');
+        renderOverviewCharts(pane, data.sales, data.profitData, primaryCurrency);
+        renderOverviewTopProducts(pane, data.sales, data.salesAgg, primaryCurrency);
+        renderOverviewTopCategories(pane, data.sales, data.salesAgg, primaryCurrency);
+        renderOverviewOperations(pane, data.operations, primaryCurrency);
+        bindOverviewChartToggles(pane);
+    }
+
+    function cleanupOverview() {
+        hideTooltip();
+        state.overviewRenderToken++;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
     // LIFECYCLE & EVENT HANDLERS
     // ─────────────────────────────────────────────────────────────────────────────
 
     function onSubtabChange(target, prev) {
         state.activeSubtab = target;
 
+        if (prev === 'overview' && target !== 'overview') {
+            cleanupOverview();
+        }
         if (prev === 'sales' && target !== 'sales') {
             cleanupSales();
         }
@@ -2650,7 +3338,9 @@
 
         updateLastUpdatedText(target);
 
-        if (target === 'sales') {
+        if (target === 'overview') {
+            renderOverviewSubtab(false);
+        } else if (target === 'sales') {
             renderSalesSubtab(false);
         } else if (target === 'purchases') {
             renderPurchasesSubtab(false);
@@ -2678,8 +3368,12 @@
         state.cachedProfitOrders = null;
         state.cachedProfitAgg = null;
         state.cachedProfitPeriod = null;
+        state.cachedOverviewData = null;
+        state.cachedOverviewPeriod = null;
 
-        if (state.activeSubtab === 'sales') {
+        if (state.activeSubtab === 'overview') {
+            renderOverviewSubtab(true);
+        } else if (state.activeSubtab === 'sales') {
             renderSalesSubtab(true);
         } else if (state.activeSubtab === 'purchases') {
             renderPurchasesSubtab(true);
@@ -2702,6 +3396,7 @@
 
         if (refreshBtn) refreshBtn.classList.add('fpt-fin-btn-spin');
 
+        const isOverview = state.activeSubtab === 'overview';
         const isPurchases = state.activeSubtab === 'purchases';
         const isOperations = state.activeSubtab === 'operations';
         const isPotential = state.activeSubtab === 'potential';
@@ -2709,7 +3404,7 @@
         const pCfg = getPurchasesConfig();
         const actionName = isOperations ? 'updateFinance' : (isPurchases ? (pCfg.updateAction || 'updatePurchases') : 'updateSales');
         const subtabType = isOperations ? 'operations' : (isPurchases ? 'purchases' : 'sales');
-        const notificationMsg = isPotential ? 'Данные о потенциале обновлены' : (isProfit ? 'Данные о прибыли обновлены' : (isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены')));
+        const notificationMsg = isOverview ? 'Данные обзора обновлены' : (isPotential ? 'Данные о потенциале обновлены' : (isProfit ? 'Данные о прибыли обновлены' : (isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены'))));
 
         try {
             if (!isPotential && !isProfit) {
@@ -2753,7 +3448,9 @@
             }
 
             // Принудительно перерисовываем активную подвкладку
-            if (state.activeSubtab === 'sales') {
+            if (state.activeSubtab === 'overview') {
+                await renderOverviewSubtab(true);
+            } else if (state.activeSubtab === 'sales') {
                 await renderSalesSubtab(true);
             } else if (state.activeSubtab === 'purchases') {
                 await renderPurchasesSubtab(true);
@@ -2808,7 +3505,9 @@
 
         updateLastUpdatedText(state.activeSubtab);
 
-        if (state.activeSubtab === 'sales') {
+        if (state.activeSubtab === 'overview') {
+            renderOverviewSubtab(false);
+        } else if (state.activeSubtab === 'sales') {
             renderSalesSubtab(false);
         } else if (state.activeSubtab === 'purchases') {
             renderPurchasesSubtab(false);
@@ -2834,7 +3533,9 @@
 
         updateLastUpdatedText(state.activeSubtab);
 
-        if (state.activeSubtab === 'sales') {
+        if (state.activeSubtab === 'overview') {
+            renderOverviewSubtab(false);
+        } else if (state.activeSubtab === 'sales') {
             renderSalesSubtab(false);
         } else if (state.activeSubtab === 'purchases') {
             renderPurchasesSubtab(false);
@@ -2854,6 +3555,7 @@
         onSubtabChange,
         onPeriodChange,
         onPageLeave: () => {
+            cleanupOverview();
             cleanupSales();
             cleanupPurchases();
             cleanupOperations();
@@ -2861,11 +3563,13 @@
             cleanupProfit();
         },
         refresh,
+        renderOverviewSubtab,
         renderSalesSubtab,
         renderPurchasesSubtab,
         renderOperationsSubtab,
         renderPotentialSubtab,
         renderProfitSubtab,
+        cleanupOverview,
         cleanupSales,
         cleanupPurchases,
         cleanupOperations,

@@ -10059,3 +10059,30 @@ textarea.fp-cw-input { line-height:1.4; }
     border-color: var(--fptm-accent, #1b75bb);
     font-weight: 600;
 }
+
+/* T08: Overview dashboard styling */
+.fpt-fin-overview-chart-wrap {
+    min-height: 200px;
+    width: 100%;
+}
+
+.fpt-fin-overview-categories-wrap {
+    min-height: 180px;
+    width: 100%;
+}
+
+.fpt-fin-overview-top-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 120px;
+}
+
+.fpt-fin-overview-events-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.fpt-fin-top-row:hover {
+    background: var(--fptm-hover, rgba(255, 255, 255, 0.06));
+}

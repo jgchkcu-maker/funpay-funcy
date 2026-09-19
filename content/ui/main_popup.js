@@ -763,8 +763,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Выручка</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">payments</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewRevenue"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewRevenueSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -773,8 +773,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Чистая прибыль</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">account_balance_wallet</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-card-sub"><span class="fpt-fin-mini-badge"><span class="material-symbols-rounded">percent</span> Маржа: —</span> <span class="fpt-fin-mini-badge"><span class="material-symbols-rounded">pie_chart</span> Покрытие: —</span></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewProfit"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewProfitSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -783,8 +783,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Заказы</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#f4c84a;">shopping_cart</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewOrders"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewOrdersSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -793,8 +793,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Средний чек</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#a09af8;">receipt</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewAvgCheck"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewAvgCheckSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
 
@@ -805,8 +805,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Потенциал выручки</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">trending_up</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewPotRevenue"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewPotRevenueSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -815,8 +815,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Потенциал прибыли</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">insights</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewPotProfit"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewPotProfitSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -825,8 +825,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Стоимость склада</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">warehouse</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewPotCost"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewPotCostSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -835,8 +835,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Активные лоты</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#4a9fd4;">inventory_2</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-card-sub"><span class="fpt-fin-mini-badge">+ 0 без остатка</span></div>
+                                    <div class="fpt-fin-card-value" id="fptFinOverviewPotOffers"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinOverviewPotOffersSub"><span class="fpt-fin-mini-badge">+ 0 без остатка</span></div>
                                 </div>
                             </div>
 
@@ -845,13 +845,15 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Динамика</h5>
-                                        <div class="fpt-fin-chart-toggles" role="group" aria-label="Метрика графика">
+                                        <div class="fpt-fin-chart-toggles" id="fptFinOverviewChartToggles" role="group" aria-label="Метрика графика">
                                             <button type="button" class="fpt-fin-chart-toggle active" data-metric="revenue">Выручка</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-metric="profit">Прибыль</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-metric="orders">Заказы</button>
                                         </div>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    <div class="fpt-fin-overview-chart-wrap" id="fptFinOverviewChart">
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-4">
@@ -859,7 +861,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Структура по категориям</h5>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    <div class="fpt-fin-overview-categories-wrap" id="fptFinOverviewCategoriesChart">
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -869,9 +873,11 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Топ товаров</h5>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    <div class="fpt-fin-overview-top-wrap" id="fptFinOverviewTopProducts">
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-6">
@@ -879,9 +885,11 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Топ категорий</h5>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    <div class="fpt-fin-overview-top-wrap" id="fptFinOverviewTopCategories">
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -891,8 +899,10 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Последние события</h5>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>
+                                    <div class="fpt-fin-overview-events-wrap" id="fptFinOverviewOperations">
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
