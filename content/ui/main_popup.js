@@ -968,9 +968,15 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Детализация продаж</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">sync</span> Синхронизация заказов в TASK-03</span>
+                                        <div class="fpt-fin-chart-toggles" role="group" aria-label="Вид детализации">
+                                            <button type="button" class="fpt-fin-chart-toggle active" data-sales-view="orders">Заказы</button>
+                                            <button type="button" class="fpt-fin-chart-toggle" data-sales-view="buyers">Топ покупателей</button>
+                                            <button type="button" class="fpt-fin-chart-toggle" data-sales-view="products">Топ товаров</button>
+                                            <button type="button" class="fpt-fin-chart-toggle" data-sales-view="categories">Топ категорий</button>
+                                        </div>
+                                        <span class="fpt-fin-empty-badge" id="fptFinSalesCountBadge">Загрузка…</span>
                                     </div>
-                                    <div class="fpt-fin-table-wrap">
+                                    <div class="fpt-fin-table-wrap" id="fptFinSalesDetailsContent">
                                         <table class="fpt-fin-table">
                                             <thead>
                                                 <tr>
@@ -2586,7 +2592,13 @@ function setupPopupNavigation() {
                 page.classList.toggle('active', page.dataset.page === pageId);
             });
             if (pageId === 'epic_nicks') { if (typeof renderEpicPreviews === 'function') renderEpicPreviews(); }
-            if (pageId === 'finance_hub') { if (typeof initializeFinanceHub === 'function') initializeFinanceHub(); }
+            if (pageId === 'finance_hub') {
+                if (typeof initializeFinanceHub === 'function') initializeFinanceHub();
+            } else {
+                if (window.fptFinanceHub && typeof window.fptFinanceHub.onPageLeave === 'function') {
+                    window.fptFinanceHub.onPageLeave();
+                }
+            }
             if (pageId === 'currency_calc') initializeCurrencyCalculator();
             if (pageId === 'notes') { if (typeof initializeNotes === 'function') initializeNotes(); }
             if (pageId === 'global_chat') { if (typeof initializeGlobalChat === 'function') initializeGlobalChat(); }
@@ -2647,6 +2659,7 @@ function setupFinanceHubUI(toolsPopup) {
 
     function switchSubtab(target) {
         if (!target) return;
+        const prevSubtab = finPage.querySelector('.fpt-fin-subtab.active')?.dataset?.subtab;
         subtabs.forEach(s => {
             const isActive = (s.dataset.subtab === target);
             s.classList.toggle('active', isActive);
@@ -2670,6 +2683,10 @@ function setupFinanceHubUI(toolsPopup) {
         try {
             sessionStorage.setItem('fpt_fin_active_subtab', target);
         } catch (_) {}
+
+        if (window.fptFinanceHub && typeof window.fptFinanceHub.onSubtabChange === 'function') {
+            window.fptFinanceHub.onSubtabChange(target, prevSubtab);
+        }
     }
 
     subtabs.forEach(btn => {
@@ -2730,31 +2747,12 @@ function setupFinanceHubUI(toolsPopup) {
 
     // Refresh button feedback
     const refreshBtn = finPage.querySelector('#fptFinRefreshBtn');
-    const lastUpdatedEl = finPage.querySelector('#fptFinLastUpdatedText');
     if (refreshBtn) {
         refreshBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            refreshBtn.classList.add('fpt-fin-btn-spin');
-            if (lastUpdatedEl) {
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            if (window.fptFinanceHub && typeof window.fptFinanceHub.refresh === 'function') {
+                window.fptFinanceHub.refresh();
             }
-
-            const activeCards = finPage.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
-            activeCards.forEach(c => {
-                c.classList.remove('fpt-fin-pulse-anim');
-                void c.offsetWidth;
-                c.classList.add('fpt-fin-pulse-anim');
-            });
-
-            if (typeof showNotification === 'function') {
-                showNotification('Финансовые данные обновлены', false);
-            }
-
-            setTimeout(() => {
-                refreshBtn.classList.remove('fpt-fin-btn-spin');
-            }, 600);
         });
     }
 
@@ -2766,10 +2764,8 @@ function setupFinanceHubUI(toolsPopup) {
                 sessionStorage.setItem('fpt_fin_last_period', periodSelect.value);
             } catch (_) {}
 
-            if (lastUpdatedEl) {
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            if (window.fptFinanceHub && typeof window.fptFinanceHub.onPeriodChange === 'function') {
+                window.fptFinanceHub.onPeriodChange(periodSelect.value);
             }
 
             const activeCards = finPage.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
@@ -2787,12 +2783,19 @@ function setupFinanceHubUI(toolsPopup) {
             }
         } catch (_) {}
     }
+
+    if (window.fptFinanceHub && typeof window.fptFinanceHub.init === 'function') {
+        window.fptFinanceHub.init(finPage);
+    }
 }
 
 function initializeFinanceHub() {
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (toolsPopup) {
         setupFinanceHubUI(toolsPopup);
+    }
+    if (window.fptFinanceHub && typeof window.fptFinanceHub.onOpen === 'function') {
+        window.fptFinanceHub.onOpen();
     }
 }
 

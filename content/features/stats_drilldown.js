@@ -177,7 +177,7 @@
 
     function openModal(title, subtitle, list) {
         ensureStyles();
-        _list = list;
+        _list = Array.isArray(list) ? list : [];
         _titleBase = title;
         const old = document.getElementById('fpt-dd-overlay');
         if (old) old.remove();
@@ -216,12 +216,16 @@
         searchEl.addEventListener('input', rerender);
         sortEl.addEventListener('change', rerender);
 
-        const close = () => overlay.remove();
+        const close = () => {
+            document.removeEventListener('keydown', onEsc);
+            overlay.remove();
+        };
+        function onEsc(e) {
+            if (e.key === 'Escape') close();
+        }
         overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
         overlay.querySelector('.fpt-dd-close').addEventListener('click', close);
-        document.addEventListener('keydown', function onEsc(e) {
-            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
-        });
+        document.addEventListener('keydown', onEsc);
     }
 
     // Собирает заказы по предикату + период + (опц.) фильтры статусов.
@@ -331,6 +335,10 @@
         // подстраховка: периодически в первые секунды
         let n = 0;
         const iv = setInterval(() => { tryWire(); if (++n > 20) clearInterval(iv); }, 500);
+    }
+
+    if (typeof window !== 'undefined') {
+        window.fptOpenDrilldownModal = openModal;
     }
 
     if (document.readyState === 'loading') {

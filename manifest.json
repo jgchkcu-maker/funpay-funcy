@@ -116,6 +116,7 @@
         "content/features/fpt_identifier.js",
         "content/features/needs_tab.js",
         "content/features/slash_telegram_ui.js",
+        "content/features/finance_hub.js",
         "content/ui/main_popup.js",
         "content/ui/header_button_styler.js",
         "content/features/lot_notes.js",
