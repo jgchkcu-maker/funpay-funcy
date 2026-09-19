@@ -1,0 +1,82 @@
+{
+  "project": "FunPay Funcy Finance Hub",
+  "execution_mode": "strict_sequential",
+  "tasks": [
+    {
+      "id": 1,
+      "file": "tasks/01_finance_hub_shell.md",
+      "depends_on": []
+    },
+    {
+      "id": 2,
+      "file": "tasks/02_finance_data_adapters.md",
+      "depends_on": [
+        1
+      ]
+    },
+    {
+      "id": 3,
+      "file": "tasks/03_move_existing_reports.md",
+      "depends_on": [
+        2
+      ]
+    },
+    {
+      "id": 4,
+      "file": "tasks/04_cost_basis_storage.md",
+      "depends_on": [
+        3
+      ]
+    },
+    {
+      "id": 5,
+      "file": "tasks/05_lot_editor_cost_basis.md",
+      "depends_on": [
+        4
+      ]
+    },
+    {
+      "id": 6,
+      "file": "tasks/06_potential_revenue_engine.md",
+      "depends_on": [
+        5
+      ]
+    },
+    {
+      "id": 7,
+      "file": "tasks/07_net_profit_engine.md",
+      "depends_on": [
+        6
+      ]
+    },
+    {
+      "id": 8,
+      "file": "tasks/08_finance_overview_dashboard.md",
+      "depends_on": [
+        7
+      ]
+    },
+    {
+      "id": 9,
+      "file": "tasks/09_filters_drilldown_export.md",
+      "depends_on": [
+        8
+      ]
+    },
+    {
+      "id": 10,
+      "file": "tasks/10_cutover_remove_legacy_injected_reports.md",
+      "depends_on": [
+        9
+      ]
+    },
+    {
+      "id": 11,
+      "file": "tasks/11_hardening_tests_polish.md",
+      "depends_on": [
+        10
+      ]
+    }
+  ],
+  "rule": "Agent must complete, test and commit exactly one task before opening the next."
+}

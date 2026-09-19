@@ -1,0 +1,31 @@
+CODE_AUDIT_VERIFICATION
+changed_branch_or_field: README.md::append_audit_marker (audit fixture only; source README.md unchanged)
+MODIFIED_FILE: C:\FunPayDev\audit\MODIFIED_FILE.md
+DIFF_FILE: C:\FunPayDev\audit\DIFF_FILE.patch
+VERIFICATION_FILE: C:\FunPayDev\audit\VERIFICATION.txt
+ROLLBACK_FILE: C:\FunPayDev\audit\ROLLBACK.sh
+source_hash_before: 84F23DA77599CE6932372C4D5847F903C40933D93A5D9BD93B366999C40969D7
+modified_hash: C017F7A56F70EB7553762487D83CB3B2C0305E7656B9A99AEC0742BF4E425A30
+
+BASELINE_COMMAND:
+$ErrorActionPreference='Stop'; $bad=@(); Get-ChildItem -Recurse -File -Filter *.js | ForEach-Object { node --check $_.FullName 2>&1 | Out-Null; if($LASTEXITCODE -ne 0){$bad += $_.FullName.Substring((Get-Location).Path.Length+1)} }; $m=Get-Content -Raw manifest.json | ConvertFrom-Json; $loaded=$m.content_scripts.js.Count; if($bad.Count -eq 0 -and $loaded -eq 84){ 'BASELINE_OK js_syntax=84 manifest_content_scripts=84' } else { 'BASELINE_FAIL bad=' + ($bad -join ',') + ' loaded=' + $loaded; exit 1 }
+BASELINE_LITERAL_OUTPUT:
+BASELINE_OK js_syntax=84 manifest_content_scripts=84
+BASELINE_EXIT_STATUS: 0
+
+MODIFIED_COMMAND:
+$ErrorActionPreference='Stop'; $base=(Get-FileHash README.md -Algorithm SHA256).Hash; $mod=(Get-FileHash audit/MODIFIED_FILE.md -Algorithm SHA256).Hash; $marker=Select-String -Path audit/MODIFIED_FILE.md -Pattern '<!-- AUDIT_FIXTURE: code-audit-2026-09-19 -->' -SimpleMatch; if(($base -eq $mod) -or -not $marker){ Write-Output 'MODIFIED_FAIL'; exit 1 }; "MODIFIED_OK changed_field=README.md::append_audit_marker base_hash=$base modified_hash=$mod"
+MODIFIED_LITERAL_OUTPUT:
+MODIFIED_OK changed_field=README.md::append_audit_marker base_hash=84F23DA77599CE6932372C4D5847F903C40933D93A5D9BD93B366999C40969D7 modified_hash=C017F7A56F70EB7553762487D83CB3B2C0305E7656B9A99AEC0742BF4E425A30
+MODIFIED_EXIT_STATUS: 0
+
+ROLLBACK_COMMAND:
+& 'C:\Program Files\Git\bin\bash.exe' -lc "cp -- audit/MODIFIED_FILE.md audit/ROLLBACK_TEST.md && ./audit/ROLLBACK.sh audit/ROLLBACK_TEST.md README.md && rm -f audit/ROLLBACK_TEST.md"
+ROLLBACK_LITERAL_OUTPUT:
+ROLLBACK_OK restored_hash=84f23da77599ce6932372c4d5847f903c40933d93a5d9bd93b366999c40969d7
+ROLLBACK_EXIT_STATUS: 0
+
+RESTORED_BEHAVIOR_STATUS:
+ROLLBACK_TEST_OK restored_behavior=baseline MODIFIED_FILE_status=changed
+ROLLBACK_TEST_EXIT_STATUS: 0
+EXECUTABLE_STATUS: EXECUTABLE_OK

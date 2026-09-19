@@ -1,0 +1,11 @@
+warning: in the working copy of 'audit/MODIFIED_FILE.md', LF will be replaced by CRLF the next time Git touches it
+diff --git a/README.md b/audit/MODIFIED_FILE.md
+index 8d46607..ac03d63 100644
+--- a/README.md
++++ b/audit/MODIFIED_FILE.md
+@@ -304,3 +304,5 @@
+ [![Footer](https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=12,20,24&height=82&section=footer)](https://github.com/XaviersDev/FunPay-Tools)
+ 
+ </div>
++
++<!-- AUDIT_FIXTURE: code-audit-2026-09-19 -->
