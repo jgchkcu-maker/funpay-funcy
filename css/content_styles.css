@@ -9869,3 +9869,36 @@ textarea.fp-cw-input { line-height:1.4; }
         gap: 5px;
     }
 }
+
+/* Cost basis editor on offer edit page (T05A) */
+#fpt-cost-basis-group {
+    position: relative;
+}
+
+#fpt-cost-basis-group .fpt-cost-profit-preview {
+    margin-top: 6px;
+    font-size: 13px;
+    line-height: 1.4;
+    min-height: 20px;
+}
+
+#fpt-cost-basis-group .fpt-cost-profit-positive {
+    color: #10b981;
+    font-weight: 500;
+}
+
+#fpt-cost-basis-group .fpt-cost-profit-negative {
+    color: #ef4444;
+    font-weight: 500;
+}
+
+#fpt-cost-basis-group .fpt-cost-profit-neutral {
+    color: #9ca3af;
+}
+
+#fpt-cost-basis-group .fpt-cost-hint {
+    margin-top: 4px;
+    font-size: 11px;
+    color: #9ca3af;
+    line-height: 1.3;
+}

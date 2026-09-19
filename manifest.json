@@ -95,6 +95,7 @@
         "content/features/exact_price.js",
         "content/features/buyer_price_field.js",
         "content/features/section_commission.js",
+        "content/features/cost_basis_editor.js",
         "content/features/open_lot_button.js",
         "content/features/profile_descriptions.js",
         "content/features/profile_raise_all.js",

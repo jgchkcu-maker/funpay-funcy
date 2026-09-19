@@ -295,6 +295,14 @@ const FPT_FEATURE_REGISTRY = [
         preview: { kind: 'html', html: '<div class="fpt-pv-lotsearch"><input type="text" class="fpt-pv-fpinput" placeholder="Цена покупателю" readonly></div>' }
     },
     {
+        id: 'cost_basis_field',
+        label: 'Поле «Себестоимость»',
+        desc: 'Поле себестоимости и предпросмотр чистой прибыли на странице редактирования своего лота. Данные сохраняются строго локально и не отправляются на FunPay.',
+        group: 'Редактор лота',
+        selector: '#fpt-cost-basis-group',
+        preview: { kind: 'html', html: '<div class="fpt-pv-lotsearch"><input type="text" class="fpt-pv-fpinput" placeholder="Себестоимость" readonly></div>' }
+    },
+    {
         id: 'lot_pinned_container',
         label: 'Блок «Закрепленные лоты»',
         desc: 'Дополнительный блок «Закрепленные лоты» на странице профиля/продаж (с кнопкой ✏️ для выбора закреплённых).',
