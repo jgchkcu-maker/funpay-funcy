@@ -674,6 +674,8 @@
 .fp-tools-body {
     display: flex;
     flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
     overflow: hidden;
     position: relative;
 }
@@ -725,9 +727,14 @@
 }
 
 .fp-tools-content {
-    flex-grow: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
     padding: 25px 30px;
     overflow-y: auto;
+    overflow-x: hidden;
+    container-type: inline-size;
+    container-name: fpt-content;
 }
 
 .fp-tools-content::-webkit-scrollbar {
@@ -749,11 +756,25 @@
 
 .fp-tools-page-content {
     display: none;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .fp-tools-page-content.active {
     display: block;
-    animation: fadeIn 0.5s ease;
+    animation: fptPageIn 120ms ease-out;
+}
+
+@keyframes fptPageIn {
+    from {
+        opacity: 0.7;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes fadeIn {
@@ -8653,9 +8674,10 @@ textarea.fp-cw-input { line-height:1.4; }
 /* 12-column responsive grid */
 .fpt-fin-grid {
     display: grid;
-    grid-template-columns: repeat(12, 1fr);
+    grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 12px;
     width: 100%;
+    min-width: 0;
     box-sizing: border-box;
 }
 
@@ -8679,7 +8701,7 @@ textarea.fp-cw-input { line-height:1.4; }
     grid-column: span 12;
 }
 
-@media (max-width: 900px) {
+@container fpt-content (max-width: 700px) {
     .fpt-fin-col-3 {
         grid-column: span 6;
     }
@@ -8691,7 +8713,7 @@ textarea.fp-cw-input { line-height:1.4; }
     }
 }
 
-@media (max-width: 600px) {
+@container fpt-content (max-width: 480px) {
     .fpt-fin-col-3,
     .fpt-fin-col-4,
     .fpt-fin-col-6,
@@ -8702,26 +8724,26 @@ textarea.fp-cw-input { line-height:1.4; }
     .fpt-fin-grid {
         gap: 8px;
     }
+    .fpt-fin-search-box {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+    }
 }
 
-/* Responsive expansion for Finance Hub */
-.fp-tools-popup:has(.fp-tools-page-content[data-page="finance_hub"].active) {
-    max-width: 1200px !important;
-    width: 94vw !important;
-    height: 840px !important;
+/* Finance Hub shrink-safe and wrapper */
+.fp-tools-page-content[data-page="finance_hub"],
+.fpt-fin-grid,
+.fpt-fin-grid > *,
+.fpt-fin-card,
+.fpt-fin-header,
+.fpt-fin-header-left,
+.fpt-fin-header-right {
+    min-width: 0;
 }
 
-.fp-tools-popup:has(.fp-tools-page-content[data-page="finance_hub"].active) .fp-tools-nav {
-    width: 180px;
-    padding: 16px 8px;
-}
-
-.fp-tools-popup:has(.fp-tools-page-content[data-page="finance_hub"].active) .fp-tools-content {
-    padding: 18px 24px;
-}
-
-/* Finance Hub Page wrapper */
 .fp-tools-page-content[data-page="finance_hub"] {
+    width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;

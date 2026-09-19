@@ -1991,7 +1991,15 @@
             b.classList.toggle('active', isTarget);
             b.setAttribute('aria-selected', isTarget ? 'true' : 'false');
             if (isTarget) {
-                try { b.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); } catch (_) {}
+                const tabsContainer = b.closest('.fpt-fin-subtabs');
+                if (tabsContainer && tabsContainer.scrollWidth > tabsContainer.clientWidth) {
+                    const left = b.offsetLeft - (tabsContainer.clientWidth - b.offsetWidth) / 2;
+                    try {
+                        tabsContainer.scrollTo({ left, behavior: 'smooth' });
+                    } catch (_) {
+                        tabsContainer.scrollLeft = left;
+                    }
+                }
             }
         });
 
