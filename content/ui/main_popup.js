@@ -1215,8 +1215,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Потенциал выручки</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">trending_up</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinPotRevenue"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinPotRevenueSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1225,8 +1225,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Потенциал прибыли</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">insights</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinPotProfit"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinPotProfitSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1235,8 +1235,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Стоимость склада</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">warehouse</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinPotCost"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinPotCostSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1245,46 +1245,47 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Лоты в продаже</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#4a9fd4;">inventory</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinPotOffers"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinPotOffersSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
 
                             <div class="fpt-fin-col-12">
-                                <div class="fpt-fin-filter-group" role="group" aria-label="Фильтры лотов">
-                                    <button type="button" class="fpt-fin-filter-chip active" data-filter="all">Все лоты</button>
+                                <div class="fpt-fin-filter-group" id="fptFinPotFilterGroup" role="group" aria-label="Фильтры лотов">
+                                    <button type="button" class="fpt-fin-filter-chip active" data-filter="all">Все</button>
                                     <button type="button" class="fpt-fin-filter-chip" data-filter="with-cost">С себестоимостью</button>
                                     <button type="button" class="fpt-fin-filter-chip" data-filter="without-cost">Без себестоимости</button>
-                                    <button type="button" class="fpt-fin-filter-chip" data-filter="in-stock">Только в наличии</button>
+                                    <button type="button" class="fpt-fin-filter-chip" data-filter="finite-stock">Конечный остаток</button>
                                 </div>
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Таблица активных предложений</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">storefront</span> Анализ лотов в TASK-06</span>
+                                        <span class="fpt-fin-empty-badge" id="fptFinPotCountBadge"><span class="material-symbols-rounded">storefront</span> 0 лотов</span>
                                     </div>
                                     <div class="fpt-fin-table-wrap">
-                                        <table class="fpt-fin-table">
+                                        <table class="fpt-fin-table" id="fptFinPotTable">
                                             <thead>
                                                 <tr>
                                                     <th>Лот</th>
                                                     <th>Категория</th>
                                                     <th>Остаток</th>
                                                     <th>Цена продавца</th>
+                                                    <th>Цена покупателю</th>
                                                     <th>Себестоимость</th>
                                                     <th>Потенц. выручка</th>
                                                     <th>Потенц. прибыль</th>
                                                     <th>Маржа</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody id="fptFinPotTableBody">
                                                 <tr>
-                                                    <td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
+                                                    <td colspan="9"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
                                                 </tr>
                                                 <tr>
-                                                    <td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
+                                                    <td colspan="9"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
                                                 </tr>
                                                 <tr>
-                                                    <td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
+                                                    <td colspan="9"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
                                                 </tr>
                                             </tbody>
                                         </table>

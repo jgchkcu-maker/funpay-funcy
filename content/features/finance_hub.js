@@ -61,6 +61,14 @@
         cachedOperationsAgg: null,
         cachedOperationsPeriod: null,
 
+        potentialRenderToken: 0,
+        isPotentialLoading: false,
+        cachedPotentialLots: null,
+        cachedPotentialAgg: null,
+        potentialFilter: 'all',
+        potentialCurrency: 'RUB',
+        potentialLastUpdate: null,
+
         tooltipEl: null
     };
 
@@ -1150,6 +1158,17 @@
         const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
         if (!lastUpdatedEl) return;
 
+        if (subtab === 'potential') {
+            if (state.potentialLastUpdate) {
+                const d = new Date(state.potentialLastUpdate);
+                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            } else {
+                lastUpdatedEl.textContent = 'Обновлено: только что';
+            }
+            return;
+        }
+
         const type = subtab === 'purchases' ? 'purchases' : (subtab === 'operations' ? 'operations' : 'sales');
         if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
             try {
@@ -2035,6 +2054,229 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
+    // ПОДВКЛАДКА: ПОТЕНЦИАЛ (T06C)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    function filterPotentialLots(lots, filter) {
+        if (!Array.isArray(lots)) return [];
+        if (filter === 'with-cost') {
+            return lots.filter(lot => lot.costBasis !== null);
+        }
+        if (filter === 'without-cost') {
+            return lots.filter(lot => lot.costBasis === null);
+        }
+        if (filter === 'finite-stock') {
+            return lots.filter(lot => lot.stockKind === 'finite' && typeof lot.stock === 'number');
+        }
+        return lots;
+    }
+
+    function renderPotentialCards(pane, totals, currency) {
+        if (!pane || !totals) return;
+
+        // 1. Потенциал выручки
+        const revEl = pane.querySelector('#fptFinPotRevenue');
+        if (revEl) {
+            revEl.textContent = formatMoney(totals.sellerRevenue, currency);
+        }
+        const revSubEl = pane.querySelector('#fptFinPotRevenueSub');
+        if (revSubEl) {
+            const gmvText = totals.buyerGmv !== null ? formatMoney(totals.buyerGmv, currency) : '—';
+            revSubEl.textContent = `Покупательский GMV: ${gmvText}`;
+        }
+
+        // 2. Потенциал прибыли
+        const profEl = pane.querySelector('#fptFinPotProfit');
+        if (profEl) {
+            profEl.textContent = totals.knownPotentialProfit !== null ? formatMoney(totals.knownPotentialProfit, currency) : '—';
+            profEl.className = 'fpt-fin-card-value' + (totals.knownPotentialProfit > 0 ? ' fpt-fin-operation-in' : (totals.knownPotentialProfit < 0 ? ' fpt-fin-operation-out' : ''));
+        }
+        const profSubEl = pane.querySelector('#fptFinPotProfitSub');
+        if (profSubEl) {
+            const marginText = totals.knownMargin !== null ? `${totals.knownMargin}%` : '—';
+            const roiText = totals.knownRoi !== null ? `${totals.knownRoi}%` : '—';
+            profSubEl.textContent = `Маржа: ${marginText} • ROI: ${roiText}`;
+        }
+
+        // 3. Стоимость склада
+        const costEl = pane.querySelector('#fptFinPotCost');
+        if (costEl) {
+            costEl.textContent = totals.knownInventoryCost !== null ? formatMoney(totals.knownInventoryCost, currency) : '—';
+        }
+        const costSubEl = pane.querySelector('#fptFinPotCostSub');
+        if (costSubEl) {
+            const covText = totals.costCoveragePercent !== null ? `${totals.costCoveragePercent}%` : '—';
+            costSubEl.textContent = `Покрытие себестоимости: ${covText}`;
+        }
+
+        // 4. Лоты в продаже
+        const offersEl = pane.querySelector('#fptFinPotOffers');
+        if (offersEl) {
+            offersEl.textContent = `${totals.finiteOffers} с остатком`;
+        }
+        const offersSubEl = pane.querySelector('#fptFinPotOffersSub');
+        if (offersSubEl) {
+            offersSubEl.textContent = totals.unknownStockOffers > 0
+                ? `+ ${totals.unknownStockOffers} без остатка`
+                : 'Все остатки известны';
+        }
+    }
+
+    function renderPotentialTable(pane) {
+        if (!pane) return;
+        const lots = state.cachedPotentialLots || [];
+        const filtered = filterPotentialLots(lots, state.potentialFilter || 'all');
+
+        const badge = pane.querySelector('#fptFinPotCountBadge');
+        if (badge) {
+            badge.innerHTML = `<span class="material-symbols-rounded">storefront</span> ${filtered.length} предложений`;
+        }
+
+        const tbody = pane.querySelector('#fptFinPotTableBody');
+        if (!tbody) return;
+
+        if (!filtered.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="fpt-fin-empty-state" style="text-align:center;padding:24px;">Лоты не найдены по выбранному фильтру</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(lot => {
+            const offerId = lot.offerId || '';
+            const titleText = lot.title || ('Лот #' + offerId);
+            const linkHref = offerId ? `https://funpay.com/lots/offer?id=${encodeURIComponent(offerId)}` : '#';
+            const activeStatus = lot.active === false
+                ? ' <span class="fpt-fin-status-badge" style="background:rgba(229,115,115,0.15);color:#e57373;border:1px solid rgba(229,115,115,0.3);font-size:10px;padding:1px 5px;">Деактивирован</span>'
+                : '';
+
+            const titleCell = `<a href="${esc(linkHref)}" target="_blank" class="fpt-fin-lot-link">${esc(titleText)}</a>${activeStatus}`;
+            const categoryCell = esc(lot.category || '—');
+
+            let stockCell = '<span class="fpt-fin-muted">—</span>';
+            if (lot.stockKind === 'finite' && typeof lot.stock === 'number') {
+                stockCell = `${lot.stock} шт.`;
+            } else if (lot.stockKind === 'unlimited') {
+                stockCell = '<span title="Неограничено">∞</span>';
+            } else if (lot.stockKind === 'unknown') {
+                stockCell = '<span class="fpt-fin-badge-unknown">Не указан</span>';
+            }
+
+            const sellerPriceCell = lot.sellerPrice !== null ? esc(formatMoney(lot.sellerPrice, lot.currency)) : '—';
+            const buyerPriceCell = lot.buyerPrice !== null ? esc(formatMoney(lot.buyerPrice, lot.currency)) : '<span class="fpt-fin-muted">—</span>';
+            const costBasisCell = lot.costBasis !== null ? esc(formatMoney(lot.costBasis, lot.currency)) : '<span class="fpt-fin-muted">—</span>';
+            const revenueCell = lot.sellerRevenue !== null ? esc(formatMoney(lot.sellerRevenue, lot.currency)) : '<span class="fpt-fin-muted">—</span>';
+
+            let profitCell = '<span class="fpt-fin-muted">—</span>';
+            if (lot.potentialProfit !== null) {
+                const profitColor = lot.potentialProfit > 0 ? '#4caf82' : (lot.potentialProfit < 0 ? '#e57373' : '');
+                profitCell = `<span style="${profitColor ? `color:${profitColor};font-weight:600;` : ''}">${esc(formatMoney(lot.potentialProfit, lot.currency))}</span>`;
+            }
+
+            const marginCell = lot.margin !== null ? `${esc(lot.margin)}%` : '<span class="fpt-fin-muted">—</span>';
+
+            return `<tr><td>${titleCell}</td><td>${categoryCell}</td><td>${stockCell}</td><td>${sellerPriceCell}</td><td>${buyerPriceCell}</td><td>${costBasisCell}</td><td>${revenueCell}</td><td>${profitCell}</td><td>${marginCell}</td></tr>`;
+        }).join('');
+    }
+
+    function bindPotentialFilters(pane) {
+        if (!pane) return;
+        const filterGroup = pane.querySelector('#fptFinPotFilterGroup');
+        if (!filterGroup || filterGroup.dataset.fptBound) return;
+        filterGroup.dataset.fptBound = '1';
+
+        const chips = filterGroup.querySelectorAll('.fpt-fin-filter-chip');
+        chips.forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                e.preventDefault();
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                state.potentialFilter = chip.dataset.filter || 'all';
+                renderPotentialTable(pane);
+            });
+        });
+    }
+
+    function renderPotentialSubtabLoading(pane) {
+        if (!pane) return;
+        ['#fptFinPotRevenue', '#fptFinPotProfit', '#fptFinPotCost', '#fptFinPotOffers'].forEach(sel => {
+            const el = pane.querySelector(sel);
+            if (el) el.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>';
+        });
+        const tbody = pane.querySelector('#fptFinPotTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="9"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td></tr><tr><td colspan="9"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td></tr>';
+        }
+    }
+
+    async function renderPotentialSubtab(forceReload) {
+        const pane = state.container && state.container.querySelector('.fpt-fin-tab-pane[data-subtab="potential"]');
+        if (!pane) return;
+
+        const currentToken = ++state.potentialRenderToken;
+
+        if (forceReload || !state.cachedPotentialLots) {
+            state.isPotentialLoading = true;
+            renderPotentialSubtabLoading(pane);
+
+            try {
+                const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+                if (!potentialEngine || typeof potentialEngine.getInventory !== 'function') {
+                    throw new Error('FPTPotential is not available');
+                }
+
+                const lots = await potentialEngine.getInventory({ enrichPotential: true, forceRefresh: forceReload });
+                const agg = potentialEngine.calculatePotentialAggregates(lots);
+
+                if (currentToken !== state.potentialRenderToken) return;
+
+                state.cachedPotentialLots = Array.isArray(lots) ? lots : [];
+                state.cachedPotentialAgg = agg || {};
+                state.potentialLastUpdate = Date.now();
+                updateLastUpdatedText('potential');
+            } catch (err) {
+                console.error('[FPTFinanceHub] Error loading inventory potential:', err);
+                if (currentToken !== state.potentialRenderToken) return;
+                const tbody = pane.querySelector('#fptFinPotTableBody');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="fpt-fin-empty-state" style="text-align:center;padding:24px;">Не удалось загрузить данные инвентаря</td></tr>';
+                }
+                state.isPotentialLoading = false;
+                return;
+            }
+            state.isPotentialLoading = false;
+        }
+
+        if (currentToken !== state.potentialRenderToken) return;
+
+        const agg = state.cachedPotentialAgg || {};
+        const availableCurrencies = Object.keys(agg);
+        const primaryCurrency = (agg[state.potentialCurrency])
+            ? state.potentialCurrency
+            : (availableCurrencies[0] || 'RUB');
+
+        const totals = agg[primaryCurrency] || {
+            currency: primaryCurrency,
+            sellerRevenue: 0,
+            buyerGmv: 0,
+            knownInventoryCost: 0,
+            knownPotentialProfit: 0,
+            unknownStockOffers: 0,
+            finiteOffers: 0,
+            costCoveragePercent: 0,
+            knownMargin: null,
+            knownRoi: null
+        };
+
+        renderPotentialCards(pane, totals, primaryCurrency);
+        renderPotentialTable(pane);
+        bindPotentialFilters(pane);
+    }
+
+    function cleanupPotential() {
+        hideTooltip();
+        state.potentialRenderToken++;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
     // LIFECYCLE & EVENT HANDLERS
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2050,6 +2292,9 @@
         if (prev === 'operations' && target !== 'operations') {
             cleanupOperations();
         }
+        if (prev === 'potential' && target !== 'potential') {
+            cleanupPotential();
+        }
 
         updateLastUpdatedText(target);
 
@@ -2059,6 +2304,8 @@
             renderPurchasesSubtab(false);
         } else if (target === 'operations') {
             renderOperationsSubtab(false);
+        } else if (target === 'potential') {
+            renderPotentialSubtab(false);
         }
     }
 
@@ -2081,6 +2328,8 @@
             renderPurchasesSubtab(true);
         } else if (state.activeSubtab === 'operations') {
             renderOperationsSubtab(true);
+        } else if (state.activeSubtab === 'potential') {
+            renderPotentialSubtab(true);
         }
     }
 
@@ -2096,40 +2345,43 @@
 
         const isPurchases = state.activeSubtab === 'purchases';
         const isOperations = state.activeSubtab === 'operations';
+        const isPotential = state.activeSubtab === 'potential';
         const pCfg = getPurchasesConfig();
         const actionName = isOperations ? 'updateFinance' : (isPurchases ? (pCfg.updateAction || 'updatePurchases') : 'updateSales');
         const subtabType = isOperations ? 'operations' : (isPurchases ? 'purchases' : 'sales');
-        const notificationMsg = isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены');
+        const notificationMsg = isPotential ? 'Данные о потенциале обновлены' : (isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены'));
 
         try {
-            await new Promise(resolve => {
-                const timer = setTimeout(resolve, 8000);
-                try {
-                    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
-                        chrome.runtime.sendMessage({ action: actionName }, () => {
+            if (!isPotential) {
+                await new Promise(resolve => {
+                    const timer = setTimeout(resolve, 8000);
+                    try {
+                        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+                            chrome.runtime.sendMessage({ action: actionName }, () => {
+                                clearTimeout(timer);
+                                resolve();
+                            });
+                        } else {
                             clearTimeout(timer);
                             resolve();
-                        });
-                    } else {
+                        }
+                    } catch (_) {
                         clearTimeout(timer);
                         resolve();
                     }
-                } catch (_) {
-                    clearTimeout(timer);
-                    resolve();
-                }
-            });
+                });
 
-            // Перечитываем метаданные через адаптер
-            if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
-                try {
-                    const meta = await root.FPTFinanceData.getMeta(subtabType);
-                    if (lastUpdatedEl && meta && meta.lastUpdate) {
-                        const d = new Date(meta.lastUpdate);
-                        const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
-                    }
-                } catch (_) {}
+                // Перечитываем метаданные через адаптер
+                if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
+                    try {
+                        const meta = await root.FPTFinanceData.getMeta(subtabType);
+                        if (lastUpdatedEl && meta && meta.lastUpdate) {
+                            const d = new Date(meta.lastUpdate);
+                            const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+                        }
+                    } catch (_) {}
+                }
             }
 
             if (!lastUpdatedEl || !lastUpdatedEl.textContent.includes('в ')) {
@@ -2147,6 +2399,8 @@
                 await renderPurchasesSubtab(true);
             } else if (state.activeSubtab === 'operations') {
                 await renderOperationsSubtab(true);
+            } else if (state.activeSubtab === 'potential') {
+                await renderPotentialSubtab(true);
             }
 
             // Анимация пульсации активных карточек
@@ -2198,6 +2452,8 @@
             renderPurchasesSubtab(false);
         } else if (state.activeSubtab === 'operations') {
             renderOperationsSubtab(false);
+        } else if (state.activeSubtab === 'potential') {
+            renderPotentialSubtab(false);
         }
     }
 
@@ -2220,6 +2476,8 @@
             renderPurchasesSubtab(false);
         } else if (state.activeSubtab === 'operations') {
             renderOperationsSubtab(false);
+        } else if (state.activeSubtab === 'potential') {
+            renderPotentialSubtab(false);
         }
     }
 
@@ -2233,14 +2491,17 @@
             cleanupSales();
             cleanupPurchases();
             cleanupOperations();
+            cleanupPotential();
         },
         refresh,
         renderSalesSubtab,
         renderPurchasesSubtab,
         renderOperationsSubtab,
+        renderPotentialSubtab,
         cleanupSales,
         cleanupPurchases,
         cleanupOperations,
+        cleanupPotential,
         getState: () => Object.assign({}, state)
     };
 
