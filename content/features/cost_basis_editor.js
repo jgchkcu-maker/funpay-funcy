@@ -1,35 +1,39 @@
 /**
- * FunPay Tools — Cost Basis Editor for Existing Offers (T05A)
+ * FunPay Tools — Cost Basis Editor for Existing & New Offers (T05A + T05B)
  *
  * Поле себестоимости и предпросмотр прибыли продавца на странице
- * редактирования существующего лота (/lots/offerEdit).
+ * редактирования или создания лота (/lots/offerEdit).
  *
  * Инварианты и правила:
- * - Активация ТОЛЬКО для существующего лота (достоверный offerId, offer_id !== '0');
- * - На странице создания нового лота (offer_id = 0) не активируется (draft в T05B);
- * - Поле себестоимости создаётся строго БЕЗ атрибута name, чтобы не попадать в payload FunPay;
+ * - Поддержка как существующих лотов (offer_id !== '0'), так и создания новых (offer_id = '0');
+ * - При создании нового лота сохраняет tab-scoped черновик в sessionStorage;
+ * - После редиректа на edit-page привязывает черновик к фактическому offerId (bindDraftToOffer);
+ * - Привязка выполняется строго при совпадении nodeId и в пределах TTL (2 часа);
+ * - Две вкладки изолированы и не разделяют глобальный черновик (гарантия sessionStorage);
+ * - Черновик удаляется только после успешного bind к offerId;
+ * - Поле себестоимости создаётся строго БЕЗ атрибута name (не попадает в payload FunPay);
  * - Текст подсказки: «Видно только вам. На FunPay не отправляется.»;
  * - Live preview: sellerPrice - cost (база прибыли — строго цена продавца);
  * - Отрицательная прибыль разрешена и не обрезается;
- * - При значении 0 или очистке — вызов FPTCostBasis.remove(offerId);
- * - Загрузка, сохранение и удаление через window.FPTCostBasis.
+ * - При значении 0 или очистке — удаление записи или черновика.
  */
 (function () {
     'use strict';
 
-    let initializedOfferId = null;
+    let initializedTargetKey = null;
     let saveTimer = null;
 
     /**
-     * Проверка, находимся ли мы на странице редактирования лота.
+     * Проверка, находимся ли мы на странице формы лота (создание или редактирование).
      * @returns {boolean}
      */
     function isEditPage() {
+        if (typeof document === 'undefined') return false;
         const header = document.querySelector('h1.page-header');
-        if (header && header.textContent.includes('Редактирование предложения')) {
+        if (header && (header.textContent.includes('Редактирование предложения') || header.textContent.includes('Добавление предложения'))) {
             return true;
         }
-        if (location.pathname.includes('/lots/offerEdit') || location.search.includes('offerEdit')) {
+        if (typeof location !== 'undefined' && (location.pathname.includes('/lots/offerEdit') || location.search.includes('offerEdit'))) {
             return true;
         }
         return false;
@@ -41,15 +45,18 @@
      * @returns {string|null}
      */
     function getExistingOfferId() {
+        if (typeof document === 'undefined') return null;
         const inp = document.querySelector('form.form-offer-editor input[name="offer_id"], input[name="offer_id"]');
         const val = inp && inp.value ? String(inp.value).trim() : null;
         if (val && /^\d+$/.test(val) && val !== '0') {
             return val;
         }
 
-        const urlOffer = new URLSearchParams(window.location.search).get('offer');
-        if (urlOffer && /^\d+$/.test(urlOffer) && urlOffer !== '0') {
-            return urlOffer;
+        if (typeof window !== 'undefined' && window.location) {
+            const urlOffer = new URLSearchParams(window.location.search).get('offer');
+            if (urlOffer && /^\d+$/.test(urlOffer) && urlOffer !== '0') {
+                return urlOffer;
+            }
         }
 
         return null;
@@ -60,19 +67,22 @@
      * @returns {string|null}
      */
     function getNodeId() {
+        if (typeof document === 'undefined') return null;
         const inp = document.querySelector('input[name="node_id"]');
         if (inp && inp.value && /^\d+$/.test(inp.value.trim())) {
             return inp.value.trim();
         }
 
-        const urlNode = new URLSearchParams(window.location.search).get('node');
-        if (urlNode && /^\d+$/.test(urlNode.trim())) {
-            return urlNode.trim();
-        }
+        if (typeof window !== 'undefined' && window.location) {
+            const urlNode = new URLSearchParams(window.location.search).get('node');
+            if (urlNode && /^\d+$/.test(urlNode.trim())) {
+                return urlNode.trim();
+            }
 
-        const pathMatch = location.pathname.match(/\/lots\/(\d+)\//);
-        if (pathMatch) {
-            return pathMatch[1];
+            const pathMatch = window.location.pathname.match(/\/lots\/(\d+)\//);
+            if (pathMatch) {
+                return pathMatch[1];
+            }
         }
 
         return null;
@@ -249,36 +259,65 @@
         if (!isEditPage()) return;
 
         const offerId = getExistingOfferId();
-        // Если это создание нового лота (offerId === null) — выходим (T05B)
-        if (!offerId) return;
+        const nodeId = getNodeId();
+        const isNewOffer = !offerId;
+
+        // Если это создание нового лота, но nodeId не найден — не можем определить контекст
+        if (isNewOffer && !nodeId) return;
 
         const priceInput = document.querySelector('input[name="price"]');
         if (!priceInput) return;
 
-        // Если уже инициализирован для этого же offerId
-        if (initializedOfferId === offerId && document.getElementById('fpt-cost-basis-group')) {
+        const targetKey = isNewOffer ? `new_${nodeId}` : `offer_${offerId}`;
+        if (initializedTargetKey === targetKey && document.getElementById('fpt-cost-basis-group')) {
             return;
         }
 
-        const nodeId = getNodeId();
         const { code: currencyCode, symbol: currencySymbol } = detectCurrency(priceInput);
 
         const dom = buildEditorDOM(priceInput, currencySymbol);
         if (!dom) return;
 
         const { input: costInput, previewBox } = dom;
-        initializedOfferId = offerId;
+        initializedTargetKey = targetKey;
 
-        // Загрузка существующей себестоимости из FPTCostBasis
-        if (window.FPTCostBasis && typeof window.FPTCostBasis.get === 'function') {
+        // Загрузка начальных данных
+        if (window.FPTCostBasis) {
             try {
-                const record = await window.FPTCostBasis.get(offerId);
-                if (record && typeof record.amount === 'number' && record.amount > 0) {
-                    costInput.value = formatMoney(record.amount);
-                    updateProfitPreview(priceInput, costInput, previewBox, currencySymbol);
+                if (isNewOffer) {
+                    // Режим создания нового лота: читаем черновик из sessionStorage
+                    if (typeof window.FPTCostBasis.getDraft === 'function') {
+                        const draft = window.FPTCostBasis.getDraft(nodeId);
+                        if (draft && typeof draft.amount === 'number' && draft.amount > 0) {
+                            costInput.value = formatMoney(draft.amount);
+                            updateProfitPreview(priceInput, costInput, previewBox, currencySymbol);
+                        }
+                    }
+                } else {
+                    // Режим существующего лота: сначала проверяем постоянное хранилище
+                    let record = null;
+                    if (typeof window.FPTCostBasis.get === 'function') {
+                        record = await window.FPTCostBasis.get(offerId);
+                    }
+
+                    // Если постоянной записи нет, проверяем, есть ли готовый черновик после редиректа
+                    if (!record && nodeId && typeof window.FPTCostBasis.getDraft === 'function') {
+                        const draft = window.FPTCostBasis.getDraft(nodeId);
+                        // Проверяем соответствие nodeId и наличие суммы
+                        if (draft && draft.nodeId === nodeId && typeof draft.amount === 'number' && draft.amount > 0) {
+                            if (typeof window.FPTCostBasis.bindDraftToOffer === 'function') {
+                                record = await window.FPTCostBasis.bindDraftToOffer(nodeId, offerId);
+                            }
+                        }
+                    }
+
+                    if (record && typeof record.amount === 'number' && record.amount > 0) {
+                        costInput.value = formatMoney(record.amount);
+                        updateProfitPreview(priceInput, costInput, previewBox, currencySymbol);
+                    }
                 }
             } catch (err) {
-                console.warn('[FPTCostEditor] Error loading cost basis:', err);
+                console.warn('[FPTCostEditor] Error loading/binding cost basis:', err);
             }
         }
 
@@ -286,7 +325,7 @@
         updateProfitPreview(priceInput, costInput, previewBox, currencySymbol);
 
         /**
-         * Сохранение значения в FPTCostBasis с debounce.
+         * Сохранение значения в FPTCostBasis (постоянное или черновик) с debounce.
          */
         function scheduleSave() {
             updateProfitPreview(priceInput, costInput, previewBox, currencySymbol);
@@ -295,18 +334,40 @@
                 if (!window.FPTCostBasis) return;
                 const cost = parseMoney(costInput.value);
                 try {
-                    if (!Number.isFinite(cost) || cost <= 0) {
-                        await window.FPTCostBasis.remove(offerId);
+                    if (isNewOffer) {
+                        // Сохранение/очистка черновика
+                        if (!Number.isFinite(cost) || cost <= 0) {
+                            if (typeof window.FPTCostBasis.clearDraft === 'function') {
+                                window.FPTCostBasis.clearDraft(nodeId);
+                            }
+                        } else {
+                            if (typeof window.FPTCostBasis.saveDraft === 'function') {
+                                window.FPTCostBasis.saveDraft(nodeId, {
+                                    amount: cost,
+                                    currency: currencyCode,
+                                    nodeId: nodeId
+                                });
+                            }
+                        }
                     } else {
-                        await window.FPTCostBasis.set(offerId, {
-                            amount: cost,
-                            currency: currencyCode,
-                            nodeId: nodeId,
-                            source: 'manual'
-                        });
+                        // Сохранение/удаление постоянной записи
+                        if (!Number.isFinite(cost) || cost <= 0) {
+                            if (typeof window.FPTCostBasis.remove === 'function') {
+                                await window.FPTCostBasis.remove(offerId);
+                            }
+                        } else {
+                            if (typeof window.FPTCostBasis.set === 'function') {
+                                await window.FPTCostBasis.set(offerId, {
+                                    amount: cost,
+                                    currency: currencyCode,
+                                    nodeId: nodeId,
+                                    source: 'manual'
+                                });
+                            }
+                        }
                     }
                 } catch (e) {
-                    console.warn('[FPTCostEditor] Error saving cost basis:', e);
+                    console.warn('[FPTCostEditor] Error saving cost basis/draft:', e);
                 }
             }, 250);
         }
@@ -340,22 +401,24 @@
     }
 
     // Запуск при готовности DOM
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCostEditor);
-    } else {
-        initCostEditor();
-    }
-
-    // Наблюдатель на случай динамической подгрузки / перерисовки формы
-    const observer = new MutationObserver(() => {
-        if (isEditPage() && document.querySelector('input[name="price"]') && !document.getElementById('fpt-cost-basis-group')) {
+    if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initCostEditor);
+        } else {
             initCostEditor();
         }
-    });
 
-    try {
-        observer.observe(document.documentElement, { childList: true, subtree: true });
-    } catch (_) {}
+        // Наблюдатель на случай динамической подгрузки / перерисовки формы
+        const observer = new MutationObserver(() => {
+            if (isEditPage() && document.querySelector('input[name="price"]') && !document.getElementById('fpt-cost-basis-group')) {
+                initCostEditor();
+            }
+        });
+
+        try {
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+        } catch (_) {}
+    }
 
     // Экспорт для тестов
     if (typeof module !== 'undefined' && module.exports) {

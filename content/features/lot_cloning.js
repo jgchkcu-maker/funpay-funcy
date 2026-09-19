@@ -977,6 +977,26 @@ function renderImportPreviewPanel(src, previewEl) {
             if (secretsTa) { secretsTa.value = src.secrets; secretsTa.dispatchEvent(new Event('input', { bubbles: true })); }
         }
 
+        // Себестоимость: собственный лот может наследовать при наличии offerId, чужой лот никогда не наследует
+        if (src && src.isOwn && src.offerId && window.FPTCostBasis && typeof window.FPTCostBasis.get === 'function') {
+            window.FPTCostBasis.get(src.offerId).then((costRec) => {
+                const costInp = document.getElementById('fpt-cost-basis-input');
+                if (costInp && costRec && costRec.amount > 0) {
+                    costInp.value = (Math.round(costRec.amount * 100) / 100).toString().replace('.', ',');
+                    costInp.dispatchEvent(new Event('input', { bubbles: true }));
+                    costInp.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }).catch(() => {});
+        } else if (src && !src.isOwn) {
+            // foreign clone никогда не наследует себестоимость
+            const costInp = document.getElementById('fpt-cost-basis-input');
+            if (costInp && costInp.value) {
+                costInp.value = '';
+                costInp.dispatchEvent(new Event('input', { bubbles: true }));
+                costInp.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+
         showNotification('Данные успешно импортированы в форму!', false);
         closeImportWizard();
     });
