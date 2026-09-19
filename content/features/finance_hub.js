@@ -1938,6 +1938,44 @@
         });
     }
 
+    // ── ЗАГЛУШКИ ДЛЯ БУДУЩИХ ЭТАПОВ (ПРИБЫЛЬ И ПОТЕНЦИАЛ) ────────────────────
+
+    function renderProfit() {
+        const pane = getPane('profit');
+        if (!pane) return;
+        pane.innerHTML = `
+            <div class="fpt-fin-empty-state">
+                <span class="material-symbols-rounded fpt-fin-empty-icon">savings</span>
+                <h4 class="fpt-fin-empty-title">Учёт чистой прибыли и маржинальности</h4>
+                <p class="fpt-fin-empty-desc">
+                    Раздел находится в разработке. Расчёт чистой прибыли, маржинальности и себестоимости проданного станет доступен после внедрения учёта себестоимости лотов в следующем обновлении.
+                </p>
+                <span class="fpt-fin-empty-badge">
+                    <span class="material-symbols-rounded" style="font-size:14px;">info</span>
+                    Аналитика продаж, покупок и операций уже доступна в соседних вкладках
+                </span>
+            </div>
+        `;
+    }
+
+    function renderPotential() {
+        const pane = getPane('potential');
+        if (!pane) return;
+        pane.innerHTML = `
+            <div class="fpt-fin-empty-state">
+                <span class="material-symbols-rounded fpt-fin-empty-icon">insights</span>
+                <h4 class="fpt-fin-empty-title">Потенциальная выручка и оценка склада</h4>
+                <p class="fpt-fin-empty-desc">
+                    Раздел находится в разработке. Оценка стоимости активных предложений на складе и расчёт потенциальной выручки станут доступны в следующем обновлении.
+                </p>
+                <span class="fpt-fin-empty-badge">
+                    <span class="material-symbols-rounded" style="font-size:14px;">info</span>
+                    Аналитика продаж, покупок и операций уже доступна в соседних вкладках
+                </span>
+            </div>
+        `;
+    }
+
     // ── ОБЩИЙ КОНТРОЛЛЕР ХАБА ────────────────────────────────────────────────
 
     function openTab(tabName) {
@@ -1969,6 +2007,8 @@
             case 'sales': renderSales(); break;
             case 'purchases': renderPurchases(); break;
             case 'operations': renderOperations(); break;
+            case 'profit': renderProfit(); break;
+            case 'potential': renderPotential(); break;
             case 'overview':
             default:
                 renderOverview();
@@ -2057,7 +2097,11 @@
 
     function init() {
         const container = getContainer();
-        if (!container || container.dataset.hubInitialized === '1') return;
+        if (!container) return;
+        if (container.dataset.hubInitialized === '1') {
+            openTab(state.activeTab);
+            return;
+        }
         container.dataset.hubInitialized = '1';
 
         // Восстанавливаем период
@@ -2121,9 +2165,21 @@
         renderPurchases,
         renderOperations,
         renderOverview,
+        renderProfit,
+        renderPotential,
         getState: () => state
     };
 
     root.FPTFinanceHub = FPTFinanceHub;
+
+    if (typeof document !== 'undefined') {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (getContainer()) init();
+            });
+        } else {
+            if (getContainer()) init();
+        }
+    }
 
 })(typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : (typeof globalThis !== 'undefined' ? globalThis : this)));

@@ -8647,7 +8647,7 @@ textarea.fp-cw-input { line-height:1.4; }
 .fp-stats-dimmed { opacity: .35; pointer-events: none; transition: opacity .2s ease; }
 
 /* ==========================================================================
-   Finance Hub — Styles & 12-Column Responsive Grid Primitives (TASK-01)
+   Finance Hub — Styles & 12-Column Responsive Grid Primitives
    ========================================================================== */
 
 /* 12-column responsive grid */
@@ -8704,6 +8704,22 @@ textarea.fp-cw-input { line-height:1.4; }
     }
 }
 
+/* Responsive expansion for Finance Hub */
+.fp-tools-popup:has(.fp-tools-page-content[data-page="finance_hub"].active) {
+    max-width: 1200px !important;
+    width: 94vw !important;
+    height: 840px !important;
+}
+
+.fp-tools-popup:has(.fp-tools-page-content[data-page="finance_hub"].active) .fp-tools-nav {
+    width: 180px;
+    padding: 16px 8px;
+}
+
+.fp-tools-popup:has(.fp-tools-page-content[data-page="finance_hub"].active) .fp-tools-content {
+    padding: 18px 24px;
+}
+
 /* Finance Hub Page wrapper */
 .fp-tools-page-content[data-page="finance_hub"] {
     max-width: 100%;
@@ -8741,6 +8757,13 @@ textarea.fp-cw-input { line-height:1.4; }
     font-size: 18px !important;
     font-weight: 700 !important;
     color: var(--fptm-text, var(--fpt-text, #fff)) !important;
+    line-height: 1.2;
+}
+
+.fpt-fin-subtitle {
+    font-size: 13px;
+    color: var(--fptm-muted, #8a90ab);
+    font-weight: 400;
     line-height: 1.2;
 }
 
@@ -8885,14 +8908,14 @@ textarea.fp-cw-input { line-height:1.4; }
 
 .fpt-fin-subtabs {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--fptm-border, rgba(255, 255, 255, 0.15)) transparent;
-    padding: 2px 2px 4px 2px;
+    padding: 2px 2px 6px 2px;
 }
 
 .fpt-fin-subtabs::-webkit-scrollbar {
@@ -8912,8 +8935,8 @@ textarea.fp-cw-input { line-height:1.4; }
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 7px !important;
-    padding: 7px 15px !important;
+    gap: 6px !important;
+    padding: 6px 13px !important;
     border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.09)) !important;
     border-radius: 8px !important;
     background: var(--fptm-surface-2, rgba(255, 255, 255, 0.04)) !important;
