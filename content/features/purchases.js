@@ -8,22 +8,10 @@
 // и подписи/действия через window.fptStatsCfg. Здесь мы выставляем оба значения
 // в «режим покупок» ДО того, как content_script вызовет initializeSalesStatistics().
 
-(function () {
+(function (root) {
     'use strict';
 
-    // Это именно страница списка покупок «/orders/», а не продажи «/orders/trade»
-    // и не конкретный заказ «/orders/CODE/».
-    function isPurchasesIndex() {
-        const p = window.location.pathname.replace(/\/+$/, '/'); // нормализуем хвостовой слэш
-        // /orders/ — да; /orders/trade — нет; /orders/ABC123/ — нет
-        return /^\/orders\/?$/.test(window.location.pathname);
-    }
-
-    if (!isPurchasesIndex()) return;
-
-    // Переключаем общий статистический UI в режим покупок.
-    window.fptOrdersDB = (typeof FPTPurchasesDB !== 'undefined') ? FPTPurchasesDB : window.FPTPurchasesDB;
-    window.fptStatsCfg = {
+    const PURCHASES_CONFIG = {
         updateAction: 'updatePurchases',
         resetAction: 'resetPurchasesStorage',
         collectingKey: 'fpToolsPurchasesCollecting',
@@ -45,4 +33,30 @@
         chartHeading: 'Покупки',
         loadingTitle: 'Загружаем покупки…'
     };
-})();
+
+    // Экспорт конфигурации покупок для повторного использования в Finance Hub
+    if (typeof window !== 'undefined') {
+        window.FPTPurchasesConfig = PURCHASES_CONFIG;
+    }
+    if (root) {
+        root.FPTPurchasesConfig = PURCHASES_CONFIG;
+    }
+
+    // Это именно страница списка покупок «/orders/», а не продажи «/orders/trade»
+    // и не конкретный заказ «/orders/CODE/».
+    function isPurchasesIndex() {
+        if (typeof window === 'undefined' || !window.location) return false;
+        const p = window.location.pathname.replace(/\/+$/, '/'); // нормализуем хвостовой слэш
+        // /orders/ — да; /orders/trade — нет; /orders/ABC123/ — нет
+        return /^\/orders\/?$/.test(window.location.pathname);
+    }
+
+    if (!isPurchasesIndex()) return;
+
+    // Переключаем общий статистический UI в режим покупок на странице /orders/.
+    const db = (typeof FPTPurchasesDB !== 'undefined') ? FPTPurchasesDB : (typeof window !== 'undefined' ? window.FPTPurchasesDB : null);
+    if (typeof window !== 'undefined') {
+        window.fptOrdersDB = db;
+        window.fptStatsCfg = PURCHASES_CONFIG;
+    }
+})(typeof window !== 'undefined' ? window : this);

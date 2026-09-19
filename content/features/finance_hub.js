@@ -1,17 +1,14 @@
 /**
- * FunPay Tools — Finance Hub Controller (Sales Subtab — T03A)
+ * FunPay Tools — Finance Hub Controller (Sales & Purchases Subtabs — T03A/T03B)
  *
- * Связующий контроллер Finance Hub для статистики продаж:
+ * Связующий контроллер Finance Hub для статистики продаж и покупок:
  * - Управление периодом и состоянием подвкладок;
- * - Доступ к данным продаж строго через window.FPTFinanceData;
- * - Рендеринг подвкладки "Продажи":
- *   * Карточки KPI (выручка, оплачено заказов, средний чек, возвраты);
- *   * Интерактивный график динамики продаж с группировкой (по дням, по неделям, по месяцам);
- *   * Круговая диаграмма структуры продаж по категориям (donut) с интерактивной легендой;
- *   * Детализация: переключение между "Заказы", "Топ покупателей", "Топ товаров", "Топ категорий";
- *   * Drill-down: клик по карточкам, столбцам графика или строкам топов открывает модальное окно со списком заказов;
+ * - Доступ к данным продаж и покупок строго через window.FPTFinanceData;
+ * - Раздельные подвкладки "Продажи" и "Покупки" без смешивания с себестоимостью;
+ * - Рендеринг подвкладки "Продажи" (KPI, динамика, категории, топы, drill-down);
+ * - Рендеринг подвкладки "Покупки" (KPI, динамика трат, топ продавцов, детализация, drill-down);
  * - Lifecycle cleanup: корректная очистка tooltips, модалок и отмена устаревших рендеров при переключении табов;
- * - Refresh: фоновое обновление продаж (updateSales) через контроллер с последующим перечитыванием адаптера.
+ * - Refresh: фоновое обновление продаж (updateSales) и покупок (updatePurchases) с перечитыванием адаптера.
  */
 (function (root) {
     'use strict';
@@ -31,14 +28,25 @@
         container: null,
         activeSubtab: 'overview',
         period: '7d',
-        salesStep: 'day',      // 'day' | 'week' | 'month'
-        salesView: 'orders',   // 'orders' | 'buyers' | 'products' | 'categories'
+        salesStep: 'day',          // 'day' | 'week' | 'month'
+        salesView: 'orders',       // 'orders' | 'buyers' | 'products' | 'categories'
         visibleOrdersLimit: 50,
         renderToken: 0,
         isLoading: false,
         cachedOrders: null,
         cachedAgg: null,
         cachedPeriod: null,
+
+        purchasesStep: 'day',          // 'day' | 'week' | 'month'
+        purchasesView: 'orders',       // 'orders' | 'sellers' | 'products' | 'categories'
+        purchasesCol4View: 'sellers',  // 'sellers' | 'categories'
+        visiblePurchasesLimit: 50,
+        purchasesRenderToken: 0,
+        isPurchasesLoading: false,
+        cachedPurchasesOrders: null,
+        cachedPurchasesAgg: null,
+        cachedPurchasesPeriod: null,
+
         tooltipEl: null
     };
 
@@ -127,20 +135,104 @@
         return `${n} заказов`;
     }
 
+    function pluralBuyers(n) {
+        const abs = Math.abs(n || 0) % 100;
+        const rem = abs % 10;
+        if (abs > 10 && abs < 20) return `${n} покупателей`;
+        if (rem > 1 && rem < 5) return `${n} покупателя`;
+        if (rem === 1) return `${n} покупатель`;
+        return `${n} покупателей`;
+    }
+
+    function pluralSellers(n) {
+        const abs = Math.abs(n || 0) % 100;
+        const rem = abs % 10;
+        if (abs > 10 && abs < 20) return `${n} продавцов`;
+        if (rem > 1 && rem < 5) return `${n} продавца`;
+        if (rem === 1) return `${n} продавец`;
+        return `${n} продавцов`;
+    }
+
+    function pluralProducts(n) {
+        const abs = Math.abs(n || 0) % 100;
+        const rem = abs % 10;
+        if (abs > 10 && abs < 20) return `${n} товаров`;
+        if (rem > 1 && rem < 5) return `${n} товара`;
+        if (rem === 1) return `${n} товар`;
+        return `${n} товаров`;
+    }
+
+    function pluralCategories(n) {
+        const abs = Math.abs(n || 0) % 100;
+        const rem = abs % 10;
+        if (abs > 10 && abs < 20) return `${n} категорий`;
+        if (rem > 1 && rem < 5) return `${n} категории`;
+        if (rem === 1) return `${n} категория`;
+        return `${n} категорий`;
+    }
+
+    function getPurchasesConfig() {
+        if (typeof window !== 'undefined' && window.FPTPurchasesConfig) {
+            return window.FPTPurchasesConfig;
+        }
+        if (root && root.FPTPurchasesConfig) {
+            return root.FPTPurchasesConfig;
+        }
+        return {
+            updateAction: 'updatePurchases',
+            resetAction: 'resetPurchasesStorage',
+            collectingKey: 'fpToolsPurchasesCollecting',
+            lastUpdateKey: 'fpToolsPurchasesLastUpdate',
+            filterKey: 'fpToolsPurchasesFilters',
+            title: 'Статистика покупок',
+            totalMoneyLabel: 'Расходы на покупки',
+            partyLabel: 'Продавец',
+            topTableLabel: 'Топ продавцов',
+            countLabel: 'Покупок',
+            chartHeading: 'Покупки'
+        };
+    }
+
     function updateCountBadge(detailsCard, orders, agg, view) {
         const countBadge = detailsCard.querySelector('#fptFinSalesCountBadge');
         if (!countBadge) return;
         if (view === 'buyers') {
             const n = (agg && agg.topBuyers) ? agg.topBuyers.length : 0;
-            countBadge.textContent = `${n} покупателей`;
+            countBadge.textContent = pluralBuyers(n);
         } else if (view === 'products') {
             const n = (agg && agg.topProducts) ? agg.topProducts.length : 0;
-            countBadge.textContent = `${n} товаров`;
+            countBadge.textContent = pluralProducts(n);
         } else if (view === 'categories') {
             const n = (agg && agg.topCategories) ? agg.topCategories.length : 0;
-            countBadge.textContent = `${n} категорий`;
+            countBadge.textContent = pluralCategories(n);
         } else {
             countBadge.textContent = pluralOrders(orders ? orders.length : 0);
+        }
+    }
+
+    function pluralPurchases(n) {
+        const abs = Math.abs(n || 0) % 100;
+        const rem = abs % 10;
+        if (abs > 10 && abs < 20) return `${n} покупок`;
+        if (rem > 1 && rem < 5) return `${n} покупки`;
+        if (rem === 1) return `${n} покупка`;
+        return `${n} покупок`;
+    }
+
+    function updatePurchasesCountBadge(detailsCard, orders, agg, view) {
+        const countBadge = detailsCard.querySelector('#fptFinPurchasesCountBadge') || detailsCard.querySelector('.fpt-fin-empty-badge');
+        if (!countBadge) return;
+        if (view === 'sellers') {
+            const n = (agg && agg.topSellers) ? agg.topSellers.length : ((agg && agg.topBuyers) ? agg.topBuyers.length : 0);
+            countBadge.textContent = pluralSellers(n);
+        } else if (view === 'products') {
+            const n = (agg && agg.topProducts) ? agg.topProducts.length : 0;
+            countBadge.textContent = pluralProducts(n);
+        } else if (view === 'categories') {
+            const n = (agg && agg.topCategories) ? agg.topCategories.length : 0;
+            countBadge.textContent = pluralCategories(n);
+        } else {
+            countBadge.textContent = pluralPurchases(orders ? orders.length : 0);
         }
     }
 
@@ -299,7 +391,7 @@
         return keys.map(k => buckets[k]);
     }
 
-    function renderDynamicChart(cardEl, orders, step) {
+    function renderDynamicChart(cardEl, orders, step, options) {
         let chartContainer = cardEl.querySelector('.fpt-fin-chart-container');
         if (!chartContainer) {
             chartContainer = document.createElement('div');
@@ -309,14 +401,25 @@
             else cardEl.appendChild(chartContainer);
         }
 
+        const opts = options || {};
+        const isPurchases = opts.isPurchases === true;
+        const valLabel = isPurchases ? 'Потрачено' : 'Выручка';
+        const cntLabel = isPurchases ? 'Покупок' : 'Заказов';
+        const emptyTitle = isPurchases ? 'Нет данных о покупках' : 'Нет данных о продажах';
+        const emptyDesc = isPurchases
+            ? 'За выбранный период нет завершённых покупок.'
+            : 'За выбранный период нет закрытых или оплаченных заказов.';
+        const accent = opts.color || (isPurchases ? '#e57373' : 'var(--fptm-accent, var(--fpt-accent, #1b75bb))');
+        const stopColor = isPurchases ? '#e57373' : '#1b75bb';
+
         const buckets = groupOrdersByStep(orders, step);
 
         if (!buckets.length) {
             chartContainer.innerHTML = `
                 <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;">
                     <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:30px;">show_chart</span>
-                    <div class="fpt-fin-empty-title">Нет данных о продажах</div>
-                    <div class="fpt-fin-empty-desc">За выбранный период нет закрытых или оплаченных заказов.</div>
+                    <div class="fpt-fin-empty-title">${esc(emptyTitle)}</div>
+                    <div class="fpt-fin-empty-desc">${esc(emptyDesc)}</div>
                 </div>`;
             return;
         }
@@ -356,7 +459,6 @@
             : '';
 
         const uid = 'fptFinGrad_' + Math.random().toString(36).slice(2, 8);
-        const accent = 'var(--fptm-accent, var(--fpt-accent, #1b75bb))';
 
         // X labels
         const MIN_GAP = 54;
@@ -390,8 +492,8 @@
             <svg class="fpt-fin-chart-svg" viewBox="0 0 ${W} ${H}" width="100%" style="display:block;overflow:visible;">
                 <defs>
                     <linearGradient id="${uid}" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#1b75bb" stop-opacity="0.28"/>
-                        <stop offset="100%" stop-color="#1b75bb" stop-opacity="0.01"/>
+                        <stop offset="0%" stop-color="${stopColor}" stop-opacity="0.28"/>
+                        <stop offset="100%" stop-color="${stopColor}" stop-opacity="0.01"/>
                     </linearGradient>
                 </defs>
                 ${grid}
@@ -412,13 +514,13 @@
 
             hit.addEventListener('mouseenter', (e) => {
                 const revStr = formatRevenueMulti(b.revenueByCur);
-                const html = `<strong>${esc(b.label)}</strong><br/>Выручка: ${esc(revStr)}<br/>Заказов: ${b.count} шт.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
+                const html = `<strong>${esc(b.label)}</strong><br/>${valLabel}: ${esc(revStr)}<br/>${cntLabel}: ${b.count} шт.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
                 showTooltip(html, e.clientX, e.clientY);
             });
 
             hit.addEventListener('mousemove', (e) => {
                 const revStr = formatRevenueMulti(b.revenueByCur);
-                const html = `<strong>${esc(b.label)}</strong><br/>Выручка: ${esc(revStr)}<br/>Заказов: ${b.count} шт.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
+                const html = `<strong>${esc(b.label)}</strong><br/>${valLabel}: ${esc(revStr)}<br/>${cntLabel}: ${b.count} шт.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
                 showTooltip(html, e.clientX, e.clientY);
             });
 
@@ -429,7 +531,9 @@
             hit.addEventListener('click', () => {
                 hideTooltip();
                 const revStr = formatRevenueMulti(b.revenueByCur);
-                openDrilldown(`Заказы за ${b.label}`, `${b.count} заказов · ${revStr}`, b.orders);
+                const countStr = isPurchases ? pluralPurchases(b.count) : pluralOrders(b.count);
+                const drillTitle = isPurchases ? `Покупки за ${b.label}` : `Заказы за ${b.label}`;
+                openDrilldown(drillTitle, `${countStr} · ${revStr}`, b.orders);
             });
         });
     }
@@ -438,15 +542,23 @@
     // SVG КРУГОВАЯ ДИАГРАММА (DONUT) ПО КАТЕГОРИЯМ
     // ─────────────────────────────────────────────────────────────────────────────
 
-    function renderCategoryDonut(cardEl, orders, agg) {
+    function renderCategoryDonut(cardEl, orders, agg, options) {
+        cardEl.querySelectorAll('.fpt-fin-skeleton, .fpt-fin-skeleton-text, .fpt-fin-skeleton-chart').forEach(s => s.remove());
         let donutContainer = cardEl.querySelector('.fpt-fin-donut-container');
         if (!donutContainer) {
             donutContainer = document.createElement('div');
             donutContainer.className = 'fpt-fin-donut-container';
-            const sk = cardEl.querySelector('.fpt-fin-skeleton-chart');
+            const sk = cardEl.querySelector('.fpt-fin-sellers-container');
             if (sk) sk.replaceWith(donutContainer);
             else cardEl.appendChild(donutContainer);
         }
+
+        const opts = options || {};
+        const isPurchases = opts.isPurchases === true;
+        const valLabel = isPurchases ? 'Потрачено' : 'Выручка';
+        const cntWord = isPurchases ? 'покупок' : 'заказов';
+        const cntShort = isPurchases ? 'пок.' : 'зак.';
+        const emptyDesc = isPurchases ? 'За выбранный период нет покупок.' : 'За выбранный период нет заказов.';
 
         const validOrders = (Array.isArray(orders) ? orders : []).filter(o => o.orderStatus === 'closed' || o.orderStatus === 'paid');
         const catMap = {};
@@ -469,7 +581,7 @@
                 <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;">
                     <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:30px;">pie_chart</span>
                     <div class="fpt-fin-empty-title">Нет категорий</div>
-                    <div class="fpt-fin-empty-desc">За выбранный период нет заказов.</div>
+                    <div class="fpt-fin-empty-desc">${esc(emptyDesc)}</div>
                 </div>`;
             return;
         }
@@ -531,7 +643,7 @@
                 <div class="fpt-fin-legend-row" data-idx="${i}">
                     <span class="fpt-fin-legend-dot" style="background:${col};"></span>
                     <span class="fpt-fin-legend-label" title="${esc(slice.name)}">${esc(slice.name)}</span>
-                    <span class="fpt-fin-legend-val">${pct}% (${slice.count} зак.)</span>
+                    <span class="fpt-fin-legend-val">${pct}% (${slice.count} ${cntShort})</span>
                 </div>`;
         });
 
@@ -540,7 +652,7 @@
                 <svg class="fpt-fin-donut-svg" viewBox="0 0 140 140" width="140" height="140">
                     ${paths}
                     <text x="70" y="74" text-anchor="middle" font-size="14" font-weight="700" fill="var(--fptm-text, #fff)" font-family="inherit">${totalOrders}</text>
-                    <text x="70" y="87" text-anchor="middle" font-size="9" fill="var(--fptm-muted, #9099b8)" font-family="inherit">заказов</text>
+                    <text x="70" y="87" text-anchor="middle" font-size="9" fill="var(--fptm-muted, #9099b8)" font-family="inherit">${esc(cntWord)}</text>
                 </svg>
                 <div class="fpt-fin-donut-legend">
                     ${legendHTML}
@@ -551,12 +663,12 @@
         const attachSliceEvents = (el, slice) => {
             el.addEventListener('mouseenter', (e) => {
                 const revStr = formatRevenueMulti(slice.revenueByCur);
-                const html = `<strong>${esc(slice.name)}</strong><br/>Заказов: ${slice.count}<br/>Выручка: ${esc(revStr)}<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
+                const html = `<strong>${esc(slice.name)}</strong><br/>${isPurchases ? 'Покупок' : 'Заказов'}: ${slice.count}<br/>${valLabel}: ${esc(revStr)}<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
                 showTooltip(html, e.clientX, e.clientY);
             });
             el.addEventListener('mousemove', (e) => {
                 const revStr = formatRevenueMulti(slice.revenueByCur);
-                const html = `<strong>${esc(slice.name)}</strong><br/>Заказов: ${slice.count}<br/>Выручка: ${esc(revStr)}<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
+                const html = `<strong>${esc(slice.name)}</strong><br/>${isPurchases ? 'Покупок' : 'Заказов'}: ${slice.count}<br/>${valLabel}: ${esc(revStr)}<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
                 showTooltip(html, e.clientX, e.clientY);
             });
             el.addEventListener('mouseleave', () => {
@@ -565,7 +677,8 @@
             el.addEventListener('click', () => {
                 hideTooltip();
                 const revStr = formatRevenueMulti(slice.revenueByCur);
-                openDrilldown(`Категория: ${slice.name}`, `${slice.count} заказов · ${revStr}`, slice.orders);
+                const countStr = isPurchases ? pluralPurchases(slice.count) : pluralOrders(slice.count);
+                openDrilldown(`Категория: ${slice.name}`, `${countStr} · ${revStr}`, slice.orders);
             });
         };
 
@@ -1009,15 +1122,640 @@
         if (ddOverlay) ddOverlay.remove();
     }
 
+    function cleanupPurchases() {
+        hideTooltip();
+        removeTooltip();
+        state.purchasesRenderToken++;
+
+        const ddOverlay = document.getElementById('fpt-dd-overlay');
+        if (ddOverlay) ddOverlay.remove();
+    }
+
+    async function updateLastUpdatedText(subtab) {
+        if (!state.container) return;
+        const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
+        if (!lastUpdatedEl) return;
+
+        const type = subtab === 'purchases' ? 'purchases' : 'sales';
+        if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
+            try {
+                const meta = await root.FPTFinanceData.getMeta(type);
+                if (meta && meta.lastUpdate) {
+                    const d = new Date(meta.lastUpdate);
+                    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+                    return;
+                }
+            } catch (_) {}
+        }
+        lastUpdatedEl.textContent = 'Не обновлялось';
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // РЕНДЕР КАРТОЧКИ ТОП ПРОДАВЦОВ (COL 4 В PURCHASES)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    function renderPurchasesTopSellersCard(cardEl, orders, agg) {
+        const topSellers = (agg && agg.topSellers) ? agg.topSellers : ((agg && agg.topBuyers) ? agg.topBuyers : []);
+
+        const titleEl = cardEl.querySelector('.fpt-fin-card-title');
+        if (titleEl) {
+            titleEl.textContent = state.purchasesCol4View === 'categories' ? 'Категории' : 'Топ продавцов';
+        }
+
+        // Управляем переключателем в заголовке карточки
+        const cardHeader = cardEl.querySelector('.fpt-fin-card-header');
+        if (cardHeader && !cardHeader.querySelector('.fpt-fin-chart-toggles')) {
+            const toggles = document.createElement('div');
+            toggles.className = 'fpt-fin-chart-toggles';
+            toggles.setAttribute('role', 'group');
+            toggles.setAttribute('aria-label', 'Вид аналитики');
+            toggles.innerHTML = `
+                <button type="button" class="fpt-fin-chart-toggle ${state.purchasesCol4View === 'sellers' ? 'active' : ''}" data-col4-view="sellers">Продавцы</button>
+                <button type="button" class="fpt-fin-chart-toggle ${state.purchasesCol4View === 'categories' ? 'active' : ''}" data-col4-view="categories">Категории</button>
+            `;
+            cardHeader.appendChild(toggles);
+        }
+
+        const toggles = cardEl.querySelectorAll('.fpt-fin-chart-toggle[data-col4-view]');
+        toggles.forEach(toggle => {
+            const view = toggle.dataset.col4View;
+            toggle.classList.toggle('active', view === state.purchasesCol4View);
+            if (!toggle.dataset.fptBound) {
+                toggle.dataset.fptBound = '1';
+                toggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    toggles.forEach(t => t.classList.remove('active'));
+                    toggle.classList.add('active');
+                    state.purchasesCol4View = toggle.dataset.col4View || 'sellers';
+                    const currentOrders = state.cachedPurchasesOrders || orders;
+                    const currentAgg = state.cachedPurchasesAgg || agg;
+                    renderPurchasesTopSellersCard(cardEl, currentOrders, currentAgg);
+                });
+            }
+        });
+
+        // Если выбран режим категорий — отрисовываем круговую диаграмму
+        if (state.purchasesCol4View === 'categories') {
+            const sellersWrap = cardEl.querySelector('.fpt-fin-sellers-container');
+            if (sellersWrap) sellersWrap.remove();
+            renderCategoryDonut(cardEl, orders, agg, { isPurchases: true });
+            return;
+        }
+
+        // Режим 'sellers'
+        const donutWrap = cardEl.querySelector('.fpt-fin-donut-container');
+        if (donutWrap) donutWrap.remove();
+
+        let sellersContainer = cardEl.querySelector('.fpt-fin-sellers-container');
+        if (!sellersContainer) {
+            sellersContainer = document.createElement('div');
+            sellersContainer.className = 'fpt-fin-sellers-container';
+            cardEl.querySelectorAll('.fpt-fin-skeleton, .fpt-fin-skeleton-text, .fpt-fin-skeleton-chart').forEach(s => s.remove());
+            cardEl.appendChild(sellersContainer);
+        }
+
+        if (!topSellers.length) {
+            sellersContainer.innerHTML = `
+                <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:30px;">storefront</span>
+                    <div class="fpt-fin-empty-title">Нет продавцов</div>
+                    <div class="fpt-fin-empty-desc">За выбранный период нет завершённых покупок.</div>
+                </div>`;
+            return;
+        }
+
+        const topSlices = topSellers.slice(0, 5);
+        const allOrders = Array.isArray(orders) ? orders : [];
+
+        const itemsHTML = topSlices.map((s, idx) => {
+            const revStr = formatRevenueMulti(s.revenueByCurrency);
+            const userLink = s.id
+                ? `<a class="fpt-fin-table-link" href="https://funpay.com/users/${esc(s.id)}/" target="_blank" rel="noopener" onclick="event.stopPropagation();">${esc(s.name)}</a>`
+                : `<span>${esc(s.name)}</span>`;
+            return `
+                <div class="fpt-fin-seller-item" data-seller-name="${esc(s.name)}" title="Кликните для деталей заказов">
+                    <span class="fpt-fin-seller-rank">#${idx + 1}</span>
+                    <div class="fpt-fin-seller-info">
+                        <div class="fpt-fin-seller-name">${userLink}</div>
+                        <div class="fpt-fin-seller-meta">${s.count} ${pluralPurchases(s.count)}</div>
+                    </div>
+                    <div class="fpt-fin-seller-spent">${esc(revStr)}</div>
+                </div>
+            `;
+        }).join('');
+
+        sellersContainer.innerHTML = `
+            <div class="fpt-fin-top-sellers-list">
+                ${itemsHTML}
+            </div>
+        `;
+
+        sellersContainer.querySelectorAll('.fpt-fin-seller-item').forEach(item => {
+            const sellerName = item.dataset.sellerName;
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('a')) return;
+                const currentOrders = state.cachedPurchasesOrders || allOrders;
+                const filtered = currentOrders.filter(o => (o.sellerUsername || o.sellerName || o.buyerUsername || '-') === sellerName);
+                const sObj = topSellers.find(s => s.name === sellerName);
+                const revStr = sObj ? formatRevenueMulti(sObj.revenueByCurrency) : '';
+                openDrilldown(`Продавец: ${sellerName}`, `${filtered.length} ${pluralPurchases(filtered.length)} · ${revStr}`, filtered);
+            });
+        });
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ТАБЛИЦА ДЕТАЛИЗАЦИИ ПОКУПОК (COL 12 В PURCHASES)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    function renderPurchasesDetailsContent(contentEl, orders, agg, view) {
+        const allOrders = Array.isArray(orders) ? orders : [];
+
+        if (view === 'sellers') {
+            const topSellers = (agg && agg.topSellers) ? agg.topSellers : ((agg && agg.topBuyers) ? agg.topBuyers : []);
+            if (!topSellers.length) {
+                contentEl.innerHTML = '<div class="fpt-fin-empty-state" style="padding:24px;"><div class="fpt-fin-empty-title">Нет данных о продавцах</div></div>';
+                return;
+            }
+            const rows = topSellers.slice(0, 50).map((s, i) => {
+                const revStr = formatRevenueMulti(s.revenueByCurrency);
+                const userLink = s.id ? `<a class="fpt-fin-table-link" href="https://funpay.com/users/${esc(s.id)}/" target="_blank" rel="noopener">${esc(s.name)}</a>` : `<span>${esc(s.name)}</span>`;
+                return `
+                <tr>
+                    <td style="width:40px;color:var(--fptm-muted, #9099b8);font-weight:600;">#${i + 1}</td>
+                    <td>${userLink}</td>
+                    <td style="font-weight:700;">${s.count} шт.</td>
+                    <td style="font-weight:600;">${esc(revStr)}</td>
+                    <td style="text-align:right;">
+                        <button type="button" class="fpt-fin-table-action-btn-coral" data-seller-idx="${i}">Покупки</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            contentEl.innerHTML = `
+                <table class="fpt-fin-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Продавец</th>
+                            <th>Покупок</th>
+                            <th>Сумма покупок</th>
+                            <th style="text-align:right;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+
+            contentEl.querySelectorAll('button[data-seller-idx]').forEach(btn => {
+                const idx = Number(btn.dataset.sellerIdx);
+                const sObj = topSellers[idx];
+                if (!sObj) return;
+                const sName = sObj.name;
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const currentOrders = state.cachedPurchasesOrders || allOrders;
+                    const filtered = currentOrders.filter(o => (o.sellerUsername || o.sellerName || o.buyerUsername || '-') === sName);
+                    const revStr = formatRevenueMulti(sObj.revenueByCurrency);
+                    openDrilldown(`Продавец: ${sName}`, `${filtered.length} ${pluralPurchases(filtered.length)} · ${revStr}`, filtered);
+                });
+            });
+            return;
+        }
+
+        if (view === 'products') {
+            const topProducts = agg && agg.topProducts ? agg.topProducts : [];
+            if (!topProducts.length) {
+                contentEl.innerHTML = '<div class="fpt-fin-empty-state" style="padding:24px;"><div class="fpt-fin-empty-title">Нет данных о товарах</div></div>';
+                return;
+            }
+            const rows = topProducts.slice(0, 50).map((p, i) => {
+                return `
+                <tr>
+                    <td style="width:40px;color:var(--fptm-muted, #9099b8);font-weight:600;">#${i + 1}</td>
+                    <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;" title="${esc(p.name)}">${esc(p.name)}</td>
+                    <td style="font-weight:700;">${p.count} раз</td>
+                    <td style="text-align:right;">
+                        <button type="button" class="fpt-fin-table-action-btn-coral" data-prod-idx="${i}">Покупки</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            contentEl.innerHTML = `
+                <table class="fpt-fin-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Товар / Описание</th>
+                            <th>Куплено</th>
+                            <th style="text-align:right;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+
+            contentEl.querySelectorAll('button[data-prod-idx]').forEach(btn => {
+                const idx = Number(btn.dataset.prodIdx);
+                const pObj = topProducts[idx];
+                if (!pObj) return;
+                const pName = pObj.name;
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const currentOrders = state.cachedPurchasesOrders || allOrders;
+                    const filtered = currentOrders.filter(o => (o.description || '-') === pName);
+                    openDrilldown(`Товар: ${pName}`, `${filtered.length} ${pluralPurchases(filtered.length)}`, filtered);
+                });
+            });
+            return;
+        }
+
+        if (view === 'categories') {
+            const topCats = agg && agg.topCategories ? agg.topCategories : [];
+            if (!topCats.length) {
+                contentEl.innerHTML = '<div class="fpt-fin-empty-state" style="padding:24px;"><div class="fpt-fin-empty-title">Нет данных о категориях</div></div>';
+                return;
+            }
+            const rows = topCats.slice(0, 50).map((c, i) => {
+                const revByCur = (agg && agg.byCategoryRevenue && agg.byCategoryRevenue[c.name]) || {};
+                const revStr = formatRevenueMulti(revByCur);
+                return `
+                <tr>
+                    <td style="width:40px;color:var(--fptm-muted, #9099b8);font-weight:600;">#${i + 1}</td>
+                    <td>${esc(c.name)}</td>
+                    <td style="font-weight:700;">${c.count} пок.</td>
+                    <td style="font-weight:600;">${esc(revStr)}</td>
+                    <td style="text-align:right;">
+                        <button type="button" class="fpt-fin-table-action-btn-coral" data-cat-idx="${i}">Покупки</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            contentEl.innerHTML = `
+                <table class="fpt-fin-table">
+                    <thead>
+                        <tr>
+                            <th>№</th>
+                            <th>Категория</th>
+                            <th>Покупок</th>
+                            <th>Потрачено</th>
+                            <th style="text-align:right;">Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+
+            contentEl.querySelectorAll('button[data-cat-idx]').forEach(btn => {
+                const idx = Number(btn.dataset.catIdx);
+                const cObj = topCats[idx];
+                if (!cObj) return;
+                const cName = cObj.name;
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const currentOrders = state.cachedPurchasesOrders || allOrders;
+                    const filtered = currentOrders.filter(o => (o.subcategoryName || 'Без категории') === cName);
+                    const revByCur = (agg && agg.byCategoryRevenue && agg.byCategoryRevenue[cName]) || {};
+                    const revStr = formatRevenueMulti(revByCur);
+                    openDrilldown(`Категория: ${cName}`, `${filtered.length} ${pluralPurchases(filtered.length)} · ${revStr}`, filtered);
+                });
+            });
+            return;
+        }
+
+        // View: 'orders' (По умолчанию)
+        if (!allOrders.length) {
+            contentEl.innerHTML = `
+                <div class="fpt-fin-empty-state" style="padding:32px 16px;">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:32px;">receipt_long</span>
+                    <div class="fpt-fin-empty-title">Нет покупок</div>
+                    <div class="fpt-fin-empty-desc">За период ${esc(periodLabel(state.period))} покупок не обнаружено.</div>
+                </div>`;
+            return;
+        }
+
+        const visibleOrders = allOrders.slice(0, state.visiblePurchasesLimit);
+        const rows = visibleOrders.map(o => {
+            let badgeClass = 'fpt-fin-status-neutral';
+            let statusText = 'В обработке';
+            if (o.orderStatus === 'closed') {
+                badgeClass = 'fpt-fin-status-success';
+                statusText = 'Завершён';
+            } else if (o.orderStatus === 'paid') {
+                badgeClass = 'fpt-fin-status-warning';
+                statusText = 'Оплачен';
+            } else if (o.orderStatus === 'refunded') {
+                badgeClass = 'fpt-fin-status-danger';
+                statusText = 'Возврат';
+            }
+
+            const sellerName = o.sellerUsername || o.sellerName || o.buyerUsername || '—';
+            const sellerId = o.sellerId || o.buyerId || 0;
+            const sellerInner = sellerId
+                ? `<a class="fpt-fin-table-link" href="https://funpay.com/users/${esc(sellerId)}/" target="_blank" rel="noopener">${esc(sellerName)}</a>`
+                : esc(sellerName);
+
+            const orderIdStr = String(o.orderId || '').replace(/^#/, '');
+            const orderLink = orderIdStr
+                ? `<a class="fpt-fin-table-link" href="https://funpay.com/orders/${esc(orderIdStr)}/" target="_blank" rel="noopener">#${esc(orderIdStr)}</a>`
+                : '—';
+
+            return `
+            <tr>
+                <td>${orderLink}</td>
+                <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;" title="${esc(o.description)}">${esc(o.description || '—')}</td>
+                <td>${sellerInner}</td>
+                <td style="color:var(--fptm-muted,#8a90ab);">${esc(formatDate(o.orderDate))}</td>
+                <td style="font-weight:700;">${esc(formatMoney(o.price, o.currency))}</td>
+                <td><span class="fpt-fin-status-badge ${badgeClass}">${esc(statusText)}</span></td>
+            </tr>`;
+        }).join('');
+
+        let moreBtnHTML = '';
+        if (allOrders.length > state.visiblePurchasesLimit) {
+            const rest = allOrders.length - state.visiblePurchasesLimit;
+            moreBtnHTML = `
+            <div class="fpt-fin-table-footer">
+                <span style="font-size:12px;color:var(--fptm-muted, #9099b8);">Показано ${visibleOrders.length} из ${allOrders.length}</span>
+                <button type="button" class="btn btn-default fpt-fin-btn" id="fptFinShowMorePurchasesBtn" style="padding:4px 14px;font-size:12px;">Показать ещё ${Math.min(50, rest)}</button>
+            </div>`;
+        }
+
+        contentEl.innerHTML = `
+            <table class="fpt-fin-table">
+                <thead>
+                    <tr>
+                        <th>Заказ</th>
+                        <th>Товар / Описание</th>
+                        <th>Продавец</th>
+                        <th>Дата</th>
+                        <th>Сумма</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+            ${moreBtnHTML}`;
+
+        const moreBtn = contentEl.querySelector('#fptFinShowMorePurchasesBtn');
+        if (moreBtn) {
+            moreBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                state.visiblePurchasesLimit += 50;
+                const currentOrders = state.cachedPurchasesOrders || allOrders;
+                const currentAgg = state.cachedPurchasesAgg || agg;
+                renderPurchasesDetailsContent(contentEl, currentOrders, currentAgg, 'orders');
+            });
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ОСНОВНОЙ РЕНДЕР ПОДВКЛАДКИ PURCHASES
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async function renderPurchasesSubtab(forceReload) {
+        if (!state.container) return;
+        const purchasesPane = state.container.querySelector('.fpt-fin-tab-pane[data-subtab="purchases"]');
+        if (!purchasesPane) return;
+
+        const currentToken = ++state.purchasesRenderToken;
+
+        if (forceReload || state.cachedPurchasesPeriod !== state.period || !state.cachedPurchasesOrders) {
+            state.isPurchasesLoading = true;
+
+            if (!state.cachedPurchasesOrders) {
+                purchasesPane.querySelectorAll('.fpt-fin-card-value').forEach(v => {
+                    v.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>';
+                });
+            }
+
+            try {
+                if (!root.FPTFinanceData || typeof root.FPTFinanceData.getPurchases !== 'function') {
+                    console.warn('[FPTFinanceHub] FPTFinanceData.getPurchases is not available');
+                    return;
+                }
+
+                const orders = await root.FPTFinanceData.getPurchases({
+                    period: state.period,
+                    useMsk: true,
+                    sort: 'date-desc'
+                });
+
+                if (currentToken !== state.purchasesRenderToken) return;
+
+                const agg = root.FPTFinanceData.aggregatePurchases(orders, {
+                    period: state.period,
+                    useMsk: true
+                });
+
+                state.cachedPurchasesOrders = orders;
+                state.cachedPurchasesAgg = agg;
+                state.cachedPurchasesPeriod = state.period;
+                state.visiblePurchasesLimit = 50;
+            } catch (err) {
+                console.error('[FPTFinanceHub] Error loading purchases data:', err);
+                if (currentToken !== state.purchasesRenderToken) return;
+            } finally {
+                state.isPurchasesLoading = false;
+            }
+        }
+
+        if (currentToken !== state.purchasesRenderToken) return;
+
+        const orders = state.cachedPurchasesOrders || [];
+        const agg = state.cachedPurchasesAgg || {
+            count: 0, total: 0, byStatus: { closed: 0, paid: 0, refunded: 0 },
+            byCurrency: {}, averageCheck: {}, refundedRevenue: {}, closedRevenue: {},
+            byDay: {}, byCategory: {}, topSellers: [], topBuyers: [],
+            topProducts: [], topCategories: []
+        };
+
+        const validOrders = orders.filter(o => o.orderStatus === 'closed' || o.orderStatus === 'paid');
+        const closedOrders = orders.filter(o => o.orderStatus === 'closed');
+        const refundedOrders = orders.filter(o => o.orderStatus === 'refunded');
+
+        // 1. KPI Карточки
+        const cards = purchasesPane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card');
+        if (cards.length >= 4) {
+            // Карточка 0: Расходы на покупки
+            const revCard = cards[0];
+            revCard.classList.add('fpt-fin-clickable');
+            const spentStr = formatRevenueMulti(agg.byCurrency);
+            revCard.innerHTML = `
+                <div class="fpt-fin-card-header">
+                    <h5 class="fpt-fin-card-title">Расходы на покупки</h5>
+                    <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">shopping_bag</span>
+                </div>
+                <div class="fpt-fin-card-value">${esc(spentStr)}</div>
+                <div class="fpt-fin-card-sub">${agg.byStatus.closed || 0} закрыто · ${agg.byStatus.paid || 0} в ожидании</div>`;
+            revCard.title = 'Нажмите для просмотра покупок';
+            revCard.onclick = () => openDrilldown('Расходы на покупки', `${periodLabel(state.period)} · ${validOrders.length} покупок · ${spentStr}`, validOrders);
+
+            // Карточка 1: Куплено товаров
+            const ordCard = cards[1];
+            ordCard.classList.add('fpt-fin-clickable');
+            ordCard.innerHTML = `
+                <div class="fpt-fin-card-header">
+                    <h5 class="fpt-fin-card-title">Куплено товаров</h5>
+                    <span class="material-symbols-rounded" style="font-size:18px;color:var(--fptm-accent, var(--fpt-accent, #1b75bb));">inventory_2</span>
+                </div>
+                <div class="fpt-fin-card-value">${agg.count} шт.</div>
+                <div class="fpt-fin-card-sub">Всего покупок: ${agg.total} (учтено: ${agg.count})</div>`;
+            ordCard.title = 'Нажмите для просмотра покупок';
+            ordCard.onclick = () => openDrilldown('Куплено товаров', `${periodLabel(state.period)} · ${validOrders.length} покупок`, validOrders);
+
+            // Карточка 2: Средний чек покупки
+            const avgCard = cards[2];
+            avgCard.classList.add('fpt-fin-clickable');
+            const avgStr = formatAvgCheckMulti(agg.averageCheck);
+            avgCard.innerHTML = `
+                <div class="fpt-fin-card-header">
+                    <h5 class="fpt-fin-card-title">Средний чек покупки</h5>
+                    <span class="material-symbols-rounded" style="font-size:18px;color:#a09af8;">receipt_long</span>
+                </div>
+                <div class="fpt-fin-card-value">${esc(avgStr)}</div>
+                <div class="fpt-fin-card-sub">По ${agg.count} завершённым покупкам</div>`;
+            avgCard.title = 'Нажмите для просмотра учтённых покупок';
+            avgCard.onclick = () => openDrilldown('Средний чек покупки', `${periodLabel(state.period)} · средний чек: ${avgStr}`, validOrders);
+
+            // Карточка 3: Завершено покупок
+            const doneCard = cards[3];
+            doneCard.classList.add('fpt-fin-clickable');
+            const refCount = agg.byStatus.refunded || 0;
+            const refSub = refCount > 0 ? ` · ${refCount} возврат.` : '';
+            doneCard.innerHTML = `
+                <div class="fpt-fin-card-header">
+                    <h5 class="fpt-fin-card-title">Завершено покупок</h5>
+                    <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">verified</span>
+                </div>
+                <div class="fpt-fin-card-value">${agg.byStatus.closed || 0} шт.</div>
+                <div class="fpt-fin-card-sub">${agg.byStatus.paid || 0} в ожидании${refSub}</div>`;
+            doneCard.title = 'Нажмите для просмотра завершённых покупок';
+            doneCard.onclick = () => openDrilldown('Завершённые покупки', `${periodLabel(state.period)} · ${closedOrders.length} покупок`, closedOrders);
+        }
+
+        // 2. График динамики расходов на покупки
+        const dynCard = purchasesPane.querySelector('.fpt-fin-col-8 .fpt-fin-card');
+        if (dynCard) {
+            const dynHeader = dynCard.querySelector('.fpt-fin-card-header');
+            if (dynHeader && !dynHeader.querySelector('.fpt-fin-chart-toggles')) {
+                const togglesDiv = document.createElement('div');
+                togglesDiv.className = 'fpt-fin-chart-toggles';
+                togglesDiv.setAttribute('role', 'group');
+                togglesDiv.setAttribute('aria-label', 'Интервал покупок');
+                togglesDiv.innerHTML = `
+                    <button type="button" class="fpt-fin-chart-toggle ${state.purchasesStep === 'day' ? 'active' : ''}" data-purchases-step="day">По дням</button>
+                    <button type="button" class="fpt-fin-chart-toggle ${state.purchasesStep === 'week' ? 'active' : ''}" data-purchases-step="week">По неделям</button>
+                    <button type="button" class="fpt-fin-chart-toggle ${state.purchasesStep === 'month' ? 'active' : ''}" data-purchases-step="month">По месяцам</button>
+                `;
+                dynHeader.appendChild(togglesDiv);
+            }
+
+            const stepToggles = dynCard.querySelectorAll('.fpt-fin-chart-toggle[data-purchases-step]');
+            stepToggles.forEach(toggle => {
+                const step = toggle.dataset.purchasesStep;
+                toggle.classList.toggle('active', step === state.purchasesStep);
+                if (!toggle.dataset.fptBound) {
+                    toggle.dataset.fptBound = '1';
+                    toggle.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        stepToggles.forEach(t => t.classList.remove('active'));
+                        toggle.classList.add('active');
+                        state.purchasesStep = toggle.dataset.purchasesStep || 'day';
+                        const currentOrders = state.cachedPurchasesOrders || [];
+                        renderDynamicChart(dynCard, currentOrders, state.purchasesStep, {
+                            isPurchases: true,
+                            color: '#e57373'
+                        });
+                    });
+                }
+            });
+
+            renderDynamicChart(dynCard, orders, state.purchasesStep, {
+                isPurchases: true,
+                color: '#e57373'
+            });
+        }
+
+        // 3. Топ продавцов (Col 4)
+        const sellersCard = purchasesPane.querySelector('.fpt-fin-col-4 .fpt-fin-card');
+        if (sellersCard) {
+            renderPurchasesTopSellersCard(sellersCard, orders, agg);
+        }
+
+        // 4. Детализация покупок (Col 12)
+        const detailsCard = purchasesPane.querySelector('.fpt-fin-col-12 .fpt-fin-card');
+        if (detailsCard) {
+            const detailsHeader = detailsCard.querySelector('.fpt-fin-card-header');
+            if (detailsHeader && !detailsHeader.querySelector('.fpt-fin-chart-toggles')) {
+                const togglesDiv = document.createElement('div');
+                togglesDiv.className = 'fpt-fin-chart-toggles';
+                togglesDiv.setAttribute('role', 'group');
+                togglesDiv.setAttribute('aria-label', 'Вид детализации покупок');
+                togglesDiv.innerHTML = `
+                    <button type="button" class="fpt-fin-chart-toggle ${state.purchasesView === 'orders' ? 'active' : ''}" data-purchases-view="orders">Покупки</button>
+                    <button type="button" class="fpt-fin-chart-toggle ${state.purchasesView === 'sellers' ? 'active' : ''}" data-purchases-view="sellers">Топ продавцов</button>
+                    <button type="button" class="fpt-fin-chart-toggle ${state.purchasesView === 'products' ? 'active' : ''}" data-purchases-view="products">Топ товаров</button>
+                    <button type="button" class="fpt-fin-chart-toggle ${state.purchasesView === 'categories' ? 'active' : ''}" data-purchases-view="categories">Топ категорий</button>
+                `;
+                const badge = detailsHeader.querySelector('.fpt-fin-empty-badge');
+                if (badge) {
+                    badge.id = 'fptFinPurchasesCountBadge';
+                    detailsHeader.insertBefore(togglesDiv, badge);
+                } else {
+                    detailsHeader.appendChild(togglesDiv);
+                }
+            }
+
+            updatePurchasesCountBadge(detailsCard, orders, agg, state.purchasesView);
+
+            const viewToggles = detailsCard.querySelectorAll('.fpt-fin-chart-toggle[data-purchases-view]');
+            viewToggles.forEach(toggle => {
+                const view = toggle.dataset.purchasesView;
+                toggle.classList.toggle('active', view === state.purchasesView);
+                if (!toggle.dataset.fptBound) {
+                    toggle.dataset.fptBound = '1';
+                    toggle.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        viewToggles.forEach(t => t.classList.remove('active'));
+                        toggle.classList.add('active');
+                        state.purchasesView = toggle.dataset.purchasesView || 'orders';
+                        const detailsContent = detailsCard.querySelector('#fptFinPurchasesDetailsContent') || detailsCard.querySelector('.fpt-fin-table-wrap');
+                        if (detailsContent) {
+                            const currentOrders = state.cachedPurchasesOrders || [];
+                            const currentAgg = state.cachedPurchasesAgg || (root.FPTFinanceData ? root.FPTFinanceData.aggregatePurchases(currentOrders) : null);
+                            updatePurchasesCountBadge(detailsCard, currentOrders, currentAgg, state.purchasesView);
+                            renderPurchasesDetailsContent(detailsContent, currentOrders, currentAgg, state.purchasesView);
+                        }
+                    });
+                }
+            });
+
+            const detailsContent = detailsCard.querySelector('#fptFinPurchasesDetailsContent') || detailsCard.querySelector('.fpt-fin-table-wrap');
+            if (detailsContent) {
+                detailsContent.id = 'fptFinPurchasesDetailsContent';
+                renderPurchasesDetailsContent(detailsContent, orders, agg, state.purchasesView);
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // LIFECYCLE & EVENT HANDLERS
+    // ─────────────────────────────────────────────────────────────────────────────
+
     function onSubtabChange(target, prev) {
         state.activeSubtab = target;
 
         if (prev === 'sales' && target !== 'sales') {
             cleanupSales();
         }
+        if (prev === 'purchases' && target !== 'purchases') {
+            cleanupPurchases();
+        }
+
+        updateLastUpdatedText(target);
 
         if (target === 'sales') {
             renderSalesSubtab(false);
+        } else if (target === 'purchases') {
+            renderPurchasesSubtab(false);
         }
     }
 
@@ -1027,13 +1765,19 @@
         state.cachedAgg = null;
         state.cachedPeriod = null;
 
+        state.cachedPurchasesOrders = null;
+        state.cachedPurchasesAgg = null;
+        state.cachedPurchasesPeriod = null;
+
         if (state.activeSubtab === 'sales') {
             renderSalesSubtab(true);
+        } else if (state.activeSubtab === 'purchases') {
+            renderPurchasesSubtab(true);
         }
     }
 
     /**
-     * Фоновое обновление финансовых данных по продажам
+     * Фоновое обновление финансовых данных (продажи или покупки в зависимости от активного таба)
      */
     async function refresh() {
         if (!state.container) return;
@@ -1042,13 +1786,18 @@
 
         if (refreshBtn) refreshBtn.classList.add('fpt-fin-btn-spin');
 
+        const isPurchases = state.activeSubtab === 'purchases';
+        const pCfg = getPurchasesConfig();
+        const actionName = isPurchases ? (pCfg.updateAction || 'updatePurchases') : 'updateSales';
+        const subtabType = isPurchases ? 'purchases' : 'sales';
+        const notificationMsg = isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены';
+
         try {
-            // Запуск фонового обновления только для продаж (updateSales)
             await new Promise(resolve => {
                 const timer = setTimeout(resolve, 8000);
                 try {
                     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
-                        chrome.runtime.sendMessage({ action: 'updateSales' }, () => {
+                        chrome.runtime.sendMessage({ action: actionName }, () => {
                             clearTimeout(timer);
                             resolve();
                         });
@@ -1065,7 +1814,7 @@
             // Перечитываем метаданные через адаптер
             if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
                 try {
-                    const meta = await root.FPTFinanceData.getMeta('sales');
+                    const meta = await root.FPTFinanceData.getMeta(subtabType);
                     if (lastUpdatedEl && meta && meta.lastUpdate) {
                         const d = new Date(meta.lastUpdate);
                         const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -1082,9 +1831,11 @@
                 }
             }
 
-            // Если открыта вкладка продаж — принудительно перерисовываем
+            // Принудительно перерисовываем активную подвкладку
             if (state.activeSubtab === 'sales') {
                 await renderSalesSubtab(true);
+            } else if (state.activeSubtab === 'purchases') {
+                await renderPurchasesSubtab(true);
             }
 
             // Анимация пульсации активных карточек
@@ -1096,7 +1847,7 @@
             });
 
             if (typeof root.showNotification === 'function') {
-                root.showNotification('Данные о продажах обновлены', false);
+                root.showNotification(notificationMsg, false);
             }
         } catch (err) {
             console.warn('[FPTFinanceHub] Refresh error:', err);
@@ -1128,9 +1879,12 @@
             periodSelect.value = state.period;
         }
 
-        // Если активна вкладка "sales", отрисовать её
+        updateLastUpdatedText(state.activeSubtab);
+
         if (state.activeSubtab === 'sales') {
             renderSalesSubtab(false);
+        } else if (state.activeSubtab === 'purchases') {
+            renderPurchasesSubtab(false);
         }
     }
 
@@ -1145,8 +1899,12 @@
             if (savedSubtab) state.activeSubtab = savedSubtab;
         } catch (_) {}
 
+        updateLastUpdatedText(state.activeSubtab);
+
         if (state.activeSubtab === 'sales') {
             renderSalesSubtab(false);
+        } else if (state.activeSubtab === 'purchases') {
+            renderPurchasesSubtab(false);
         }
     }
 
@@ -1156,10 +1914,15 @@
         onOpen,
         onSubtabChange,
         onPeriodChange,
-        onPageLeave: cleanupSales,
+        onPageLeave: () => {
+            cleanupSales();
+            cleanupPurchases();
+        },
         refresh,
         renderSalesSubtab,
+        renderPurchasesSubtab,
         cleanupSales,
+        cleanupPurchases,
         getState: () => Object.assign({}, state)
     };
 

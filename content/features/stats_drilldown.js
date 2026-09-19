@@ -82,7 +82,11 @@
         const dateStr = d ? d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
         const price = o.price != null ? money(o.price, o.currency) : '';
         const link = o.orderId ? `https://funpay.com/orders/${o.orderId}/` : null;
-        const party = esc(o.buyerUsername || '-'); // на покупках это продавец
+        const isPurchases = !!(window.fptStatsCfg && window.fptStatsCfg.updateAction === 'updatePurchases') || (_titleBase && /покуп|продавец/i.test(_titleBase));
+        const party = esc(isPurchases
+            ? (o.sellerUsername || o.sellerName || o.buyerUsername || '-')
+            : (o.buyerUsername || o.sellerUsername || o.sellerName || '-')
+        ); // на покупках это продавец
         const inner = `
             <div class="fpt-dd-row-top">
                 <span class="fpt-dd-row-title">${esc(o.description || o.subcategoryName || 'Заказ')}</span>
@@ -162,6 +166,8 @@
             arr = arr.filter(o =>
                 (o.description || '').toLowerCase().includes(q) ||
                 (o.buyerUsername || '').toLowerCase().includes(q) ||
+                (o.sellerUsername || '').toLowerCase().includes(q) ||
+                (o.sellerName || '').toLowerCase().includes(q) ||
                 (o.subcategoryName || '').toLowerCase().includes(q)
             );
         }
