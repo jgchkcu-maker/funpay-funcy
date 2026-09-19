@@ -1111,21 +1111,21 @@ function createMainPopup() {
                             <div class="fpt-fin-col-3">
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Чистая прибыль</h5>
+                                        <h5 class="fpt-fin-card-title">Реализованная прибыль</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">savings</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinProfitNet"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinProfitNetSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Себестоимость проданного</h5>
+                                        <h5 class="fpt-fin-card-title">Себестоимость продаж</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">money_off</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinProfitCost"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinProfitCostSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1134,8 +1134,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Маржинальность</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">percent</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinProfitMargin"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinProfitMarginSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1144,8 +1144,8 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">ROI инвестиций</h5>
                                         <span class="material-symbols-rounded" style="font-size:18px;color:#a09af8;">trending_up</span>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                    <div class="fpt-fin-card-value" id="fptFinProfitRoi"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
+                                    <div class="fpt-fin-card-sub" id="fptFinProfitRoiSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
                                 </div>
                             </div>
 
@@ -1153,12 +1153,11 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Выручка vs Прибыль</h5>
-                                        <div class="fpt-fin-chart-toggles" role="group" aria-label="Метрика прибыли">
-                                            <button type="button" class="fpt-fin-chart-toggle active" data-metric="rev_prof">Выручка и прибыль</button>
-                                            <button type="button" class="fpt-fin-chart-toggle" data-metric="margin">Маржинальность %</button>
-                                        </div>
+                                        <div class="fpt-fin-currency-chips" id="fptFinProfitCurrencyChips"></div>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    <div class="fpt-fin-profit-chart-wrap" id="fptFinProfitChart">
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-4">
@@ -1166,37 +1165,47 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Покрытие себестоимости</h5>
                                     </div>
-                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    <div class="fpt-fin-coverage-wrap" id="fptFinProfitCoverageCard">
+                                        <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                    </div>
                                 </div>
                             </div>
 
                             <div class="fpt-fin-col-12">
+                                <div class="fpt-fin-filter-group" id="fptFinProfitFilterGroup" role="group" aria-label="Фильтры заказов прибыли">
+                                    <button type="button" class="fpt-fin-filter-chip active" data-filter="all">Все заказы</button>
+                                    <button type="button" class="fpt-fin-filter-chip" data-filter="with-cost">С себестоимостью</button>
+                                    <button type="button" class="fpt-fin-filter-chip" data-filter="without-cost">Без себестоимости</button>
+                                    <button type="button" class="fpt-fin-filter-chip" data-filter="refunded">Возвраты</button>
+                                </div>
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Прибыльность позиций</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">calculate</span> Расчёт чистой прибыли в TASK-07</span>
+                                        <h5 class="fpt-fin-card-title">Заказы и чистая прибыль</h5>
+                                        <span class="fpt-fin-empty-badge" id="fptFinProfitCountBadge"><span class="material-symbols-rounded">receipt_long</span> 0 заказов</span>
                                     </div>
                                     <div class="fpt-fin-table-wrap">
-                                        <table class="fpt-fin-table">
+                                        <table class="fpt-fin-table" id="fptFinProfitTable">
                                             <thead>
                                                 <tr>
-                                                    <th>Товар / Лот</th>
-                                                    <th>Продаж</th>
+                                                    <th>Заказ</th>
+                                                    <th>Дата</th>
                                                     <th>Выручка</th>
                                                     <th>Себестоимость</th>
                                                     <th>Чистая прибыль</th>
-                                                    <th>Маржа %</th>
+                                                    <th>Маржа</th>
+                                                    <th>ROI</th>
+                                                    <th>Статус</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody id="fptFinProfitTableBody">
                                                 <tr>
-                                                    <td colspan="6"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
+                                                    <td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
                                                 </tr>
                                                 <tr>
-                                                    <td colspan="6"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
+                                                    <td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
                                                 </tr>
                                                 <tr>
-                                                    <td colspan="6"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
+                                                    <td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td>
                                                 </tr>
                                             </tbody>
                                         </table>

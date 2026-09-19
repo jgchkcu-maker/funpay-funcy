@@ -69,6 +69,15 @@
         potentialCurrency: 'RUB',
         potentialLastUpdate: null,
 
+        profitRenderToken: 0,
+        isProfitLoading: false,
+        cachedProfitOrders: null,
+        cachedProfitAgg: null,
+        cachedProfitPeriod: null,
+        profitFilter: 'all',
+        profitCurrency: 'RUB',
+        profitLastUpdate: null,
+
         tooltipEl: null
     };
 
@@ -1157,6 +1166,17 @@
         if (!state.container) return;
         const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
         if (!lastUpdatedEl) return;
+
+        if (subtab === 'profit') {
+            if (state.profitLastUpdate) {
+                const d = new Date(state.profitLastUpdate);
+                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            } else {
+                lastUpdatedEl.textContent = 'Обновлено: только что';
+            }
+            return;
+        }
 
         if (subtab === 'potential') {
             if (state.potentialLastUpdate) {
@@ -2277,6 +2297,335 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
+    // ПОДВКЛАДКА: ПРИБЫЛЬ (T07C)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    function filterProfitOrders(orders, filter) {
+        if (!Array.isArray(orders)) return [];
+        if (filter === 'with-cost') {
+            return orders.filter(o => o.profitInfo && o.profitInfo.hasCost);
+        }
+        if (filter === 'without-cost') {
+            return orders.filter(o => o.profitInfo && !o.profitInfo.hasCost && !o.profitInfo.isRefunded);
+        }
+        if (filter === 'refunded') {
+            return orders.filter(o => o.profitInfo && o.profitInfo.isRefunded);
+        }
+        return orders;
+    }
+
+    function renderProfitCards(pane, totals, currency, byCurrency) {
+        if (!pane || !totals) return;
+
+        // 1. Реализованная чистая прибыль
+        const netEl = pane.querySelector('#fptFinProfitNet');
+        if (netEl) {
+            netEl.textContent = formatMoney(totals.realisedNetProfit, currency);
+            netEl.className = 'fpt-fin-card-value' + (totals.realisedNetProfit > 0 ? ' fpt-fin-operation-in' : (totals.realisedNetProfit < 0 ? ' fpt-fin-operation-out' : ''));
+        }
+        const netSubEl = pane.querySelector('#fptFinProfitNetSub');
+        if (netSubEl) {
+            netSubEl.textContent = `Выручка с себестоимостью: ${formatMoney(totals.knownCostRevenue, currency)}`;
+        }
+
+        // 2. Себестоимость продаж
+        const costEl = pane.querySelector('#fptFinProfitCost');
+        if (costEl) {
+            costEl.textContent = formatMoney(totals.realisedCost, currency);
+        }
+        const costSubEl = pane.querySelector('#fptFinProfitCostSub');
+        if (costSubEl) {
+            costSubEl.textContent = `Покрытие: ${totals.revenueCoverage}% по выручке`;
+        }
+
+        // 3. Маржинальность
+        const marginEl = pane.querySelector('#fptFinProfitMargin');
+        if (marginEl) {
+            marginEl.textContent = totals.margin !== null ? `${totals.margin}%` : '—';
+            marginEl.className = 'fpt-fin-card-value' + (totals.margin > 0 ? ' fpt-fin-operation-in' : (totals.margin < 0 ? ' fpt-fin-operation-out' : ''));
+        }
+        const marginSubEl = pane.querySelector('#fptFinProfitMarginSub');
+        if (marginSubEl) {
+            marginSubEl.textContent = 'На базе известных затрат';
+        }
+
+        // 4. ROI инвестиций
+        const roiEl = pane.querySelector('#fptFinProfitRoi');
+        if (roiEl) {
+            roiEl.textContent = totals.roi !== null ? `${totals.roi}%` : '—';
+            roiEl.className = 'fpt-fin-card-value' + (totals.roi > 0 ? ' fpt-fin-operation-in' : (totals.roi < 0 ? ' fpt-fin-operation-out' : ''));
+        }
+        const roiSubEl = pane.querySelector('#fptFinProfitRoiSub');
+        if (roiSubEl) {
+            roiSubEl.textContent = 'Окупаемость вложений';
+        }
+
+        // Переключатель валют (если в данных несколько валют)
+        const chipsContainer = pane.querySelector('#fptFinProfitCurrencyChips');
+        if (chipsContainer && byCurrency) {
+            const curKeys = Object.keys(byCurrency);
+            if (curKeys.length > 1) {
+                chipsContainer.innerHTML = curKeys.map(c => {
+                    const cAgg = byCurrency[c];
+                    const activeCls = c === currency ? ' active' : '';
+                    return `<button type="button" class="fpt-fin-currency-chip${activeCls}" data-cur="${esc(c)}">${esc(c)}: ${esc(formatMoney(cAgg.realisedNetProfit, c))}</button>`;
+                }).join('');
+                chipsContainer.querySelectorAll('.fpt-fin-currency-chip').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        state.profitCurrency = btn.dataset.cur;
+                        renderProfitCards(pane, byCurrency[state.profitCurrency] || totals, state.profitCurrency, byCurrency);
+                        renderProfitCoverage(pane, byCurrency[state.profitCurrency] || totals, state.profitCurrency);
+                        renderProfitTable(pane);
+                    });
+                });
+            } else {
+                chipsContainer.innerHTML = '';
+            }
+        }
+    }
+
+    function renderProfitCoverage(pane, totals, currency) {
+        if (!pane) return;
+        const card = pane.querySelector('#fptFinProfitCoverageCard');
+        if (!card) return;
+
+        card.innerHTML = `
+            <div class="fpt-fin-coverage-wrap">
+                <div class="fpt-fin-coverage-row">
+                    <div class="fpt-fin-coverage-label-wrap">
+                        <span class="fpt-fin-coverage-label">По заказам</span>
+                        <span class="fpt-fin-coverage-val">${totals.orderCoverage}% (${totals.knownCostOrdersCount} из ${totals.eligibleOrdersCount})</span>
+                    </div>
+                    <div class="fpt-fin-coverage-bar">
+                        <div class="fpt-fin-coverage-bar-fill" style="width: ${Math.min(100, Math.max(0, totals.orderCoverage))}%;"></div>
+                    </div>
+                </div>
+                <div class="fpt-fin-coverage-row">
+                    <div class="fpt-fin-coverage-label-wrap">
+                        <span class="fpt-fin-coverage-label">По выручке</span>
+                        <span class="fpt-fin-coverage-val">${totals.revenueCoverage}% (${formatMoney(totals.knownCostRevenue, currency)} из ${formatMoney(totals.eligibleRevenue, currency)})</span>
+                    </div>
+                    <div class="fpt-fin-coverage-bar">
+                        <div class="fpt-fin-coverage-bar-fill" style="width: ${Math.min(100, Math.max(0, totals.revenueCoverage))}%;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderProfitChart(pane, totals, orders, currency) {
+        if (!pane) return;
+        const chartEl = pane.querySelector('#fptFinProfitChart');
+        if (!chartEl) return;
+
+        chartEl.innerHTML = `
+            <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                    <span style="color:var(--fptm-muted, #9099b8);">Выручка закрытых заказов</span>
+                    <span style="font-weight: 600; color: #fff;">${formatMoney(totals.eligibleRevenue, currency)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                    <span style="color:var(--fptm-muted, #9099b8);">Выручка с известной себестоимостью</span>
+                    <span style="font-weight: 600; color: var(--fptm-accent, #1b75bb);">${formatMoney(totals.knownCostRevenue, currency)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
+                    <span style="color:var(--fptm-muted, #9099b8);">Себестоимость проданного</span>
+                    <span style="font-weight: 600; color: #e57373;">${formatMoney(totals.realisedCost, currency)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
+                    <span style="font-weight: 600; color: #fff;">Реализованная чистая прибыль</span>
+                    <span style="font-weight: 700; color: ${totals.realisedNetProfit > 0 ? '#4caf82' : (totals.realisedNetProfit < 0 ? '#e57373' : '#fff')};">${totals.realisedNetProfit > 0 ? '+' : ''}${formatMoney(totals.realisedNetProfit, currency)}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderProfitTable(pane) {
+        if (!pane) return;
+        const tbody = pane.querySelector('#fptFinProfitTableBody');
+        const badge = pane.querySelector('#fptFinProfitCountBadge');
+        if (!tbody) return;
+
+        const allOrders = state.cachedProfitOrders || [];
+        const filtered = filterProfitOrders(allOrders, state.profitFilter || 'all');
+
+        if (badge) {
+            badge.innerHTML = `<span class="material-symbols-rounded">receipt_long</span> ${filtered.length} заказов`;
+        }
+
+        if (!filtered.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="fpt-fin-empty-state" style="text-align:center;padding:24px;">Нет заказов по выбранному фильтру</td></tr>';
+            return;
+        }
+
+        const rows = filtered.map(o => {
+            const info = o.profitInfo || {};
+            const orderId = esc(o.orderId || '—');
+            const dateStr = esc(formatDate(o.orderDate || o.date));
+            const cur = info.currency || 'RUB';
+
+            const revenueCell = esc(formatMoney(info.sellerRevenue, cur));
+
+            let costCell = '<span class="fpt-fin-badge-unknown">Без себестоимости</span>';
+            if (info.hasCost) {
+                costCell = esc(formatMoney(info.costBasis, info.costBasisCurrency || cur));
+            } else if (info.hasCurrencyMismatch) {
+                costCell = '<span class="fpt-fin-badge-unknown" title="Несовпадение валют">Валюта не совпадает</span>';
+            }
+
+            let profitCell = '<span class="fpt-fin-muted">—</span>';
+            if (info.netProfit !== null) {
+                const isPos = info.netProfit > 0;
+                const isNeg = info.netProfit < 0;
+                const cls = isPos ? 'fpt-fin-badge-profit-pos' : (isNeg ? 'fpt-fin-badge-profit-neg' : '');
+                profitCell = `<span class="${cls}">${isPos ? '+' : ''}${esc(formatMoney(info.netProfit, cur))}</span>`;
+            }
+
+            let marginCell = '<span class="fpt-fin-muted">—</span>';
+            if (info.margin !== null) {
+                const isPos = info.margin > 0;
+                const isNeg = info.margin < 0;
+                const cls = isPos ? 'fpt-fin-badge-profit-pos' : (isNeg ? 'fpt-fin-badge-profit-neg' : '');
+                marginCell = `<span class="${cls}">${esc(info.margin)}%</span>`;
+            }
+
+            let roiCell = '<span class="fpt-fin-muted">—</span>';
+            if (info.roi !== null) {
+                const isPos = info.roi > 0;
+                const isNeg = info.roi < 0;
+                const cls = isPos ? 'fpt-fin-badge-profit-pos' : (isNeg ? 'fpt-fin-badge-profit-neg' : '');
+                roiCell = `<span class="${cls}">${esc(info.roi)}%</span>`;
+            }
+
+            let statusCell = esc(o.status || '—');
+            if (info.isRefunded) {
+                statusCell = '<span class="fpt-fin-badge-refunded">Возврат</span>';
+            } else if (info.isClosed) {
+                statusCell = '<span style="color:#4caf82;font-size:11px;">Закрыт</span>';
+            }
+
+            return `
+                <tr>
+                    <td><strong>${orderId}</strong></td>
+                    <td style="font-size:11.5px;color:var(--fptm-muted,#9099b8);">${dateStr}</td>
+                    <td>${revenueCell}</td>
+                    <td>${costCell}</td>
+                    <td>${profitCell}</td>
+                    <td>${marginCell}</td>
+                    <td>${roiCell}</td>
+                    <td>${statusCell}</td>
+                </tr>
+            `;
+        }).join('');
+
+        tbody.innerHTML = rows;
+    }
+
+    function bindProfitFilters(pane) {
+        if (!pane) return;
+        const group = pane.querySelector('#fptFinProfitFilterGroup');
+        if (!group) return;
+
+        const chips = group.querySelectorAll('.fpt-fin-filter-chip');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                chips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                state.profitFilter = chip.dataset.filter || 'all';
+                renderProfitTable(pane);
+            });
+        });
+    }
+
+    function renderProfitSubtabLoading(pane) {
+        if (!pane) return;
+        ['#fptFinProfitNet', '#fptFinProfitCost', '#fptFinProfitMargin', '#fptFinProfitRoi'].forEach(sel => {
+            const el = pane.querySelector(sel);
+            if (el) el.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>';
+        });
+        const tbody = pane.querySelector('#fptFinProfitTableBody');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td></tr><tr><td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td></tr>';
+        }
+    }
+
+    async function renderProfitSubtab(forceReload) {
+        const pane = state.container && state.container.querySelector('.fpt-fin-tab-pane[data-subtab="profit"]');
+        if (!pane) return;
+
+        const currentToken = ++state.profitRenderToken;
+
+        if (forceReload || state.cachedProfitPeriod !== state.period || !state.cachedProfitOrders) {
+            state.isProfitLoading = true;
+            renderProfitSubtabLoading(pane);
+
+            try {
+                const profitEngine = (typeof window !== 'undefined' && window.FPTProfitEngine) || root.FPTProfitEngine;
+                if (!profitEngine || typeof profitEngine.getRealisedProfit !== 'function') {
+                    throw new Error('FPTProfitEngine is not available');
+                }
+
+                const result = await profitEngine.getRealisedProfit({ period: state.period });
+
+                if (currentToken !== state.profitRenderToken) return;
+
+                state.cachedProfitOrders = Array.isArray(result.orders) ? result.orders : [];
+                state.cachedProfitAgg = result.byCurrency || {};
+                state.cachedProfitPeriod = state.period;
+                state.profitLastUpdate = Date.now();
+                updateLastUpdatedText('profit');
+            } catch (err) {
+                console.error('[FPTFinanceHub] Error loading realised profit:', err);
+                if (currentToken !== state.profitRenderToken) return;
+                const tbody = pane.querySelector('#fptFinProfitTableBody');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="fpt-fin-empty-state" style="text-align:center;padding:24px;">Не удалось загрузить данные о прибыли</td></tr>';
+                }
+                state.isProfitLoading = false;
+                return;
+            }
+            state.isProfitLoading = false;
+        }
+
+        if (currentToken !== state.profitRenderToken) return;
+
+        const agg = state.cachedProfitAgg || {};
+        const availableCurrencies = Object.keys(agg);
+        const primaryCurrency = (agg[state.profitCurrency])
+            ? state.profitCurrency
+            : (availableCurrencies[0] || 'RUB');
+
+        const totals = agg[primaryCurrency] || {
+            currency: primaryCurrency,
+            eligibleOrdersCount: 0,
+            eligibleRevenue: 0,
+            knownCostOrdersCount: 0,
+            missingCostOrdersCount: 0,
+            knownCostRevenue: 0,
+            realisedCost: 0,
+            realisedNetProfit: 0,
+            margin: null,
+            roi: null,
+            orderCoverage: 0,
+            revenueCoverage: 0,
+            refundedOrdersCount: 0,
+            refundedRevenue: 0,
+            currencyMismatchCount: 0
+        };
+
+        renderProfitCards(pane, totals, primaryCurrency, agg);
+        renderProfitCoverage(pane, totals, primaryCurrency);
+        renderProfitChart(pane, totals, state.cachedProfitOrders || [], primaryCurrency);
+        renderProfitTable(pane);
+        bindProfitFilters(pane);
+    }
+
+    function cleanupProfit() {
+        hideTooltip();
+        state.profitRenderToken++;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
     // LIFECYCLE & EVENT HANDLERS
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2295,6 +2644,9 @@
         if (prev === 'potential' && target !== 'potential') {
             cleanupPotential();
         }
+        if (prev === 'profit' && target !== 'profit') {
+            cleanupProfit();
+        }
 
         updateLastUpdatedText(target);
 
@@ -2306,6 +2658,8 @@
             renderOperationsSubtab(false);
         } else if (target === 'potential') {
             renderPotentialSubtab(false);
+        } else if (target === 'profit') {
+            renderProfitSubtab(false);
         }
     }
 
@@ -2321,6 +2675,9 @@
         state.cachedOperations = null;
         state.cachedOperationsAgg = null;
         state.cachedOperationsPeriod = null;
+        state.cachedProfitOrders = null;
+        state.cachedProfitAgg = null;
+        state.cachedProfitPeriod = null;
 
         if (state.activeSubtab === 'sales') {
             renderSalesSubtab(true);
@@ -2330,6 +2687,8 @@
             renderOperationsSubtab(true);
         } else if (state.activeSubtab === 'potential') {
             renderPotentialSubtab(true);
+        } else if (state.activeSubtab === 'profit') {
+            renderProfitSubtab(true);
         }
     }
 
@@ -2346,13 +2705,14 @@
         const isPurchases = state.activeSubtab === 'purchases';
         const isOperations = state.activeSubtab === 'operations';
         const isPotential = state.activeSubtab === 'potential';
+        const isProfit = state.activeSubtab === 'profit';
         const pCfg = getPurchasesConfig();
         const actionName = isOperations ? 'updateFinance' : (isPurchases ? (pCfg.updateAction || 'updatePurchases') : 'updateSales');
         const subtabType = isOperations ? 'operations' : (isPurchases ? 'purchases' : 'sales');
-        const notificationMsg = isPotential ? 'Данные о потенциале обновлены' : (isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены'));
+        const notificationMsg = isPotential ? 'Данные о потенциале обновлены' : (isProfit ? 'Данные о прибыли обновлены' : (isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены')));
 
         try {
-            if (!isPotential) {
+            if (!isPotential && !isProfit) {
                 await new Promise(resolve => {
                     const timer = setTimeout(resolve, 8000);
                     try {
@@ -2401,6 +2761,8 @@
                 await renderOperationsSubtab(true);
             } else if (state.activeSubtab === 'potential') {
                 await renderPotentialSubtab(true);
+            } else if (state.activeSubtab === 'profit') {
+                await renderProfitSubtab(true);
             }
 
             // Анимация пульсации активных карточек
@@ -2454,6 +2816,8 @@
             renderOperationsSubtab(false);
         } else if (state.activeSubtab === 'potential') {
             renderPotentialSubtab(false);
+        } else if (state.activeSubtab === 'profit') {
+            renderProfitSubtab(false);
         }
     }
 
@@ -2478,6 +2842,8 @@
             renderOperationsSubtab(false);
         } else if (state.activeSubtab === 'potential') {
             renderPotentialSubtab(false);
+        } else if (state.activeSubtab === 'profit') {
+            renderProfitSubtab(false);
         }
     }
 
@@ -2492,16 +2858,19 @@
             cleanupPurchases();
             cleanupOperations();
             cleanupPotential();
+            cleanupProfit();
         },
         refresh,
         renderSalesSubtab,
         renderPurchasesSubtab,
         renderOperationsSubtab,
         renderPotentialSubtab,
+        renderProfitSubtab,
         cleanupSales,
         cleanupPurchases,
         cleanupOperations,
         cleanupPotential,
+        cleanupProfit,
         getState: () => Object.assign({}, state)
     };
 
