@@ -1596,8 +1596,346 @@
         }
     }
 
+    // ── РЕНДЕРИНГ ВКЛАДКИ «ОБЗОР» ───────────────────────────────────────────
+
     async function renderOverview() {
-        // Будет реализовано в commit 5
+        const pane = getPane('overview');
+        if (!pane) return;
+
+        state.loading.overview = true;
+
+        const dataLayer = root.FPTFinanceData;
+        if (!dataLayer) {
+            pane.innerHTML = `<div class="fpt-fin-empty-state"><p class="fpt-fin-empty-desc">Служба данных не загружена</p></div>`;
+            state.loading.overview = false;
+            return;
+        }
+
+        const period = state.period || '7d';
+
+        // Запрашиваем данные параллельно
+        const [salesRes, purchasesRes, opsRes] = await Promise.all([
+            dataLayer.getSales({ period, statusFilter: { stClosed: true, stPaid: true, stRefunded: true } }),
+            dataLayer.getPurchases({ period, statusFilter: { stClosed: true, stPaid: true, stRefunded: false } }),
+            dataLayer.getOperations({ period, typeFilter: 'all' })
+        ]);
+
+        const salesAgg = dataLayer.aggregateSales(salesRes.orders);
+        const purchasesAgg = dataLayer.aggregatePurchases(purchasesRes.orders);
+        const opsAgg = dataLayer.aggregateOperations(opsRes.txns);
+
+        state.loading.overview = false;
+
+        const totalAny = salesRes.totalCount + purchasesRes.totalCount + opsRes.totalCount;
+        if (totalAny === 0) {
+            pane.innerHTML = `
+                <div class="fpt-fin-empty-state">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon">dashboard</span>
+                    <h4 class="fpt-fin-empty-title">Финансовые данные ещё не загружены</h4>
+                    <p class="fpt-fin-empty-desc">Запустите синхронизацию данных с FunPay, чтобы построить общую аналитику продаж, покупок и баланса.</p>
+                    <button type="button" class="btn btn-primary fpt-fin-btn" id="fptFinOverviewInitialSyncBtn">
+                        <span class="material-symbols-rounded">sync</span>
+                        <span>Синхронизировать всё</span>
+                    </button>
+                </div>
+            `;
+            const syncBtn = pane.querySelector('#fptFinOverviewInitialSyncBtn');
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => refresh());
+            }
+            return;
+        }
+
+        const chartMetric = state.overview.chartMetric || 'revenue'; // 'revenue' | 'count' | 'spent'
+        let chartDays = [];
+        let chartDataMap = {};
+        let isMoney = true;
+
+        if (chartMetric === 'revenue') {
+            chartDays = Object.keys(salesAgg.byDay).sort();
+            chartDataMap = salesAgg.byDay;
+            isMoney = true;
+        } else if (chartMetric === 'count') {
+            chartDays = Object.keys(salesAgg.byDay).sort();
+            chartDataMap = salesAgg.byDay;
+            isMoney = false;
+        } else {
+            chartDays = Object.keys(purchasesAgg.byDay).sort();
+            chartDataMap = purchasesAgg.byDay;
+            isMoney = true;
+        }
+
+        // Структура по категориям продаж
+        const catEntries = Object.entries(salesAgg.byCategory)
+            .map(([k, v]) => ({ label: k, value: v.count }))
+            .sort((a, b) => b.value - a.value);
+
+        // Топ товаров
+        const topProducts = Object.entries(salesAgg.byProduct)
+            .map(([desc, d]) => ({ desc, count: d.count, revenue: d.revenue }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 6);
+
+        // Топ категорий
+        const topCategories = Object.entries(salesAgg.byCategory)
+            .map(([cat, d]) => ({ cat, count: d.count, revenue: d.revenue }))
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 6);
+
+        // Свежие события (объединяем заказы и операции, сортируем по дате)
+        const recentEvents = [];
+        salesRes.orders.slice(0, 8).forEach(o => {
+            recentEvents.push({
+                type: 'sale',
+                id: o.orderId,
+                date: o.orderDate,
+                desc: o.description,
+                price: o.price,
+                cur: o.currency,
+                party: o.buyerUsername,
+                status: o.orderStatus
+            });
+        });
+        purchasesRes.orders.slice(0, 6).forEach(o => {
+            recentEvents.push({
+                type: 'purchase',
+                id: o.orderId,
+                date: o.orderDate,
+                desc: o.description,
+                price: o.price,
+                cur: o.currency,
+                party: o.sellerUsername || o.buyerUsername,
+                status: o.orderStatus
+            });
+        });
+        recentEvents.sort((a, b) => (b.date || 0) - (a.date || 0));
+        const displayEvents = recentEvents.slice(0, 8);
+
+        const netClass = opsAgg.totalNetRUB >= 0 ? '#4caf82' : '#e57373';
+        const netPrefix = opsAgg.totalNetRUB >= 0 ? '+' : '';
+
+        pane.innerHTML = `
+            <div class="fpt-fin-grid">
+                <!-- Главные KPI: 4 колонки -->
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card fpt-fin-clickable-card" data-ov-nav="sales" title="Перейти к продажам">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Выручка от продаж</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">payments</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${fmtRevenueMulti(salesAgg.totalRevenue)}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Закрыто: ${salesAgg.totalClosed} зак.</span>
+                            ${salesAgg.totalPending > 0 ? `<span>· В ожидании: ${salesAgg.totalPending}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card fpt-fin-clickable-card" data-ov-nav="sales" title="Перейти к продажам">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Оплачено заказов</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:var(--fptm-accent, #1b75bb);">check_circle</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${salesAgg.totalOrders}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Средний чек: ${fmtRevenueMulti(salesAgg.averageCheck)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card fpt-fin-clickable-card" data-ov-nav="purchases" title="Перейти к покупкам">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Расходы на покупки</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">shopping_bag</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${fmtRevenueMulti(purchasesAgg.totalSpent)}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Куплено: ${purchasesAgg.totalOrders} товаров</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card fpt-fin-clickable-card" data-ov-nav="operations" title="Перейти к операциям">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Чистый поток (нетто)</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:var(--fptm-accent, #1b75bb);">account_balance</span>
+                        </div>
+                        <div class="fpt-fin-card-value" style="color:${netClass}!important;">${netPrefix}${fmtMoney(opsAgg.totalNetRUB, 'RUB')}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Изменение баланса за период</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- График динамики и Структура -->
+                <div class="fpt-fin-col-8">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Динамика активности</h5>
+                            <div class="fpt-fin-chart-toggles" role="group">
+                                <button type="button" class="fpt-fin-chart-toggle ${chartMetric === 'revenue' ? 'active' : ''}" data-ov-metric="revenue">Выручка</button>
+                                <button type="button" class="fpt-fin-chart-toggle ${chartMetric === 'count' ? 'active' : ''}" data-ov-metric="count">Заказы</button>
+                                <button type="button" class="fpt-fin-chart-toggle ${chartMetric === 'spent' ? 'active' : ''}" data-ov-metric="spent">Покупки</button>
+                            </div>
+                        </div>
+                        <div class="fpt-fin-chart-wrap" style="height:220px;position:relative;">
+                            ${renderLineChartSVG(chartDays, chartDataMap, chartMetric === 'spent' ? 'spent' : chartMetric, isMoney)}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpt-fin-col-4">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Структура продаж</h5>
+                        </div>
+                        ${renderDonutSVG('Категории товаров', catEntries)}
+                    </div>
+                </div>
+
+                <!-- Топ товаров и Топ категорий -->
+                <div class="fpt-fin-col-6">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Популярные товары</h5>
+                            <span class="fpt-fin-card-sub">${topProducts.length} позиций</span>
+                        </div>
+                        <div class="fpt-fin-table-wrap">
+                            <table class="fpt-fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Товар</th>
+                                        <th style="text-align:right;">Продано</th>
+                                        <th style="text-align:right;">Сумма</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topProducts.length ? topProducts.map((p, i) => `
+                                        <tr>
+                                            <td style="width:28px;color:var(--fptm-muted,#888);">${i + 1}</td>
+                                            <td class="fpt-fin-desc-cell" title="${esc(p.desc)}">${esc(p.desc)}</td>
+                                            <td style="text-align:right;font-weight:600;">${p.count} раз</td>
+                                            <td style="text-align:right;font-weight:700;">${fmtMoney(p.revenue, 'RUB')}</td>
+                                        </tr>
+                                    `).join('') : `<tr><td colspan="4" style="text-align:center;padding:16px;">Нет данных</td></tr>`}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpt-fin-col-6">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Топ категорий</h5>
+                            <span class="fpt-fin-card-sub">${topCategories.length} категорий</span>
+                        </div>
+                        <div class="fpt-fin-table-wrap">
+                            <table class="fpt-fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Категория</th>
+                                        <th style="text-align:right;">Заказов</th>
+                                        <th style="text-align:right;">Выручка</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topCategories.length ? topCategories.map((c, i) => `
+                                        <tr>
+                                            <td style="width:28px;color:var(--fptm-muted,#888);">${i + 1}</td>
+                                            <td style="font-weight:500;">${esc(c.cat)}</td>
+                                            <td style="text-align:right;font-weight:600;">${c.count} зак.</td>
+                                            <td style="text-align:right;font-weight:700;">${fmtMoney(c.revenue, 'RUB')}</td>
+                                        </tr>
+                                    `).join('') : `<tr><td colspan="4" style="text-align:center;padding:16px;">Нет данных</td></tr>`}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Последние события -->
+                <div class="fpt-fin-col-12">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Последние события</h5>
+                            <span class="fpt-fin-card-sub">${displayEvents.length} последних записей</span>
+                        </div>
+                        <div class="fpt-fin-table-wrap">
+                            <table class="fpt-fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Тип</th>
+                                        <th>Заказ / Событие</th>
+                                        <th>Партнёр</th>
+                                        <th>Дата</th>
+                                        <th style="text-align:right;">Сумма</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${displayEvents.length ? displayEvents.map(ev => {
+                                        const d = ev.date ? new Date(ev.date) : null;
+                                        const dateStr = d ? `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '—';
+                                        const isSale = ev.type === 'sale';
+                                        const typeBadge = isSale
+                                            ? `<span class="fpt-fin-badge-pill fpt-fin-badge-closed">Продажа</span>`
+                                            : `<span class="fpt-fin-badge-pill fpt-fin-badge-paid">Покупка</span>`;
+                                        const amtColor = isSale ? '#4caf82' : '#e57373';
+                                        const amtPrefix = isSale ? '+' : '−';
+
+                                        return `
+                                            <tr>
+                                                <td>${typeBadge}</td>
+                                                <td>
+                                                    <a href="https://funpay.com/orders/${esc(ev.id)}/" target="_blank" class="fpt-fin-order-link" style="font-family:monospace;font-weight:600;">
+                                                        #${esc(ev.id)}
+                                                    </a>
+                                                    <span style="margin-left:6px;color:var(--fptm-text,#fff);">${esc(ev.desc || '')}</span>
+                                                </td>
+                                                <td>${esc(ev.party || '—')}</td>
+                                                <td style="color:var(--fptm-muted,#888);font-size:11px;">${dateStr}</td>
+                                                <td style="text-align:right;font-weight:700;color:${amtColor};font-variant-numeric:tabular-nums;">
+                                                    ${amtPrefix}${fmtMoney(ev.price, ev.cur)}
+                                                </td>
+                                                <td>
+                                                    <span class="fpt-fin-badge-pill ${ev.status === 'closed' ? 'fpt-fin-badge-closed' : ev.status === 'paid' ? 'fpt-fin-badge-paid' : 'fpt-fin-badge-refunded'}">
+                                                        ${ev.status === 'closed' ? 'Закрыт' : ev.status === 'paid' ? 'Оплачен' : 'Возврат'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('') : `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--fptm-muted,#888);">События отсутствуют</td></tr>`}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        wireOverviewEvents(pane);
+    }
+
+    function wireOverviewEvents(pane) {
+        pane.querySelectorAll('[data-ov-nav]').forEach(card => {
+            card.addEventListener('click', () => {
+                const target = card.getAttribute('data-ov-nav');
+                openTab(target);
+            });
+        });
+
+        pane.querySelectorAll('.fpt-fin-chart-toggle[data-ov-metric]').forEach(t => {
+            t.addEventListener('click', () => {
+                state.overview.chartMetric = t.getAttribute('data-ov-metric');
+                renderOverview();
+            });
+        });
     }
 
     // ── ОБЩИЙ КОНТРОЛЛЕР ХАБА ────────────────────────────────────────────────
