@@ -112,6 +112,7 @@ function createMainPopup() {
                     <li data-page="ai_audit"><a><span class="nav-icon material-symbols-rounded">search_insights</span><span>ИИ-аудит</span></a></li>
                     <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>
                     <li class="fp-nav-divider">Финансы</li>
+                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Финансы</span></a></li>
                     <li data-page="piggy_banks"><a><span class="nav-icon material-symbols-rounded">savings</span><span>Копилки</span></a></li>
                     <li data-page="calculator"><a><span class="nav-icon material-symbols-rounded">calculate</span><span>Калькулятор</span></a></li>
                     <li data-page="currency_calc"><a><span class="nav-icon material-symbols-rounded">currency_exchange</span><span>Валюты</span></a></li>
@@ -686,6 +687,255 @@ function createMainPopup() {
                     <h4 style="margin-top: 30px;">Незавершённые импорты</h4>
                     <div id="lot-io-pending-imports-list">
                         <p class="template-info">Здесь будут отображаться отложенные процессы импорта.</p>
+                    </div>
+                </div>
+                <div class="fp-tools-page-content" data-page="finance_hub">
+                    <div class="fpt-fin-header">
+                        <div class="fpt-fin-header-left">
+                            <div class="fpt-fin-title-row">
+                                <h3 class="fpt-fin-title">Финансы</h3>
+                                <span class="fpt-fin-badge">Hub</span>
+                            </div>
+                            <div class="fpt-fin-last-updated" id="fptFinLastUpdated">
+                                <span class="material-symbols-rounded">schedule</span>
+                                <span id="fptFinLastUpdatedText">Обновлено: только что</span>
+                            </div>
+                        </div>
+                        <div class="fpt-fin-header-right">
+                            <div class="fpt-fin-period-wrap">
+                                <select id="fptFinPeriodSelect" class="fpt-fin-period-select" aria-label="Период статистики">
+                                    <option value="today">Сегодня</option>
+                                    <option value="yesterday">Вчера</option>
+                                    <option value="24h">24 часа</option>
+                                    <option value="7d" selected>7 дней</option>
+                                    <option value="30d">30 дней</option>
+                                    <option value="365d">Год</option>
+                                    <option value="all">Всё время</option>
+                                </select>
+                            </div>
+                            <button type="button" id="fptFinRefreshBtn" class="btn btn-default fpt-fin-btn" title="Обновить финансовые данные" aria-label="Обновить">
+                                <span class="material-symbols-rounded">refresh</span>
+                                <span>Обновить</span>
+                            </button>
+                            <button type="button" id="fptFinExportBtn" class="btn btn-default fpt-fin-btn" disabled title="Экспорт станет доступен в следующем обновлении" aria-label="Экспорт (недоступно)">
+                                <span class="material-symbols-rounded">download</span>
+                                <span>Экспорт</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="fpt-fin-subtabs-wrap">
+                        <div class="fpt-fin-subtabs" id="fptFinSubtabs" role="tablist">
+                            <button type="button" class="fpt-fin-subtab active" data-subtab="overview" role="tab" aria-selected="true">
+                                <span class="material-symbols-rounded">dashboard</span>
+                                <span>Обзор</span>
+                            </button>
+                            <button type="button" class="fpt-fin-subtab" data-subtab="sales" role="tab" aria-selected="false">
+                                <span class="material-symbols-rounded">trending_up</span>
+                                <span>Продажи</span>
+                            </button>
+                            <button type="button" class="fpt-fin-subtab" data-subtab="purchases" role="tab" aria-selected="false">
+                                <span class="material-symbols-rounded">shopping_bag</span>
+                                <span>Покупки</span>
+                            </button>
+                            <button type="button" class="fpt-fin-subtab" data-subtab="profit" role="tab" aria-selected="false">
+                                <span class="material-symbols-rounded">attach_money</span>
+                                <span>Прибыль</span>
+                            </button>
+                            <button type="button" class="fpt-fin-subtab" data-subtab="potential" role="tab" aria-selected="false">
+                                <span class="material-symbols-rounded">query_stats</span>
+                                <span>Потенциал</span>
+                            </button>
+                            <button type="button" class="fpt-fin-subtab" data-subtab="operations" role="tab" aria-selected="false">
+                                <span class="material-symbols-rounded">receipt_long</span>
+                                <span>Операции</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Обзор -->
+                    <div class="fpt-fin-tab-pane active" data-subtab="overview">
+                        <div class="fpt-fin-grid">
+                            <!-- Row 1: KPI (4x col-3) -->
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Выручка</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">payments</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Чистая прибыль</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">account_balance_wallet</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Заказы</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:#f4c84a;">shopping_cart</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Средний чек</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:#a09af8;">receipt</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: Потенциал (4x col-3) -->
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Потенциал выручки</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">trending_up</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Потенциал прибыли</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">insights</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Стоимость склада</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">inventory</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-3">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Активные лоты</h5>
+                                        <span class="material-symbols-rounded" style="font-size:18px;color:#4a9fd4;">inventory_2</span>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Графики (col-8 + col-4) -->
+                            <div class="fpt-fin-col-8">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Динамика выручки и прибыли</h5>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-4">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Структура по категориям</h5>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-chart"></div>
+                                </div>
+                            </div>
+
+                            <!-- Row 4: Топы (col-6 + col-6) -->
+                            <div class="fpt-fin-col-6">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Топ товаров</h5>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                </div>
+                            </div>
+                            <div class="fpt-fin-col-6">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Топ категорий</h5>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:28px;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Операции (col-12) -->
+                            <div class="fpt-fin-col-12">
+                                <div class="fpt-fin-card">
+                                    <div class="fpt-fin-card-header">
+                                        <h5 class="fpt-fin-card-title">Последние события</h5>
+                                    </div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>
+                                    <div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Продажи -->
+                    <div class="fpt-fin-tab-pane" data-subtab="sales">
+                        <div class="fpt-fin-empty-state">
+                            <span class="material-symbols-rounded fpt-fin-empty-icon">trending_up</span>
+                            <h4 class="fpt-fin-empty-title">Аналитика продаж</h4>
+                            <p class="fpt-fin-empty-desc">Раздел подготавливается к интеграции отчётов. Здесь будут отображаться графики продаж, динамика по периодам и детализация заказов.</p>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Покупки -->
+                    <div class="fpt-fin-tab-pane" data-subtab="purchases">
+                        <div class="fpt-fin-empty-state">
+                            <span class="material-symbols-rounded fpt-fin-empty-icon">shopping_bag</span>
+                            <h4 class="fpt-fin-empty-title">Аналитика покупок</h4>
+                            <p class="fpt-fin-empty-desc">Раздел подготавливается к интеграции отчётов. Здесь будут отображаться ваши покупки на FunPay, статистика расходов и топы продавцов.</p>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Прибыль -->
+                    <div class="fpt-fin-tab-pane" data-subtab="profit">
+                        <div class="fpt-fin-empty-state">
+                            <span class="material-symbols-rounded fpt-fin-empty-icon">attach_money</span>
+                            <h4 class="fpt-fin-empty-title">Чистая прибыль</h4>
+                            <p class="fpt-fin-empty-desc">Модель расчёта чистой прибыли с учётом себестоимости и комиссии площадки будет подключена на следующих этапах пакета задач.</p>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Потенциал -->
+                    <div class="fpt-fin-tab-pane" data-subtab="potential">
+                        <div class="fpt-fin-empty-state">
+                            <span class="material-symbols-rounded fpt-fin-empty-icon">query_stats</span>
+                            <h4 class="fpt-fin-empty-title">Потенциал склада и лотов</h4>
+                            <p class="fpt-fin-empty-desc">Расчёт потенциальной выручки активных лотов, стоимости текущего склада и маржинальности будет подключен в TASK-06.</p>
+                        </div>
+                    </div>
+
+                    <!-- Subtab: Операции -->
+                    <div class="fpt-fin-tab-pane" data-subtab="operations">
+                        <div class="fpt-fin-empty-state">
+                            <span class="material-symbols-rounded fpt-fin-empty-icon">receipt_long</span>
+                            <h4 class="fpt-fin-empty-title">Финансовые операции</h4>
+                            <p class="fpt-fin-empty-desc">Раздел подготавливается к интеграции истории баланса. Здесь будут отображаться приход, расход, нетто и помесячная динамика.</p>
+                        </div>
                     </div>
                 </div>
                 <div class="fp-tools-page-content" data-page="piggy_banks">
@@ -1886,6 +2136,7 @@ function setupPopupNavigation() {
                 page.classList.toggle('active', page.dataset.page === pageId);
             });
             if (pageId === 'epic_nicks') { if (typeof renderEpicPreviews === 'function') renderEpicPreviews(); }
+            if (pageId === 'finance_hub') { if (typeof initializeFinanceHub === 'function') initializeFinanceHub(); }
             if (pageId === 'currency_calc') initializeCurrencyCalculator();
             if (pageId === 'notes') { if (typeof initializeNotes === 'function') initializeNotes(); }
             if (pageId === 'global_chat') { if (typeof initializeGlobalChat === 'function') initializeGlobalChat(); }
@@ -1923,6 +2174,7 @@ function setupPopupNavigation() {
     compactNav(toolsPopup);
     setupNavSearch(toolsPopup);
     setupAccentPicker(toolsPopup);
+    setupFinanceHubUI(toolsPopup);
     attachAutoReplyImageButtons(toolsPopup);
 
     // Общий чат: подтянуть удалённый конфиг и сразу применить видимость вкладки.
@@ -1931,6 +2183,76 @@ function setupPopupNavigation() {
         fptGcRefreshConfig(false).then(() => {
             if (typeof fptGcApplyVisibility === 'function') fptGcApplyVisibility();
         });
+    }
+}
+
+function setupFinanceHubUI(toolsPopup) {
+    const finPage = toolsPopup ? toolsPopup.querySelector('.fp-tools-page-content[data-page="finance_hub"]') : document.querySelector('.fp-tools-page-content[data-page="finance_hub"]');
+    if (!finPage || finPage.dataset.fptBound) return;
+    finPage.dataset.fptBound = '1';
+
+    // Subtabs switching
+    const subtabs = finPage.querySelectorAll('.fpt-fin-subtab');
+    const panes = finPage.querySelectorAll('.fpt-fin-tab-pane');
+
+    subtabs.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const target = btn.dataset.subtab;
+            if (!target) return;
+
+            subtabs.forEach(s => {
+                const isActive = (s === btn);
+                s.classList.toggle('active', isActive);
+                s.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            });
+
+            panes.forEach(pane => {
+                pane.classList.toggle('active', pane.dataset.subtab === target);
+            });
+        });
+    });
+
+    // Refresh button feedback
+    const refreshBtn = finPage.querySelector('#fptFinRefreshBtn');
+    const lastUpdatedEl = finPage.querySelector('#fptFinLastUpdatedText');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            refreshBtn.classList.add('fpt-fin-btn-spin');
+            if (lastUpdatedEl) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            }
+            setTimeout(() => {
+                refreshBtn.classList.remove('fpt-fin-btn-spin');
+            }, 600);
+        });
+    }
+
+    // Period selector handler
+    const periodSelect = finPage.querySelector('#fptFinPeriodSelect');
+    if (periodSelect) {
+        periodSelect.addEventListener('change', () => {
+            try {
+                sessionStorage.setItem('fpt_fin_last_period', periodSelect.value);
+            } catch (_) {}
+        });
+        try {
+            const savedPeriod = sessionStorage.getItem('fpt_fin_last_period');
+            if (savedPeriod && periodSelect.querySelector(`option[value="${savedPeriod}"]`)) {
+                periodSelect.value = savedPeriod;
+            }
+        } catch (_) {}
+    }
+}
+
+function initializeFinanceHub() {
+    const toolsPopup = document.querySelector('.fp-tools-popup');
+    if (toolsPopup) {
+        setupFinanceHubUI(toolsPopup);
     }
 }
 
