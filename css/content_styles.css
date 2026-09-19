@@ -9290,3 +9290,241 @@ textarea.fp-cw-input { line-height:1.4; }
     100% { opacity: 1; transform: scale(1); }
 }
 
+/* Finance Hub Toolbar & Controls */
+.fpt-fin-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.fpt-fin-search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 260px;
+    flex: 1;
+    max-width: 380px;
+}
+
+.fpt-fin-search-icon {
+    position: absolute;
+    left: 9px;
+    font-size: 16px !important;
+    color: var(--fptm-muted, #9099b8);
+    pointer-events: none;
+}
+
+.fp-tools-popup input.fpt-fin-search-input,
+.fp-tools-popup .fpt-fin-search-input {
+    all: unset;
+    box-sizing: border-box !important;
+    width: 100% !important;
+    padding: 6px 28px 6px 30px !important;
+    border-radius: 7px !important;
+    background: var(--fptm-surface-2, rgba(255, 255, 255, 0.04)) !important;
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.1)) !important;
+    color: var(--fptm-text, #fff) !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    transition: border-color .15s ease, background .15s ease !important;
+}
+
+.fp-tools-popup input.fpt-fin-search-input:focus {
+    border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+    background: var(--fptm-surface, rgba(255, 255, 255, 0.07)) !important;
+}
+
+.fp-tools-popup button.fpt-fin-search-clear,
+.fp-tools-popup .fpt-fin-search-clear {
+    all: unset;
+    position: absolute;
+    right: 8px;
+    font-size: 16px !important;
+    color: var(--fptm-muted, #9099b8) !important;
+    cursor: pointer !important;
+    line-height: 1 !important;
+}
+
+.fp-tools-popup select.fpt-fin-sort-select,
+.fp-tools-popup .fpt-fin-sort-select {
+    all: unset;
+    box-sizing: border-box !important;
+    background: var(--fptm-surface-2, rgba(255, 255, 255, 0.04)) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%239099b8' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 8px center !important;
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.1)) !important;
+    border-radius: 6px !important;
+    color: var(--fptm-text, #fff) !important;
+    padding: 3px 24px 3px 8px !important;
+    font-size: 11px !important;
+    cursor: pointer !important;
+}
+
+.fpt-fin-clickable-card {
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease;
+}
+
+.fpt-fin-clickable-card:hover {
+    border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+    transform: translateY(-1px);
+}
+
+/* Badges and Links */
+.fpt-fin-badge-pill {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 4px;
+    line-height: 1.2;
+}
+
+.fpt-fin-badge-closed {
+    background: rgba(76, 175, 130, 0.15);
+    color: #4caf82;
+    border: 1px solid rgba(76, 175, 130, 0.3);
+}
+
+.fpt-fin-badge-paid {
+    background: rgba(27, 117, 187, 0.18);
+    color: #4a9fd4;
+    border: 1px solid rgba(27, 117, 187, 0.3);
+}
+
+.fpt-fin-badge-refunded {
+    background: rgba(244, 200, 74, 0.15);
+    color: #f4c84a;
+    border: 1px solid rgba(244, 200, 74, 0.3);
+}
+
+.fpt-fin-subcat-badge {
+    font-size: 11px;
+    color: var(--fptm-muted, #9099b8);
+    background: var(--fptm-surface, rgba(255, 255, 255, 0.04));
+    padding: 2px 6px;
+    border-radius: 4px;
+    max-width: 140px;
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fpt-fin-order-link,
+.fpt-fin-user-link {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+    text-decoration: none;
+    transition: opacity .15s ease;
+}
+
+.fpt-fin-order-link:hover,
+.fpt-fin-user-link:hover {
+    text-decoration: underline;
+    opacity: 0.85;
+}
+
+.fp-tools-popup button.fpt-fin-mini-badge-btn,
+.fp-tools-popup .fpt-fin-mini-badge-btn {
+    all: unset;
+    cursor: pointer !important;
+    font-size: 11px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    background: var(--fptm-surface, rgba(255, 255, 255, 0.05)) !important;
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.1)) !important;
+    color: var(--fptm-text, #fff) !important;
+    font-variant-numeric: tabular-nums !important;
+    transition: all .15s ease !important;
+}
+
+.fp-tools-popup button.fpt-fin-mini-badge-btn:hover {
+    background: var(--fptm-accent-soft, rgba(27, 117, 187, 0.2)) !important;
+    border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+}
+
+.fpt-fin-desc-cell {
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Donut diagram component */
+.fpt-fin-donut-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fpt-fin-donut-content {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.fpt-fin-donut-svg {
+    flex-shrink: 0;
+}
+
+.fpt-fin-donut-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+}
+
+.fpt-fin-donut-leg-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+}
+
+.fpt-fin-donut-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.fpt-fin-donut-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--fptm-muted, #9099b8);
+}
+
+.fpt-fin-donut-val {
+    font-weight: 600;
+    color: var(--fptm-text, #fff);
+    font-variant-numeric: tabular-nums;
+}
+
+.fpt-fin-donut-seg {
+    cursor: pointer;
+    transition: opacity .15s ease;
+}
+
+.fpt-fin-donut-seg:hover {
+    opacity: 0.8;
+}
+
+/* Line chart points */
+.fpt-fin-chart-pt {
+    cursor: pointer;
+}
+
+.fpt-fin-chart-pt circle {
+    transition: r .15s ease;
+}
+
+.fpt-fin-chart-pt:hover circle {
+    r: 6;
+}
+

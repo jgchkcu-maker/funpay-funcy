@@ -146,6 +146,7 @@
         "content/features/sales_modes.js",
         "content/features/stats_drilldown.js",
         "content/features/finance.js",
+        "content/features/finance_hub.js",
         "content/features/export_studio.js",
         "content/features/slash_commands.js",
         "content/features/category_peek_panel.js",

@@ -333,9 +333,14 @@
         const iv = setInterval(() => { tryWire(); if (++n > 20) clearInterval(iv); }, 500);
     }
 
+    if (typeof window !== 'undefined') {
+        window.fptOpenOrdersDrilldown = openModal;
+    }
+
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
     } else {
         boot();
     }
 })();
+

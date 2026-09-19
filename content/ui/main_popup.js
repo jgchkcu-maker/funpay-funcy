@@ -2788,6 +2788,9 @@ function initializeFinanceHub() {
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (toolsPopup) {
         setupFinanceHubUI(toolsPopup);
+        if (typeof window !== 'undefined' && window.FPTFinanceHub && typeof window.FPTFinanceHub.init === 'function') {
+            window.FPTFinanceHub.init();
+        }
     }
 }
 
