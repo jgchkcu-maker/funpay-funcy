@@ -1,14 +1,15 @@
 /**
- * FunPay Tools — Finance Hub Controller (Sales & Purchases Subtabs — T03A/T03B)
+ * FunPay Tools — Finance Hub Controller (Sales, Purchases & Operations — T03A/T03B/T03C)
  *
- * Связующий контроллер Finance Hub для статистики продаж и покупок:
+ * Связующий контроллер Finance Hub для статистики продаж, покупок и операций:
  * - Управление периодом и состоянием подвкладок;
- * - Доступ к данным продаж и покупок строго через window.FPTFinanceData;
+ * - Доступ к данным продаж, покупок и операций строго через window.FPTFinanceData;
  * - Раздельные подвкладки "Продажи" и "Покупки" без смешивания с себестоимостью;
  * - Рендеринг подвкладки "Продажи" (KPI, динамика, категории, топы, drill-down);
  * - Рендеринг подвкладки "Покупки" (KPI, динамика трат, топ продавцов, детализация, drill-down);
+ * - Рендеринг подвкладки "Операции" (приход/расход/нетто, типы, динамика, список, drill-down);
  * - Lifecycle cleanup: корректная очистка tooltips, модалок и отмена устаревших рендеров при переключении табов;
- * - Refresh: фоновое обновление продаж (updateSales) и покупок (updatePurchases) с перечитыванием адаптера.
+ * - Refresh: фоновое обновление продаж (updateSales), покупок (updatePurchases) и операций (updateFinance).
  */
 (function (root) {
     'use strict';
@@ -21,6 +22,13 @@
 
     const SYMBOLS = { RUB: '₽', USD: '$', EUR: '€' };
     const RATES = { RUB: 1, USD: 1 / 0.011, EUR: 1.08 / 0.011 };
+    const OPERATION_TYPE_LABELS = {
+        order: 'Заказы',
+        payment: 'Пополнения',
+        withdraw: 'Выводы',
+        withdraw_cancel: 'Отмены выводов',
+        other: 'Другое'
+    };
 
     // Состояние контроллера
     const state = {
@@ -46,6 +54,12 @@
         cachedPurchasesOrders: null,
         cachedPurchasesAgg: null,
         cachedPurchasesPeriod: null,
+
+        operationsRenderToken: 0,
+        isOperationsLoading: false,
+        cachedOperations: null,
+        cachedOperationsAgg: null,
+        cachedOperationsPeriod: null,
 
         tooltipEl: null
     };
@@ -1136,7 +1150,7 @@
         const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
         if (!lastUpdatedEl) return;
 
-        const type = subtab === 'purchases' ? 'purchases' : 'sales';
+        const type = subtab === 'purchases' ? 'purchases' : (subtab === 'operations' ? 'operations' : 'sales');
         if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
             try {
                 const meta = await root.FPTFinanceData.getMeta(type);
@@ -1737,6 +1751,290 @@
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
+    // OPERATIONS SUBTAB (T03C)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    function operationTypeLabel(type) {
+        return OPERATION_TYPE_LABELS[type] || (type ? String(type) : 'Другое');
+    }
+
+    function operationSignedValue(txn) {
+        const signed = Number(txn && txn.signed);
+        if (Number.isFinite(signed)) return signed;
+        const amount = Number(txn && txn.amount);
+        return Number.isFinite(amount) ? amount : 0;
+    }
+
+    function formatOperationsMap(map) {
+        if (!map || typeof map !== 'object') return '0 ₽';
+        const parts = Object.entries(map)
+            .filter(([, value]) => typeof value === 'number' && Number.isFinite(value) && Math.abs(value) > 0.005)
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([currency, value]) => formatMoney(value, currency));
+        return parts.length ? parts.join(' · ') : '0 ₽';
+    }
+
+    function formatOperationsNet(inByCur, outByCur) {
+        const currencies = new Set([
+            ...Object.keys(inByCur || {}),
+            ...Object.keys(outByCur || {})
+        ]);
+        const net = {};
+        currencies.forEach(currency => {
+            const value = (inByCur && inByCur[currency] || 0) - (outByCur && outByCur[currency] || 0);
+            if (Math.abs(value) > 0.005) net[currency] = value;
+        });
+        return formatOperationsMap(net);
+    }
+
+    function operationDateValue(txn) {
+        const value = txn && txn.date;
+        if (typeof value === 'number') return value;
+        const parsed = Date.parse(value || '');
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function operationDateLabel(txn) {
+        const timestamp = operationDateValue(txn);
+        if (!timestamp) return '—';
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return '—';
+        return `${date.toLocaleDateString('ru-RU')} ${date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}`;
+    }
+
+    function operationStatusLabel(status) {
+        return ({ complete: 'Завершено', cancel: 'Отменено', waiting: 'Ожидание' })[status]
+            || (status ? String(status) : 'Неизвестно');
+    }
+
+    function operationPeriodLabel() {
+        return ({
+            today: 'за сегодня',
+            yesterday: 'за вчера',
+            '24h': 'за 24 часа',
+            '7d': 'за неделю',
+            '30d': 'за месяц',
+            '90d': 'за 3 месяца',
+            '365d': 'за год',
+            all: 'за всё время'
+        })[state.period] || '';
+    }
+
+    function operationFlowChart(cardEl, agg) {
+        if (!cardEl) return;
+        const daily = ['today', 'yesterday', '24h', '7d', '30d'].includes(state.period);
+        const buckets = daily ? (agg.byDay || {}) : (agg.byMonth || {});
+        const keys = Object.keys(buckets).sort().slice(daily ? -31 : -12);
+        const titleEl = cardEl.querySelector('.fpt-fin-card-title');
+        if (titleEl) titleEl.textContent = daily ? 'Динамика по дням' : 'Динамика по месяцам';
+
+        const body = cardEl.querySelector('.fpt-fin-operation-chart') || document.createElement('div');
+        body.className = 'fpt-fin-operation-chart';
+        if (!body.parentElement) {
+            const skeleton = cardEl.querySelector('.fpt-fin-skeleton-chart');
+            if (skeleton) skeleton.replaceWith(body);
+            else cardEl.appendChild(body);
+        }
+        if (!keys.length) {
+            body.innerHTML = '<div class="fpt-fin-empty-state" style="padding:28px 16px;">Нет операций за период.</div>';
+            return;
+        }
+
+        const W = 680, H = 220, PAD = { t: 18, r: 18, b: 38, l: 56 };
+        const chartWidth = W - PAD.l - PAD.r;
+        const chartHeight = H - PAD.t - PAD.b;
+        const incoming = keys.map(key => Number(buckets[key].in) || 0);
+        const outgoing = keys.map(key => Number(buckets[key].out) || 0);
+        const maxValue = Math.max(1, ...incoming, ...outgoing);
+        const slot = chartWidth / keys.length;
+        const barWidth = Math.max(3, Math.min(20, slot / 2 - 3));
+        const zeroY = PAD.t + chartHeight / 2;
+        const halfHeight = chartHeight / 2;
+        let bars = '';
+        let labels = '';
+        const labelStep = Math.max(1, Math.ceil(keys.length / 8));
+        keys.forEach((key, index) => {
+            const center = PAD.l + slot * index + slot / 2;
+            const inHeight = incoming[index] / maxValue * halfHeight;
+            const outHeight = outgoing[index] / maxValue * halfHeight;
+            const label = daily ? key.slice(5).replace('-', '.') : key.slice(5) + '.' + key.slice(2, 4);
+            const tip = `${key}: +${fmtAxis(incoming[index])} ₽ / −${fmtAxis(outgoing[index])} ₽`;
+            bars += `<rect class="fpt-fin-op-bar" x="${center - barWidth - 1}" y="${zeroY - inHeight}" width="${barWidth}" height="${inHeight}" rx="2" fill="#22c55e" data-tip="${esc(tip)}"></rect>`;
+            bars += `<rect class="fpt-fin-op-bar" x="${center + 1}" y="${zeroY}" width="${barWidth}" height="${outHeight}" rx="2" fill="#ef4444" data-tip="${esc(tip)}"></rect>`;
+            if (index % labelStep === 0 || index === keys.length - 1) {
+                labels += `<text x="${center}" y="${H - 9}" text-anchor="middle" font-size="9" fill="var(--fptm-muted,#9099b8)">${esc(label)}</text>`;
+            }
+        });
+        body.innerHTML = `<svg class="fpt-fin-operation-svg" viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Динамика операций">
+            <line x1="${PAD.l}" y1="${zeroY}" x2="${W - PAD.r}" y2="${zeroY}" stroke="var(--fptm-border,rgba(255,255,255,.12))" />
+            <text x="${PAD.l - 7}" y="${PAD.t + 4}" text-anchor="end" font-size="9" fill="var(--fptm-muted,#9099b8)">${esc(fmtAxis(maxValue))}</text>
+            <text x="${PAD.l - 7}" y="${zeroY + 3}" text-anchor="end" font-size="9" fill="var(--fptm-muted,#9099b8)">0</text>
+            <text x="${PAD.l - 7}" y="${H - PAD.b + 2}" text-anchor="end" font-size="9" fill="var(--fptm-muted,#9099b8)">${esc(fmtAxis(maxValue))}</text>
+            ${bars}${labels}</svg>
+            <div class="fpt-fin-operation-chart-legend"><span class="fpt-fin-operation-in">▮</span> приход <span class="fpt-fin-operation-out">▮</span> расход <span>· визуальная ось нормализована к ₽</span></div>`;
+        body.querySelectorAll('.fpt-fin-op-bar').forEach(bar => {
+            bar.addEventListener('mouseenter', event => showTooltip(esc(bar.dataset.tip || ''), event.clientX, event.clientY));
+            bar.addEventListener('mousemove', event => showTooltip(esc(bar.dataset.tip || ''), event.clientX, event.clientY));
+            bar.addEventListener('mouseleave', hideTooltip);
+        });
+    }
+
+    function operationModalRow(txn) {
+        const value = operationSignedValue(txn);
+        const currency = String(txn && txn.currency || 'UNKNOWN').toUpperCase();
+        const valueClass = value >= 0 ? 'fpt-fin-operation-in' : 'fpt-fin-operation-out';
+        const sign = value >= 0 ? '+' : '−';
+        const id = txn && (txn.id || txn.operationId || txn.transactionId) || '—';
+        const title = txn && (txn.title || txn.description || operationTypeLabel(txn.type)) || 'Операция';
+        return `<div class="fpt-fin-operation-modal-row">
+            <div class="fpt-fin-operation-modal-main"><strong>${esc(title)}</strong>
+                <span>${esc(operationTypeLabel(txn && txn.type))} · ${esc(operationStatusLabel(txn && txn.status))} · ${esc(operationDateLabel(txn))}</span>
+                <small>ID: ${esc(id)}</small></div>
+            <b class="${valueClass}">${sign} ${esc(formatMoney(Math.abs(value), currency))}</b>
+        </div>`;
+    }
+
+    function openOperationsDrilldown(title, list) {
+        const operations = Array.isArray(list) ? list.slice() : [];
+        const old = document.getElementById('fpt-fin-operations-modal');
+        if (old) old.remove();
+        const overlay = document.createElement('div');
+        overlay.id = 'fpt-fin-operations-modal';
+        overlay.className = 'fpt-fin-operations-modal';
+        overlay.innerHTML = `<div class="fpt-fin-operations-dialog">
+            <div class="fpt-fin-operations-dialog-head"><div><strong>${esc(title)}</strong><span>${operations.length} операций</span></div><button type="button" class="fpt-fin-operations-close" aria-label="Закрыть">×</button></div>
+            <div class="fpt-fin-operations-tools"><input type="search" placeholder="Поиск по операциям…" autocomplete="off"><select><option value="date-desc">Сначала новые</option><option value="date-asc">Сначала старые</option><option value="amount-desc">Большая сумма</option><option value="amount-asc">Малая сумма</option></select></div>
+            <div class="fpt-fin-operations-modal-list"></div></div>`;
+        document.body.appendChild(overlay);
+        const search = overlay.querySelector('input');
+        const sort = overlay.querySelector('select');
+        const listEl = overlay.querySelector('.fpt-fin-operations-modal-list');
+        const renderList = () => {
+            let filtered = operations.slice();
+            const query = search.value.trim().toLowerCase();
+            if (query) filtered = filtered.filter(txn => {
+                const haystack = [txn.title, txn.description, txn.type, txn.currency, txn.id, txn.operationId].filter(Boolean).join(' ').toLowerCase();
+                return haystack.includes(query);
+            });
+            if (sort.value === 'date-asc') filtered.sort((a, b) => operationDateValue(a) - operationDateValue(b));
+            else if (sort.value === 'amount-desc') filtered.sort((a, b) => Math.abs(operationSignedValue(b)) - Math.abs(operationSignedValue(a)));
+            else if (sort.value === 'amount-asc') filtered.sort((a, b) => Math.abs(operationSignedValue(a)) - Math.abs(operationSignedValue(b)));
+            else filtered.sort((a, b) => operationDateValue(b) - operationDateValue(a));
+            listEl.innerHTML = filtered.length
+                ? filtered.map(operationModalRow).join('')
+                : '<div class="fpt-fin-empty-state">Ничего не найдено.</div>';
+        };
+        renderList();
+        search.addEventListener('input', renderList);
+        sort.addEventListener('change', renderList);
+        const close = () => overlay.remove();
+        overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+        overlay.querySelector('.fpt-fin-operations-close').addEventListener('click', close);
+    }
+
+    function renderOperationsCards(pane, agg) {
+        const cards = Array.from(pane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card')).slice(0, 4);
+        const values = [
+            { key: 'in', label: 'Поступления', value: formatOperationsMap(agg.inByCur), color: 'fpt-fin-operation-in', list: agg.list.filter(txn => operationSignedValue(txn) >= 0) },
+            { key: 'out', label: 'Расходы', value: formatOperationsMap(agg.outByCur), color: 'fpt-fin-operation-out', list: agg.list.filter(txn => operationSignedValue(txn) < 0) },
+            { key: 'count', label: 'Операций за период', value: String(agg.count || 0), color: '', list: agg.list },
+            { key: 'complete', label: 'Завершено', value: String(agg.byStatus && agg.byStatus.complete || 0), color: '', list: agg.list }
+        ];
+        cards.forEach((card, index) => {
+            const item = values[index];
+            if (!item) return;
+            card.dataset.finOperationCard = item.key;
+            card.classList.add('fpt-fin-operation-card');
+            card.innerHTML = `<div class="fpt-fin-card-header"><h5 class="fpt-fin-card-title">${esc(item.label)}</h5><span class="material-symbols-rounded">${item.key === 'in' ? 'arrow_circle_down' : item.key === 'out' ? 'arrow_circle_up' : 'receipt_long'}</span></div>
+                <div class="fpt-fin-card-value ${item.color}">${esc(item.value)}</div><div class="fpt-fin-card-sub">${esc(operationPeriodLabel())}</div>`;
+            if (!card.dataset.fptOperationsBound) {
+                card.dataset.fptOperationsBound = '1';
+                card.addEventListener('click', () => {
+                    const current = state.cachedOperationsAgg || { list: [] };
+                    const currentList = item.key === 'in'
+                        ? current.list.filter(txn => operationSignedValue(txn) >= 0)
+                        : item.key === 'out'
+                            ? current.list.filter(txn => operationSignedValue(txn) < 0)
+                            : current.list;
+                    openOperationsDrilldown(item.label + ' ' + operationPeriodLabel(), currentList);
+                });
+            }
+        });
+    }
+
+    function renderOperationsBreakdown(card, agg) {
+        if (!card) return;
+        const rows = Object.entries(agg.byType || {}).sort(([, a], [, b]) => b.count - a.count).map(([type, item]) => `<button type="button" class="fpt-fin-operation-type-row" data-fin-operation-type="${esc(type)}"><span><strong>${esc(operationTypeLabel(type))}</strong><small>${item.count} операций</small></span><b>${esc(formatOperationsNet(item.in, item.out))}</b></button>`).join('');
+        card.innerHTML = `<div class="fpt-fin-card-header"><h5 class="fpt-fin-card-title">По типам операций</h5><span class="material-symbols-rounded">category</span></div><div class="fpt-fin-operation-types">${rows || '<div class="fpt-fin-empty-state">Нет операций за период.</div>'}</div>`;
+        card.querySelectorAll('[data-fin-operation-type]').forEach(row => row.addEventListener('click', () => {
+            const type = row.dataset.finOperationType;
+            openOperationsDrilldown(operationTypeLabel(type) + ' ' + operationPeriodLabel(), agg.list.filter(txn => txn.type === type));
+        }));
+    }
+
+    function renderOperationsTable(card, agg) {
+        if (!card) return;
+        const visible = agg.list.slice(0, 100);
+        const rows = visible.map((txn, index) => {
+            const value = operationSignedValue(txn);
+            const currency = String(txn.currency || 'UNKNOWN').toUpperCase();
+            const title = txn.title || txn.description || operationTypeLabel(txn.type);
+            const id = txn.id || txn.operationId || txn.transactionId || '—';
+            return `<tr class="fpt-fin-operation-row" data-fin-operation-index="${index}"><td>${esc(id)}</td><td>${esc(operationDateLabel(txn))}</td><td>${esc(operationTypeLabel(txn.type))}</td><td>${esc(title)}</td><td class="${value >= 0 ? 'fpt-fin-operation-in' : 'fpt-fin-operation-out'}">${value >= 0 ? '+' : '−'} ${esc(formatMoney(Math.abs(value), currency))}</td><td>${esc(operationStatusLabel(txn.status))}</td></tr>`;
+        }).join('');
+        const tail = agg.list.length > visible.length ? `<tr><td colspan="6" class="fpt-fin-operation-more">Показаны первые ${visible.length} из ${agg.list.length}. Нажмите на строку или заголовок, чтобы открыть полный список.</td></tr>` : '';
+        card.innerHTML = `<div class="fpt-fin-card-header"><h5 class="fpt-fin-card-title">История операций</h5><span class="fpt-fin-empty-badge">${agg.list.length} операций</span></div><div class="fpt-fin-table-wrap"><table class="fpt-fin-table fpt-fin-operation-table"><thead><tr><th>ID</th><th>Дата</th><th>Тип операции</th><th>Описание / Реквизиты</th><th>Сумма</th><th>Статус</th></tr></thead><tbody>${rows || '<tr><td colspan="6" class="fpt-fin-operation-more">Нет операций за период.</td></tr>'}${tail}</tbody></table></div>`;
+        card.querySelectorAll('[data-fin-operation-index]').forEach(row => row.addEventListener('click', () => openOperationsDrilldown('Операции ' + operationPeriodLabel(), agg.list)));
+        card.querySelector('.fpt-fin-card-header').addEventListener('click', () => openOperationsDrilldown('Операции ' + operationPeriodLabel(), agg.list));
+    }
+
+    function renderOperationsSubtabLoading(pane) {
+        if (!pane) return;
+        pane.querySelectorAll('.fpt-fin-card-value').forEach(value => { value.textContent = 'Загрузка…'; });
+    }
+
+    async function renderOperationsSubtab(forceReload) {
+        const pane = state.container && state.container.querySelector('.fpt-fin-tab-pane[data-subtab="operations"]');
+        if (!pane) return;
+        const currentToken = ++state.operationsRenderToken;
+        if (forceReload || state.cachedOperationsPeriod !== state.period || !state.cachedOperations) {
+            state.isOperationsLoading = true;
+            renderOperationsSubtabLoading(pane);
+            try {
+                if (!root.FPTFinanceData || typeof root.FPTFinanceData.getOperations !== 'function') {
+                    throw new Error('FPTFinanceData.getOperations is not available');
+                }
+                const operations = await root.FPTFinanceData.getOperations({ period: state.period, sort: 'date-desc', useMsk: true });
+                const aggregate = root.FPTFinanceData.aggregateOperations(operations);
+                if (currentToken !== state.operationsRenderToken) return;
+                state.cachedOperations = Array.isArray(operations) ? operations : [];
+                state.cachedOperationsAgg = aggregate || { list: [], inByCur: {}, outByCur: {}, byType: {}, byDay: {}, byMonth: {}, byStatus: {}, count: 0 };
+                state.cachedOperationsPeriod = state.period;
+            } catch (error) {
+                console.error('[FPTFinanceHub] Error loading operations data:', error);
+                if (currentToken !== state.operationsRenderToken) return;
+                pane.querySelector('.fpt-fin-col-12 .fpt-fin-card').innerHTML = `<div class="fpt-fin-empty-state">Не удалось загрузить операции.</div>`;
+                state.isOperationsLoading = false;
+                return;
+            }
+            state.isOperationsLoading = false;
+        }
+        if (currentToken !== state.operationsRenderToken) return;
+        const aggregate = state.cachedOperationsAgg || { list: [], inByCur: {}, outByCur: {}, byType: {}, byDay: {}, byMonth: {}, byStatus: {}, count: 0 };
+        renderOperationsCards(pane, aggregate);
+        operationFlowChart(pane.querySelector('.fpt-fin-col-8 .fpt-fin-card'), aggregate);
+        renderOperationsBreakdown(pane.querySelector('.fpt-fin-col-4 .fpt-fin-card'), aggregate);
+        renderOperationsTable(pane.querySelector('.fpt-fin-col-12 .fpt-fin-card'), aggregate);
+    }
+
+    function cleanupOperations() {
+        hideTooltip();
+        state.operationsRenderToken++;
+        const modal = document.getElementById('fpt-fin-operations-modal');
+        if (modal) modal.remove();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
     // LIFECYCLE & EVENT HANDLERS
     // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1749,6 +2047,9 @@
         if (prev === 'purchases' && target !== 'purchases') {
             cleanupPurchases();
         }
+        if (prev === 'operations' && target !== 'operations') {
+            cleanupOperations();
+        }
 
         updateLastUpdatedText(target);
 
@@ -1756,6 +2057,8 @@
             renderSalesSubtab(false);
         } else if (target === 'purchases') {
             renderPurchasesSubtab(false);
+        } else if (target === 'operations') {
+            renderOperationsSubtab(false);
         }
     }
 
@@ -1768,11 +2071,16 @@
         state.cachedPurchasesOrders = null;
         state.cachedPurchasesAgg = null;
         state.cachedPurchasesPeriod = null;
+        state.cachedOperations = null;
+        state.cachedOperationsAgg = null;
+        state.cachedOperationsPeriod = null;
 
         if (state.activeSubtab === 'sales') {
             renderSalesSubtab(true);
         } else if (state.activeSubtab === 'purchases') {
             renderPurchasesSubtab(true);
+        } else if (state.activeSubtab === 'operations') {
+            renderOperationsSubtab(true);
         }
     }
 
@@ -1787,10 +2095,11 @@
         if (refreshBtn) refreshBtn.classList.add('fpt-fin-btn-spin');
 
         const isPurchases = state.activeSubtab === 'purchases';
+        const isOperations = state.activeSubtab === 'operations';
         const pCfg = getPurchasesConfig();
-        const actionName = isPurchases ? (pCfg.updateAction || 'updatePurchases') : 'updateSales';
-        const subtabType = isPurchases ? 'purchases' : 'sales';
-        const notificationMsg = isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены';
+        const actionName = isOperations ? 'updateFinance' : (isPurchases ? (pCfg.updateAction || 'updatePurchases') : 'updateSales');
+        const subtabType = isOperations ? 'operations' : (isPurchases ? 'purchases' : 'sales');
+        const notificationMsg = isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены');
 
         try {
             await new Promise(resolve => {
@@ -1836,6 +2145,8 @@
                 await renderSalesSubtab(true);
             } else if (state.activeSubtab === 'purchases') {
                 await renderPurchasesSubtab(true);
+            } else if (state.activeSubtab === 'operations') {
+                await renderOperationsSubtab(true);
             }
 
             // Анимация пульсации активных карточек
@@ -1885,6 +2196,8 @@
             renderSalesSubtab(false);
         } else if (state.activeSubtab === 'purchases') {
             renderPurchasesSubtab(false);
+        } else if (state.activeSubtab === 'operations') {
+            renderOperationsSubtab(false);
         }
     }
 
@@ -1905,6 +2218,8 @@
             renderSalesSubtab(false);
         } else if (state.activeSubtab === 'purchases') {
             renderPurchasesSubtab(false);
+        } else if (state.activeSubtab === 'operations') {
+            renderOperationsSubtab(false);
         }
     }
 
@@ -1917,12 +2232,15 @@
         onPageLeave: () => {
             cleanupSales();
             cleanupPurchases();
+            cleanupOperations();
         },
         refresh,
         renderSalesSubtab,
         renderPurchasesSubtab,
+        renderOperationsSubtab,
         cleanupSales,
         cleanupPurchases,
+        cleanupOperations,
         getState: () => Object.assign({}, state)
     };
 

@@ -9604,3 +9604,268 @@ textarea.fp-cw-input { line-height:1.4; }
     background: rgba(229, 115, 115, 0.18);
     color: #fff;
 }
+
+/* Finance Hub — operations subtab (T03C) */
+.fpt-fin-operation-card {
+    cursor: pointer;
+}
+
+.fpt-fin-operation-card:hover {
+    border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+}
+
+.fpt-fin-operation-in {
+    color: #4caf82 !important;
+}
+
+.fpt-fin-operation-out {
+    color: #e57373 !important;
+}
+
+.fpt-fin-operation-chart {
+    min-height: 180px;
+}
+
+.fpt-fin-operation-svg {
+    display: block;
+    width: 100%;
+    min-height: 180px;
+    overflow: visible;
+}
+
+.fpt-fin-op-bar {
+    cursor: default;
+    transition: opacity .12s ease;
+}
+
+.fpt-fin-op-bar:hover {
+    opacity: .78;
+}
+
+.fpt-fin-operation-chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    margin-top: 4px;
+    font-size: 10.5px;
+    color: var(--fptm-muted, #9099b8);
+}
+
+.fpt-fin-operation-types {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.fp-tools-popup button.fpt-fin-operation-type-row,
+.fp-tools-popup .fpt-fin-operation-type-row {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--fptm-border, rgba(255, 255, 255, .08));
+    color: var(--fptm-text, #fff);
+    cursor: pointer;
+    text-align: left;
+}
+
+.fpt-fin-operation-type-row:last-child {
+    border-bottom: 0;
+}
+
+.fpt-fin-operation-type-row:hover {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+}
+
+.fpt-fin-operation-type-row span {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.fpt-fin-operation-type-row strong {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.fpt-fin-operation-type-row small {
+    color: var(--fptm-muted, #9099b8);
+    font-size: 10px;
+}
+
+.fpt-fin-operation-type-row b {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.fpt-fin-operation-table tbody tr {
+    cursor: pointer;
+}
+
+.fpt-fin-operation-table tbody tr:hover {
+    background: var(--fptm-hover, rgba(255, 255, 255, .05));
+}
+
+.fpt-fin-operation-more {
+    padding: 12px !important;
+    color: var(--fptm-muted, #9099b8);
+    text-align: center;
+    font-size: 11px;
+}
+
+.fpt-fin-operations-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2147483600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(8, 9, 14, .62);
+    backdrop-filter: blur(3px);
+}
+
+.fpt-fin-operations-dialog {
+    display: flex;
+    flex-direction: column;
+    width: min(760px, 96vw);
+    max-height: 86vh;
+    overflow: hidden;
+    color: var(--fptm-text, #fff);
+    background: var(--fptm-surface, #171922);
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, .1));
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+}
+
+.fpt-fin-operations-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 18px;
+    border-bottom: 1px solid var(--fptm-border, rgba(255, 255, 255, .08));
+}
+
+.fpt-fin-operations-dialog-head div {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fpt-fin-operations-dialog-head strong {
+    font-size: 15px;
+}
+
+.fpt-fin-operations-dialog-head span {
+    color: var(--fptm-muted, #9099b8);
+    font-size: 11px;
+}
+
+.fp-tools-popup button.fpt-fin-operations-close,
+.fp-tools-popup .fpt-fin-operations-close {
+    all: unset;
+    width: 28px;
+    height: 28px;
+    color: var(--fptm-muted, #9099b8);
+    font-size: 24px;
+    line-height: 28px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.fpt-fin-operations-close:hover {
+    color: var(--fptm-text, #fff);
+}
+
+.fpt-fin-operations-tools {
+    display: flex;
+    gap: 8px;
+    padding: 10px 18px 0;
+}
+
+.fpt-fin-operations-tools input,
+.fpt-fin-operations-tools select {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 8px 10px;
+    color: var(--fptm-text, #fff);
+    background: var(--fptm-field, rgba(255, 255, 255, .06));
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, .1));
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+}
+
+.fpt-fin-operations-tools input {
+    flex: 1;
+}
+
+.fpt-fin-operations-modal-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 18px 18px;
+    overflow-y: auto;
+}
+
+.fpt-fin-operation-modal-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 9px 11px;
+    background: var(--fptm-surface-2, rgba(255, 255, 255, .04));
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, .08));
+    border-radius: 9px;
+}
+
+.fpt-fin-operation-modal-main {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+}
+
+.fpt-fin-operation-modal-main strong {
+    overflow: hidden;
+    font-size: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fpt-fin-operation-modal-main span,
+.fpt-fin-operation-modal-main small {
+    color: var(--fptm-muted, #9099b8);
+    font-size: 10.5px;
+}
+
+.fpt-fin-operation-modal-row > b {
+    flex-shrink: 0;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+    .fpt-fin-operations-tools {
+        flex-direction: column;
+    }
+
+    .fpt-fin-operation-table {
+        min-width: 720px;
+    }
+
+    .fpt-fin-operation-modal-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+}
