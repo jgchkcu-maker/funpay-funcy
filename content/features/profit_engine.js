@@ -241,9 +241,26 @@
             const agg = byCurrency[cur];
             agg.eligibleRevenue = round2(agg.eligibleRevenue);
             agg.knownCostRevenue = round2(agg.knownCostRevenue);
-            agg.realisedCost = round2(agg.realisedCost);
-            agg.realisedNetProfit = round2(agg.knownCostRevenue - agg.realisedCost);
             agg.refundedRevenue = round2(agg.refundedRevenue);
+
+            if (agg.knownCostOrdersCount === 0 && agg.eligibleOrdersCount > 0) {
+                agg.realisedCost = null;
+                agg.realisedNetProfit = null;
+                agg.margin = null;
+                agg.roi = null;
+            } else {
+                agg.realisedCost = round2(agg.realisedCost);
+                agg.realisedNetProfit = round2(agg.knownCostRevenue - agg.realisedCost);
+
+                // Margin & ROI
+                agg.margin = agg.knownCostRevenue > 0
+                    ? round2((agg.realisedNetProfit / agg.knownCostRevenue) * 100)
+                    : null;
+
+                agg.roi = agg.realisedCost > 0
+                    ? round2((agg.realisedNetProfit / agg.realisedCost) * 100)
+                    : null;
+            }
 
             // Coverage
             agg.orderCoverage = agg.eligibleOrdersCount > 0
@@ -253,15 +270,6 @@
             agg.revenueCoverage = agg.eligibleRevenue > 0
                 ? round2((agg.knownCostRevenue / agg.eligibleRevenue) * 100)
                 : 0;
-
-            // Margin & ROI
-            agg.margin = agg.knownCostRevenue > 0
-                ? round2((agg.realisedNetProfit / agg.knownCostRevenue) * 100)
-                : null;
-
-            agg.roi = agg.realisedCost > 0
-                ? round2((agg.realisedNetProfit / agg.realisedCost) * 100)
-                : null;
         }
 
         // Выбор целевого aggregate

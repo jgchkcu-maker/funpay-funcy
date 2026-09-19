@@ -8791,6 +8791,10 @@ textarea.fp-cw-input { line-height:1.4; }
 
 .fpt-fin-period-wrap {
     position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* Period select override */

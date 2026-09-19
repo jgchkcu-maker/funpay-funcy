@@ -36,6 +36,9 @@
         container: null,
         activeSubtab: 'overview',
         period: '7d',
+        currency: 'all',           // 'all' | 'RUB' | 'USD' | 'EUR'
+        status: 'all',             // 'all' | 'closed' | 'paid' | 'refunded'
+        category: 'all',           // 'all' | <categoryName>
         salesStep: 'day',          // 'day' | 'week' | 'month'
         salesView: 'orders',       // 'orders' | 'buyers' | 'products' | 'categories'
         visibleOrdersLimit: 50,
@@ -271,6 +274,43 @@
             countBadge.textContent = pluralCategories(n);
         } else {
             countBadge.textContent = pluralPurchases(orders ? orders.length : 0);
+        }
+    }
+
+    function updateCategorySelectOptions(categories) {
+        if (!state.container) return;
+        const select = state.container.querySelector('#fptFinCategorySelect');
+        if (!select) return;
+
+        if (!state.knownCategories) {
+            state.knownCategories = new Set();
+        }
+
+        if (Array.isArray(categories)) {
+            categories.forEach(c => {
+                if (c && typeof c === 'string' && c.trim() && c.trim() !== 'Без категории') {
+                    state.knownCategories.add(c.trim());
+                }
+            });
+        }
+
+        const sortedCats = Array.from(state.knownCategories).sort((a, b) => a.localeCompare(b, 'ru'));
+        const currentOptions = Array.from(select.options).map(o => o.value);
+        const newOptions = ['all', ...sortedCats];
+
+        if (currentOptions.length === newOptions.length && currentOptions.every((v, i) => v === newOptions[i])) {
+            select.value = state.category;
+            return;
+        }
+
+        select.innerHTML = '<option value="all">Все категории</option>' +
+            sortedCats.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+
+        if (state.category && state.knownCategories.has(state.category)) {
+            select.value = state.category;
+        } else {
+            select.value = 'all';
+            state.category = 'all';
         }
     }
 
@@ -986,11 +1026,22 @@
                     return;
                 }
 
-                const orders = await root.FPTFinanceData.getSales({
+                const filterOpts = {
                     period: state.period,
                     useMsk: true,
                     sort: 'date-desc'
-                });
+                };
+                if (state.status && state.status !== 'all') {
+                    filterOpts.statuses = state.status;
+                }
+                if (state.currency && state.currency !== 'all') {
+                    filterOpts.currency = state.currency;
+                }
+                if (state.category && state.category !== 'all') {
+                    filterOpts.category = state.category;
+                }
+
+                const orders = await root.FPTFinanceData.getSales(filterOpts);
 
                 if (currentToken !== state.renderToken) return;
 
@@ -1003,6 +1054,7 @@
                 state.cachedAgg = agg;
                 state.cachedPeriod = state.period;
                 state.visibleOrdersLimit = 50;
+                updateCategorySelectOptions(orders.map(o => o.subcategoryName || o.category));
             } catch (err) {
                 console.error('[FPTFinanceHub] Error loading sales data:', err);
                 if (currentToken !== state.renderToken) return;
@@ -1603,11 +1655,22 @@
                     return;
                 }
 
-                const orders = await root.FPTFinanceData.getPurchases({
+                const filterOpts = {
                     period: state.period,
                     useMsk: true,
                     sort: 'date-desc'
-                });
+                };
+                if (state.status && state.status !== 'all') {
+                    filterOpts.statuses = state.status;
+                }
+                if (state.currency && state.currency !== 'all') {
+                    filterOpts.currency = state.currency;
+                }
+                if (state.category && state.category !== 'all') {
+                    filterOpts.category = state.category;
+                }
+
+                const orders = await root.FPTFinanceData.getPurchases(filterOpts);
 
                 if (currentToken !== state.purchasesRenderToken) return;
 
@@ -1620,6 +1683,7 @@
                 state.cachedPurchasesAgg = agg;
                 state.cachedPurchasesPeriod = state.period;
                 state.visiblePurchasesLimit = 50;
+                updateCategorySelectOptions(orders.map(o => o.subcategoryName || o.category));
             } catch (err) {
                 console.error('[FPTFinanceHub] Error loading purchases data:', err);
                 if (currentToken !== state.purchasesRenderToken) return;
@@ -2061,7 +2125,10 @@
                 if (!root.FPTFinanceData || typeof root.FPTFinanceData.getOperations !== 'function') {
                     throw new Error('FPTFinanceData.getOperations is not available');
                 }
-                const operations = await root.FPTFinanceData.getOperations({ period: state.period, sort: 'date-desc', useMsk: true });
+                const filterOpts = { period: state.period, sort: 'date-desc', useMsk: true };
+                if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
+                if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                const operations = await root.FPTFinanceData.getOperations(filterOpts);
                 const aggregate = root.FPTFinanceData.aggregateOperations(operations);
                 if (currentToken !== state.operationsRenderToken) return;
                 state.cachedOperations = Array.isArray(operations) ? operations : [];
@@ -2109,7 +2176,7 @@
         return lots;
     }
 
-    function renderPotentialCards(pane, totals, currency) {
+    function renderPotentialCards(pane, totals, currency, filteredLots) {
         if (!pane || !totals) return;
 
         // 1. Потенциал выручки
@@ -2158,12 +2225,44 @@
                 ? `+ ${totals.unknownStockOffers} без остатка`
                 : 'Все остатки известны';
         }
+
+        // Drilldown binding
+        const lotsList = Array.isArray(filteredLots) ? filteredLots : (state.cachedPotentialLots || []);
+        const revCard = revEl && revEl.closest('.fpt-fin-card');
+        if (revCard) {
+            revCard.classList.add('fpt-fin-clickable');
+            revCard.title = 'Показать лоты инвентаря';
+            revCard.onclick = () => openDrilldown('Потенциал выручки (лоты)', `${lotsList.length} предложений · ${formatMoney(totals.sellerRevenue, currency)}`, lotsList);
+        }
+        const profCard = profEl && profEl.closest('.fpt-fin-card');
+        if (profCard) {
+            profCard.classList.add('fpt-fin-clickable');
+            profCard.title = 'Показать лоты инвентаря';
+            const profLabel = totals.knownPotentialProfit !== null ? formatMoney(totals.knownPotentialProfit, currency) : '—';
+            profCard.onclick = () => openDrilldown('Потенциал прибыли (лоты)', `${lotsList.length} предложений · ${profLabel}`, lotsList);
+        }
+        const costCard = costEl && costEl.closest('.fpt-fin-card');
+        if (costCard) {
+            costCard.classList.add('fpt-fin-clickable');
+            costCard.title = 'Показать лоты инвентаря';
+            const costLabel = totals.knownInventoryCost !== null ? formatMoney(totals.knownInventoryCost, currency) : '—';
+            costCard.onclick = () => openDrilldown('Себестоимость склада (лоты)', `${lotsList.length} предложений · ${costLabel}`, lotsList);
+        }
+        const offersCard = offersEl && offersEl.closest('.fpt-fin-card');
+        if (offersCard) {
+            offersCard.classList.add('fpt-fin-clickable');
+            offersCard.title = 'Показать лоты инвентаря';
+            offersCard.onclick = () => openDrilldown('Предложения в продаже', `${lotsList.length} предложений`, lotsList);
+        }
     }
 
     function renderPotentialTable(pane) {
         if (!pane) return;
         const lots = state.cachedPotentialLots || [];
-        const filtered = filterPotentialLots(lots, state.potentialFilter || 'all');
+        const activeLots = (state.category && state.category !== 'all')
+            ? lots.filter(l => (l.category || '').toLowerCase() === state.category.toLowerCase())
+            : lots;
+        const filtered = filterPotentialLots(activeLots, state.potentialFilter || 'all');
 
         const badge = pane.querySelector('#fptFinPotCountBadge');
         if (badge) {
@@ -2181,7 +2280,7 @@
         tbody.innerHTML = filtered.map(lot => {
             const offerId = lot.offerId || '';
             const titleText = lot.title || ('Лот #' + offerId);
-            const linkHref = offerId ? `https://funpay.com/lots/offer?id=${encodeURIComponent(offerId)}` : '#';
+            const linkHref = offerId ? `https://funpay.com/lots/offerEdit?offer=${encodeURIComponent(offerId)}` : '#';
             const activeStatus = lot.active === false
                 ? ' <span class="fpt-fin-status-badge" style="background:rgba(229,115,115,0.15);color:#e57373;border:1px solid rgba(229,115,115,0.3);font-size:10px;padding:1px 5px;">Деактивирован</span>'
                 : '';
@@ -2228,6 +2327,17 @@
                 chips.forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
                 state.potentialFilter = chip.dataset.filter || 'all';
+
+                const lots = state.cachedPotentialLots || [];
+                const activeLots = (state.category && state.category !== 'all')
+                    ? lots.filter(l => (l.category || '').toLowerCase() === state.category.toLowerCase())
+                    : lots;
+                const filteredLots = filterPotentialLots(activeLots, state.potentialFilter || 'all');
+                const primaryCurrency = (state.currency && state.currency !== 'all') ? state.currency : (state.potentialCurrency || 'RUB');
+                const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+                const totals = potentialEngine ? potentialEngine.calculateCurrencyTotals(filteredLots, primaryCurrency) : null;
+
+                renderPotentialCards(pane, totals, primaryCurrency, filteredLots);
                 renderPotentialTable(pane);
             });
         });
@@ -2285,26 +2395,37 @@
 
         if (currentToken !== state.potentialRenderToken) return;
 
+        const lots = state.cachedPotentialLots || [];
+        updateCategorySelectOptions(lots.map(l => l.category));
+
+        const activeLots = (state.category && state.category !== 'all')
+            ? lots.filter(l => (l.category || '').toLowerCase() === state.category.toLowerCase())
+            : lots;
+
         const agg = state.cachedPotentialAgg || {};
         const availableCurrencies = Object.keys(agg);
-        const primaryCurrency = (agg[state.potentialCurrency])
-            ? state.potentialCurrency
-            : (availableCurrencies[0] || 'RUB');
+        const primaryCurrency = (state.currency && state.currency !== 'all')
+            ? state.currency
+            : ((agg[state.potentialCurrency]) ? state.potentialCurrency : (availableCurrencies[0] || 'RUB'));
 
-        const totals = agg[primaryCurrency] || {
-            currency: primaryCurrency,
-            sellerRevenue: 0,
-            buyerGmv: 0,
-            knownInventoryCost: 0,
-            knownPotentialProfit: 0,
-            unknownStockOffers: 0,
-            finiteOffers: 0,
-            costCoveragePercent: 0,
-            knownMargin: null,
-            knownRoi: null
-        };
+        const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+        const filteredLots = filterPotentialLots(activeLots, state.potentialFilter || 'all');
+        const totals = (potentialEngine && typeof potentialEngine.calculateCurrencyTotals === 'function')
+            ? potentialEngine.calculateCurrencyTotals(filteredLots, primaryCurrency)
+            : (agg[primaryCurrency] || {
+                currency: primaryCurrency,
+                sellerRevenue: 0,
+                buyerGmv: 0,
+                knownInventoryCost: 0,
+                knownPotentialProfit: 0,
+                unknownStockOffers: 0,
+                finiteOffers: 0,
+                costCoveragePercent: 0,
+                knownMargin: null,
+                knownRoi: null
+            });
 
-        renderPotentialCards(pane, totals, primaryCurrency);
+        renderPotentialCards(pane, totals, primaryCurrency, filteredLots);
         renderPotentialTable(pane);
         bindPotentialFilters(pane);
     }
@@ -2332,14 +2453,19 @@
         return orders;
     }
 
-    function renderProfitCards(pane, totals, currency, byCurrency) {
+    function renderProfitCards(pane, totals, currency, byCurrency, filteredOrders) {
         if (!pane || !totals) return;
 
         // 1. Реализованная чистая прибыль
         const netEl = pane.querySelector('#fptFinProfitNet');
         if (netEl) {
-            netEl.textContent = formatMoney(totals.realisedNetProfit, currency);
-            netEl.className = 'fpt-fin-card-value' + (totals.realisedNetProfit > 0 ? ' fpt-fin-operation-in' : (totals.realisedNetProfit < 0 ? ' fpt-fin-operation-out' : ''));
+            if (totals.realisedNetProfit !== null && typeof totals.realisedNetProfit === 'number') {
+                netEl.textContent = formatMoney(totals.realisedNetProfit, currency);
+                netEl.className = 'fpt-fin-card-value' + (totals.realisedNetProfit > 0 ? ' fpt-fin-operation-in' : (totals.realisedNetProfit < 0 ? ' fpt-fin-operation-out' : ''));
+            } else {
+                netEl.textContent = '—';
+                netEl.className = 'fpt-fin-card-value';
+            }
         }
         const netSubEl = pane.querySelector('#fptFinProfitNetSub');
         if (netSubEl) {
@@ -2349,7 +2475,9 @@
         // 2. Себестоимость продаж
         const costEl = pane.querySelector('#fptFinProfitCost');
         if (costEl) {
-            costEl.textContent = formatMoney(totals.realisedCost, currency);
+            costEl.textContent = (totals.realisedCost !== null && typeof totals.realisedCost === 'number')
+                ? formatMoney(totals.realisedCost, currency)
+                : '—';
         }
         const costSubEl = pane.querySelector('#fptFinProfitCostSub');
         if (costSubEl) {
@@ -2378,6 +2506,39 @@
             roiSubEl.textContent = 'Окупаемость вложений';
         }
 
+        // Drilldown binding
+        const ords = Array.isArray(filteredOrders) ? filteredOrders : (state.cachedProfitOrders || []);
+        const netCard = netEl && typeof netEl.closest === 'function' && netEl.closest('.fpt-fin-card');
+        if (netCard) {
+            netCard.classList.add('fpt-fin-clickable');
+            netCard.title = 'Показать заказы за этой цифрой';
+            const netLabel = (totals.realisedNetProfit !== null && typeof totals.realisedNetProfit === 'number')
+                ? formatMoney(totals.realisedNetProfit, currency)
+                : '—';
+            netCard.onclick = () => openDrilldown('Реализованная чистая прибыль', `${periodLabel(state.period)} · ${ords.length} заказов · ${netLabel}`, ords);
+        }
+        const costCard = costEl && typeof costEl.closest === 'function' && costEl.closest('.fpt-fin-card');
+        if (costCard) {
+            costCard.classList.add('fpt-fin-clickable');
+            costCard.title = 'Показать заказы за этой цифрой';
+            const costLabel = (totals.realisedCost !== null && typeof totals.realisedCost === 'number')
+                ? formatMoney(totals.realisedCost, currency)
+                : '—';
+            costCard.onclick = () => openDrilldown('Себестоимость продаж', `${periodLabel(state.period)} · ${ords.length} заказов · ${costLabel}`, ords);
+        }
+        const marginCard = marginEl && typeof marginEl.closest === 'function' && marginEl.closest('.fpt-fin-card');
+        if (marginCard) {
+            marginCard.classList.add('fpt-fin-clickable');
+            marginCard.title = 'Показать заказы за этой цифрой';
+            marginCard.onclick = () => openDrilldown('Маржинальность продаж', `${periodLabel(state.period)} · ${ords.length} заказов`, ords);
+        }
+        const roiCard = roiEl && typeof roiEl.closest === 'function' && roiEl.closest('.fpt-fin-card');
+        if (roiCard) {
+            roiCard.classList.add('fpt-fin-clickable');
+            roiCard.title = 'Показать заказы за этой цифрой';
+            roiCard.onclick = () => openDrilldown('ROI инвестиций', `${periodLabel(state.period)} · ${ords.length} заказов`, ords);
+        }
+
         // Переключатель валют (если в данных несколько валют)
         const chipsContainer = pane.querySelector('#fptFinProfitCurrencyChips');
         if (chipsContainer && byCurrency) {
@@ -2391,8 +2552,9 @@
                 chipsContainer.querySelectorAll('.fpt-fin-currency-chip').forEach(btn => {
                     btn.addEventListener('click', () => {
                         state.profitCurrency = btn.dataset.cur;
-                        renderProfitCards(pane, byCurrency[state.profitCurrency] || totals, state.profitCurrency, byCurrency);
+                        renderProfitCards(pane, byCurrency[state.profitCurrency] || totals, state.profitCurrency, byCurrency, filteredOrders);
                         renderProfitCoverage(pane, byCurrency[state.profitCurrency] || totals, state.profitCurrency);
+                        renderProfitChart(pane, byCurrency[state.profitCurrency] || totals, filteredOrders, state.profitCurrency);
                         renderProfitTable(pane);
                     });
                 });
@@ -2403,7 +2565,7 @@
     }
 
     function renderProfitCoverage(pane, totals, currency) {
-        if (!pane) return;
+        if (!pane || !totals) return;
         const card = pane.querySelector('#fptFinProfitCoverageCard');
         if (!card) return;
 
@@ -2432,9 +2594,21 @@
     }
 
     function renderProfitChart(pane, totals, orders, currency) {
-        if (!pane) return;
+        if (!pane || !totals) return;
         const chartEl = pane.querySelector('#fptFinProfitChart');
         if (!chartEl) return;
+
+        const costStr = (totals.realisedCost !== null && typeof totals.realisedCost === 'number')
+            ? formatMoney(totals.realisedCost, currency)
+            : '—';
+
+        const profitStr = (totals.realisedNetProfit !== null && typeof totals.realisedNetProfit === 'number')
+            ? `${totals.realisedNetProfit > 0 ? '+' : ''}${formatMoney(totals.realisedNetProfit, currency)}`
+            : '—';
+
+        const profitColor = (totals.realisedNetProfit !== null && typeof totals.realisedNetProfit === 'number')
+            ? (totals.realisedNetProfit > 0 ? '#4caf82' : (totals.realisedNetProfit < 0 ? '#e57373' : '#fff'))
+            : '#fff';
 
         chartEl.innerHTML = `
             <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
@@ -2448,11 +2622,11 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
                     <span style="color:var(--fptm-muted, #9099b8);">Себестоимость проданного</span>
-                    <span style="font-weight: 600; color: #e57373;">${formatMoney(totals.realisedCost, currency)}</span>
+                    <span style="font-weight: 600; color: #e57373;">${costStr}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
                     <span style="font-weight: 600; color: #fff;">Реализованная чистая прибыль</span>
-                    <span style="font-weight: 700; color: ${totals.realisedNetProfit > 0 ? '#4caf82' : (totals.realisedNetProfit < 0 ? '#e57373' : '#fff')};">${totals.realisedNetProfit > 0 ? '+' : ''}${formatMoney(totals.realisedNetProfit, currency)}</span>
+                    <span style="font-weight: 700; color: ${profitColor};">${profitStr}</span>
                 </div>
             </div>
         `;
@@ -2542,14 +2716,27 @@
     function bindProfitFilters(pane) {
         if (!pane) return;
         const group = pane.querySelector('#fptFinProfitFilterGroup');
-        if (!group) return;
+        if (!group || group.dataset.fptBound) return;
+        group.dataset.fptBound = '1';
 
         const chips = group.querySelectorAll('.fpt-fin-filter-chip');
         chips.forEach(chip => {
-            chip.addEventListener('click', () => {
+            chip.addEventListener('click', (e) => {
+                e.preventDefault();
                 chips.forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
                 state.profitFilter = chip.dataset.filter || 'all';
+
+                const allOrders = state.cachedProfitOrders || [];
+                const filteredOrders = filterProfitOrders(allOrders, state.profitFilter || 'all');
+                const primaryCurrency = (state.currency && state.currency !== 'all') ? state.currency : (state.profitCurrency || 'RUB');
+                const profitEngine = (typeof window !== 'undefined' && window.FPTProfitEngine) || root.FPTProfitEngine;
+                const aggResult = profitEngine ? profitEngine.calculateProfitAggregates(filteredOrders, { currency: primaryCurrency }) : null;
+                const totals = aggResult ? aggResult.totals : null;
+
+                renderProfitCards(pane, totals, primaryCurrency, aggResult ? aggResult.byCurrency : null, filteredOrders);
+                renderProfitCoverage(pane, totals, primaryCurrency);
+                renderProfitChart(pane, totals, filteredOrders, primaryCurrency);
                 renderProfitTable(pane);
             });
         });
@@ -2583,7 +2770,21 @@
                     throw new Error('FPTProfitEngine is not available');
                 }
 
-                const result = await profitEngine.getRealisedProfit({ period: state.period });
+                const profitOpts = {
+                    period: state.period,
+                    useMsk: true
+                };
+                if (state.currency && state.currency !== 'all') {
+                    profitOpts.currency = state.currency;
+                }
+                if (state.category && state.category !== 'all') {
+                    profitOpts.category = state.category;
+                }
+                if (state.status && state.status !== 'all') {
+                    profitOpts.statuses = state.status;
+                }
+
+                const result = await profitEngine.getRealisedProfit(profitOpts);
 
                 if (currentToken !== state.profitRenderToken) return;
 
@@ -2607,13 +2808,22 @@
 
         if (currentToken !== state.profitRenderToken) return;
 
+        const allOrders = state.cachedProfitOrders || [];
+        updateCategorySelectOptions(allOrders.map(o => o.subcategoryName || o.category));
+
         const agg = state.cachedProfitAgg || {};
         const availableCurrencies = Object.keys(agg);
-        const primaryCurrency = (agg[state.profitCurrency])
-            ? state.profitCurrency
-            : (availableCurrencies[0] || 'RUB');
+        const primaryCurrency = (state.currency && state.currency !== 'all')
+            ? state.currency
+            : ((agg[state.profitCurrency]) ? state.profitCurrency : (availableCurrencies[0] || 'RUB'));
 
-        const totals = agg[primaryCurrency] || {
+        const filteredOrders = filterProfitOrders(allOrders, state.profitFilter || 'all');
+        const profitEngine = (typeof window !== 'undefined' && window.FPTProfitEngine) || root.FPTProfitEngine;
+        const aggResult = (profitEngine && typeof profitEngine.calculateProfitAggregates === 'function')
+            ? profitEngine.calculateProfitAggregates(filteredOrders, { currency: primaryCurrency })
+            : null;
+
+        const totals = aggResult ? aggResult.totals : (agg[primaryCurrency] || {
             currency: primaryCurrency,
             eligibleOrdersCount: 0,
             eligibleRevenue: 0,
@@ -2629,11 +2839,11 @@
             refundedOrdersCount: 0,
             refundedRevenue: 0,
             currencyMismatchCount: 0
-        };
+        });
 
-        renderProfitCards(pane, totals, primaryCurrency, agg);
+        renderProfitCards(pane, totals, primaryCurrency, aggResult ? aggResult.byCurrency : agg, filteredOrders);
         renderProfitCoverage(pane, totals, primaryCurrency);
-        renderProfitChart(pane, totals, state.cachedProfitOrders || [], primaryCurrency);
+        renderProfitChart(pane, totals, filteredOrders, primaryCurrency);
         renderProfitTable(pane);
         bindProfitFilters(pane);
     }
@@ -2679,7 +2889,7 @@
         if (ops) ops.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>';
     }
 
-    function renderOverviewRow1(pane, salesAgg, profitData, primaryCurrency) {
+    function renderOverviewRow1(pane, salesAgg, profitData, primaryCurrency, salesOrders, profitOrders) {
         if (!pane) return;
 
         // 1. Выручка
@@ -2747,9 +2957,39 @@
         if (avgSubEl) {
             avgSubEl.textContent = salesAgg ? 'Средний чек покупателя' : '—';
         }
+
+        // Drilldown wire
+        const salesList = Array.isArray(salesOrders) ? salesOrders : [];
+        const validSales = salesList.filter(o => o.orderStatus === 'closed' || o.orderStatus === 'paid');
+        const profitList = Array.isArray(profitOrders) ? profitOrders : [];
+
+        const revCard = revEl && typeof revEl.closest === 'function' && revEl.closest('.fpt-fin-card');
+        if (revCard) {
+            revCard.classList.add('fpt-fin-clickable');
+            revCard.title = 'Показать заказы за этой цифрой';
+            revCard.onclick = () => openDrilldown('Выручка от продаж', `${periodLabel(state.period)} · ${validSales.length} заказов`, validSales);
+        }
+        const profitCard = profitEl && typeof profitEl.closest === 'function' && profitEl.closest('.fpt-fin-card');
+        if (profitCard) {
+            profitCard.classList.add('fpt-fin-clickable');
+            profitCard.title = 'Показать заказы за этой цифрой';
+            profitCard.onclick = () => openDrilldown('Реализованная чистая прибыль', `${periodLabel(state.period)} · ${profitList.length} заказов`, profitList);
+        }
+        const ordersCard = ordersEl && typeof ordersEl.closest === 'function' && ordersEl.closest('.fpt-fin-card');
+        if (ordersCard) {
+            ordersCard.classList.add('fpt-fin-clickable');
+            ordersCard.title = 'Показать заказы за этой цифрой';
+            ordersCard.onclick = () => openDrilldown('Оплаченные заказы', `${periodLabel(state.period)} · ${validSales.length} заказов`, validSales);
+        }
+        const avgCard = avgEl && typeof avgEl.closest === 'function' && avgEl.closest('.fpt-fin-card');
+        if (avgCard) {
+            avgCard.classList.add('fpt-fin-clickable');
+            avgCard.title = 'Показать заказы за этой цифрой';
+            avgCard.onclick = () => openDrilldown('Средний чек продажи', `${periodLabel(state.period)} · ${validSales.length} заказов`, validSales);
+        }
     }
 
-    function renderOverviewRow2(pane, potTotals, potCurrency) {
+    function renderOverviewRow2(pane, potTotals, potCurrency, lotsList) {
         if (!pane) return;
 
         // 1. Потенциал выручки
@@ -2823,6 +3063,33 @@
             } else {
                 offersSubEl.innerHTML = '<span class="fpt-fin-mini-badge">—</span>';
             }
+        }
+
+        // Drilldown wire
+        const lots = Array.isArray(lotsList) ? lotsList : [];
+        const revCard = revEl && typeof revEl.closest === 'function' && revEl.closest('.fpt-fin-card');
+        if (revCard) {
+            revCard.classList.add('fpt-fin-clickable');
+            revCard.title = 'Показать лоты инвентаря';
+            revCard.onclick = () => openDrilldown('Потенциал выручки (лоты)', `${lots.length} предложений`, lots);
+        }
+        const profCard = profEl && typeof profEl.closest === 'function' && profEl.closest('.fpt-fin-card');
+        if (profCard) {
+            profCard.classList.add('fpt-fin-clickable');
+            profCard.title = 'Показать лоты инвентаря';
+            profCard.onclick = () => openDrilldown('Потенциал прибыли (лоты)', `${lots.length} предложений`, lots);
+        }
+        const costCard = costEl && typeof costEl.closest === 'function' && costEl.closest('.fpt-fin-card');
+        if (costCard) {
+            costCard.classList.add('fpt-fin-clickable');
+            costCard.title = 'Показать лоты инвентаря';
+            costCard.onclick = () => openDrilldown('Себестоимость склада (лоты)', `${lots.length} предложений`, lots);
+        }
+        const offersCard = offersEl && typeof offersEl.closest === 'function' && offersEl.closest('.fpt-fin-card');
+        if (offersCard) {
+            offersCard.classList.add('fpt-fin-clickable');
+            offersCard.title = 'Показать лоты инвентаря';
+            offersCard.onclick = () => openDrilldown('Предложения в продаже', `${lots.length} предложений`, lots);
         }
     }
 
@@ -3218,20 +3485,37 @@
                 const profitEngine = (typeof window !== 'undefined' && window.FPTProfitEngine) || root.FPTProfitEngine;
                 const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
 
+                const filterOpts = {
+                    period: state.period,
+                    useMsk: true
+                };
+                if (state.currency && state.currency !== 'all') {
+                    filterOpts.currency = state.currency;
+                }
+                if (state.status && state.status !== 'all') {
+                    filterOpts.statuses = state.status;
+                }
+                if (state.category && state.category !== 'all') {
+                    filterOpts.category = state.category;
+                }
+
                 const salesPromise = (finData && typeof finData.getSales === 'function')
-                    ? finData.getSales({ period: state.period, sort: 'date-desc' })
+                    ? finData.getSales(Object.assign({ sort: 'date-desc' }, filterOpts))
                     : Promise.resolve([]);
 
                 const profitPromise = (profitEngine && typeof profitEngine.getRealisedProfit === 'function')
-                    ? profitEngine.getRealisedProfit({ period: state.period })
+                    ? profitEngine.getRealisedProfit(filterOpts)
                     : Promise.resolve(null);
 
                 const potentialPromise = (potentialEngine && typeof potentialEngine.getInventory === 'function')
                     ? potentialEngine.getInventory({ enrichPotential: true, forceRefresh: forceReload })
                     : Promise.resolve(null);
 
+                const opsFilter = { period: state.period, sort: 'date-desc', useMsk: true };
+                if (filterOpts.currency) opsFilter.currency = filterOpts.currency;
+                if (filterOpts.statuses) opsFilter.statuses = filterOpts.statuses;
                 const opsPromise = (finData && typeof finData.getOperations === 'function')
-                    ? finData.getOperations({ period: state.period, sort: 'date-desc', useMsk: true })
+                    ? finData.getOperations(opsFilter)
                     : Promise.resolve([]);
 
                 const [salesRes, profitRes, potRes, opsRes] = await Promise.allSettled([
@@ -3252,15 +3536,20 @@
 
                 let potTotals = null;
                 let potCurrency = 'RUB';
+                let lots = [];
                 if (potRes.status === 'fulfilled' && potRes.value) {
                     try {
-                        const lots = Array.isArray(potRes.value) ? potRes.value : (potRes.value.lots || []);
+                        const rawLots = Array.isArray(potRes.value) ? potRes.value : (potRes.value.lots || []);
+                        lots = (filterOpts.category)
+                            ? rawLots.filter(l => (l.category || '').toLowerCase() === filterOpts.category.toLowerCase())
+                            : rawLots;
                         if (Array.isArray(lots) && potentialEngine && typeof potentialEngine.calculatePotentialAggregates === 'function') {
                             const enriched = (typeof potentialEngine.calculateRowPotential === 'function')
                                 ? lots.map(l => (l && l.stockKind) ? l : Object.assign({}, l, potentialEngine.calculateRowPotential(l)))
                                 : lots;
                             const potAggs = potentialEngine.calculatePotentialAggregates(enriched);
-                            potCurrency = potAggs[state.profitCurrency] ? state.profitCurrency : (Object.keys(potAggs)[0] || 'RUB');
+                            const targetCur = (filterOpts.currency) ? filterOpts.currency : state.profitCurrency;
+                            potCurrency = potAggs[targetCur] ? targetCur : (Object.keys(potAggs)[0] || 'RUB');
                             potTotals = potAggs[potCurrency] || null;
                         }
                     } catch (potErr) {
@@ -3277,11 +3566,13 @@
                     profitData,
                     potTotals,
                     potCurrency,
+                    lots,
                     operations
                 };
                 state.cachedOverviewPeriod = state.period;
                 state.overviewLastUpdate = Date.now();
                 updateLastUpdatedText('overview');
+                updateCategorySelectOptions(sales.map(o => o.subcategoryName || o.category).concat(lots.map(l => l.category)));
             } catch (err) {
                 console.error('[FPTFinanceHub] Error loading overview data:', err);
                 if (currentToken !== state.overviewRenderToken) return;
@@ -3296,8 +3587,8 @@
         const data = state.cachedOverviewData || {};
         const primaryCurrency = (data.salesAgg && data.salesAgg.byCurrency && Object.keys(data.salesAgg.byCurrency)[0]) || state.profitCurrency || 'RUB';
 
-        renderOverviewRow1(pane, data.salesAgg, data.profitData, primaryCurrency);
-        renderOverviewRow2(pane, data.potTotals, data.potCurrency || 'RUB');
+        renderOverviewRow1(pane, data.salesAgg, data.profitData, primaryCurrency, data.sales, data.profitData ? data.profitData.orders : []);
+        renderOverviewRow2(pane, data.potTotals, data.potCurrency || 'RUB', data.lots || []);
         renderOverviewCharts(pane, data.sales, data.profitData, primaryCurrency);
         renderOverviewTopProducts(pane, data.sales, data.salesAgg, primaryCurrency);
         renderOverviewTopCategories(pane, data.sales, data.salesAgg, primaryCurrency);
@@ -3337,6 +3628,7 @@
         }
 
         updateLastUpdatedText(target);
+        updateHeaderFiltersVisibility(target);
 
         if (target === 'overview') {
             renderOverviewSubtab(false);
@@ -3353,8 +3645,7 @@
         }
     }
 
-    function onPeriodChange(newPeriod) {
-        state.period = newPeriod || '7d';
+    function invalidateAllCaches() {
         state.cachedOrders = null;
         state.cachedAgg = null;
         state.cachedPeriod = null;
@@ -3368,9 +3659,13 @@
         state.cachedProfitOrders = null;
         state.cachedProfitAgg = null;
         state.cachedProfitPeriod = null;
+        state.cachedPotentialLots = null;
+        state.cachedPotentialAgg = null;
         state.cachedOverviewData = null;
         state.cachedOverviewPeriod = null;
+    }
 
+    function reRenderActiveSubtab() {
         if (state.activeSubtab === 'overview') {
             renderOverviewSubtab(true);
         } else if (state.activeSubtab === 'sales') {
@@ -3383,6 +3678,102 @@
             renderPotentialSubtab(true);
         } else if (state.activeSubtab === 'profit') {
             renderProfitSubtab(true);
+        }
+    }
+
+    function onPeriodChange(newPeriod) {
+        state.period = newPeriod || '7d';
+        try {
+            sessionStorage.setItem('fpt_fin_last_period', state.period);
+        } catch (_) {}
+        invalidateAllCaches();
+        reRenderActiveSubtab();
+    }
+
+    function onCurrencyChange(newCurrency) {
+        state.currency = newCurrency || 'all';
+        invalidateAllCaches();
+        reRenderActiveSubtab();
+    }
+
+    function onStatusChange(newStatus) {
+        state.status = newStatus || 'all';
+        invalidateAllCaches();
+        reRenderActiveSubtab();
+    }
+
+    function onCategoryChange(newCategory) {
+        state.category = newCategory || 'all';
+        invalidateAllCaches();
+        reRenderActiveSubtab();
+    }
+
+    function setupHeaderFilters(container) {
+        if (!container) return;
+        const periodWrap = container.querySelector('.fpt-fin-period-wrap');
+        if (!periodWrap) return;
+
+        // 1. Currency Select
+        let curSelect = container.querySelector('#fptFinCurrencySelect');
+        if (!curSelect) {
+            curSelect = document.createElement('select');
+            curSelect.id = 'fptFinCurrencySelect';
+            curSelect.className = 'fpt-fin-period-select';
+            curSelect.setAttribute('aria-label', 'Валюта статистики');
+            curSelect.innerHTML = `
+                <option value="all">Все валюты</option>
+                <option value="RUB">₽ RUB</option>
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+            `;
+            periodWrap.appendChild(curSelect);
+        }
+        curSelect.value = state.currency || 'all';
+        curSelect.onchange = (e) => onCurrencyChange(e.target.value);
+
+        // 2. Status Select
+        let statusSelect = container.querySelector('#fptFinStatusSelect');
+        if (!statusSelect) {
+            statusSelect = document.createElement('select');
+            statusSelect.id = 'fptFinStatusSelect';
+            statusSelect.className = 'fpt-fin-period-select';
+            statusSelect.setAttribute('aria-label', 'Статус заказов');
+            statusSelect.innerHTML = `
+                <option value="all">Все статусы</option>
+                <option value="closed">Закрытые</option>
+                <option value="paid">Оплаченные</option>
+                <option value="refunded">Возвраты</option>
+            `;
+            periodWrap.appendChild(statusSelect);
+        }
+        statusSelect.value = state.status || 'all';
+        statusSelect.onchange = (e) => onStatusChange(e.target.value);
+
+        // 3. Category Select
+        let catSelect = container.querySelector('#fptFinCategorySelect');
+        if (!catSelect) {
+            catSelect = document.createElement('select');
+            catSelect.id = 'fptFinCategorySelect';
+            catSelect.className = 'fpt-fin-period-select';
+            catSelect.setAttribute('aria-label', 'Категория товаров');
+            catSelect.innerHTML = `<option value="all">Все категории</option>`;
+            periodWrap.appendChild(catSelect);
+        }
+        catSelect.value = state.category || 'all';
+        catSelect.onchange = (e) => onCategoryChange(e.target.value);
+
+        updateHeaderFiltersVisibility(state.activeSubtab);
+    }
+
+    function updateHeaderFiltersVisibility(subtab) {
+        if (!state.container) return;
+        const catSelect = state.container.querySelector('#fptFinCategorySelect');
+        if (catSelect) {
+            catSelect.style.display = (subtab === 'operations') ? 'none' : '';
+        }
+        const statusSelect = state.container.querySelector('#fptFinStatusSelect');
+        if (statusSelect) {
+            statusSelect.style.display = (subtab === 'potential') ? 'none' : '';
         }
     }
 
@@ -3503,6 +3894,8 @@
             periodSelect.value = state.period;
         }
 
+        setupHeaderFilters(container);
+
         updateLastUpdatedText(state.activeSubtab);
 
         if (state.activeSubtab === 'overview') {
@@ -3531,6 +3924,10 @@
             if (savedSubtab) state.activeSubtab = savedSubtab;
         } catch (_) {}
 
+        if (state.container) {
+            setupHeaderFilters(state.container);
+        }
+
         updateLastUpdatedText(state.activeSubtab);
 
         if (state.activeSubtab === 'overview') {
@@ -3554,6 +3951,9 @@
         onOpen,
         onSubtabChange,
         onPeriodChange,
+        onCurrencyChange,
+        onStatusChange,
+        onCategoryChange,
         onPageLeave: () => {
             cleanupOverview();
             cleanupSales();

@@ -94,7 +94,7 @@
             </div>
             <div class="fpt-dd-row-meta">
                 <span>${party}</span>
-                <span>${esc(o.subcategoryName || '')}</span>
+                <span>${esc(o.subcategoryName || o.category || '')}</span>
                 <span class="fpt-dd-st fpt-dd-st-${esc(o.orderStatus || '')}">${esc(st)}</span>
                 <span>${esc(dateStr)}</span>
             </div>`;
@@ -103,57 +103,105 @@
             : `<div class="fpt-dd-row">${inner}</div>`;
     }
 
-    function ensureStyles() {
-        if (document.getElementById('fpt-dd-styles')) return;
-        const css = document.createElement('style');
-        css.id = 'fpt-dd-styles';
-        css.textContent = `
-        .fpt-dd-overlay{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;
-            justify-content:center;background:rgba(8,9,14,0.62);backdrop-filter:blur(3px);
-            animation:fptDdFade .15s ease;}
-        @keyframes fptDdFade{from{opacity:0}to{opacity:1}}
-        .fpt-dd-modal{width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;
-            background:var(--fpt-surface,#171922);color:var(--fpt-text,#e7e9f3);
-            border:1px solid var(--fpt-border,rgba(255,255,255,0.1));border-radius:16px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.5);overflow:hidden;}
-        .fpt-custom-theme-off .fpt-dd-modal{background:#fff;color:#1a1a1a;border-color:rgba(0,0,0,0.12);}
-        .fpt-dd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
-            padding:16px 18px;border-bottom:1px solid var(--fpt-border,rgba(255,255,255,0.08));}
-        .fpt-dd-title{font-size:15px;font-weight:700;}
-        .fpt-dd-sub{font-size:12px;color:var(--fpt-text-muted,#9099b8);margin-top:2px;}
-        .fpt-dd-close{background:none;border:none;color:inherit;font-size:22px;line-height:1;
-            cursor:pointer;opacity:.7;}
-        .fpt-dd-close:hover{opacity:1;}
-        .fpt-dd-tools{display:flex;gap:8px;padding:10px 18px 0;}
-        .fpt-dd-search{flex:1;padding:8px 10px;border-radius:8px;font-size:13px;
-            background:var(--fpt-surface-2,#20222e);color:var(--fpt-text,#fff);
-            border:1px solid var(--fpt-border,#22253a);}
-        .fpt-custom-theme-off .fpt-dd-search{background:#f3f3f5;color:#1a1a1a;border-color:#ddd;}
-        .fpt-dd-sort{padding:8px 10px;border-radius:8px;font-size:13px;
-            background:var(--fpt-surface-2,#20222e);color:var(--fpt-text,#fff);
-            border:1px solid var(--fpt-border,#22253a);cursor:pointer;}
-        .fpt-custom-theme-off .fpt-dd-sort{background:#f3f3f5;color:#1a1a1a;border-color:#ddd;}
-        .fpt-dd-list{padding:12px 18px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
-        .fpt-dd-row{display:block;text-decoration:none;background:var(--fpt-surface-2,#20222e);
-            border:1px solid var(--fpt-border,#22253a);border-radius:10px;padding:9px 11px;color:inherit;}
-        .fpt-custom-theme-off .fpt-dd-row{background:#f7f7f9;border-color:#e3e3e8;}
-        a.fpt-dd-row:hover{border-color:var(--fpt-accent,#ff6d15);}
-        .fpt-dd-row-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
-        .fpt-dd-row-title{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .fpt-dd-row-price{font-size:12.5px;font-weight:700;color:var(--fpt-accent,#ff6d15);white-space:nowrap;}
-        .fpt-dd-row-meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:5px;font-size:11px;
-            color:var(--fpt-text-muted,#9099b8);}
-        .fpt-dd-st{font-weight:600;}
-        .fpt-dd-st-closed{color:#3ad07a;} .fpt-dd-st-paid{color:#4aa3ff;} .fpt-dd-st-refunded{color:#ff6b6b;}
-        .fpt-dd-empty{padding:24px;text-align:center;color:var(--fpt-text-muted,#9099b8);font-size:13px;}
-        .fp-stat-card{cursor:pointer;transition:transform .08s ease,box-shadow .12s ease;}
-        .fp-stat-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,0.18);}
-        .fp-s3.fpt-clickable{cursor:pointer;}
-        .fp-s3.fpt-clickable .fp-s3-value{transition:color .12s ease;}
-        .fp-s3.fpt-clickable:hover .fp-s3-value{color:var(--fpt-accent,#1b75bb);}
-        .fpt-dd-hint{font-size:10px;color:var(--fpt-text-muted,#9099b8);opacity:.7;margin-top:6px;}
-        `;
-        document.head.appendChild(css);
+    function lotRow(lot) {
+        const title = esc(lot.title || lot.description || ('Лот #' + lot.offerId));
+        const cur = lot.currency || 'RUB';
+        const price = lot.sellerPrice != null ? money(lot.sellerPrice, cur) : (lot.price != null ? money(lot.price, cur) : '');
+        const link = lot.offerId ? `https://funpay.com/lots/offerEdit?offer=${encodeURIComponent(lot.offerId)}` : null;
+
+        let stockStr = 'без остатка';
+        if (lot.stockKind === 'finite' && typeof lot.stock === 'number') {
+            stockStr = `${lot.stock} шт.`;
+        } else if (lot.stockKind === 'unlimited') {
+            stockStr = '∞ (неогранич.)';
+        }
+
+        let costStr = 'С/с: не указана';
+        if (lot.costBasis !== null && lot.costBasis !== undefined) {
+            costStr = `С/с: ${money(lot.costBasis, cur)}`;
+        }
+
+        let profitStr = '';
+        if (lot.potentialProfit !== null && lot.potentialProfit !== undefined) {
+            const sign = lot.potentialProfit > 0 ? '+' : '';
+            const pClass = lot.potentialProfit >= 0 ? 'fpt-dd-st-closed' : 'fpt-dd-st-refunded';
+            const marginStr = (lot.margin !== null && lot.margin !== undefined) ? ` (${lot.margin}%)` : '';
+            profitStr = `<span class="${pClass}">Прибыль: ${sign}${money(lot.potentialProfit, cur)}${marginStr}</span>`;
+        }
+
+        const activeStr = lot.active === false
+            ? '<span class="fpt-dd-st fpt-dd-st-refunded">Деактивирован</span>'
+            : '<span class="fpt-dd-st fpt-dd-st-closed">Активен</span>';
+
+        const inner = `
+            <div class="fpt-dd-row-top">
+                <span class="fpt-dd-row-title">${title}</span>
+                ${price ? `<span class="fpt-dd-row-price">${esc(price)}</span>` : ''}
+            </div>
+            <div class="fpt-dd-row-meta">
+                <span>${esc(lot.category || 'Без категории')}</span>
+                <span>${esc(stockStr)}</span>
+                <span>${esc(costStr)}</span>
+                ${profitStr}
+                ${activeStr}
+            </div>`;
+        return link
+            ? `<a class="fpt-dd-row" href="${link}" target="_blank" rel="noopener">${inner}</a>`
+            : `<div class="fpt-dd-row">${inner}</div>`;
+    }
+
+    function profitOrderRow(o) {
+        const info = o.profitInfo || ((typeof root !== 'undefined' && root.FPTProfitEngine && root.FPTProfitEngine.calculateOrderProfit) ? root.FPTProfitEngine.calculateOrderProfit(o) : null);
+        const st = { closed: 'Закрыт', paid: 'Оплачен', refunded: 'Возврат' }[o.orderStatus] || o.orderStatus || '';
+        const d = o.orderDate ? new Date(o.orderDate) : null;
+        const dateStr = d ? d.toLocaleDateString('ru-RU') + ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : '';
+        const cur = (info && info.currency) || o.currency || 'RUB';
+        const price = o.price != null ? money(o.price, cur) : (info && info.sellerRevenue != null ? money(info.sellerRevenue, cur) : '');
+        const link = o.orderId ? `https://funpay.com/orders/${o.orderId}/` : null;
+        const party = esc(o.buyerUsername || o.sellerUsername || o.sellerName || '-');
+
+        let costBadge = '';
+        let profitBadge = '';
+        if (info) {
+            if (info.hasCost) {
+                costBadge = `<span>С/с: ${money(info.costBasis, info.costBasisCurrency || cur)}</span>`;
+                const sign = info.netProfit > 0 ? '+' : '';
+                const pColor = info.netProfit >= 0 ? 'fpt-dd-st-closed' : 'fpt-dd-st-refunded';
+                const marginPart = info.margin !== null ? ` (${info.margin}%)` : '';
+                profitBadge = `<span class="${pColor}">Прибыль: ${sign}${money(info.netProfit, cur)}${marginPart}</span>`;
+            } else if (info.hasCurrencyMismatch) {
+                costBadge = '<span class="fpt-dd-st-refunded">С/с: несовпадение валют</span>';
+            } else if (!info.isRefunded) {
+                costBadge = '<span>С/с: не указана</span>';
+            }
+        }
+
+        const inner = `
+            <div class="fpt-dd-row-top">
+                <span class="fpt-dd-row-title">${esc(o.description || o.subcategoryName || 'Заказ')}</span>
+                ${price ? `<span class="fpt-dd-row-price">${esc(price)}</span>` : ''}
+            </div>
+            <div class="fpt-dd-row-meta">
+                <span>${party}</span>
+                <span>${esc(o.subcategoryName || o.category || '')}</span>
+                <span class="fpt-dd-st fpt-dd-st-${esc(o.orderStatus || '')}">${esc(st)}</span>
+                ${costBadge}
+                ${profitBadge}
+                <span>${esc(dateStr)}</span>
+            </div>`;
+        return link
+            ? `<a class="fpt-dd-row" href="${link}" target="_blank" rel="noopener">${inner}</a>`
+            : `<div class="fpt-dd-row">${inner}</div>`;
+    }
+
+    function renderItem(item) {
+        if (item && item.offerId && !item.orderId) {
+            return lotRow(item);
+        }
+        if (item && (item.profitInfo || item.costBasisSnapshot !== undefined)) {
+            return profitOrderRow(item);
+        }
+        return orderRow(item);
     }
 
     let _list = []; // текущий показанный список (для сортировки/поиска)
@@ -165,19 +213,44 @@
             const q = query.toLowerCase();
             arr = arr.filter(o =>
                 (o.description || '').toLowerCase().includes(q) ||
+                (o.title || '').toLowerCase().includes(q) ||
                 (o.buyerUsername || '').toLowerCase().includes(q) ||
                 (o.sellerUsername || '').toLowerCase().includes(q) ||
                 (o.sellerName || '').toLowerCase().includes(q) ||
-                (o.subcategoryName || '').toLowerCase().includes(q)
+                (o.subcategoryName || '').toLowerCase().includes(q) ||
+                (o.category || '').toLowerCase().includes(q) ||
+                String(o.orderId || '').toLowerCase().includes(q) ||
+                String(o.offerId || '').toLowerCase().includes(q)
             );
         }
-        const valUSD = o => (o.price || 0) * (RATES[o.currency] || 0);
+        const valUSD = o => (o.sellerPrice != null ? o.sellerPrice : (o.price || 0)) * (RATES[o.currency] || 1);
+        const valProfit = o => {
+            if (o.profitInfo && o.profitInfo.netProfit != null) return o.profitInfo.netProfit;
+            if (o.potentialProfit != null) return o.potentialProfit;
+            return -999999999;
+        };
+        const valDate = o => {
+            if (typeof o.orderDate === 'number') return o.orderDate;
+            if (o.orderDate) {
+                const parsed = Date.parse(o.orderDate);
+                if (!isNaN(parsed)) return parsed;
+            }
+            if (o.offerId) {
+                const n = parseInt(o.offerId, 10);
+                if (!isNaN(n)) return n;
+            }
+            return 0;
+        };
+
         if (sortMode === 'price-desc') arr.sort((a, b) => valUSD(b) - valUSD(a));
         else if (sortMode === 'price-asc') arr.sort((a, b) => valUSD(a) - valUSD(b));
-        else if (sortMode === 'date-asc') arr.sort((a, b) => (a.orderDate || 0) - (b.orderDate || 0));
-        else arr.sort((a, b) => (b.orderDate || 0) - (a.orderDate || 0)); // date-desc
+        else if (sortMode === 'profit-desc') arr.sort((a, b) => valProfit(b) - valProfit(a));
+        else if (sortMode === 'profit-asc') arr.sort((a, b) => valProfit(a) - valProfit(b));
+        else if (sortMode === 'date-asc') arr.sort((a, b) => valDate(a) - valDate(b));
+        else arr.sort((a, b) => valDate(b) - valDate(a)); // date-desc
+
         container.innerHTML = arr.length
-            ? arr.map(orderRow).join('')
+            ? arr.map(renderItem).join('')
             : `<div class="fpt-dd-empty">Ничего не найдено.</div>`;
     }
 
@@ -207,6 +280,8 @@
                         <option value="date-asc">Сначала старые</option>
                         <option value="price-desc">Дороже сверху</option>
                         <option value="price-asc">Дешевле сверху</option>
+                        <option value="profit-desc">Больше прибыль</option>
+                        <option value="profit-asc">Меньше прибыль</option>
                     </select>
                 </div>
                 <div class="fpt-dd-list" id="fpt-dd-list"></div>
@@ -346,10 +421,16 @@
     if (typeof window !== 'undefined') {
         window.fptOpenDrilldownModal = openModal;
     }
+    if (typeof root !== 'undefined') {
+        root.fptOpenDrilldownModal = openModal;
+    }
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = { openModal, renderList, renderItem, orderRow, lotRow, profitOrderRow };
+    }
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', boot);
     } else {
         boot();
     }
-})();
+})(typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : this));

@@ -539,6 +539,10 @@
             }
             if (options.statuses !== undefined && options.statuses !== null && !isStatusAllowed(o.orderStatus, options.statuses)) return false;
             if (options.currency !== undefined && options.currency !== null && !isCurrencyAllowed(o.currency, options.currency)) return false;
+            if (options.category !== undefined && options.category !== null && options.category !== '' && options.category !== 'all') {
+                const cat = o.subcategoryName || o.category || 'Без категории';
+                if (cat.toLowerCase() !== String(options.category).toLowerCase()) return false;
+            }
             return true;
         });
     }

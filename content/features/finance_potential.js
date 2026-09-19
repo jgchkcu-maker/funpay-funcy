@@ -494,8 +494,13 @@
 
         sellerRevenue = Math.round(sellerRevenue * 100) / 100;
         buyerGmv = Math.round(buyerGmv * 100) / 100;
-        knownInventoryCost = Math.round(knownInventoryCost * 100) / 100;
-        knownPotentialProfit = Math.round(knownPotentialProfit * 100) / 100;
+        if (knownCostOffers === 0 && finiteOffers > 0) {
+            knownInventoryCost = null;
+            knownPotentialProfit = null;
+        } else {
+            knownInventoryCost = Math.round(knownInventoryCost * 100) / 100;
+            knownPotentialProfit = Math.round(knownPotentialProfit * 100) / 100;
+        }
         knownCostSellerRevenue = Math.round(knownCostSellerRevenue * 100) / 100;
         missingCostSellerRevenue = Math.round(missingCostSellerRevenue * 100) / 100;
 
@@ -506,15 +511,15 @@
             costCoveragePercent = 100;
         }
 
-        const knownMargin = knownCostSellerRevenue > 0
+        const knownMargin = (knownCostSellerRevenue > 0 && knownPotentialProfit !== null)
             ? Math.round((knownPotentialProfit / knownCostSellerRevenue) * 10000) / 100
             : null;
 
-        const knownRoi = knownInventoryCost > 0
+        const knownRoi = (knownInventoryCost > 0 && knownPotentialProfit !== null)
             ? Math.round((knownPotentialProfit / knownInventoryCost) * 10000) / 100
             : null;
 
-        const overallMargin = sellerRevenue > 0
+        const overallMargin = (sellerRevenue > 0 && knownPotentialProfit !== null)
             ? Math.round((knownPotentialProfit / sellerRevenue) * 10000) / 100
             : null;
 
