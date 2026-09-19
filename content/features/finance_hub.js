@@ -773,10 +773,457 @@
         modal.querySelector('.fpt-dd-close').addEventListener('click', close);
     }
 
-    // ── ЗАГЛУШКИ ДЛЯ ОСТАЛЬНЫХ ВКЛАДОК (БУДУТ РАСШИРЕНЫ В СЛЕДУЮЩИХ ЭТАПАХ) ──
+    // ── РЕНДЕРИНГ ВКЛАДКИ «ПОКУПКИ» ─────────────────────────────────────────
 
     async function renderPurchases() {
-        // Будет реализовано в commit 3
+        const pane = getPane('purchases');
+        if (!pane) return;
+
+        state.loading.purchases = true;
+
+        const dataLayer = root.FPTFinanceData;
+        if (!dataLayer) {
+            pane.innerHTML = `<div class="fpt-fin-empty-state"><p class="fpt-fin-empty-desc">Служба данных не загружена</p></div>`;
+            state.loading.purchases = false;
+            return;
+        }
+
+        const period = state.period || '7d';
+        const purchasesFilter = state.purchases.statusFilter;
+        const search = state.purchases.search;
+        const sort = state.purchases.sort;
+
+        const { orders, count, totalCount } = await dataLayer.getPurchases({
+            period,
+            statusFilter: purchasesFilter,
+            search,
+            sort
+        });
+
+        const agg = dataLayer.aggregatePurchases(orders);
+        state.loading.purchases = false;
+
+        if (totalCount === 0) {
+            pane.innerHTML = `
+                <div class="fpt-fin-empty-state">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon">shopping_bag</span>
+                    <h4 class="fpt-fin-empty-title">Покупки не найдены</h4>
+                    <p class="fpt-fin-empty-desc">Нажмите кнопку ниже или «Обновить» вверху, чтобы синхронизировать историю ваших покупок с FunPay.</p>
+                    <button type="button" class="btn btn-primary fpt-fin-btn" id="fptFinPurchasesInitialSyncBtn">
+                        <span class="material-symbols-rounded">sync</span>
+                        <span>Синхронизировать покупки</span>
+                    </button>
+                </div>
+            `;
+            const syncBtn = pane.querySelector('#fptFinPurchasesInitialSyncBtn');
+            if (syncBtn) {
+                syncBtn.addEventListener('click', () => refresh());
+            }
+            return;
+        }
+
+        const days = Object.keys(agg.byDay).sort();
+        const chartMetric = state.purchases.chartMetric; // 'spent' | 'count'
+        const isMoneyMetric = chartMetric === 'spent';
+
+        const donutMetric = state.purchases.donutMetric;
+        let donutTitle = 'Покупки по категориям';
+        let donutEntries = [];
+        let donutFmt = null;
+
+        if (donutMetric === 'category') {
+            donutTitle = 'Покупки по категориям';
+            donutEntries = Object.entries(agg.byCategory)
+                .map(([k, v]) => ({ label: k, value: v.count }))
+                .sort((a, b) => b.value - a.value);
+        } else if (donutMetric === 'status') {
+            donutTitle = 'Покупки по статусам';
+            const stLabels = { closed: 'Закрыт', paid: 'Оплачен', refunded: 'Возврат' };
+            donutEntries = Object.entries(agg.byStatus)
+                .filter(([, v]) => v > 0)
+                .map(([k, v]) => ({ label: stLabels[k] || k, value: v }))
+                .sort((a, b) => b.value - a.value);
+        } else {
+            donutTitle = 'Траты по валютам';
+            donutEntries = Object.entries(agg.totalSpent)
+                .filter(([, v]) => v > 0)
+                .map(([k, v]) => ({ label: k, value: Math.round(v) }))
+                .sort((a, b) => b.value - a.value);
+            donutFmt = (v) => `${v.toLocaleString('ru-RU')}`;
+        }
+
+        const topSellers = Object.values(agg.bySeller)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+
+        const topProducts = Object.entries(agg.byProduct)
+            .map(([desc, d]) => ({ desc, count: d.count, spent: d.spent }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+
+        const visibleOrders = orders.slice(0, state.purchases.visibleOrdersCount);
+
+        pane.innerHTML = `
+            <!-- Фильтры и поиск -->
+            <div class="fpt-fin-toolbar">
+                <div class="fpt-fin-filter-group">
+                    <button type="button" class="fpt-fin-filter-chip ${purchasesFilter.stClosed ? 'active' : ''}" data-pst="closed">
+                        <span class="material-symbols-rounded">check_circle</span> Завершённые
+                    </button>
+                    <button type="button" class="fpt-fin-filter-chip ${purchasesFilter.stPaid ? 'active' : ''}" data-pst="paid">
+                        <span class="material-symbols-rounded">schedule</span> В процессе
+                    </button>
+                    <button type="button" class="fpt-fin-filter-chip ${purchasesFilter.stRefunded ? 'active' : ''}" data-pst="refunded">
+                        <span class="material-symbols-rounded">assignment_return</span> Возвраты
+                    </button>
+                </div>
+                <div class="fpt-fin-search-box">
+                    <span class="material-symbols-rounded fpt-fin-search-icon">search</span>
+                    <input type="text" class="fpt-fin-search-input" id="fptFinPurchasesSearch" placeholder="Поиск по товару, продавцу, ID..." value="${esc(search)}" autocomplete="off" />
+                    ${search ? `<button type="button" class="fpt-fin-search-clear" id="fptFinPurchasesSearchClear">×</button>` : ''}
+                </div>
+            </div>
+
+            <!-- Сетка KPI -->
+            <div class="fpt-fin-grid">
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card fpt-fin-clickable-card" data-pdrill="spent" title="Кликните для просмотра покупок">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Потрачено на покупки</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">shopping_bag</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${fmtRevenueMulti(agg.totalSpent)}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Закрыто: ${agg.totalClosed}</span>
+                            ${agg.totalPending > 0 ? `<span>· В ожидании: ${agg.totalPending}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card fpt-fin-clickable-card" data-pdrill="orders" title="Кликните для просмотра покупок">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Куплено товаров</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:var(--fptm-accent, #1b75bb);">inventory_2</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${agg.totalOrders}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Уник. продавцов: ${agg.uniqueSellersCount}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Средний чек покупки</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#a09af8;">receipt_long</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${fmtRevenueMulti(agg.averageCheck)}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>По завершённым покупкам</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="fpt-fin-col-3">
+                    <div class="fpt-fin-card fpt-fin-clickable-card" data-pdrill="refunded" title="Кликните для просмотра возвратов">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Возвраты средств</h5>
+                            <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">verified</span>
+                        </div>
+                        <div class="fpt-fin-card-value">${agg.totalRefunded}</div>
+                        <div class="fpt-fin-card-sub">
+                            <span>Сумма: ${fmtRevenueMulti(agg.refundedAmount)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- График расходов и Диаграмма -->
+                <div class="fpt-fin-col-8">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Динамика покупок</h5>
+                            <div class="fpt-fin-chart-toggles" role="group">
+                                <button type="button" class="fpt-fin-chart-toggle ${chartMetric === 'spent' ? 'active' : ''}" data-pmetric="spent">Траты</button>
+                                <button type="button" class="fpt-fin-chart-toggle ${chartMetric === 'count' ? 'active' : ''}" data-pmetric="count">Покупки</button>
+                            </div>
+                        </div>
+                        <div class="fpt-fin-chart-wrap" style="height:220px;position:relative;">
+                            ${renderLineChartSVG(days, agg.byDay, chartMetric, isMoneyMetric)}
+                        </div>
+                    </div>
+                </div>
+                <div class="fpt-fin-col-4">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Структура</h5>
+                            <div class="fpt-fin-chart-toggles" role="group">
+                                <button type="button" class="fpt-fin-chart-toggle ${donutMetric === 'category' ? 'active' : ''}" data-pdonut="category">Категории</button>
+                                <button type="button" class="fpt-fin-chart-toggle ${donutMetric === 'status' ? 'active' : ''}" data-pdonut="status">Статусы</button>
+                                <button type="button" class="fpt-fin-chart-toggle ${donutMetric === 'currency' ? 'active' : ''}" data-pdonut="currency">Валюты</button>
+                            </div>
+                        </div>
+                        ${renderDonutSVG(donutTitle, donutEntries, donutFmt)}
+                    </div>
+                </div>
+
+                <!-- Топы продавцов и товаров -->
+                <div class="fpt-fin-col-6">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Топ продавцов</h5>
+                            <span class="fpt-fin-card-sub">${topSellers.length} партнёров</span>
+                        </div>
+                        <div class="fpt-fin-table-wrap">
+                            <table class="fpt-fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Продавец</th>
+                                        <th style="text-align:right;">Покупок</th>
+                                        <th style="text-align:right;">Потрачено</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topSellers.length ? topSellers.map((s, i) => `
+                                        <tr>
+                                            <td style="width:28px;color:var(--fptm-muted,#888);">${i + 1}</td>
+                                            <td>
+                                                <a href="${s.id ? `https://funpay.com/users/${s.id}/` : '#'}" target="_blank" class="fpt-fin-user-link">
+                                                    ${esc(s.username)}
+                                                </a>
+                                            </td>
+                                            <td style="text-align:right;">
+                                                <button type="button" class="fpt-fin-mini-badge-btn" data-pdrill-seller="${esc(s.username)}" title="Показать покупки у этого продавца">
+                                                    ${s.count} пок.
+                                                </button>
+                                            </td>
+                                            <td style="text-align:right;font-weight:600;">${fmtMoney(s.spent, 'RUB')}</td>
+                                        </tr>
+                                    `).join('') : `<tr><td colspan="4" style="text-align:center;padding:16px;">Нет данных</td></tr>`}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fpt-fin-col-6">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <h5 class="fpt-fin-card-title">Купленные товары</h5>
+                            <span class="fpt-fin-card-sub">${topProducts.length} позиций</span>
+                        </div>
+                        <div class="fpt-fin-table-wrap">
+                            <table class="fpt-fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Товар</th>
+                                        <th style="text-align:right;">Куплено</th>
+                                        <th style="text-align:right;">Сумма</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${topProducts.length ? topProducts.map((p, i) => `
+                                        <tr>
+                                            <td style="width:28px;color:var(--fptm-muted,#888);">${i + 1}</td>
+                                            <td class="fpt-fin-desc-cell" title="${esc(p.desc)}">${esc(p.desc)}</td>
+                                            <td style="text-align:right;">
+                                                <button type="button" class="fpt-fin-mini-badge-btn" data-pdrill-product="${esc(p.desc)}" title="Показать покупки этого товара">
+                                                    ${p.count} раз
+                                                </button>
+                                            </td>
+                                            <td style="text-align:right;font-weight:600;">${fmtMoney(p.spent, 'RUB')}</td>
+                                        </tr>
+                                    `).join('') : `<tr><td colspan="4" style="text-align:center;padding:16px;">Нет данных</td></tr>`}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Таблица детальных покупок -->
+                <div class="fpt-fin-col-12">
+                    <div class="fpt-fin-card">
+                        <div class="fpt-fin-card-header">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <h5 class="fpt-fin-card-title">История покупок</h5>
+                                <span class="fpt-fin-mini-badge">Показано ${visibleOrders.length} из ${orders.length}</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <select class="fpt-fin-sort-select" id="fptFinPurchasesSortSelect" aria-label="Сортировка">
+                                    <option value="date-desc" ${sort === 'date-desc' ? 'selected' : ''}>Сначала новые</option>
+                                    <option value="date-asc" ${sort === 'date-asc' ? 'selected' : ''}>Сначала старые</option>
+                                    <option value="price-desc" ${sort === 'price-desc' ? 'selected' : ''}>Дороже сверху</option>
+                                    <option value="price-asc" ${sort === 'price-asc' ? 'selected' : ''}>Дешевле сверху</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="fpt-fin-table-wrap">
+                            <table class="fpt-fin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Заказ</th>
+                                        <th>Товар / Описание</th>
+                                        <th>Категория</th>
+                                        <th>Продавец</th>
+                                        <th>Дата</th>
+                                        <th>Сумма</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${visibleOrders.length ? visibleOrders.map(o => {
+                                        const d = o.orderDate ? new Date(o.orderDate) : null;
+                                        const dateStr = d ? `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '—';
+                                        const stBadge = o.orderStatus === 'closed'
+                                            ? `<span class="fpt-fin-badge-pill fpt-fin-badge-closed">Закрыт</span>`
+                                            : o.orderStatus === 'paid'
+                                            ? `<span class="fpt-fin-badge-pill fpt-fin-badge-paid">Оплачен</span>`
+                                            : `<span class="fpt-fin-badge-pill fpt-fin-badge-refunded">Возврат</span>`;
+                                        const sellerName = o.sellerUsername || o.buyerUsername || '—';
+                                        const sellerId = o.sellerId || o.buyerId;
+                                        return `
+                                            <tr>
+                                                <td style="font-family:monospace;font-weight:600;">
+                                                    <a href="https://funpay.com/orders/${esc(o.orderId)}/" target="_blank" class="fpt-fin-order-link">
+                                                        #${esc(o.orderId)}
+                                                    </a>
+                                                </td>
+                                                <td class="fpt-fin-desc-cell" title="${esc(o.description)}">${esc(o.description)}</td>
+                                                <td><span class="fpt-fin-subcat-badge">${esc(o.subcategoryName || '—')}</span></td>
+                                                <td>
+                                                    <a href="${sellerId ? `https://funpay.com/users/${sellerId}/` : '#'}" target="_blank" class="fpt-fin-user-link">
+                                                        ${esc(sellerName)}
+                                                    </a>
+                                                </td>
+                                                <td style="color:var(--fptm-muted,#888);font-size:11px;">${dateStr}</td>
+                                                <td style="font-weight:700;font-variant-numeric:tabular-nums;">${fmtMoney(o.price, o.currency)}</td>
+                                                <td>${stBadge}</td>
+                                            </tr>
+                                        `;
+                                    }).join('') : `
+                                        <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--fptm-muted,#888);">Нет покупок по текущим фильтрам</td></tr>
+                                    `}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        ${orders.length > visibleOrders.length ? `
+                            <div class="fpt-fin-table-footer">
+                                <button type="button" class="btn btn-default fpt-fin-btn" id="fptFinPurchasesLoadMoreBtn">
+                                    <span>Показать ещё ${Math.min(50, orders.length - visibleOrders.length)} покупок</span>
+                                </button>
+                                <button type="button" class="btn btn-default fpt-fin-btn" id="fptFinPurchasesLoadAllBtn">
+                                    <span>Показать все (${orders.length})</span>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        wirePurchasesEvents(pane, orders, agg);
+    }
+
+    function wirePurchasesEvents(pane, orders, agg) {
+        pane.querySelectorAll('.fpt-fin-filter-chip[data-pst]').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const st = chip.getAttribute('data-pst');
+                if (st === 'closed') state.purchases.statusFilter.stClosed = !state.purchases.statusFilter.stClosed;
+                if (st === 'paid') state.purchases.statusFilter.stPaid = !state.purchases.statusFilter.stPaid;
+                if (st === 'refunded') state.purchases.statusFilter.stRefunded = !state.purchases.statusFilter.stRefunded;
+                renderPurchases();
+            });
+        });
+
+        const searchInput = pane.querySelector('#fptFinPurchasesSearch');
+        if (searchInput) {
+            let timeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    state.purchases.search = e.target.value.trim();
+                    renderPurchases();
+                }, 300);
+            });
+        }
+        const clearSearchBtn = pane.querySelector('#fptFinPurchasesSearchClear');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', () => {
+                state.purchases.search = '';
+                renderPurchases();
+            });
+        }
+
+        pane.querySelectorAll('.fpt-fin-chart-toggle[data-pmetric]').forEach(t => {
+            t.addEventListener('click', () => {
+                state.purchases.chartMetric = t.getAttribute('data-pmetric');
+                renderPurchases();
+            });
+        });
+
+        pane.querySelectorAll('.fpt-fin-chart-toggle[data-pdonut]').forEach(t => {
+            t.addEventListener('click', () => {
+                state.purchases.donutMetric = t.getAttribute('data-pdonut');
+                renderPurchases();
+            });
+        });
+
+        const sortSelect = pane.querySelector('#fptFinPurchasesSortSelect');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', (e) => {
+                state.purchases.sort = e.target.value;
+                renderPurchases();
+            });
+        }
+
+        const loadMoreBtn = pane.querySelector('#fptFinPurchasesLoadMoreBtn');
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', () => {
+                state.purchases.visibleOrdersCount += 50;
+                renderPurchases();
+            });
+        }
+        const loadAllBtn = pane.querySelector('#fptFinPurchasesLoadAllBtn');
+        if (loadAllBtn) {
+            loadAllBtn.addEventListener('click', () => {
+                state.purchases.visibleOrdersCount = orders.length;
+                renderPurchases();
+            });
+        }
+
+        pane.querySelectorAll('.fpt-fin-clickable-card[data-pdrill]').forEach(card => {
+            card.addEventListener('click', () => {
+                const drill = card.getAttribute('data-pdrill');
+                let subset = orders;
+                let title = 'История покупок';
+                if (drill === 'spent') {
+                    subset = orders.filter(o => o.orderStatus === 'closed' || o.orderStatus === 'paid');
+                    title = 'Оплаченные покупки';
+                } else if (drill === 'refunded') {
+                    subset = orders.filter(o => o.orderStatus === 'refunded');
+                    title = 'Возвращённые покупки';
+                }
+                openDrilldownModal(title, `${subset.length} покупок`, subset);
+            });
+        });
+
+        pane.querySelectorAll('[data-pdrill-seller]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const seller = btn.getAttribute('data-pdrill-seller');
+                const subset = orders.filter(o => (o.sellerUsername || o.buyerUsername) === seller);
+                openDrilldownModal(`Покупки у продавца ${seller}`, `${subset.length} покупок`, subset);
+            });
+        });
+
+        pane.querySelectorAll('[data-pdrill-product]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const prod = btn.getAttribute('data-pdrill-product');
+                const subset = orders.filter(o => o.description === prod);
+                openDrilldownModal(`Покупки товара: ${prod}`, `${subset.length} покупок`, subset);
+            });
+        });
     }
 
     async function renderOperations() {
