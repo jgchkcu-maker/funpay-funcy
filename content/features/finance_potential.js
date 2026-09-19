@@ -335,11 +335,240 @@
             }
         }
 
+        if (options.enrichPotential) {
+            lots = lots.map(lot => calculateRowPotential(lot));
+        }
+
         if (!includeInactive) {
             return lots.filter(lot => lot.active === true);
         }
 
         return lots;
+    }
+
+    /**
+     * Чистый расчет показателей потенциала для отдельной строки лота (T06B).
+     * @param {Object} lot Нормализованная строка лота
+     * @returns {Object|null} Обогащенная строка с метриками потенциала
+     */
+    function calculateRowPotential(lot) {
+        if (!lot || typeof lot !== 'object') return null;
+
+        const normalized = (lot.stockKind && lot.offerId) ? lot : normalizeLotRow(lot);
+        if (!normalized) return null;
+
+        const isFinite = normalized.stockKind === 'finite' && typeof normalized.stock === 'number';
+        const hasSellerPrice = typeof normalized.sellerPrice === 'number';
+        const hasBuyerPrice = typeof normalized.buyerPrice === 'number';
+        const hasCostBasis = typeof normalized.costBasis === 'number';
+
+        let sellerRevenue = null;
+        let buyerGmv = null;
+        let inventoryCost = null;
+        let potentialProfit = null;
+        let margin = null;
+        let roi = null;
+
+        if (isFinite) {
+            if (hasSellerPrice) {
+                sellerRevenue = Math.round(normalized.sellerPrice * normalized.stock * 100) / 100;
+            }
+            if (hasBuyerPrice) {
+                buyerGmv = Math.round(normalized.buyerPrice * normalized.stock * 100) / 100;
+            }
+            if (hasCostBasis) {
+                inventoryCost = Math.round(normalized.costBasis * normalized.stock * 100) / 100;
+            }
+            if (hasSellerPrice && hasCostBasis) {
+                // Отрицательная прибыль допустима и не должна обнуляться
+                potentialProfit = Math.round((normalized.sellerPrice - normalized.costBasis) * normalized.stock * 100) / 100;
+            }
+            if (potentialProfit !== null && sellerRevenue !== null && sellerRevenue > 0) {
+                margin = Math.round((potentialProfit / sellerRevenue) * 10000) / 100;
+            }
+            if (potentialProfit !== null && inventoryCost !== null && inventoryCost > 0) {
+                roi = Math.round((potentialProfit / inventoryCost) * 10000) / 100;
+            }
+        }
+
+        return {
+            ...normalized,
+            sellerRevenue,
+            buyerGmv,
+            inventoryCost,
+            potentialProfit,
+            margin,
+            roi,
+            missingCost: normalized.costBasis === null,
+            hasFiniteStock: isFinite
+        };
+    }
+
+    /**
+     * Расчет агрегированных показателей потенциала для заданной валюты (T06B).
+     * Неактивные лоты (active === false) строго исключаются из итогов.
+     * @param {Array<Object>} lots Массив лотов
+     * @param {string} targetCurrency Валюта ('RUB', 'USD', 'EUR')
+     * @returns {Object} Агрегаты
+     */
+    function calculateCurrencyTotals(lots, targetCurrency) {
+        if (!Array.isArray(lots)) {
+            return {
+                currency: targetCurrency,
+                sellerRevenue: 0,
+                buyerGmv: 0,
+                knownInventoryCost: 0,
+                knownPotentialProfit: 0,
+                unknownStockOffers: 0,
+                unknownStockCount: 0,
+                unlimitedStockOffers: 0,
+                unlimitedStockCount: 0,
+                totalActiveOffers: 0,
+                finiteOffers: 0,
+                knownCostOffers: 0,
+                missingCostOffers: 0,
+                knownCostSellerRevenue: 0,
+                missingCostSellerRevenue: 0,
+                costCoveragePercent: 0,
+                costCoverage: 0,
+                knownMargin: null,
+                knownRoi: null,
+                overallMargin: null
+            };
+        }
+
+        const activeLots = lots
+            .filter(l => l && l.active === true && (l.currency || 'RUB').toUpperCase() === targetCurrency.toUpperCase())
+            .map(l => (l.sellerRevenue !== undefined ? l : calculateRowPotential(l)));
+
+        let sellerRevenue = 0;
+        let buyerGmv = 0;
+        let knownInventoryCost = 0;
+        let knownPotentialProfit = 0;
+        let unknownStockOffers = 0;
+        let unlimitedStockOffers = 0;
+        let finiteOffers = 0;
+        let knownCostOffers = 0;
+        let missingCostOffers = 0;
+        let knownCostSellerRevenue = 0;
+        let missingCostSellerRevenue = 0;
+
+        for (const lot of activeLots) {
+            if (lot.stockKind === 'unknown') {
+                unknownStockOffers++;
+                continue;
+            }
+            if (lot.stockKind === 'unlimited') {
+                unlimitedStockOffers++;
+                continue;
+            }
+            if (lot.stockKind === 'finite' && typeof lot.stock === 'number') {
+                finiteOffers++;
+
+                if (lot.sellerRevenue !== null) {
+                    sellerRevenue += lot.sellerRevenue;
+                }
+                if (lot.buyerGmv !== null) {
+                    buyerGmv += lot.buyerGmv;
+                }
+
+                if (lot.costBasis !== null) {
+                    knownCostOffers++;
+                    if (lot.inventoryCost !== null) {
+                        knownInventoryCost += lot.inventoryCost;
+                    }
+                    if (lot.potentialProfit !== null) {
+                        knownPotentialProfit += lot.potentialProfit;
+                    }
+                    if (lot.sellerRevenue !== null) {
+                        knownCostSellerRevenue += lot.sellerRevenue;
+                    }
+                } else {
+                    missingCostOffers++;
+                    if (lot.sellerRevenue !== null) {
+                        missingCostSellerRevenue += lot.sellerRevenue;
+                    }
+                }
+            }
+        }
+
+        sellerRevenue = Math.round(sellerRevenue * 100) / 100;
+        buyerGmv = Math.round(buyerGmv * 100) / 100;
+        knownInventoryCost = Math.round(knownInventoryCost * 100) / 100;
+        knownPotentialProfit = Math.round(knownPotentialProfit * 100) / 100;
+        knownCostSellerRevenue = Math.round(knownCostSellerRevenue * 100) / 100;
+        missingCostSellerRevenue = Math.round(missingCostSellerRevenue * 100) / 100;
+
+        let costCoveragePercent = 0;
+        if (sellerRevenue > 0) {
+            costCoveragePercent = Math.round((knownCostSellerRevenue / sellerRevenue) * 10000) / 100;
+        } else if (finiteOffers === 0) {
+            costCoveragePercent = 100;
+        }
+
+        const knownMargin = knownCostSellerRevenue > 0
+            ? Math.round((knownPotentialProfit / knownCostSellerRevenue) * 10000) / 100
+            : null;
+
+        const knownRoi = knownInventoryCost > 0
+            ? Math.round((knownPotentialProfit / knownInventoryCost) * 10000) / 100
+            : null;
+
+        const overallMargin = sellerRevenue > 0
+            ? Math.round((knownPotentialProfit / sellerRevenue) * 10000) / 100
+            : null;
+
+        return {
+            currency: targetCurrency,
+            sellerRevenue,
+            buyerGmv,
+            knownInventoryCost,
+            knownPotentialProfit,
+            unknownStockOffers,
+            unknownStockCount: unknownStockOffers,
+            unlimitedStockOffers,
+            unlimitedStockCount: unlimitedStockOffers,
+            totalActiveOffers: activeLots.length,
+            finiteOffers,
+            knownCostOffers,
+            missingCostOffers,
+            knownCostSellerRevenue,
+            missingCostSellerRevenue,
+            costCoveragePercent,
+            costCoverage: costCoveragePercent,
+            knownMargin,
+            knownRoi,
+            overallMargin
+        };
+    }
+
+    /**
+     * Расчет агрегированных показателей потенциала по всем имеющимся валютам (T06B).
+     * @param {Array<Object>} lots Массив лотов
+     * @returns {Object<string, Object>} Карта агрегатов по валютам { RUB: {...}, USD: {...}, EUR: {...} }
+     */
+    function calculatePotentialAggregates(lots) {
+        if (!Array.isArray(lots) || lots.length === 0) {
+            return {
+                RUB: calculateCurrencyTotals([], 'RUB')
+            };
+        }
+
+        const currencies = new Set();
+        for (const lot of lots) {
+            if (lot && lot.currency) {
+                currencies.add(lot.currency.toUpperCase());
+            }
+        }
+        if (currencies.size === 0) {
+            currencies.add('RUB');
+        }
+
+        const result = {};
+        for (const cur of currencies) {
+            result[cur] = calculateCurrencyTotals(lots, cur);
+        }
+        return result;
     }
 
     const api = {
@@ -350,7 +579,10 @@
         parseLotsFromDOM,
         parseLotsFromHtml,
         getMyUserId,
-        getInventory
+        getInventory,
+        calculateRowPotential,
+        calculateCurrencyTotals,
+        calculatePotentialAggregates
     };
 
     root.FPTPotential = api;
