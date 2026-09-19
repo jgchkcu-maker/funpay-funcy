@@ -60,13 +60,162 @@
         });
     }
 
+    let _costBasisOverrideForTesting = null;
+
+    function setCostBasisOverrideForTesting(map) {
+        _costBasisOverrideForTesting = map;
+    }
+
+    async function getCostBasisSnapshot(offerId) {
+        if (offerId == null) return null;
+        const id = String(offerId).trim();
+        if (!id) return null;
+
+        // 1. Testing override if provided
+        if (_costBasisOverrideForTesting && _costBasisOverrideForTesting[id]) {
+            const entry = _costBasisOverrideForTesting[id];
+            if (entry && typeof entry.amount === 'number' && entry.amount > 0) {
+                return {
+                    costBasisSnapshot: entry.amount,
+                    costBasisCurrency: entry.currency || 'RUB',
+                    costBasisCapturedAt: Date.now()
+                };
+            }
+        }
+
+        // 2. FPTCostBasis if available in runtime
+        if (root.FPTCostBasis && typeof root.FPTCostBasis.createSnapshot === 'function') {
+            try {
+                const snap = await root.FPTCostBasis.createSnapshot(id);
+                if (snap) return snap;
+            } catch (_) {}
+        }
+        if (root.FPTCostBasis && typeof root.FPTCostBasis.get === 'function') {
+            try {
+                const entry = await root.FPTCostBasis.get(id);
+                if (entry && typeof entry.amount === 'number' && entry.amount > 0) {
+                    return {
+                        costBasisSnapshot: entry.amount,
+                        costBasisCurrency: entry.currency || 'RUB',
+                        costBasisCapturedAt: Date.now()
+                    };
+                }
+            } catch (_) {}
+        }
+
+        // 3. Direct chrome.storage.local read (works in Service Worker)
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+            try {
+                const data = await chrome.storage.local.get(['fpToolsCostBasis']);
+                const store = data && data.fpToolsCostBasis;
+                const entry = store && store.offers && store.offers[id];
+                if (entry && typeof entry.amount === 'number' && entry.amount > 0) {
+                    return {
+                        costBasisSnapshot: entry.amount,
+                        costBasisCurrency: entry.currency || 'RUB',
+                        costBasisCapturedAt: Date.now()
+                    };
+                }
+            } catch (_) {}
+        }
+
+        return null;
+    }
+
+    async function getExistingOrdersMap(ids) {
+        if (!ids || !ids.length) return {};
+        const db = await openDB();
+        return new Promise((resolve) => {
+            const tx = db.transaction(STORE_ORDERS, 'readonly');
+            const store = tx.objectStore(STORE_ORDERS);
+            const map = {};
+            let remaining = ids.length;
+            for (const id of ids) {
+                if (!id) {
+                    if (--remaining === 0) resolve(map);
+                    continue;
+                }
+                const req = store.get(id);
+                req.onsuccess = () => {
+                    if (req.result) map[id] = req.result;
+                    if (--remaining === 0) resolve(map);
+                };
+                req.onerror = () => {
+                    if (--remaining === 0) resolve(map);
+                };
+            }
+        });
+    }
+
     async function putOrders(orders) {
         if (!orders || !orders.length) return;
         const db = await openDB();
+
+        // 1. Проверяем, какие заказы уже есть в базе, чтобы не делать бэкфилл старых записей
+        const ids = orders.map(o => o && o.orderId).filter(Boolean);
+        const existingMap = await getExistingOrdersMap(ids);
+
+        // 2. Для действительно новых заказов с известным offerId предварительно запрашиваем снимок себестоимости
+        const snapshotMap = {};
+        for (const o of orders) {
+            if (!o || typeof o.orderId !== 'string') continue;
+            if (existingMap[o.orderId]) continue; // Уже в базе - старый заказ, бэкфилл запрещен
+
+            // Проверяем наличие достоверного offerId от источника
+            const rawOfferId = (o.offerId != null && String(o.offerId).trim() !== '')
+                ? String(o.offerId).trim()
+                : null;
+
+            if (rawOfferId && !snapshotMap[rawOfferId]) {
+                snapshotMap[rawOfferId] = await getCostBasisSnapshot(rawOfferId);
+            }
+        }
+
+        // 3. Открываем транзакцию на запись и сохраняем заказы
         const tx = db.transaction(STORE_ORDERS, 'readwrite');
         const store = tx.objectStore(STORE_ORDERS);
+
         for (const o of orders) {
-            if (o && typeof o.orderId === 'string') store.put(o);
+            if (!o || typeof o.orderId !== 'string') continue;
+
+            const existing = existingMap[o.orderId];
+            if (existing) {
+                // СУЩЕСТВУЮЩИЙ ЗАКАЗ:
+                // Если у него уже был зафиксирован снимок себестоимости - сохраняем его неизменным
+                if (existing.costBasisSnapshot !== undefined) {
+                    o.costBasisSnapshot = existing.costBasisSnapshot;
+                    o.costBasisCurrency = existing.costBasisCurrency;
+                    o.costBasisCapturedAt = existing.costBasisCapturedAt;
+                }
+                if (existing.offerId && !o.offerId) {
+                    o.offerId = existing.offerId;
+                }
+                // ВАЖНО: Никакого автоматического бэкфилла для старых заказов без снимка!
+            } else {
+                // НОВЫЙ ЗАКАЗ:
+                const rawOfferId = (o.offerId != null && String(o.offerId).trim() !== '')
+                    ? String(o.offerId).trim()
+                    : null;
+
+                if (rawOfferId) {
+                    o.offerId = rawOfferId;
+                    if (o.costBasisSnapshot === undefined) {
+                        const snap = snapshotMap[rawOfferId];
+                        if (snap) {
+                            o.costBasisSnapshot = snap.costBasisSnapshot;
+                            o.costBasisCurrency = snap.costBasisCurrency;
+                            o.costBasisCapturedAt = snap.costBasisCapturedAt;
+                        }
+                    }
+                } else {
+                    // Если offerId неизвестен - снимок строго отсутствует (не угадывать по title/description!)
+                    delete o.costBasisSnapshot;
+                    delete o.costBasisCurrency;
+                    delete o.costBasisCapturedAt;
+                }
+            }
+
+            store.put(o);
         }
         await txDone(tx);
     }
@@ -167,6 +316,8 @@
         setMeta,
         clearAll,
         migrateFromLocalStorage,
+        getCostBasisSnapshot,
+        setCostBasisOverrideForTesting
     };
 
     root.FPTSalesDB = api;

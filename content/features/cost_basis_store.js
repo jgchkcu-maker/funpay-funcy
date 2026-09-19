@@ -251,6 +251,25 @@
     }
 
     /**
+     * Создать снимок себестоимости для новой продажи при наличии достоверного offerId (T07A).
+     * @param {string|number} offerId
+     * @returns {Promise<{costBasisSnapshot: number, costBasisCurrency: string, costBasisCapturedAt: number}|null>}
+     */
+    async function createSnapshot(offerId) {
+        const id = normalizeOfferId(offerId);
+        if (!id) return null;
+        const entry = await get(id);
+        if (!entry || !entry.amount || entry.amount <= 0 || !entry.currency) {
+            return null;
+        }
+        return {
+            costBasisSnapshot: entry.amount,
+            costBasisCurrency: entry.currency,
+            costBasisCapturedAt: Date.now()
+        };
+    }
+
+    /**
      * Установить себестоимость оффера.
      * Если amount равен 0 или пустой — запись удаляется из хранилища.
      * @param {string|number} offerId
@@ -586,6 +605,7 @@
         getDraft,
         clearDraft,
         bindDraftToOffer,
+        createSnapshot,
         _setSessionDriver
     };
 
