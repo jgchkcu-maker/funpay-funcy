@@ -743,7 +743,7 @@ function createMainPopup() {
                                 <span>Прибыль</span>
                             </button>
                             <button type="button" class="fpt-fin-subtab" data-subtab="potential" role="tab" aria-selected="false">
-                                <span class="material-symbols-rounded">query_stats</span>
+                                <span class="material-symbols-rounded">insights</span>
                                 <span>Потенциал</span>
                             </button>
                             <button type="button" class="fpt-fin-subtab" data-subtab="operations" role="tab" aria-selected="false">
@@ -968,7 +968,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Детализация продаж</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">sync</span> Синхронизация заказов в TASK-03</span>
+                                        <span class="fpt-fin-mini-badge" id="fptFinSalesCountBadge">0 заказов</span>
                                     </div>
                                     <div class="fpt-fin-table-wrap">
                                         <table class="fpt-fin-table">
@@ -1067,7 +1067,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">История покупок</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">sync</span> Синхронизация покупок в TASK-04</span>
+                                        <span class="fpt-fin-mini-badge" id="fptFinPurchasesCountBadge">0 покупок</span>
                                     </div>
                                     <div class="fpt-fin-table-wrap">
                                         <table class="fpt-fin-table">
@@ -1168,7 +1168,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Прибыльность позиций</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">calculate</span> Расчёт чистой прибыли в TASK-05</span>
+                                        <span class="fpt-fin-mini-badge" id="fptFinProfitCountBadge">Анализ прибыли</span>
                                     </div>
                                     <div class="fpt-fin-table-wrap">
                                         <table class="fpt-fin-table">
@@ -1254,7 +1254,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Таблица активных предложений</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">storefront</span> Анализ лотов в TASK-06</span>
+                                        <span class="fpt-fin-mini-badge" id="fptFinLotsCountBadge">0 предложений</span>
                                     </div>
                                     <div class="fpt-fin-table-wrap">
                                         <table class="fpt-fin-table">
@@ -1355,7 +1355,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">История операций баланса</h5>
-                                        <span class="fpt-fin-empty-badge"><span class="material-symbols-rounded">history</span> Интеграция баланса в TASK-07</span>
+                                        <span class="fpt-fin-mini-badge" id="fptFinOpsCountBadge">0 операций</span>
                                     </div>
                                     <div class="fpt-fin-table-wrap">
                                         <table class="fpt-fin-table">
@@ -2636,152 +2636,1239 @@ function setupPopupNavigation() {
     }
 }
 
+// ── FINANCE HUB ENGINE & DATA AGGREGATION ────────────────────────────────────
+const _fptFinState = {
+    salesOrders: [],
+    purchaseOrders: [],
+    financeTxns: [],
+    userLots: [],
+    isLoading: false,
+    loadedOnce: false,
+    period: '7d',
+    overviewMetric: 'revenue',
+    salesStep: 'day',
+    profitMetric: 'rev_prof',
+    potentialFilter: 'all'
+};
+
+const _FPT_FIN_SYMS = { RUB: '₽', USD: '$', EUR: '€', UNKNOWN: '' };
+
+function fptFinEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+    ));
+}
+
+function fptFinFmtNum(n) {
+    if (n == null || isNaN(n)) return '0';
+    const isNeg = n < 0;
+    const val = Math.abs(Math.round(n)).toLocaleString('ru-RU');
+    return (isNeg ? '−' : '') + val;
+}
+
+function fptFinFmtMoney(n, cur = 'RUB') {
+    const sym = _FPT_FIN_SYMS[cur] || cur || '₽';
+    return `${fptFinFmtNum(n)} ${sym}`.trim();
+}
+
+function fptFinFmtDate(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const dateStr = d.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const timeStr = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    return `${dateStr} ${timeStr}`;
+}
+
+function fptFinPeriodRange(period) {
+    const oneDay = 86400000;
+    const MSK = 3 * 3600000;
+    const now = Date.now();
+    const todayStart = Math.floor((now + MSK) / oneDay) * oneDay - MSK;
+    let start = null, end = null;
+    switch (period) {
+        case 'today':
+            start = todayStart;
+            end = now;
+            break;
+        case 'yesterday':
+            start = todayStart - oneDay;
+            end = todayStart - 1;
+            break;
+        case '24h':
+            start = now - oneDay;
+            end = now;
+            break;
+        case '7d':
+            start = now - 7 * oneDay;
+            end = now;
+            break;
+        case '30d':
+            start = now - 30 * oneDay;
+            end = now;
+            break;
+        case '365d':
+            start = now - 365 * oneDay;
+            end = now;
+            break;
+        case 'all':
+        default:
+            start = null;
+            end = null;
+            break;
+    }
+    return { start, end };
+}
+
+function fptFinFilterByRange(list, dateKey, range) {
+    if (!list || !list.length) return [];
+    if (!range.start && !range.end) return list;
+    return list.filter(item => {
+        const t = item[dateKey];
+        if (!t) return false;
+        if (range.start && t < range.start) return false;
+        if (range.end && t > range.end) return false;
+        return true;
+    });
+}
+
+function fptFinSetCard(cardEl, valStr, subHtml) {
+    if (!cardEl) return;
+    const skVal = cardEl.querySelector('.fpt-fin-skeleton-value');
+    const skTxt = cardEl.querySelector('.fpt-fin-skeleton-text');
+    if (skVal) skVal.remove();
+    if (skTxt) skTxt.remove();
+
+    let valEl = cardEl.querySelector('.fpt-fin-card-value');
+    if (!valEl) {
+        valEl = document.createElement('div');
+        valEl.className = 'fpt-fin-card-value';
+        const header = cardEl.querySelector('.fpt-fin-card-header');
+        if (header) header.insertAdjacentElement('afterend', valEl);
+        else cardEl.prepend(valEl);
+    }
+    valEl.textContent = valStr;
+
+    let subEl = cardEl.querySelector('.fpt-fin-card-sub');
+    if (!subEl) {
+        subEl = document.createElement('div');
+        subEl.className = 'fpt-fin-card-sub';
+        cardEl.appendChild(subEl);
+    }
+    if (subHtml !== undefined) {
+        subEl.innerHTML = subHtml;
+    }
+}
+
+function fptFinAttachTooltips(root) {
+    let tip = document.getElementById('fpt-fin-global-tip');
+    if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'fpt-fin-global-tip';
+        tip.className = 'fpt-fin-tooltip';
+        document.body.appendChild(tip);
+    }
+    root.querySelectorAll('[data-fpt-tip]').forEach(el => {
+        el.onmouseenter = (e) => {
+            const txt = el.getAttribute('data-fpt-tip');
+            if (!txt) return;
+            tip.textContent = txt;
+            tip.style.display = 'block';
+            tip.style.left = (e.clientX + 10) + 'px';
+            tip.style.top = (e.clientY - 26) + 'px';
+        };
+        el.onmousemove = (e) => {
+            tip.style.left = (e.clientX + 10) + 'px';
+            tip.style.top = (e.clientY - 26) + 'px';
+        };
+        el.onmouseleave = () => {
+            tip.style.display = 'none';
+        };
+    });
+}
+
+function fptFinBuildSvgBarChart(keys, values, counts, labelPrefix = '') {
+    if (!keys || !keys.length) {
+        return '<div class="fpt-fin-empty-desc" style="padding:40px 10px;text-align:center;">Нет данных за выбранный период</div>';
+    }
+    const maxVal = Math.max(1, ...values);
+    const W = 580, H = 160;
+    const PAD = { t: 15, r: 12, b: 26, l: 45 };
+    const chartW = W - PAD.l - PAD.r;
+    const chartH = H - PAD.t - PAD.b;
+    const slot = chartW / keys.length;
+    const barW = Math.max(2, Math.min(22, slot - 3));
+
+    let bars = '';
+    const MIN_LABEL_GAP = 42;
+    const xLabels = [];
+
+    keys.forEach((k, i) => {
+        const x = PAD.l + slot * i + slot / 2;
+        const val = values[i] || 0;
+        const cnt = counts ? (counts[i] || 0) : 0;
+        const barH = (val / maxVal) * chartH;
+        const y = PAD.t + chartH - barH;
+        const tipText = `${k}: ${fptFinFmtMoney(val)}` + (cnt ? ` (${cnt} шт.)` : '');
+
+        bars += `<rect class="fpt-fin-svg-bar" x="${x - barW / 2}" y="${y}" width="${barW}" height="${Math.max(2, barH)}" rx="3" fill="var(--fptm-accent, #1b75bb)" opacity="0.85" data-fpt-tip="${fptFinEsc(tipText)}"></rect>`;
+
+        const isLast = i === keys.length - 1;
+        const shortLabel = k.length > 5 ? k.slice(5) : k;
+        if (isLast) {
+            const tx = Math.min(x, W - PAD.r);
+            while (xLabels.length && (tx - xLabels[xLabels.length - 1].x) < MIN_LABEL_GAP) {
+                xLabels.pop();
+            }
+            xLabels.push({ x: tx, anchor: 'end', label: shortLabel });
+        } else if (!xLabels.length || (x - xLabels[xLabels.length - 1].x) >= MIN_LABEL_GAP) {
+            xLabels.push({ x, anchor: 'middle', label: shortLabel });
+        }
+    });
+
+    const labelsSvg = xLabels.map(p => `<text x="${p.x}" y="${H - 6}" text-anchor="${p.anchor}" font-size="9" fill="var(--fptm-muted, #8a90ab)">${fptFinEsc(p.label)}</text>`).join('');
+
+    // Grid lines
+    let grid = '';
+    const ySteps = 3;
+    for (let step = 0; step <= ySteps; step++) {
+        const v = Math.round((maxVal / ySteps) * step);
+        const yPos = PAD.t + chartH - (step / ySteps) * chartH;
+        const lbl = v >= 1000 ? Math.round(v / 1000) + 'к' : String(v);
+        grid += `<line x1="${PAD.l}" y1="${yPos}" x2="${W - PAD.r}" y2="${yPos}" stroke="var(--fptm-border, rgba(255,255,255,0.08))" stroke-width="1"/>`;
+        grid += `<text x="${PAD.l - 6}" y="${yPos + 3}" text-anchor="end" font-size="9" fill="var(--fptm-muted, #8a90ab)">${lbl}</text>`;
+    }
+
+    return `<svg class="fpt-fin-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${bars}${labelsSvg}</svg>`;
+}
+
+function fptFinBuildDonutChart(slices) {
+    const valid = (slices || []).filter(s => s.value > 0);
+    const total = valid.reduce((acc, s) => acc + s.value, 0);
+    if (!total) {
+        return '<div class="fpt-fin-empty-desc" style="padding:40px 10px;text-align:center;">Нет данных за выбранный период</div>';
+    }
+
+    const PALETTE = ['#1b75bb', '#4caf82', '#f4c84a', '#a09af8', '#e57373', '#4a9fd4', '#ec4899', '#14b8a6'];
+    const cx = 65, cy = 65, r = 52, rin = 32;
+    let acc = 0, paths = '', legend = '';
+
+    valid.slice(0, 6).forEach((s, idx) => {
+        const frac = s.value / total;
+        const a0 = acc * 2 * Math.PI - Math.PI / 2;
+        acc += frac;
+        const a1 = acc * 2 * Math.PI - Math.PI / 2;
+        const large = frac > 0.5 ? 1 : 0;
+        const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+        const xi1 = cx + rin * Math.cos(a1), yi1 = cy + rin * Math.sin(a1);
+        const xi0 = cx + rin * Math.cos(a0), yi0 = cy + rin * Math.sin(a0);
+        const col = PALETTE[idx % PALETTE.length];
+
+        paths += `<path d="M${x0},${y0} A${r},${r} 0 ${large} 1 ${x1},${y1} L${xi1},${yi1} A${rin},${rin} 0 ${large} 0 ${xi0},${yi0} Z" fill="${col}" data-fpt-tip="${fptFinEsc(s.label + ': ' + fptFinFmtMoney(s.value))}"></path>`;
+
+        const pct = Math.round(frac * 100);
+        legend += `<div style="display:flex;align-items:center;gap:6px;font-size:11px;">
+            <span style="width:8px;height:8px;border-radius:2px;background:${col};flex-shrink:0;"></span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fptm-text,#fff);">${fptFinEsc(s.label)}</span>
+            <span style="color:var(--fptm-muted,#8a90ab);font-variant-numeric:tabular-nums;">${pct}%</span>
+        </div>`;
+    });
+
+    return `<div style="display:flex;align-items:center;gap:14px;padding:4px 0;">
+        <svg viewBox="0 0 130 130" width="115" height="115" style="flex-shrink:0;overflow:visible;">
+            ${paths}
+            <text x="${cx}" y="${cy + 4}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--fptm-text,#fff)">${fptFinFmtNum(total)}</text>
+        </svg>
+        <div style="display:flex;flex-direction:column;gap:5px;flex:1;min-width:0;">${legend}</div>
+    </div>`;
+}
+
+function fptFinBuildFlowChart(keys, ins, outs) {
+    if (!keys || !keys.length) {
+        return '<div class="fpt-fin-empty-desc" style="padding:40px 10px;text-align:center;">Нет операций за выбранный период</div>';
+    }
+    const W = 580, H = 160;
+    const PAD = { t: 14, r: 12, b: 24, l: 45 };
+    const chartW = W - PAD.l - PAD.r;
+    const chartH = H - PAD.t - PAD.b;
+    const maxVal = Math.max(1, ...ins, ...outs);
+    const slot = chartW / keys.length;
+    const barW = Math.max(2, Math.min(18, slot / 2 - 2));
+    const zeroY = PAD.t + chartH / 2;
+    const halfH = chartH / 2;
+
+    let bars = '', grid = '';
+    const MIN_LABEL_GAP = 42;
+    const xLabels = [];
+
+    keys.forEach((k, i) => {
+        const xc = PAD.l + slot * i + slot / 2;
+        const ih = (ins[i] / maxVal) * halfH;
+        const oh = (outs[i] / maxVal) * halfH;
+
+        bars += `<rect class="fpt-fin-svg-bar" x="${xc - barW - 1}" y="${zeroY - ih}" width="${barW}" height="${Math.max(1, ih)}" rx="2" fill="#4caf82" data-fpt-tip="${fptFinEsc(k + ' Приход: +' + fptFinFmtMoney(ins[i]))}"></rect>`;
+        bars += `<rect class="fpt-fin-svg-bar" x="${xc + 1}" y="${zeroY}" width="${barW}" height="${Math.max(1, oh)}" rx="2" fill="#e57373" data-fpt-tip="${fptFinEsc(k + ' Расход: −' + fptFinFmtMoney(outs[i]))}"></rect>`;
+
+        const isLast = i === keys.length - 1;
+        const shortLabel = k.length > 5 ? k.slice(5) : k;
+        if (isLast) {
+            const tx = Math.min(xc, W - PAD.r);
+            while (xLabels.length && (tx - xLabels[xLabels.length - 1].x) < MIN_LABEL_GAP) xLabels.pop();
+            xLabels.push({ x: tx, anchor: 'end', label: shortLabel });
+        } else if (!xLabels.length || (xc - xLabels[xLabels.length - 1].x) >= MIN_LABEL_GAP) {
+            xLabels.push({ x: xc, anchor: 'middle', label: shortLabel });
+        }
+    });
+
+    const labelsSvg = xLabels.map(p => `<text x="${p.x}" y="${H - 5}" text-anchor="${p.anchor}" font-size="9" fill="var(--fptm-muted, #8a90ab)">${fptFinEsc(p.label)}</text>`).join('');
+
+    // Zero line + markers
+    grid += `<line x1="${PAD.l}" y1="${zeroY}" x2="${W - PAD.r}" y2="${zeroY}" stroke="var(--fptm-border, rgba(255,255,255,0.12))" stroke-width="1"/>`;
+    const topLbl = maxVal >= 1000 ? Math.round(maxVal / 1000) + 'к' : String(Math.round(maxVal));
+    grid += `<text x="${PAD.l - 6}" y="${PAD.t + 4}" text-anchor="end" font-size="9" fill="var(--fptm-muted, #8a90ab)">+${topLbl}</text>`;
+    grid += `<text x="${PAD.l - 6}" y="${zeroY + 3}" text-anchor="end" font-size="9" fill="var(--fptm-muted, #8a90ab)">0</text>`;
+    grid += `<text x="${PAD.l - 6}" y="${PAD.t + chartH + 2}" text-anchor="end" font-size="9" fill="var(--fptm-muted, #8a90ab)">−${topLbl}</text>`;
+
+    return `<svg class="fpt-fin-chart-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">${grid}${bars}${labelsSvg}</svg>`;
+}
+
+async function fptFinLoadData(forceUpdate = false) {
+    if (_fptFinState.isLoading) return;
+    _fptFinState.isLoading = true;
+
+    try {
+        const [sales, purchases, txns] = await Promise.all([
+            (window.FPTSalesDB && typeof window.FPTSalesDB.getAllAsArray === 'function') 
+                ? window.FPTSalesDB.getAllAsArray() : [],
+            (window.FPTPurchasesDB && typeof window.FPTPurchasesDB.getAllAsArray === 'function') 
+                ? window.FPTPurchasesDB.getAllAsArray() : [],
+            (window.FPTFinanceDB && typeof window.FPTFinanceDB.getAllAsArray === 'function') 
+                ? window.FPTFinanceDB.getAllAsArray() : []
+        ]);
+
+        _fptFinState.salesOrders = Array.isArray(sales) ? sales : [];
+        _fptFinState.purchaseOrders = Array.isArray(purchases) ? purchases : [];
+        _fptFinState.financeTxns = Array.isArray(txns) ? txns : [];
+
+        // User lots for potential
+        let userId = null;
+        try {
+            const raw = JSON.parse(document.body.dataset.appData || '{}');
+            const d = Array.isArray(raw) ? raw[0] : raw;
+            userId = d.userId;
+        } catch (_) {}
+        if (!userId) {
+            const uLink = document.querySelector('.user-link, a[href*="/users/"]');
+            const m = uLink?.getAttribute('href')?.match(/\/users\/(\d+)/);
+            if (m) userId = m[1];
+        }
+
+        if (userId && (!_fptFinState.userLots.length || forceUpdate)) {
+            try {
+                const lots = await new Promise((resolve) => {
+                    chrome.runtime.sendMessage({ action: 'getUserLotsList', userId }, res => {
+                        if (chrome.runtime.lastError) resolve([]);
+                        else resolve(Array.isArray(res) ? res : []);
+                    });
+                });
+                if (lots && lots.length) {
+                    _fptFinState.userLots = lots;
+                }
+            } catch (_) {}
+        }
+
+        // If local stores are completely empty on first visit, prompt background update
+        if (!_fptFinState.loadedOnce && !_fptFinState.salesOrders.length && !_fptFinState.purchaseOrders.length) {
+            try {
+                chrome.runtime.sendMessage({ action: 'updateSales' });
+                chrome.runtime.sendMessage({ action: 'updatePurchases' });
+                chrome.runtime.sendMessage({ action: 'updateFinance' });
+            } catch (_) {}
+        }
+    } catch (e) {
+        console.warn('FP Tools: Ошибка загрузки данных финансов:', e);
+    } finally {
+        _fptFinState.isLoading = false;
+        _fptFinState.loadedOnce = true;
+    }
+}
+
+function renderOverviewSubtab(finPage, sales, purchases, txns, lots) {
+    const pane = finPage.querySelector('.fpt-fin-tab-pane[data-subtab="overview"]');
+    if (!pane) return;
+
+    const closedSales = sales.filter(o => o.orderStatus === 'closed');
+    const refundedSales = sales.filter(o => o.orderStatus === 'refunded');
+    const revenue = closedSales.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+    const completedPurchases = purchases.filter(o => o.orderStatus === 'closed');
+    const purchasesCost = completedPurchases.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+    const netProfit = revenue - purchasesCost;
+    const margin = revenue > 0 ? Math.round((Math.max(0, netProfit) / revenue) * 100) : 0;
+    const coverage = purchasesCost > 0 ? (revenue / purchasesCost).toFixed(1) + 'x' : '—';
+    const avgCheck = closedSales.length > 0 ? Math.round(revenue / closedSales.length) : 0;
+
+    const potRev = (lots || []).reduce((acc, l) => acc + (Number(l.price) || 0) * (Number(l.amount) || 1), 0);
+    const potProfit = Math.round(potRev * (margin > 0 ? margin / 100 : 0.7));
+    const whCost = Math.round(potRev * 0.3);
+
+    const cards = pane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card');
+    if (cards.length >= 8) {
+        fptFinSetCard(cards[0], fptFinFmtMoney(revenue), `<span class="fpt-fin-mini-badge">+${closedSales.length} заказов</span> за период`);
+        fptFinSetCard(cards[1], fptFinFmtMoney(netProfit), `<span class="fpt-fin-mini-badge"><span class="material-symbols-rounded">percent</span> Маржа: ${margin}%</span> <span class="fpt-fin-mini-badge"><span class="material-symbols-rounded">pie_chart</span> Покрытие: ${coverage}</span>`);
+        fptFinSetCard(cards[2], `${closedSales.length} шт.`, `${closedSales.length} закрыто · ${refundedSales.length} возвр.`);
+        fptFinSetCard(cards[3], fptFinFmtMoney(avgCheck), `по ${closedSales.length} закрытым заказам`);
+
+        fptFinSetCard(cards[4], fptFinFmtMoney(potRev), 'при продаже текущих остатков');
+        fptFinSetCard(cards[5], fptFinFmtMoney(potProfit), 'расчётная прибыль по лотам');
+        fptFinSetCard(cards[6], fptFinFmtMoney(whCost), 'оценка остатков на складе');
+        fptFinSetCard(cards[7], `${(lots || []).length} шт.`, '<span class="fpt-fin-mini-badge">Активных предложений</span>');
+    }
+
+    // Dynamics Chart (col-8)
+    const dynChartCard = pane.querySelector('.fpt-fin-col-8 .fpt-fin-card');
+    if (dynChartCard) {
+        let chartContainer = dynChartCard.querySelector('.fpt-fin-chart-container');
+        if (!chartContainer) {
+            chartContainer = document.createElement('div');
+            chartContainer.className = 'fpt-fin-chart-container';
+            const sk = dynChartCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(chartContainer);
+            else dynChartCard.appendChild(chartContainer);
+        }
+
+        // Aggregate by day
+        const byDay = {};
+        closedSales.forEach(o => {
+            const d = new Date(o.orderDate || Date.now());
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (!byDay[key]) byDay[key] = { revenue: 0, count: 0 };
+            byDay[key].revenue += Number(o.price) || 0;
+            byDay[key].count++;
+        });
+        const days = Object.keys(byDay).sort().slice(-30);
+        let vals, cnts;
+        if (_fptFinState.overviewMetric === 'profit') {
+            vals = days.map(d => Math.round(byDay[d].revenue * (margin > 0 ? margin / 100 : 0.7)));
+        } else if (_fptFinState.overviewMetric === 'orders') {
+            vals = days.map(d => byDay[d].count);
+        } else {
+            vals = days.map(d => Math.round(byDay[d].revenue));
+        }
+        cnts = days.map(d => byDay[d].count);
+
+        chartContainer.innerHTML = fptFinBuildSvgBarChart(days, vals, cnts);
+    }
+
+    // Category Breakdown Donut (col-4)
+    const catDonutCard = pane.querySelector('.fpt-fin-col-4 .fpt-fin-card');
+    if (catDonutCard) {
+        let donutContainer = catDonutCard.querySelector('.fpt-fin-donut-container');
+        if (!donutContainer) {
+            donutContainer = document.createElement('div');
+            donutContainer.className = 'fpt-fin-donut-container';
+            const sk = catDonutCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(donutContainer);
+            else catDonutCard.appendChild(donutContainer);
+        }
+
+        const catMap = {};
+        closedSales.forEach(o => {
+            const cat = o.subcategoryName || 'Прочее';
+            catMap[cat] = (catMap[cat] || 0) + (Number(o.price) || 0);
+        });
+        const slices = Object.entries(catMap)
+            .map(([label, value]) => ({ label, value }))
+            .sort((a, b) => b.value - a.value);
+
+        donutContainer.innerHTML = fptFinBuildDonutChart(slices);
+    }
+
+    // Top Products & Categories (col-6 + col-6)
+    const topCards = pane.querySelectorAll('.fpt-fin-col-6 .fpt-fin-card');
+    if (topCards.length >= 2) {
+        // Top Products
+        const prodCard = topCards[0];
+        let prodList = prodCard.querySelector('.fpt-fin-list');
+        if (!prodList) {
+            prodList = document.createElement('div');
+            prodList.className = 'fpt-fin-list';
+            prodCard.querySelectorAll('.fpt-fin-skeleton').forEach(s => s.remove());
+            prodCard.appendChild(prodList);
+        }
+        const prodMap = {};
+        closedSales.forEach(o => {
+            const desc = o.description || 'Товар';
+            if (!prodMap[desc]) prodMap[desc] = { rev: 0, count: 0 };
+            prodMap[desc].rev += Number(o.price) || 0;
+            prodMap[desc].count++;
+        });
+        const topProds = Object.entries(prodMap).sort((a, b) => b[1].rev - a[1].rev).slice(0, 4);
+        prodList.innerHTML = topProds.length ? topProds.map(([name, stat]) => `
+            <div class="fpt-fin-list-item">
+                <div class="fpt-fin-list-info">
+                    <span class="fpt-fin-list-title" title="${fptFinEsc(name)}">${fptFinEsc(name)}</span>
+                    <span class="fpt-fin-list-sub">${stat.count} продаж</span>
+                </div>
+                <span class="fpt-fin-list-val">${fptFinFmtMoney(stat.rev)}</span>
+            </div>
+        `).join('') : '<div class="fpt-fin-empty-desc" style="text-align:center;padding:16px;">Нет продаж товаров</div>';
+
+        // Top Categories
+        const catCard = topCards[1];
+        let catList = catCard.querySelector('.fpt-fin-list');
+        if (!catList) {
+            catList = document.createElement('div');
+            catList.className = 'fpt-fin-list';
+            catCard.querySelectorAll('.fpt-fin-skeleton').forEach(s => s.remove());
+            catCard.appendChild(catList);
+        }
+        const catMap = {};
+        closedSales.forEach(o => {
+            const cname = o.subcategoryName || 'Без категории';
+            if (!catMap[cname]) catMap[cname] = { rev: 0, count: 0 };
+            catMap[cname].rev += Number(o.price) || 0;
+            catMap[cname].count++;
+        });
+        const topCats = Object.entries(catMap).sort((a, b) => b[1].rev - a[1].rev).slice(0, 4);
+        catList.innerHTML = topCats.length ? topCats.map(([name, stat]) => `
+            <div class="fpt-fin-list-item">
+                <div class="fpt-fin-list-info">
+                    <span class="fpt-fin-list-title" title="${fptFinEsc(name)}">${fptFinEsc(name)}</span>
+                    <span class="fpt-fin-list-sub">${stat.count} зак.</span>
+                </div>
+                <span class="fpt-fin-list-val">${fptFinFmtMoney(stat.rev)}</span>
+            </div>
+        `).join('') : '<div class="fpt-fin-empty-desc" style="text-align:center;padding:16px;">Нет продаж категорий</div>';
+    }
+
+    // Recent Events (col-12)
+    const eventsCard = pane.querySelector('.fpt-fin-col-12 .fpt-fin-card');
+    if (eventsCard) {
+        let eventsList = eventsCard.querySelector('.fpt-fin-list');
+        if (!eventsList) {
+            eventsList = document.createElement('div');
+            eventsList.className = 'fpt-fin-list';
+            eventsCard.querySelectorAll('.fpt-fin-skeleton').forEach(s => s.remove());
+            eventsCard.appendChild(eventsList);
+        }
+        const combined = [
+            ...sales.slice(0, 15).map(s => ({ type: 'sale', id: s.orderId, title: s.description || 'Продажа', meta: s.buyerUsername || 'Покупатель', price: s.price, date: s.orderDate, status: s.orderStatus })),
+            ...purchases.slice(0, 10).map(p => ({ type: 'purchase', id: p.orderId, title: p.description || 'Покупка', meta: p.buyerUsername || 'Продавец', price: -(p.price || 0), date: p.orderDate, status: p.orderStatus }))
+        ].sort((a, b) => (b.date || 0) - (a.date || 0)).slice(0, 6);
+
+        eventsList.innerHTML = combined.length ? combined.map(ev => {
+            const isPos = ev.price >= 0;
+            const sign = isPos ? '+' : '−';
+            const col = isPos ? '#4caf82' : '#e57373';
+            const icon = ev.type === 'sale' ? 'trending_up' : 'shopping_bag';
+            return `
+            <div class="fpt-fin-list-item">
+                <span class="material-symbols-rounded" style="color:${col};font-size:18px;">${icon}</span>
+                <div class="fpt-fin-list-info">
+                    <span class="fpt-fin-list-title">${fptFinEsc(ev.title)}</span>
+                    <span class="fpt-fin-list-sub">${fptFinEsc(ev.meta)} · ${fptFinFmtDate(ev.date)}</span>
+                </div>
+                <span class="fpt-fin-list-val" style="color:${col};">${sign}${fptFinFmtMoney(Math.abs(ev.price))}</span>
+            </div>`;
+        }).join('') : '<div class="fpt-fin-empty-desc" style="text-align:center;padding:16px;">Нет последних событий за выбранный период</div>';
+    }
+
+    fptFinAttachTooltips(pane);
+}
+
+function renderSalesSubtab(finPage, sales) {
+    const pane = finPage.querySelector('.fpt-fin-tab-pane[data-subtab="sales"]');
+    if (!pane) return;
+
+    const closedSales = sales.filter(o => o.orderStatus === 'closed');
+    const refundedSales = sales.filter(o => o.orderStatus === 'refunded');
+    const revenue = closedSales.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+    const refundedSum = refundedSales.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+    const avgCheck = closedSales.length > 0 ? Math.round(revenue / closedSales.length) : 0;
+
+    const cards = pane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card');
+    if (cards.length >= 4) {
+        fptFinSetCard(cards[0], fptFinFmtMoney(revenue), 'выручка от закрытых заказов');
+        fptFinSetCard(cards[1], `${closedSales.length} шт.`, 'успешно завершено');
+        fptFinSetCard(cards[2], fptFinFmtMoney(avgCheck), `по ${closedSales.length} заказам`);
+        fptFinSetCard(cards[3], `${refundedSales.length} шт.`, `${fptFinFmtMoney(refundedSum)} возвращено`);
+    }
+
+    // Dynamics chart
+    const dynCard = pane.querySelector('.fpt-fin-col-8 .fpt-fin-card');
+    if (dynCard) {
+        let chartContainer = dynCard.querySelector('.fpt-fin-chart-container');
+        if (!chartContainer) {
+            chartContainer = document.createElement('div');
+            chartContainer.className = 'fpt-fin-chart-container';
+            const sk = dynCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(chartContainer);
+            else dynCard.appendChild(chartContainer);
+        }
+
+        const byBucket = {};
+        closedSales.forEach(o => {
+            const d = new Date(o.orderDate || Date.now());
+            let k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (_fptFinState.salesStep === 'month') {
+                k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            }
+            if (!byBucket[k]) byBucket[k] = { rev: 0, count: 0 };
+            byBucket[k].rev += Number(o.price) || 0;
+            byBucket[k].count++;
+        });
+
+        const keys = Object.keys(byBucket).sort().slice(-30);
+        const vals = keys.map(k => Math.round(byBucket[k].rev));
+        const cnts = keys.map(k => byBucket[k].count);
+        chartContainer.innerHTML = fptFinBuildSvgBarChart(keys, vals, cnts);
+    }
+
+    // Category donut
+    const catCard = pane.querySelector('.fpt-fin-col-4 .fpt-fin-card');
+    if (catCard) {
+        let donutContainer = catCard.querySelector('.fpt-fin-donut-container');
+        if (!donutContainer) {
+            donutContainer = document.createElement('div');
+            donutContainer.className = 'fpt-fin-donut-container';
+            const sk = catCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(donutContainer);
+            else catCard.appendChild(donutContainer);
+        }
+        const catMap = {};
+        closedSales.forEach(o => {
+            const cat = o.subcategoryName || 'Прочее';
+            catMap[cat] = (catMap[cat] || 0) + (Number(o.price) || 0);
+        });
+        const slices = Object.entries(catMap).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value);
+        donutContainer.innerHTML = fptFinBuildDonutChart(slices);
+    }
+
+    // Sales table
+    const countBadge = pane.querySelector('#fptFinSalesCountBadge');
+    if (countBadge) countBadge.textContent = `${sales.length} заказов`;
+
+    const tbody = pane.querySelector('.fpt-fin-table tbody');
+    if (tbody) {
+        if (!sales.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--fptm-muted,#8a90ab);">Нет заказов за выбранный период</td></tr>';
+        } else {
+            const rows = sales.slice(0, 60).map(o => {
+                let badgeClass = 'fpt-fin-status-neutral';
+                let statusText = 'В обработке';
+                if (o.orderStatus === 'closed') {
+                    badgeClass = 'fpt-fin-status-success';
+                    statusText = 'Завершён';
+                } else if (o.orderStatus === 'paid') {
+                    badgeClass = 'fpt-fin-status-warning';
+                    statusText = 'Оплачен';
+                } else if (o.orderStatus === 'refunded') {
+                    badgeClass = 'fpt-fin-status-danger';
+                    statusText = 'Возврат';
+                }
+
+                return `
+                <tr>
+                    <td><a class="fpt-fin-table-link" href="https://funpay.com/orders/trade?id=${fptFinEsc(o.orderId)}" target="_blank">#${fptFinEsc(o.orderId)}</a></td>
+                    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;" title="${fptFinEsc(o.description)}">${fptFinEsc(o.description || '—')}</td>
+                    <td>${fptFinEsc(o.buyerUsername || '—')}</td>
+                    <td style="color:var(--fptm-muted,#8a90ab);">${fptFinFmtDate(o.orderDate)}</td>
+                    <td style="font-weight:700;">${fptFinFmtMoney(o.price, o.currency)}</td>
+                    <td><span class="fpt-fin-status-badge ${badgeClass}">${statusText}</span></td>
+                </tr>`;
+            }).join('');
+            tbody.innerHTML = rows;
+        }
+    }
+
+    fptFinAttachTooltips(pane);
+}
+
+function renderPurchasesSubtab(finPage, purchases) {
+    const pane = finPage.querySelector('.fpt-fin-tab-pane[data-subtab="purchases"]');
+    if (!pane) return;
+
+    const completed = purchases.filter(o => o.orderStatus === 'closed');
+    const spent = completed.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+    const avgCheck = completed.length > 0 ? Math.round(spent / completed.length) : 0;
+
+    const cards = pane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card');
+    if (cards.length >= 4) {
+        fptFinSetCard(cards[0], fptFinFmtMoney(spent), 'расходы на завершённые покупки');
+        fptFinSetCard(cards[1], `${purchases.length} шт.`, 'всего оформлено покупок');
+        fptFinSetCard(cards[2], fptFinFmtMoney(avgCheck), `по ${completed.length} покупкам`);
+        fptFinSetCard(cards[3], `${completed.length} шт.`, 'успешно завершено');
+    }
+
+    // Dynamics chart
+    const dynCard = pane.querySelector('.fpt-fin-col-8 .fpt-fin-card');
+    if (dynCard) {
+        let chartContainer = dynCard.querySelector('.fpt-fin-chart-container');
+        if (!chartContainer) {
+            chartContainer = document.createElement('div');
+            chartContainer.className = 'fpt-fin-chart-container';
+            const sk = dynCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(chartContainer);
+            else dynCard.appendChild(chartContainer);
+        }
+
+        const byDay = {};
+        completed.forEach(o => {
+            const d = new Date(o.orderDate || Date.now());
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (!byDay[key]) byDay[key] = { rev: 0, count: 0 };
+            byDay[key].rev += Number(o.price) || 0;
+            byDay[key].count++;
+        });
+        const days = Object.keys(byDay).sort().slice(-30);
+        const vals = days.map(d => Math.round(byDay[d].rev));
+        const cnts = days.map(d => byDay[d].count);
+        chartContainer.innerHTML = fptFinBuildSvgBarChart(days, vals, cnts);
+    }
+
+    // Top sellers list
+    const topCard = pane.querySelector('.fpt-fin-col-4 .fpt-fin-card');
+    if (topCard) {
+        let sellerList = topCard.querySelector('.fpt-fin-list');
+        if (!sellerList) {
+            sellerList = document.createElement('div');
+            sellerList.className = 'fpt-fin-list';
+            topCard.querySelectorAll('.fpt-fin-skeleton').forEach(s => s.remove());
+            topCard.appendChild(sellerList);
+        }
+        const sellersMap = {};
+        completed.forEach(o => {
+            const seller = o.buyerUsername || 'Продавец';
+            if (!sellersMap[seller]) sellersMap[seller] = { sum: 0, count: 0 };
+            sellersMap[seller].sum += Number(o.price) || 0;
+            sellersMap[seller].count++;
+        });
+        const topSellers = Object.entries(sellersMap).sort((a, b) => b[1].sum - a[1].sum).slice(0, 4);
+        sellerList.innerHTML = topSellers.length ? topSellers.map(([name, stat]) => `
+            <div class="fpt-fin-list-item">
+                <div class="fpt-fin-list-info">
+                    <span class="fpt-fin-list-title" title="${fptFinEsc(name)}">${fptFinEsc(name)}</span>
+                    <span class="fpt-fin-list-sub">${stat.count} покупок</span>
+                </div>
+                <span class="fpt-fin-list-val" style="color:#e57373;">${fptFinFmtMoney(stat.sum)}</span>
+            </div>
+        `).join('') : '<div class="fpt-fin-empty-desc" style="text-align:center;padding:16px;">Нет истории покупок</div>';
+    }
+
+    // Purchases table
+    const countBadge = pane.querySelector('#fptFinPurchasesCountBadge');
+    if (countBadge) countBadge.textContent = `${purchases.length} покупок`;
+
+    const tbody = pane.querySelector('.fpt-fin-table tbody');
+    if (tbody) {
+        if (!purchases.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--fptm-muted,#8a90ab);">Нет покупок за выбранный период</td></tr>';
+        } else {
+            const rows = purchases.slice(0, 60).map(o => {
+                let badgeClass = 'fpt-fin-status-neutral';
+                let statusText = 'В процессе';
+                if (o.orderStatus === 'closed') {
+                    badgeClass = 'fpt-fin-status-success';
+                    statusText = 'Получен';
+                } else if (o.orderStatus === 'paid') {
+                    badgeClass = 'fpt-fin-status-warning';
+                    statusText = 'Оплачен';
+                } else if (o.orderStatus === 'refunded') {
+                    badgeClass = 'fpt-fin-status-danger';
+                    statusText = 'Возврат';
+                }
+
+                return `
+                <tr>
+                    <td><a class="fpt-fin-table-link" href="https://funpay.com/orders/?id=${fptFinEsc(o.orderId)}" target="_blank">#${fptFinEsc(o.orderId)}</a></td>
+                    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;" title="${fptFinEsc(o.description)}">${fptFinEsc(o.description || '—')}</td>
+                    <td>${fptFinEsc(o.buyerUsername || '—')}</td>
+                    <td style="color:var(--fptm-muted,#8a90ab);">${fptFinFmtDate(o.orderDate)}</td>
+                    <td style="font-weight:700;color:#e57373;">${fptFinFmtMoney(o.price, o.currency)}</td>
+                    <td><span class="fpt-fin-status-badge ${badgeClass}">${statusText}</span></td>
+                </tr>`;
+            }).join('');
+            tbody.innerHTML = rows;
+        }
+    }
+
+    fptFinAttachTooltips(pane);
+}
+
+function renderProfitSubtab(finPage, sales, purchases) {
+    const pane = finPage.querySelector('.fpt-fin-tab-pane[data-subtab="profit"]');
+    if (!pane) return;
+
+    const closedSales = sales.filter(o => o.orderStatus === 'closed');
+    const completedPurchases = purchases.filter(o => o.orderStatus === 'closed');
+    const revenue = closedSales.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+    const purchasesCost = completedPurchases.reduce((acc, o) => acc + (Number(o.price) || 0), 0);
+    const netProfit = revenue - purchasesCost;
+    const margin = revenue > 0 ? Math.round((Math.max(0, netProfit) / revenue) * 100) : 0;
+    const roi = purchasesCost > 0 ? Math.round((netProfit / purchasesCost) * 100) : null;
+
+    const cards = pane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card');
+    if (cards.length >= 4) {
+        fptFinSetCard(cards[0], fptFinFmtMoney(netProfit), 'выручка минус расходы');
+        fptFinSetCard(cards[1], fptFinFmtMoney(purchasesCost), 'себестоимость покупок');
+        fptFinSetCard(cards[2], `${margin}%`, 'доля чистой прибыли');
+        fptFinSetCard(cards[3], roi != null ? `${roi}%` : '—', roi != null ? 'окупаемость вложений' : 'расходы не зафиксированы');
+    }
+
+    // Dynamics chart (Revenue vs Profit)
+    const dynCard = pane.querySelector('.fpt-fin-col-8 .fpt-fin-card');
+    if (dynCard) {
+        let chartContainer = dynCard.querySelector('.fpt-fin-chart-container');
+        if (!chartContainer) {
+            chartContainer = document.createElement('div');
+            chartContainer.className = 'fpt-fin-chart-container';
+            const sk = dynCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(chartContainer);
+            else dynCard.appendChild(chartContainer);
+        }
+
+        const byDay = {};
+        closedSales.forEach(o => {
+            const d = new Date(o.orderDate || Date.now());
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            if (!byDay[key]) byDay[key] = { rev: 0 };
+            byDay[key].rev += Number(o.price) || 0;
+        });
+        const days = Object.keys(byDay).sort().slice(-30);
+        let vals;
+        if (_fptFinState.profitMetric === 'margin') {
+            vals = days.map(() => margin);
+        } else {
+            vals = days.map(d => Math.round(byDay[d].rev * (margin > 0 ? margin / 100 : 0.7)));
+        }
+        chartContainer.innerHTML = fptFinBuildSvgBarChart(days, vals, null);
+    }
+
+    // Cost Coverage Donut (col-4)
+    const covCard = pane.querySelector('.fpt-fin-col-4 .fpt-fin-card');
+    if (covCard) {
+        let donutContainer = covCard.querySelector('.fpt-fin-donut-container');
+        if (!donutContainer) {
+            donutContainer = document.createElement('div');
+            donutContainer.className = 'fpt-fin-donut-container';
+            const sk = covCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(donutContainer);
+            else covCard.appendChild(donutContainer);
+        }
+        const slices = [
+            { label: 'Чистая прибыль', value: Math.max(0, netProfit) },
+            { label: 'Себестоимость', value: purchasesCost }
+        ];
+        donutContainer.innerHTML = fptFinBuildDonutChart(slices);
+    }
+
+    // Profitability table by item
+    const tbody = pane.querySelector('.fpt-fin-table tbody');
+    if (tbody) {
+        const prodMap = {};
+        closedSales.forEach(o => {
+            const desc = o.description || 'Лот';
+            if (!prodMap[desc]) prodMap[desc] = { count: 0, rev: 0 };
+            prodMap[desc].count++;
+            prodMap[desc].rev += Number(o.price) || 0;
+        });
+
+        const items = Object.entries(prodMap).sort((a, b) => b[1].rev - a[1].rev);
+        if (!items.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--fptm-muted,#8a90ab);">Нет завершённых продаж для расчёта прибыли</td></tr>';
+        } else {
+            tbody.innerHTML = items.slice(0, 50).map(([name, stat]) => {
+                const itemMargin = margin || 70;
+                const estCost = Math.round(stat.rev * ((100 - itemMargin) / 100));
+                const estProfit = stat.rev - estCost;
+                return `
+                <tr>
+                    <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;" title="${fptFinEsc(name)}">${fptFinEsc(name)}</td>
+                    <td>${stat.count} шт.</td>
+                    <td style="font-weight:700;">${fptFinFmtMoney(stat.rev)}</td>
+                    <td style="color:#e57373;">${fptFinFmtMoney(estCost)}</td>
+                    <td style="color:#4caf82;font-weight:700;">${fptFinFmtMoney(estProfit)}</td>
+                    <td><span class="fpt-fin-mini-badge">${itemMargin}%</span></td>
+                </tr>`;
+            }).join('');
+        }
+    }
+
+    fptFinAttachTooltips(pane);
+}
+
+function renderPotentialSubtab(finPage, lots) {
+    const pane = finPage.querySelector('.fpt-fin-tab-pane[data-subtab="potential"]');
+    if (!pane) return;
+
+    const allLots = lots || [];
+    const potRev = allLots.reduce((acc, l) => acc + (Number(l.price) || 0) * (Number(l.amount) || 1), 0);
+    const potProfit = Math.round(potRev * 0.7);
+    const whCost = Math.round(potRev * 0.3);
+
+    const cards = pane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card');
+    if (cards.length >= 4) {
+        fptFinSetCard(cards[0], fptFinFmtMoney(potRev), 'при полной реализации');
+        fptFinSetCard(cards[1], fptFinFmtMoney(potProfit), 'оценочная прибыль (маржа ~70%)');
+        fptFinSetCard(cards[2], fptFinFmtMoney(whCost), 'оценка стоимости склада');
+        fptFinSetCard(cards[3], `${allLots.length} шт.`, 'активно выставлено');
+    }
+
+    // Filter chip logic
+    let displayLots = allLots.slice();
+    if (_fptFinState.potentialFilter === 'in-stock') {
+        displayLots = displayLots.filter(l => (l.amount || 0) > 0);
+    }
+
+    const countBadge = pane.querySelector('#fptFinLotsCountBadge');
+    if (countBadge) countBadge.textContent = `${displayLots.length} предложений`;
+
+    const tbody = pane.querySelector('.fpt-fin-table tbody');
+    if (tbody) {
+        if (!displayLots.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--fptm-muted,#8a90ab);">Нет активных лотов. Откройте профиль FunPay для синхронизации предложений.</td></tr>';
+        } else {
+            tbody.innerHTML = displayLots.slice(0, 50).map(lot => {
+                const price = Number(lot.price) || 0;
+                const amt = Number(lot.amount) || 1;
+                const lotRev = price * amt;
+                const estCost = Math.round(price * 0.3);
+                const lotProfit = Math.round(lotRev * 0.7);
+
+                return `
+                <tr>
+                    <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;" title="${fptFinEsc(lot.title)}">
+                        <a class="fpt-fin-table-link" href="https://funpay.com/lots/offer?id=${fptFinEsc(lot.id)}" target="_blank">${fptFinEsc(lot.title)}</a>
+                    </td>
+                    <td style="color:var(--fptm-muted,#8a90ab);">${fptFinEsc(lot.categoryName || '—')}</td>
+                    <td>${amt} шт.</td>
+                    <td style="font-weight:600;">${fptFinFmtMoney(price)}</td>
+                    <td style="color:var(--fptm-muted,#8a90ab);">${fptFinFmtMoney(estCost)}</td>
+                    <td style="font-weight:700;">${fptFinFmtMoney(lotRev)}</td>
+                    <td style="color:#4caf82;font-weight:700;">${fptFinFmtMoney(lotProfit)}</td>
+                    <td><span class="fpt-fin-mini-badge">~70%</span></td>
+                </tr>`;
+            }).join('');
+        }
+    }
+}
+
+function renderOperationsSubtab(finPage, txns) {
+    const pane = finPage.querySelector('.fpt-fin-tab-pane[data-subtab="operations"]');
+    if (!pane) return;
+
+    let deposits = 0, withdraws = 0, ordersSum = 0;
+    txns.forEach(t => {
+        const amt = Number(t.signed) || 0;
+        if (t.type === 'payment') deposits += Math.abs(amt);
+        else if (t.type === 'withdraw') withdraws += Math.abs(amt);
+        else if (t.type === 'order') ordersSum += amt;
+    });
+
+    const net = deposits + ordersSum - withdraws;
+
+    const cards = pane.querySelectorAll('.fpt-fin-col-3 .fpt-fin-card');
+    if (cards.length >= 4) {
+        fptFinSetCard(cards[0], fptFinFmtMoney(deposits), 'пополнений счёта');
+        fptFinSetCard(cards[1], fptFinFmtMoney(withdraws), 'выведено с баланса');
+        fptFinSetCard(cards[2], fptFinFmtMoney(Math.round(withdraws * 0.03)), 'оценочные комиссии');
+        fptFinSetCard(cards[3], fptFinFmtMoney(net), net >= 0 ? 'положительный баланс' : 'отрицательный поток');
+    }
+
+    // Monthly flow chart
+    const dynCard = pane.querySelector('.fpt-fin-col-8 .fpt-fin-card');
+    if (dynCard) {
+        let chartContainer = dynCard.querySelector('.fpt-fin-chart-container');
+        if (!chartContainer) {
+            chartContainer = document.createElement('div');
+            chartContainer.className = 'fpt-fin-chart-container';
+            const sk = dynCard.querySelector('.fpt-fin-skeleton-chart');
+            if (sk) sk.replaceWith(chartContainer);
+            else dynCard.appendChild(chartContainer);
+        }
+
+        const byBucket = {};
+        txns.forEach(t => {
+            const d = new Date(t.date || Date.now());
+            const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            if (!byBucket[k]) byBucket[k] = { in: 0, out: 0 };
+            const s = Number(t.signed) || 0;
+            if (s >= 0) byBucket[k].in += s;
+            else byBucket[k].out += Math.abs(s);
+        });
+
+        const keys = Object.keys(byBucket).sort().slice(-12);
+        const ins = keys.map(k => byBucket[k].in);
+        const outs = keys.map(k => byBucket[k].out);
+        chartContainer.innerHTML = fptFinBuildFlowChart(keys, ins, outs);
+    }
+
+    // Structure list
+    const structCard = pane.querySelector('.fpt-fin-col-4 .fpt-fin-card');
+    if (structCard) {
+        let listContainer = structCard.querySelector('.fpt-fin-list');
+        if (!listContainer) {
+            listContainer = document.createElement('div');
+            listContainer.className = 'fpt-fin-list';
+            structCard.querySelectorAll('.fpt-fin-skeleton').forEach(s => s.remove());
+            structCard.appendChild(listContainer);
+        }
+
+        const TYPE_NAMES = { order: 'Заказы', payment: 'Пополнения', withdraw: 'Выводы', withdraw_cancel: 'Отмены выводов', other: 'Прочее' };
+        const byType = {};
+        txns.forEach(t => {
+            const tp = t.type || 'other';
+            if (!byType[tp]) byType[tp] = { count: 0, sum: 0 };
+            byType[tp].count++;
+            byType[tp].sum += Math.abs(Number(t.signed) || 0);
+        });
+
+        const rows = Object.entries(byType).map(([type, st]) => `
+            <div class="fpt-fin-list-item">
+                <div class="fpt-fin-list-info">
+                    <span class="fpt-fin-list-title">${fptFinEsc(TYPE_NAMES[type] || type)}</span>
+                    <span class="fpt-fin-list-sub">${st.count} операций</span>
+                </div>
+                <span class="fpt-fin-list-val">${fptFinFmtMoney(st.sum)}</span>
+            </div>
+        `).join('');
+
+        listContainer.innerHTML = rows || '<div class="fpt-fin-empty-desc" style="text-align:center;padding:16px;">Нет операций</div>';
+    }
+
+    // Operations table
+    const countBadge = pane.querySelector('#fptFinOpsCountBadge');
+    if (countBadge) countBadge.textContent = `${txns.length} операций`;
+
+    const tbody = pane.querySelector('.fpt-fin-table tbody');
+    if (tbody) {
+        if (!txns.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:var(--fptm-muted,#8a90ab);">Нет операций баланса за выбранный период</td></tr>';
+        } else {
+            const TYPE_LABELS = { order: 'Заказ', payment: 'Пополнение', withdraw: 'Вывод', withdraw_cancel: 'Отмена вывода', other: 'Операция' };
+            tbody.innerHTML = txns.slice(0, 60).map(t => {
+                const isPos = (Number(t.signed) || 0) >= 0;
+                const sign = isPos ? '+' : '−';
+                const col = isPos ? '#4caf82' : '#e57373';
+                const statusTxt = t.status === 'cancel' ? 'Отменено' : (t.status === 'waiting' ? 'Ожидание' : 'Завершено');
+                const badgeCls = t.status === 'cancel' ? 'fpt-fin-status-danger' : (t.status === 'waiting' ? 'fpt-fin-status-warning' : 'fpt-fin-status-success');
+
+                return `
+                <tr>
+                    <td>#${fptFinEsc(t.id || '—')}</td>
+                    <td style="color:var(--fptm-muted,#8a90ab);">${fptFinFmtDate(t.date)}</td>
+                    <td><span class="fpt-fin-mini-badge">${fptFinEsc(TYPE_LABELS[t.type] || t.type)}</span></td>
+                    <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;" title="${fptFinEsc(t.title || t.wallet)}">${fptFinEsc(t.title || t.wallet || '—')}</td>
+                    <td style="font-weight:700;color:${col};">${sign}${fptFinFmtMoney(Math.abs(t.signed || t.amount), t.currency)}</td>
+                    <td><span class="fpt-fin-status-badge ${badgeCls}">${statusTxt}</span></td>
+                </tr>`;
+            }).join('');
+        }
+    }
+
+    fptFinAttachTooltips(pane);
+}
+
+function renderActiveSubtab(finPage) {
+    if (!finPage) return;
+    const range = fptFinPeriodRange(_fptFinState.period);
+    const filteredSales = fptFinFilterByRange(_fptFinState.salesOrders, 'orderDate', range);
+    const filteredPurchases = fptFinFilterByRange(_fptFinState.purchaseOrders, 'orderDate', range);
+    const filteredTxns = fptFinFilterByRange(_fptFinState.financeTxns, 'date', range);
+
+    renderOverviewSubtab(finPage, filteredSales, filteredPurchases, filteredTxns, _fptFinState.userLots);
+    renderSalesSubtab(finPage, filteredSales);
+    renderPurchasesSubtab(finPage, filteredPurchases);
+    renderProfitSubtab(finPage, filteredSales, filteredPurchases);
+    renderPotentialSubtab(finPage, _fptFinState.userLots);
+    renderOperationsSubtab(finPage, filteredTxns);
+}
+
 function setupFinanceHubUI(toolsPopup) {
     const finPage = toolsPopup ? toolsPopup.querySelector('.fp-tools-page-content[data-page="finance_hub"]') : document.querySelector('.fp-tools-page-content[data-page="finance_hub"]');
-    if (!finPage || finPage.dataset.fptBound) return;
-    finPage.dataset.fptBound = '1';
+    if (!finPage) return;
 
-    // Subtabs switching with smooth scroll & persistence
-    const subtabs = finPage.querySelectorAll('.fpt-fin-subtab');
-    const panes = finPage.querySelectorAll('.fpt-fin-tab-pane');
+    if (!finPage.dataset.fptBound) {
+        finPage.dataset.fptBound = '1';
 
-    function switchSubtab(target) {
-        if (!target) return;
-        subtabs.forEach(s => {
-            const isActive = (s.dataset.subtab === target);
-            s.classList.toggle('active', isActive);
-            s.setAttribute('aria-selected', isActive ? 'true' : 'false');
-            if (isActive) {
-                try {
-                    s.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                } catch (_) {}
-            }
-        });
+        // Subtabs switching with gentle horizontal-only scrolling & zero vertical jitter
+        const subtabs = finPage.querySelectorAll('.fpt-fin-subtab');
+        const panes = finPage.querySelectorAll('.fpt-fin-tab-pane');
 
-        panes.forEach(pane => {
-            pane.classList.toggle('active', pane.dataset.subtab === target);
-        });
-
-        try {
-            sessionStorage.setItem('fpt_fin_active_subtab', target);
-        } catch (_) {}
-    }
-
-    subtabs.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            switchSubtab(btn.dataset.subtab);
-        });
-    });
-
-    // Restore saved subtab if any
-    try {
-        const savedSubtab = sessionStorage.getItem('fpt_fin_active_subtab');
-        if (savedSubtab && finPage.querySelector(`.fpt-fin-subtab[data-subtab="${savedSubtab}"]`)) {
-            switchSubtab(savedSubtab);
-        }
-    } catch (_) {}
-
-    // Chart metric toggles
-    const chartToggles = finPage.querySelectorAll('.fpt-fin-chart-toggle');
-    chartToggles.forEach(toggle => {
-        toggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const group = toggle.closest('.fpt-fin-chart-toggles');
-            if (group) {
-                group.querySelectorAll('.fpt-fin-chart-toggle').forEach(t => t.classList.remove('active'));
-            }
-            toggle.classList.add('active');
-            const card = toggle.closest('.fpt-fin-card');
-            if (card) {
-                card.classList.remove('fpt-fin-pulse-anim');
-                void card.offsetWidth;
-                card.classList.add('fpt-fin-pulse-anim');
-            }
-        });
-    });
-
-    // Filter chips
-    const filterChips = finPage.querySelectorAll('.fpt-fin-filter-chip');
-    filterChips.forEach(chip => {
-        chip.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const group = chip.closest('.fpt-fin-filter-group');
-            if (group) {
-                group.querySelectorAll('.fpt-fin-filter-chip').forEach(c => c.classList.remove('active'));
-            }
-            chip.classList.add('active');
-            const targetCard = finPage.querySelector('.fpt-fin-tab-pane.active .fpt-fin-card');
-            if (targetCard) {
-                targetCard.classList.remove('fpt-fin-pulse-anim');
-                void targetCard.offsetWidth;
-                targetCard.classList.add('fpt-fin-pulse-anim');
-            }
-        });
-    });
-
-    // Refresh button feedback
-    const refreshBtn = finPage.querySelector('#fptFinRefreshBtn');
-    const lastUpdatedEl = finPage.querySelector('#fptFinLastUpdatedText');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            refreshBtn.classList.add('fpt-fin-btn-spin');
-            if (lastUpdatedEl) {
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
-            }
-
-            const activeCards = finPage.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
-            activeCards.forEach(c => {
-                c.classList.remove('fpt-fin-pulse-anim');
-                void c.offsetWidth;
-                c.classList.add('fpt-fin-pulse-anim');
+        function switchSubtab(target) {
+            if (!target) return;
+            _fptFinState.activeSubtab = target;
+            subtabs.forEach(s => {
+                const isActive = (s.dataset.subtab === target);
+                s.classList.toggle('active', isActive);
+                s.setAttribute('aria-selected', isActive ? 'true' : 'false');
+                if (isActive) {
+                    const subtabsBar = finPage.querySelector('.fpt-fin-subtabs');
+                    if (subtabsBar) {
+                        const subLeft = s.offsetLeft;
+                        const subWidth = s.offsetWidth;
+                        const barWidth = subtabsBar.clientWidth;
+                        const targetScroll = subLeft - (barWidth - subWidth) / 2;
+                        subtabsBar.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
+                    }
+                }
             });
 
-            if (typeof showNotification === 'function') {
-                showNotification('Финансовые данные обновлены', false);
-            }
+            panes.forEach(pane => {
+                pane.classList.toggle('active', pane.dataset.subtab === target);
+            });
 
-            setTimeout(() => {
-                refreshBtn.classList.remove('fpt-fin-btn-spin');
-            }, 600);
-        });
-    }
-
-    // Period selector handler
-    const periodSelect = finPage.querySelector('#fptFinPeriodSelect');
-    if (periodSelect) {
-        periodSelect.addEventListener('change', () => {
             try {
-                sessionStorage.setItem('fpt_fin_last_period', periodSelect.value);
+                sessionStorage.setItem('fpt_fin_active_subtab', target);
             } catch (_) {}
 
-            if (lastUpdatedEl) {
-                const now = new Date();
-                const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
-            }
+            renderActiveSubtab(finPage);
+        }
 
-            const activeCards = finPage.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
-            activeCards.forEach(c => {
-                c.classList.remove('fpt-fin-pulse-anim');
-                void c.offsetWidth;
-                c.classList.add('fpt-fin-pulse-anim');
+        subtabs.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                switchSubtab(btn.dataset.subtab);
             });
         });
 
+        // Restore saved subtab if any
         try {
-            const savedPeriod = sessionStorage.getItem('fpt_fin_last_period');
-            if (savedPeriod && periodSelect.querySelector(`option[value="${savedPeriod}"]`)) {
-                periodSelect.value = savedPeriod;
+            const savedSubtab = sessionStorage.getItem('fpt_fin_active_subtab');
+            if (savedSubtab && finPage.querySelector(`.fpt-fin-subtab[data-subtab="${savedSubtab}"]`)) {
+                switchSubtab(savedSubtab);
             }
         } catch (_) {}
+
+        // Chart metric toggles (Overview)
+        const chartToggles = finPage.querySelectorAll('.fpt-fin-tab-pane[data-subtab="overview"] .fpt-fin-chart-toggle');
+        chartToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                chartToggles.forEach(t => t.classList.remove('active'));
+                toggle.classList.add('active');
+                _fptFinState.overviewMetric = toggle.dataset.metric || 'revenue';
+                renderActiveSubtab(finPage);
+            });
+        });
+
+        // Chart step toggles (Sales)
+        const salesStepToggles = finPage.querySelectorAll('.fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-chart-toggle');
+        salesStepToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                salesStepToggles.forEach(t => t.classList.remove('active'));
+                toggle.classList.add('active');
+                _fptFinState.salesStep = toggle.dataset.periodStep || 'day';
+                renderActiveSubtab(finPage);
+            });
+        });
+
+        // Chart toggles (Profit)
+        const profitToggles = finPage.querySelectorAll('.fpt-fin-tab-pane[data-subtab="profit"] .fpt-fin-chart-toggle');
+        profitToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                profitToggles.forEach(t => t.classList.remove('active'));
+                toggle.classList.add('active');
+                _fptFinState.profitMetric = toggle.dataset.metric || 'rev_prof';
+                renderActiveSubtab(finPage);
+            });
+        });
+
+        // Filter chips (Potential)
+        const filterChips = finPage.querySelectorAll('.fpt-fin-filter-chip');
+        filterChips.forEach(chip => {
+            chip.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                filterChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                _fptFinState.potentialFilter = chip.dataset.filter || 'all';
+                renderActiveSubtab(finPage);
+            });
+        });
+
+        // Period selector handler
+        const periodSelect = finPage.querySelector('#fptFinPeriodSelect');
+        const lastUpdatedEl = finPage.querySelector('#fptFinLastUpdatedText');
+        if (periodSelect) {
+            try {
+                const savedPeriod = sessionStorage.getItem('fpt_fin_last_period');
+                if (savedPeriod && periodSelect.querySelector(`option[value="${savedPeriod}"]`)) {
+                    periodSelect.value = savedPeriod;
+                }
+            } catch (_) {}
+
+            periodSelect.addEventListener('change', () => {
+                _fptFinState.period = periodSelect.value;
+                try {
+                    sessionStorage.setItem('fpt_fin_last_period', periodSelect.value);
+                } catch (_) {}
+
+                renderActiveSubtab(finPage);
+
+                const activeCards = finPage.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
+                activeCards.forEach(c => {
+                    c.classList.remove('fpt-fin-pulse-anim');
+                    void c.offsetWidth;
+                    c.classList.add('fpt-fin-pulse-anim');
+                });
+            });
+            _fptFinState.period = periodSelect.value;
+        }
+
+        // Refresh button
+        const refreshBtn = finPage.querySelector('#fptFinRefreshBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                refreshBtn.classList.add('fpt-fin-btn-spin');
+
+                try {
+                    // Trigger background update cycles
+                    await Promise.allSettled([
+                        new Promise(res => chrome.runtime.sendMessage({ action: 'updateSales' }, res)),
+                        new Promise(res => chrome.runtime.sendMessage({ action: 'updatePurchases' }, res)),
+                        new Promise(res => chrome.runtime.sendMessage({ action: 'updateFinance' }, res))
+                    ]);
+                } catch (_) {}
+
+                await fptFinLoadData(true);
+                renderActiveSubtab(finPage);
+
+                if (lastUpdatedEl) {
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+                }
+
+                const activeCards = finPage.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
+                activeCards.forEach(c => {
+                    c.classList.remove('fpt-fin-pulse-anim');
+                    void c.offsetWidth;
+                    c.classList.add('fpt-fin-pulse-anim');
+                });
+
+                if (typeof showNotification === 'function') {
+                    showNotification('Финансовые данные обновлены', false);
+                }
+
+                setTimeout(() => {
+                    refreshBtn.classList.remove('fpt-fin-btn-spin');
+                }, 600);
+            });
+        }
     }
+
+    // Load data and render
+    fptFinLoadData().then(() => {
+        renderActiveSubtab(finPage);
+    });
 }
 
 function initializeFinanceHub() {

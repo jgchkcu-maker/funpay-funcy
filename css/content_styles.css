@@ -734,6 +734,7 @@
     padding: 25px 30px;
     overflow-y: auto;
     overflow-x: hidden;
+    scrollbar-gutter: stable;
     container-type: inline-size;
     container-name: fpt-content;
 }
@@ -8717,6 +8718,8 @@ textarea.fp-cw-input { line-height:1.4; }
     max-width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
+    min-height: 100%;
+    scrollbar-gutter: stable;
 }
 
 /* Header */
@@ -8985,21 +8988,20 @@ textarea.fp-cw-input { line-height:1.4; }
 /* Subtab panes */
 .fpt-fin-tab-pane {
     display: none;
+    min-height: 440px;
 }
 
 .fpt-fin-tab-pane.active {
     display: block;
-    animation: fpFinFadeIn 0.25s ease;
+    animation: fpFinFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes fpFinFadeIn {
     from {
         opacity: 0;
-        transform: translateY(4px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
     }
 }
 
@@ -9297,4 +9299,136 @@ textarea.fp-cw-input { line-height:1.4; }
     50% { opacity: 0.8; }
     100% { opacity: 1; transform: scale(1); }
 }
+
+/* Status badges in finance tables */
+.fpt-fin-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fpt-fin-status-success {
+    background: rgba(76, 175, 130, 0.16);
+    color: #4caf82;
+    border: 1px solid rgba(76, 175, 130, 0.3);
+}
+
+.fpt-fin-status-warning {
+    background: rgba(244, 200, 74, 0.16);
+    color: #f4c84a;
+    border: 1px solid rgba(244, 200, 74, 0.3);
+}
+
+.fpt-fin-status-danger {
+    background: rgba(229, 115, 115, 0.16);
+    color: #e57373;
+    border: 1px solid rgba(229, 115, 115, 0.3);
+}
+
+.fpt-fin-status-neutral {
+    background: var(--fptm-surface, rgba(255, 255, 255, 0.06));
+    color: var(--fptm-muted, #9099b8);
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.1));
+}
+
+/* Lists (Top products, Top categories, Top sellers, Recent events) */
+.fpt-fin-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.fpt-fin-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--fptm-surface, rgba(255, 255, 255, 0.03));
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.06));
+    font-size: 12px;
+    transition: background 0.15s ease;
+}
+
+.fpt-fin-list-item:hover {
+    background: var(--fptm-hover, rgba(255, 255, 255, 0.06));
+}
+
+.fpt-fin-list-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.fpt-fin-list-title {
+    font-weight: 500;
+    color: var(--fptm-text, #fff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fpt-fin-list-sub {
+    font-size: 11px;
+    color: var(--fptm-muted, #8a90ab);
+}
+
+.fpt-fin-list-val {
+    font-weight: 700;
+    color: var(--fptm-text, #fff);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.fpt-fin-table-link {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+    text-decoration: none !important;
+    font-weight: 600;
+}
+
+.fpt-fin-table-link:hover {
+    text-decoration: underline !important;
+}
+
+/* Tooltip for SVG chart bars */
+.fpt-fin-tooltip {
+    position: fixed;
+    z-index: 2147483647;
+    pointer-events: none;
+    display: none;
+    background: #11131a;
+    color: #fff;
+    font-size: 11px;
+    padding: 5px 9px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+    white-space: nowrap;
+}
+
+.fpt-fin-chart-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+}
+
+.fpt-fin-svg-bar {
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    cursor: pointer;
+}
+
+.fpt-fin-svg-bar:hover {
+    opacity: 0.75;
+}
+
 

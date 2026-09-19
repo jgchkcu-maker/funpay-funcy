@@ -831,8 +831,13 @@ function parseUserLotsList(html) {
             const idMatch = row.getAttribute('href')?.match(/(?:offer=|id=)(\d+)/);
             const id = idMatch ? idMatch[1] : null;
 
+            const priceText = row.querySelector(".tc-price")?.textContent || "";
+            const price = parseFloat(priceText.replace(/[^\d.,]/g, "").replace(/\s/g, "").replace(",", ".")) || 0;
+            const amountText = row.querySelector(".tc-amount")?.textContent || "";
+            const amount = parseInt(amountText.replace(/\D/g, ""), 10) || 1;
+
             if (id) {
-                allLots.push({ id, title, nodeId, categoryName });
+                allLots.push({ id, title, nodeId, categoryName, price, amount });
             }
         });
         
