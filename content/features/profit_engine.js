@@ -111,7 +111,12 @@
             };
         }
 
-        const status = String(order.status || '').toLowerCase().trim();
+        // Sales records use orderStatus; keep status as a compatibility alias for
+        // callers that already provide the shorter field.
+        const rawStatus = order.status != null && String(order.status).trim() !== ''
+            ? order.status
+            : order.orderStatus;
+        const status = String(rawStatus || '').toLowerCase().trim();
         const isRefunded = status === 'refunded' || status.includes('refund');
         const isClosed = status === 'closed';
         const isEligible = isClosed && !isRefunded;

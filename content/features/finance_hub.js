@@ -2689,7 +2689,7 @@
                 roiCell = `<span class="${cls}">${esc(info.roi)}%</span>`;
             }
 
-            let statusCell = esc(o.status || '—');
+            let statusCell = esc(o.status || o.orderStatus || '—');
             if (info.isRefunded) {
                 statusCell = '<span class="fpt-fin-badge-refunded">Возврат</span>';
             } else if (info.isClosed) {
