@@ -1434,3 +1434,392 @@
         init();
     }
 })();
+
+// =============================================================================
+//  FP Tools — Finance Hub Verified Export Engine (T09B)
+// =============================================================================
+(function (root) {
+    'use strict';
+
+    function formatNumber(v) {
+        if (v === null || v === undefined) return 'null';
+        if (typeof v === 'number') {
+            return isNaN(v) ? 'null' : String(Math.round(v * 100) / 100);
+        }
+        const n = Number(v);
+        return isNaN(n) ? 'null' : String(Math.round(n * 100) / 100);
+    }
+
+    function formatString(s) {
+        if (s === null || s === undefined) return 'null';
+        s = String(s);
+        if (/[";\n\r,]/.test(s)) {
+            return '"' + s.replace(/"/g, '""') + '"';
+        }
+        return s;
+    }
+
+    function formatBool(b) {
+        if (b === null || b === undefined) return 'null';
+        return b ? 'true' : 'false';
+    }
+
+    function formatItem(dataset, o) {
+        if (!o) return null;
+
+        if (dataset === 'sales') {
+            const info = o.profitInfo || ((typeof root !== 'undefined' && root.FPTProfitEngine && typeof root.FPTProfitEngine.calculateOrderProfit === 'function') ? root.FPTProfitEngine.calculateOrderProfit(o) : null);
+            const costVal = (info && typeof info.costBasis === 'number') ? info.costBasis : (typeof o.costBasis === 'number' ? o.costBasis : null);
+            const hasCost = Boolean((info && info.hasCost) || costVal !== null);
+            const costBasis = (hasCost && costVal !== null) ? costVal : null;
+            const profit = (hasCost && info && typeof info.netProfit === 'number') ? info.netProfit : (hasCost && typeof o.profit === 'number' ? o.profit : null);
+            const price = typeof o.price === 'number' ? o.price : (Number(o.price) || 0);
+            return {
+                orderId: String(o.orderId || ''),
+                orderDate: o.orderDate ? (typeof o.orderDate === 'number' ? new Date(o.orderDate).toISOString() : String(o.orderDate)) : null,
+                description: o.description || o.subcategoryName || 'Заказ',
+                category: o.subcategoryName || o.category || 'Без категории',
+                buyerUsername: o.buyerUsername || '-',
+                orderStatus: o.orderStatus || 'unknown',
+                price: price,
+                currency: o.currency || 'RUB',
+                knownCost: hasCost,
+                costBasis: costBasis,
+                profit: profit,
+                stockKind: null
+            };
+        }
+
+        if (dataset === 'purchases') {
+            const price = typeof o.price === 'number' ? o.price : (Number(o.price) || 0);
+            return {
+                orderId: String(o.orderId || ''),
+                orderDate: o.orderDate ? (typeof o.orderDate === 'number' ? new Date(o.orderDate).toISOString() : String(o.orderDate)) : null,
+                description: o.description || o.subcategoryName || 'Покупка',
+                category: o.subcategoryName || o.category || 'Без категории',
+                sellerUsername: o.sellerUsername || o.sellerName || '-',
+                orderStatus: o.orderStatus || 'unknown',
+                price: price,
+                currency: o.currency || 'RUB',
+                knownCost: false,
+                costBasis: null,
+                profit: null,
+                stockKind: null
+            };
+        }
+
+        if (dataset === 'operations') {
+            const amount = typeof o.amount === 'number' ? o.amount : (Number(o.amount) || 0);
+            const signedAmount = typeof o.signed === 'number' ? o.signed : (Number(o.signed) || amount);
+            return {
+                id: String(o.id || o.paymentId || ''),
+                date: o.date ? (typeof o.date === 'number' ? new Date(o.date).toISOString() : String(o.date)) : null,
+                type: o.type || 'other',
+                typeLabel: (o.typeLabel || o.type || 'Операция'),
+                title: o.title || o.description || '-',
+                status: o.status || 'unknown',
+                amount: amount,
+                signedAmount: signedAmount,
+                currency: o.currency || 'RUB',
+                knownCost: false,
+                costBasis: null,
+                profit: null,
+                stockKind: null
+            };
+        }
+
+        if (dataset === 'profit') {
+            const info = o.profitInfo || ((typeof root !== 'undefined' && root.FPTProfitEngine && typeof root.FPTProfitEngine.calculateOrderProfit === 'function') ? root.FPTProfitEngine.calculateOrderProfit(o) : {});
+            const costVal = (typeof info.costBasis === 'number') ? info.costBasis : (typeof o.costBasis === 'number' ? o.costBasis : null);
+            const hasCost = Boolean(info.hasCost || costVal !== null);
+            const costBasis = (hasCost && costVal !== null) ? costVal : null;
+            const profit = (hasCost && typeof info.netProfit === 'number') ? info.netProfit : (hasCost && typeof o.profit === 'number' ? o.profit : null);
+            const margin = (hasCost && typeof info.margin === 'number') ? info.margin : (hasCost && typeof o.margin === 'number' ? o.margin : null);
+            const roi = (hasCost && typeof info.roi === 'number') ? info.roi : (hasCost && typeof o.roi === 'number' ? o.roi : null);
+            const rev = (typeof info.sellerRevenue === 'number') ? info.sellerRevenue : (typeof o.price === 'number' ? o.price : 0);
+            return {
+                orderId: String(o.orderId || ''),
+                orderDate: o.orderDate ? (typeof o.orderDate === 'number' ? new Date(o.orderDate).toISOString() : String(o.orderDate)) : null,
+                description: o.description || o.subcategoryName || 'Заказ',
+                category: o.subcategoryName || o.category || 'Без категории',
+                buyerUsername: o.buyerUsername || '-',
+                orderStatus: o.orderStatus || (info.isRefunded ? 'refunded' : (info.isClosed ? 'closed' : 'unknown')),
+                revenue: rev,
+                currency: info.currency || o.currency || 'RUB',
+                knownCost: hasCost,
+                costBasis: costBasis,
+                costBasisCurrency: (hasCost && info.costBasisCurrency) ? info.costBasisCurrency : null,
+                profit: profit,
+                margin: margin,
+                roi: roi,
+                stockKind: null
+            };
+        }
+
+        if (dataset === 'potential') {
+            const knownCost = (o.costBasis !== null && o.costBasis !== undefined && !isNaN(Number(o.costBasis)));
+            const costBasis = knownCost ? Number(o.costBasis) : null;
+            const stock = (o.stockKind === 'finite' && typeof o.stock === 'number') ? o.stock : null;
+            const stockKind = o.stockKind || (typeof o.stock === 'number' ? 'finite' : 'unknown');
+            const sellerPrice = typeof o.sellerPrice === 'number' ? o.sellerPrice : (Number(o.sellerPrice) || 0);
+            const buyerPrice = typeof o.buyerPrice === 'number' ? o.buyerPrice : (o.sellerPrice != null ? Number(o.sellerPrice) : null);
+            const rev = (typeof o.sellerRevenue === 'number') ? o.sellerRevenue : null;
+            const buyerGmv = (typeof o.buyerGmv === 'number') ? o.buyerGmv : null;
+            const profit = (knownCost && typeof o.potentialProfit === 'number') ? o.potentialProfit : null;
+            const margin = (knownCost && typeof o.margin === 'number') ? o.margin : null;
+            const roi = (knownCost && typeof o.roi === 'number') ? o.roi : null;
+            return {
+                offerId: String(o.offerId || ''),
+                title: o.title || ('Лот #' + (o.offerId || '')),
+                category: o.category || 'Без категории',
+                currency: o.currency || 'RUB',
+                stock: stock,
+                stockKind: stockKind,
+                sellerPrice: sellerPrice,
+                buyerPrice: buyerPrice,
+                knownCost: knownCost,
+                costBasis: costBasis,
+                sellerRevenue: rev,
+                buyerGmv: buyerGmv,
+                profit: profit,
+                margin: margin,
+                roi: roi,
+                active: o.active !== false
+            };
+        }
+
+        return o;
+    }
+
+    const SCHEMAS = {
+        sales: [
+            { key: 'orderId', label: 'ID заказа', format: formatString },
+            { key: 'orderDate', label: 'Дата', format: formatString },
+            { key: 'description', label: 'Описание', format: formatString },
+            { key: 'category', label: 'Категория', format: formatString },
+            { key: 'buyerUsername', label: 'Покупатель', format: formatString },
+            { key: 'orderStatus', label: 'Статус', format: formatString },
+            { key: 'price', label: 'Выручка', format: formatNumber },
+            { key: 'currency', label: 'Валюта', format: formatString },
+            { key: 'knownCost', label: 'Себестоимость известна', format: formatBool },
+            { key: 'costBasis', label: 'Себестоимость', format: formatNumber },
+            { key: 'profit', label: 'Чистая прибыль', format: formatNumber },
+            { key: 'stockKind', label: 'Тип остатка', format: formatString }
+        ],
+        purchases: [
+            { key: 'orderId', label: 'ID заказа', format: formatString },
+            { key: 'orderDate', label: 'Дата', format: formatString },
+            { key: 'description', label: 'Описание', format: formatString },
+            { key: 'category', label: 'Категория', format: formatString },
+            { key: 'sellerUsername', label: 'Продавец', format: formatString },
+            { key: 'orderStatus', label: 'Статус', format: formatString },
+            { key: 'price', label: 'Расход', format: formatNumber },
+            { key: 'currency', label: 'Валюта', format: formatString },
+            { key: 'knownCost', label: 'Себестоимость известна', format: formatBool },
+            { key: 'costBasis', label: 'Себестоимость', format: formatNumber },
+            { key: 'profit', label: 'Чистая прибыль', format: formatNumber },
+            { key: 'stockKind', label: 'Тип остатка', format: formatString }
+        ],
+        operations: [
+            { key: 'id', label: 'ID операции', format: formatString },
+            { key: 'date', label: 'Дата', format: formatString },
+            { key: 'type', label: 'Тип', format: formatString },
+            { key: 'typeLabel', label: 'Тип (название)', format: formatString },
+            { key: 'title', label: 'Описание', format: formatString },
+            { key: 'status', label: 'Статус', format: formatString },
+            { key: 'amount', label: 'Сумма', format: formatNumber },
+            { key: 'signedAmount', label: 'Сумма со знаком', format: formatNumber },
+            { key: 'currency', label: 'Валюта', format: formatString },
+            { key: 'knownCost', label: 'Себестоимость известна', format: formatBool },
+            { key: 'costBasis', label: 'Себестоимость', format: formatNumber },
+            { key: 'profit', label: 'Чистая прибыль', format: formatNumber },
+            { key: 'stockKind', label: 'Тип остатка', format: formatString }
+        ],
+        profit: [
+            { key: 'orderId', label: 'ID заказа', format: formatString },
+            { key: 'orderDate', label: 'Дата', format: formatString },
+            { key: 'description', label: 'Описание', format: formatString },
+            { key: 'category', label: 'Категория', format: formatString },
+            { key: 'buyerUsername', label: 'Покупатель', format: formatString },
+            { key: 'orderStatus', label: 'Статус', format: formatString },
+            { key: 'revenue', label: 'Выручка', format: formatNumber },
+            { key: 'currency', label: 'Валюта', format: formatString },
+            { key: 'knownCost', label: 'Себестоимость известна', format: formatBool },
+            { key: 'costBasis', label: 'Себестоимость', format: formatNumber },
+            { key: 'profit', label: 'Чистая прибыль', format: formatNumber },
+            { key: 'margin', label: 'Маржа %', format: formatNumber },
+            { key: 'roi', label: 'ROI %', format: formatNumber },
+            { key: 'stockKind', label: 'Тип остатка', format: formatString }
+        ],
+        potential: [
+            { key: 'offerId', label: 'ID лота', format: formatString },
+            { key: 'title', label: 'Название', format: formatString },
+            { key: 'category', label: 'Категория', format: formatString },
+            { key: 'currency', label: 'Валюта', format: formatString },
+            { key: 'stock', label: 'Остаток', format: formatNumber },
+            { key: 'stockKind', label: 'Тип остатка', format: formatString },
+            { key: 'sellerPrice', label: 'Цена продавца', format: formatNumber },
+            { key: 'buyerPrice', label: 'Цена покупателя', format: formatNumber },
+            { key: 'knownCost', label: 'Себестоимость известна', format: formatBool },
+            { key: 'costBasis', label: 'Себестоимость', format: formatNumber },
+            { key: 'sellerRevenue', label: 'Потенциал выручки', format: formatNumber },
+            { key: 'profit', label: 'Потенциал прибыли', format: formatNumber },
+            { key: 'margin', label: 'Маржа %', format: formatNumber },
+            { key: 'roi', label: 'ROI %', format: formatNumber },
+            { key: 'active', label: 'Активен', format: formatBool }
+        ]
+    };
+
+    function buildTotalsSummary(dataset, totals, cur) {
+        if (!totals) return [];
+        const lines = [];
+        lines.push(['# TOTALS', '']);
+        lines.push(['Показатель', 'Значение']);
+        if (dataset === 'sales') {
+            lines.push(['Всего заказов', String(totals.count || 0)]);
+            lines.push(['Выручка', totals.total != null ? `${formatNumber(totals.total)} ${cur}` : 'null']);
+            if (totals.byCurrency) {
+                for (const [c, v] of Object.entries(totals.byCurrency)) {
+                    lines.push([`Выручка (${c})`, `${formatNumber(v)} ${c}`]);
+                }
+            }
+        } else if (dataset === 'purchases') {
+            lines.push(['Всего покупок', String(totals.count || 0)]);
+            lines.push(['Расходы', totals.total != null ? `${formatNumber(totals.total)} ${cur}` : 'null']);
+            if (totals.byCurrency) {
+                for (const [c, v] of Object.entries(totals.byCurrency)) {
+                    lines.push([`Расходы (${c})`, `${formatNumber(v)} ${c}`]);
+                }
+            }
+        } else if (dataset === 'operations') {
+            lines.push(['Всего операций', String(totals.count || 0)]);
+            if (totals.inByCur) {
+                for (const [c, v] of Object.entries(totals.inByCur)) {
+                    lines.push([`Поступления (${c})`, `${formatNumber(v)} ${c}`]);
+                }
+            }
+            if (totals.outByCur) {
+                for (const [c, v] of Object.entries(totals.outByCur)) {
+                    lines.push([`Списания (${c})`, `${formatNumber(v)} ${c}`]);
+                }
+            }
+        } else if (dataset === 'profit') {
+            lines.push(['Закрытых заказов', String(totals.eligibleOrdersCount || 0)]);
+            lines.push(['Выручка закрытых заказов', `${formatNumber(totals.eligibleRevenue)} ${cur}`]);
+            lines.push(['Заказов с себестоимостью', String(totals.knownCostOrdersCount || 0)]);
+            lines.push(['Выручка с себестоимостью', `${formatNumber(totals.knownCostRevenue)} ${cur}`]);
+            lines.push(['Себестоимость проданного', totals.realisedCost !== null ? `${formatNumber(totals.realisedCost)} ${cur}` : 'null']);
+            lines.push(['Реализованная чистая прибыль', totals.realisedNetProfit !== null ? `${formatNumber(totals.realisedNetProfit)} ${cur}` : 'null']);
+            lines.push(['Маржинальность', totals.margin !== null ? `${formatNumber(totals.margin)}%` : 'null']);
+            lines.push(['ROI', totals.roi !== null ? `${formatNumber(totals.roi)}%` : 'null']);
+            lines.push(['Покрытие заказов', `${formatNumber(totals.orderCoverage)}%`]);
+            lines.push(['Покрытие выручки', `${formatNumber(totals.revenueCoverage)}%`]);
+        } else if (dataset === 'potential') {
+            lines.push(['Активных предложений с остатком', String(totals.finiteOffers || 0)]);
+            lines.push(['Потенциал выручки', totals.sellerRevenue !== null ? `${formatNumber(totals.sellerRevenue)} ${cur}` : 'null']);
+            lines.push(['Покупательский GMV', totals.buyerGmv !== null ? `${formatNumber(totals.buyerGmv)} ${cur}` : 'null']);
+            lines.push(['Себестоимость склада', totals.knownInventoryCost !== null ? `${formatNumber(totals.knownInventoryCost)} ${cur}` : 'null']);
+            lines.push(['Потенциальная чистая прибыль', totals.knownPotentialProfit !== null ? `${formatNumber(totals.knownPotentialProfit)} ${cur}` : 'null']);
+            lines.push(['Маржинальность', totals.knownMargin !== null ? `${formatNumber(totals.knownMargin)}%` : 'null']);
+            lines.push(['ROI', totals.knownRoi !== null ? `${formatNumber(totals.knownRoi)}%` : 'null']);
+            lines.push(['Покрытие себестоимости', `${formatNumber(totals.costCoveragePercent)}%`]);
+        }
+        return lines;
+    }
+
+    function buildJSON(dataset, rawItems, totals, meta) {
+        const items = (rawItems || []).map(r => formatItem(dataset, r));
+        const out = {
+            meta: Object.assign({
+                dataset,
+                exportedAt: new Date().toISOString(),
+                source: 'FunPay Tools Finance Hub'
+            }, meta || {}),
+            totals: totals || null,
+            items: items
+        };
+        return JSON.stringify(out, null, 2);
+    }
+
+    function buildCSV(dataset, rawItems, totals, meta) {
+        const schema = SCHEMAS[dataset] || SCHEMAS.sales;
+        const items = (rawItems || []).map(r => formatItem(dataset, r));
+        const sep = ';';
+
+        const lines = [];
+        // Header
+        lines.push(schema.map(col => formatString(col.label)).join(sep));
+
+        // Rows
+        for (const item of items) {
+            lines.push(schema.map(col => {
+                const val = item[col.key];
+                return col.format(val);
+            }).join(sep));
+        }
+
+        // Totals summary
+        const cur = (meta && meta.currency && meta.currency !== 'all') ? meta.currency : ((totals && totals.currency) || 'RUB');
+        const summary = buildTotalsSummary(dataset, totals, cur);
+        if (summary.length) {
+            lines.push('');
+            for (const [k, v] of summary) {
+                lines.push(`${formatString(k)}${sep}${formatString(v)}`);
+            }
+        }
+
+        return '\uFEFF' + lines.join('\r\n');
+    }
+
+    function download(dataset, format, rawItems, totals, meta) {
+        const isJson = String(format).toLowerCase() === 'json';
+        const ext = isJson ? 'json' : 'csv';
+        const mime = isJson ? 'application/json;charset=utf-8' : 'text/csv;charset=utf-8';
+        const content = isJson
+            ? buildJSON(dataset, rawItems, totals, meta)
+            : buildCSV(dataset, rawItems, totals, meta);
+
+        const period = (meta && meta.period) ? meta.period : 'all';
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const filename = `funpay_finance_${dataset}_${period}_${dateStr}.${ext}`;
+
+        if (typeof Blob !== 'undefined' && typeof document !== 'undefined') {
+            const blob = new Blob([content], { type: mime });
+            if (typeof window !== 'undefined' && window.FPTExportStudio && window.FPTExportStudio._util && window.FPTExportStudio._util.downloadBlob) {
+                window.FPTExportStudio._util.downloadBlob(blob, mime, filename);
+            } else if (typeof URL !== 'undefined' && URL.createObjectURL) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 4000);
+            }
+        }
+
+        return { filename, content, mime };
+    }
+
+    const FPTFinanceExport = {
+        formatItem,
+        buildCSV,
+        buildJSON,
+        download,
+        SCHEMAS
+    };
+
+    if (typeof window !== 'undefined') {
+        window.FPTFinanceExport = FPTFinanceExport;
+        if (window.FPTExportStudio) {
+            window.FPTExportStudio.financeExport = FPTFinanceExport;
+        }
+    }
+    if (root) {
+        root.FPTFinanceExport = FPTFinanceExport;
+    }
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = FPTFinanceExport;
+    }
+})(typeof window !== 'undefined' ? window : (typeof self !== 'undefined' ? self : this));

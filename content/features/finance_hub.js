@@ -3762,6 +3762,16 @@
         catSelect.value = state.category || 'all';
         catSelect.onchange = (e) => onCategoryChange(e.target.value);
 
+        // 4. Export button activation
+        const exportBtn = container.querySelector('#fptFinExportBtn');
+        if (exportBtn) {
+            exportBtn.disabled = false;
+            exportBtn.removeAttribute('disabled');
+            exportBtn.title = 'Экспорт финансовых данных (CSV, JSON)';
+            exportBtn.setAttribute('aria-label', 'Экспорт финансовых данных');
+            exportBtn.onclick = () => openExportModal();
+        }
+
         updateHeaderFiltersVisibility(state.activeSubtab);
     }
 
@@ -3775,6 +3785,519 @@
         if (statusSelect) {
             statusSelect.style.display = (subtab === 'potential') ? 'none' : '';
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ЭКСПОРТ ДАННЫХ (T09B)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    function ensureExportModalStyles() {
+        if (typeof document === 'undefined' || document.getElementById('fpt-fin-export-modal-styles')) return;
+        const style = document.createElement('style');
+        style.id = 'fpt-fin-export-modal-styles';
+        style.textContent = `
+            .fpt-fin-export-overlay {
+                position: fixed;
+                top: 0; left: 0; right: 0; bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                backdrop-filter: blur(4px);
+                z-index: 100000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 16px;
+                box-sizing: border-box;
+                font-family: inherit;
+            }
+            .fpt-fin-export-dialog {
+                background: #1a1c23;
+                border: 1px solid #2e3342;
+                border-radius: 12px;
+                width: 100%;
+                max-width: 580px;
+                box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
+                color: #e2e8f0;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            .fpt-fin-export-head {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 18px;
+                background: #21242d;
+                border-bottom: 1px solid #2e3342;
+            }
+            .fpt-fin-export-title-row {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .fpt-fin-export-head h4 {
+                margin: 0;
+                font-size: 15px;
+                font-weight: 600;
+                color: #f1f5f9;
+            }
+            .fpt-fin-export-close {
+                background: transparent;
+                border: none;
+                color: #94a3b8;
+                font-size: 22px;
+                cursor: pointer;
+                line-height: 1;
+                padding: 0 4px;
+            }
+            .fpt-fin-export-close:hover {
+                color: #fff;
+            }
+            .fpt-fin-export-body {
+                padding: 16px 18px;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            .fpt-fin-export-filters-bar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px 12px;
+                font-size: 12px;
+                color: #94a3b8;
+                background: #14161d;
+                padding: 8px 12px;
+                border-radius: 6px;
+                border: 1px solid #282c37;
+            }
+            .fpt-fin-export-filters-bar strong {
+                color: #cbd5e1;
+            }
+            .fpt-fin-export-tabs {
+                display: flex;
+                gap: 6px;
+                flex-wrap: wrap;
+            }
+            .fpt-fin-export-tab {
+                background: #242834;
+                border: 1px solid #33394a;
+                color: #cbd5e1;
+                padding: 6px 12px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+            .fpt-fin-export-tab:hover {
+                background: #2d3342;
+                color: #fff;
+            }
+            .fpt-fin-export-tab.active {
+                background: #2563eb;
+                border-color: #3b82f6;
+                color: #fff;
+            }
+            .fpt-fin-export-card {
+                background: #14161d;
+                border: 1px solid #282c37;
+                border-radius: 8px;
+                padding: 12px 14px;
+                font-size: 12px;
+                display: flex;
+                flex-direction: column;
+                gap: 6px;
+            }
+            .fpt-fin-export-card-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                color: #cbd5e1;
+            }
+            .fpt-fin-export-card-row strong {
+                color: #fff;
+                font-weight: 600;
+            }
+            .fpt-fin-export-actions {
+                display: flex;
+                gap: 10px;
+                margin-top: 4px;
+            }
+            .fpt-fin-export-btn {
+                flex: 1;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 9px 16px;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+                border: none;
+                transition: opacity 0.15s ease;
+            }
+            .fpt-fin-export-btn:hover {
+                opacity: 0.9;
+            }
+            .fpt-fin-export-btn-csv {
+                background: #059669;
+                color: #fff;
+            }
+            .fpt-fin-export-btn-json {
+                background: #2563eb;
+                color: #fff;
+            }
+            .fpt-fin-export-hint {
+                font-size: 11px;
+                color: #64748b;
+                line-height: 1.4;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    async function getDatasetForExport(datasetKey) {
+        const dataset = datasetKey || (state.activeSubtab === 'overview' ? 'sales' : state.activeSubtab);
+        const meta = {
+            dataset,
+            period: state.period,
+            currency: state.currency,
+            status: state.status,
+            category: state.category,
+            exportedAt: new Date().toISOString()
+        };
+
+        if (dataset === 'sales') {
+            let orders = state.cachedOrders;
+            let agg = state.cachedAgg;
+            if (!orders || state.cachedPeriod !== state.period) {
+                if (root.FPTFinanceData && typeof root.FPTFinanceData.getSales === 'function') {
+                    const filterOpts = { period: state.period, useMsk: true, sort: 'date-desc' };
+                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
+                    if (state.category && state.category !== 'all') filterOpts.category = state.category;
+                    orders = await root.FPTFinanceData.getSales(filterOpts);
+                    agg = root.FPTFinanceData.aggregateSales(orders, { period: state.period, useMsk: true });
+                } else {
+                    orders = [];
+                    agg = { count: 0, total: 0, byCurrency: {} };
+                }
+            }
+            return { dataset: 'sales', items: orders || [], totals: agg || {}, meta };
+        }
+
+        if (dataset === 'purchases') {
+            let orders = state.cachedPurchasesOrders;
+            let agg = state.cachedPurchasesAgg;
+            if (!orders || state.cachedPurchasesPeriod !== state.period) {
+                if (root.FPTFinanceData && typeof root.FPTFinanceData.getPurchases === 'function') {
+                    const filterOpts = { period: state.period, useMsk: true, sort: 'date-desc' };
+                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
+                    if (state.category && state.category !== 'all') filterOpts.category = state.category;
+                    orders = await root.FPTFinanceData.getPurchases(filterOpts);
+                    agg = root.FPTFinanceData.aggregatePurchases(orders, { period: state.period, useMsk: true });
+                } else {
+                    orders = [];
+                    agg = { count: 0, total: 0, byCurrency: {} };
+                }
+            }
+            return { dataset: 'purchases', items: orders || [], totals: agg || {}, meta };
+        }
+
+        if (dataset === 'operations') {
+            let operations = state.cachedOperations;
+            let agg = state.cachedOperationsAgg;
+            if (!operations || state.cachedOperationsPeriod !== state.period) {
+                if (root.FPTFinanceData && typeof root.FPTFinanceData.getOperations === 'function') {
+                    const filterOpts = { period: state.period, useMsk: true, sort: 'date-desc' };
+                    if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
+                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    operations = await root.FPTFinanceData.getOperations(filterOpts);
+                    agg = root.FPTFinanceData.aggregateOperations(operations);
+                } else {
+                    operations = [];
+                    agg = { count: 0, inByCur: {}, outByCur: {} };
+                }
+            }
+            return { dataset: 'operations', items: operations || [], totals: agg || {}, meta };
+        }
+
+        if (dataset === 'profit') {
+            const profitEngine = (typeof window !== 'undefined' && window.FPTProfitEngine) || root.FPTProfitEngine;
+            let allOrders = state.cachedProfitOrders;
+            let agg = state.cachedProfitAgg;
+            if (!allOrders || state.cachedProfitPeriod !== state.period) {
+                if (profitEngine && typeof profitEngine.getRealisedProfit === 'function') {
+                    const filterOpts = { period: state.period, useMsk: true };
+                    if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
+                    if (state.category && state.category !== 'all') filterOpts.category = state.category;
+                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    const result = await profitEngine.getRealisedProfit(filterOpts);
+                    allOrders = Array.isArray(result.orders) ? result.orders : [];
+                    agg = result.byCurrency || {};
+                } else {
+                    allOrders = [];
+                    agg = {};
+                }
+            }
+            const filteredOrders = filterProfitOrders(allOrders || [], state.profitFilter || 'all');
+            const availableCurrencies = Object.keys(agg || {});
+            const primaryCurrency = (state.currency && state.currency !== 'all')
+                ? state.currency
+                : ((agg && agg[state.profitCurrency]) ? state.profitCurrency : (availableCurrencies[0] || 'RUB'));
+
+            const aggResult = (profitEngine && typeof profitEngine.calculateProfitAggregates === 'function')
+                ? profitEngine.calculateProfitAggregates(filteredOrders, { currency: primaryCurrency })
+                : null;
+            const totals = aggResult ? aggResult.totals : ((agg && agg[primaryCurrency]) || { currency: primaryCurrency });
+
+            return { dataset: 'profit', items: filteredOrders, totals, meta: Object.assign(meta, { primaryCurrency }) };
+        }
+
+        if (dataset === 'potential') {
+            const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+            let lots = state.cachedPotentialLots;
+            let agg = state.cachedPotentialAgg;
+            if (!lots) {
+                if (potentialEngine && typeof potentialEngine.getInventory === 'function') {
+                    lots = await potentialEngine.getInventory({ enrichPotential: true });
+                    agg = potentialEngine.calculatePotentialAggregates(lots);
+                } else {
+                    lots = [];
+                    agg = {};
+                }
+            }
+            const activeLots = (state.category && state.category !== 'all')
+                ? (lots || []).filter(l => (l.category || '').toLowerCase() === state.category.toLowerCase())
+                : (lots || []);
+            const filteredLots = filterPotentialLots(activeLots, state.potentialFilter || 'all');
+            const availableCurrencies = Object.keys(agg || {});
+            const primaryCurrency = (state.currency && state.currency !== 'all')
+                ? state.currency
+                : ((agg && agg[state.potentialCurrency]) ? state.potentialCurrency : (availableCurrencies[0] || 'RUB'));
+
+            const totals = (potentialEngine && typeof potentialEngine.calculateCurrencyTotals === 'function')
+                ? potentialEngine.calculateCurrencyTotals(filteredLots, primaryCurrency)
+                : ((agg && agg[primaryCurrency]) || { currency: primaryCurrency });
+
+            return { dataset: 'potential', items: filteredLots, totals, meta: Object.assign(meta, { primaryCurrency }) };
+        }
+
+        return { dataset, items: [], totals: null, meta };
+    }
+
+    async function exportFinanceData(dataset, format) {
+        const engine = (typeof window !== 'undefined' && window.FPTFinanceExport) || root.FPTFinanceExport;
+        if (!engine || typeof engine.download !== 'function') {
+            throw new Error('Модуль FPTFinanceExport не найден');
+        }
+        const data = await getDatasetForExport(dataset);
+        return engine.download(data.dataset, format, data.items, data.totals, data.meta);
+    }
+
+    function closeExportModal() {
+        if (typeof document === 'undefined') return;
+        const modal = document.getElementById('fpt-fin-export-modal');
+        if (modal) modal.remove();
+    }
+
+    function openExportModal() {
+        if (typeof document === 'undefined') return;
+        closeExportModal();
+        ensureExportModalStyles();
+
+        const activeSubtab = state.activeSubtab;
+        let currentDataset = ['sales', 'purchases', 'operations', 'profit', 'potential'].includes(activeSubtab)
+            ? activeSubtab
+            : 'sales';
+
+        const overlay = document.createElement('div');
+        overlay.id = 'fpt-fin-export-modal';
+        overlay.className = 'fpt-fin-export-overlay';
+
+        const periodNames = {
+            today: 'Сегодня',
+            yesterday: 'Вчера',
+            '24h': '24 часа',
+            '7d': '7 дней',
+            '30d': '30 дней',
+            '365d': '365 дней',
+            all: 'Всё время'
+        };
+
+        overlay.innerHTML = `
+            <div class="fpt-fin-export-dialog" role="dialog" aria-modal="true" aria-labelledby="fpt-fin-export-title">
+                <div class="fpt-fin-export-head">
+                    <div class="fpt-fin-export-title-row">
+                        <span class="material-symbols-rounded" style="color:#2563eb;font-size:20px;">file_download</span>
+                        <h4 id="fpt-fin-export-title">Экспорт финансовых данных</h4>
+                    </div>
+                    <button type="button" class="fpt-fin-export-close" aria-label="Закрыть">×</button>
+                </div>
+                <div class="fpt-fin-export-body">
+                    <div class="fpt-fin-export-filters-bar" id="fptFinExportFiltersBar">
+                        <span>Период: <strong>${esc(periodNames[state.period] || state.period)}</strong></span>
+                        <span>Валюта: <strong>${esc(state.currency === 'all' ? 'Все валюты' : state.currency)}</strong></span>
+                        <span>Статус: <strong>${esc(state.status === 'all' ? 'Все статусы' : state.status)}</strong></span>
+                        ${state.category !== 'all' ? `<span>Категория: <strong>${esc(state.category)}</strong></span>` : ''}
+                    </div>
+
+                    <div>
+                        <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:#94a3b8;">Выберите набор данных:</div>
+                        <div class="fpt-fin-export-tabs" id="fptFinExportTabs">
+                            <button type="button" class="fpt-fin-export-tab ${currentDataset === 'sales' ? 'active' : ''}" data-ds="sales">Продажи</button>
+                            <button type="button" class="fpt-fin-export-tab ${currentDataset === 'purchases' ? 'active' : ''}" data-ds="purchases">Покупки</button>
+                            <button type="button" class="fpt-fin-export-tab ${currentDataset === 'operations' ? 'active' : ''}" data-ds="operations">Операции</button>
+                            <button type="button" class="fpt-fin-export-tab ${currentDataset === 'profit' ? 'active' : ''}" data-ds="profit">Прибыль</button>
+                            <button type="button" class="fpt-fin-export-tab ${currentDataset === 'potential' ? 'active' : ''}" data-ds="potential">Инвентарь и потенциал</button>
+                        </div>
+                    </div>
+
+                    <div class="fpt-fin-export-card" id="fptFinExportCard">
+                        <div style="color:#94a3b8;font-size:12px;">Загрузка данных...</div>
+                    </div>
+
+                    <div class="fpt-fin-export-actions">
+                        <button type="button" class="fpt-fin-export-btn fpt-fin-export-btn-csv" id="fptFinExportDownloadCsv">
+                            <span class="material-symbols-rounded" style="font-size:16px;">table_view</span>
+                            <span>Скачать CSV</span>
+                        </button>
+                        <button type="button" class="fpt-fin-export-btn fpt-fin-export-btn-json" id="fptFinExportDownloadJson">
+                            <span class="material-symbols-rounded" style="font-size:16px;">data_object</span>
+                            <span>Скачать JSON</span>
+                        </button>
+                    </div>
+
+                    <div class="fpt-fin-export-hint">
+                        • CSV содержит UTF-8 с BOM, разделитель точка с запятой (;) и блок итогов (# TOTALS).<br>
+                        • JSON содержит полную структуру с метаданными фильтров, итогами и строками.<br>
+                        • Поля себестоимости и прибыли при отсутствии данных строго сохраняются как <code>null</code>.
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const cardEl = overlay.querySelector('#fptFinExportCard');
+        const csvBtn = overlay.querySelector('#fptFinExportDownloadCsv');
+        const jsonBtn = overlay.querySelector('#fptFinExportDownloadJson');
+        const tabsEl = overlay.querySelector('#fptFinExportTabs');
+
+        async function updateCard() {
+            if (!cardEl) return;
+            cardEl.innerHTML = '<div style="color:#94a3b8;font-size:12px;">Подготовка набора данных...</div>';
+            if (csvBtn) csvBtn.disabled = true;
+            if (jsonBtn) jsonBtn.disabled = true;
+
+            try {
+                const data = await getDatasetForExport(currentDataset);
+                const itemsCount = data.items ? data.items.length : 0;
+                let summaryHtml = '';
+
+                if (currentDataset === 'sales') {
+                    const rev = data.totals && data.totals.byCurrency ? formatRevenueMulti(data.totals.byCurrency) : '0 ₽';
+                    summaryHtml = `
+                        <div class="fpt-fin-export-card-row"><span>Набор данных:</span><strong>Продажи</strong></div>
+                        <div class="fpt-fin-export-card-row"><span>Заказов к выгрузке:</span><strong>${itemsCount}</strong></div>
+                        <div class="fpt-fin-export-card-row"><span>Выручка от продаж:</span><strong>${esc(rev)}</strong></div>
+                    `;
+                } else if (currentDataset === 'purchases') {
+                    const cost = data.totals && data.totals.byCurrency ? formatRevenueMulti(data.totals.byCurrency) : '0 ₽';
+                    summaryHtml = `
+                        <div class="fpt-fin-export-card-row"><span>Набор данных:</span><strong>Покупки</strong></div>
+                        <div class="fpt-fin-export-card-row"><span>Покупок к выгрузке:</span><strong>${itemsCount}</strong></div>
+                        <div class="fpt-fin-export-card-row"><span>Сумма покупок:</span><strong>${esc(cost)}</strong></div>
+                    `;
+                } else if (currentDataset === 'operations') {
+                    summaryHtml = `
+                        <div class="fpt-fin-export-card-row"><span>Набор данных:</span><strong>Операции</strong></div>
+                        <div class="fpt-fin-export-card-row"><span>Операций к выгрузке:</span><strong>${itemsCount}</strong></div>
+                    `;
+                } else if (currentDataset === 'profit') {
+                    const cur = (data.totals && data.totals.currency) || 'RUB';
+                    const net = data.totals && data.totals.realisedNetProfit !== null && data.totals.realisedNetProfit !== undefined
+                        ? formatMoney(data.totals.realisedNetProfit, cur)
+                        : 'null';
+                    const knownCount = data.totals && data.totals.knownCostOrdersCount !== undefined ? data.totals.knownCostOrdersCount : 0;
+                    summaryHtml = `
+                        <div class="fpt-fin-export-card-row"><span>Набор данных:</span><strong>Реализованная прибыль</strong></div>
+                        <div class="fpt-fin-export-card-row"><span>Заказов к выгрузке:</span><strong>${itemsCount}</strong> (с себестоимостью: ${knownCount})</div>
+                        <div class="fpt-fin-export-card-row"><span>Чистая прибыль:</span><strong>${esc(net)}</strong></div>
+                    `;
+                } else if (currentDataset === 'potential') {
+                    const cur = (data.totals && data.totals.currency) || 'RUB';
+                    const potProfit = data.totals && data.totals.knownPotentialProfit !== null && data.totals.knownPotentialProfit !== undefined
+                        ? formatMoney(data.totals.knownPotentialProfit, cur)
+                        : 'null';
+                    const finiteCount = data.totals && data.totals.finiteOffers !== undefined ? data.totals.finiteOffers : 0;
+                    summaryHtml = `
+                        <div class="fpt-fin-export-card-row"><span>Набор данных:</span><strong>Инвентарь и потенциал</strong></div>
+                        <div class="fpt-fin-export-card-row"><span>Лотов к выгрузке:</span><strong>${itemsCount}</strong> (с остатком: ${finiteCount})</div>
+                        <div class="fpt-fin-export-card-row"><span>Потенциал чистой прибыли:</span><strong>${esc(potProfit)}</strong></div>
+                    `;
+                }
+
+                cardEl.innerHTML = summaryHtml;
+                if (csvBtn) csvBtn.disabled = false;
+                if (jsonBtn) jsonBtn.disabled = false;
+            } catch (err) {
+                console.error('[FPTFinanceHub] Export prepare error:', err);
+                cardEl.innerHTML = `<div style="color:#ef4444;font-size:12px;">Ошибка загрузки данных: ${esc(err.message || err)}</div>`;
+                if (csvBtn) csvBtn.disabled = true;
+                if (jsonBtn) jsonBtn.disabled = true;
+            }
+        }
+
+        tabsEl.onclick = (e) => {
+            const btn = e.target.closest('.fpt-fin-export-tab');
+            if (!btn) return;
+            tabsEl.querySelectorAll('.fpt-fin-export-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            currentDataset = btn.dataset.ds;
+            updateCard();
+        };
+
+        const doDownload = async (format) => {
+            const btn = format === 'csv' ? csvBtn : jsonBtn;
+            if (!btn) return;
+            const orig = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span style="display:inline-block;animation:spin 1s infinite linear;">↻</span> Формирование...';
+            try {
+                await exportFinanceData(currentDataset, format);
+                btn.innerHTML = '✓ Скачано';
+                setTimeout(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = orig;
+                }, 1800);
+            } catch (err) {
+                console.error('[FPTFinanceHub] Export error:', err);
+                alert('Ошибка экспорта: ' + (err.message || err));
+                btn.disabled = false;
+                btn.innerHTML = orig;
+            }
+        };
+
+        if (csvBtn) csvBtn.onclick = () => doDownload('csv');
+        if (jsonBtn) jsonBtn.onclick = () => doDownload('json');
+
+        const closeBtn = overlay.querySelector('.fpt-fin-export-close');
+        if (closeBtn) closeBtn.onclick = closeExportModal;
+        overlay.onclick = (e) => {
+            if (e.target === overlay) closeExportModal();
+        };
+
+        const onEsc = (e) => {
+            if (e.key === 'Escape') {
+                closeExportModal();
+                document.removeEventListener('keydown', onEsc);
+            }
+        };
+        document.addEventListener('keydown', onEsc);
+
+        updateCard();
     }
 
     /**
@@ -3955,6 +4478,7 @@
         onStatusChange,
         onCategoryChange,
         onPageLeave: () => {
+            closeExportModal();
             cleanupOverview();
             cleanupSales();
             cleanupPurchases();
@@ -3963,6 +4487,10 @@
             cleanupProfit();
         },
         refresh,
+        openExportModal,
+        closeExportModal,
+        getDatasetForExport,
+        exportFinanceData,
         renderOverviewSubtab,
         renderSalesSubtab,
         renderPurchasesSubtab,
@@ -3985,6 +4513,9 @@
     if (root) {
         root.fptFinanceHub = hub;
         root.FPTFinanceHub = hub;
+    }
+    if (typeof module !== 'undefined' && module.exports) {
+        module.exports = hub;
     }
 
     if (typeof document !== 'undefined') {
