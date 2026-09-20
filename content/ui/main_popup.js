@@ -128,13 +128,14 @@ function createMainPopup() {
             <main class="fp-tools-content">
                 <div class="fp-tools-page-content active" data-page="general">
                     <h3>Общие настройки</h3>
+                    <p class="template-info" style="margin:0 0 10px;">Finance Hub — основной раздел аналитики. Legacy-отчёты ниже оставлены как временный расширенный режим.</p>
                     <div class="checkbox-label-inline">
                         <input type="checkbox" id="showSalesStatsCheckbox">
-                        <label for="showSalesStatsCheckbox" style="margin-bottom:0;"><span>Показывать статистику покупок и продаж на их вкладках</span></label>
+                        <label for="showSalesStatsCheckbox" style="margin-bottom:0;"><span>Legacy: статистика покупок и продаж на вкладках</span></label>
                     </div>
                     <div class="checkbox-label-inline">
                         <input type="checkbox" id="showFinanceStatsCheckbox">
-                        <label for="showFinanceStatsCheckbox" style="margin-bottom:0;"><span>Показывать статистику финансов в «Финансы»</span></label>
+                        <label for="showFinanceStatsCheckbox" style="margin-bottom:0;"><span>Legacy: статистика финансов на странице «Финансы»</span></label>
                     </div>
                     <div class="checkbox-label-inline">
                         <input type="checkbox" id="hideBalanceCheckbox">

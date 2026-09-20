@@ -1,5 +1,51 @@
 // content/features/ui_enhancements.js
 
+const FPT_LEGACY_FINANCE_REPORTS_KEY = 'fptLegacyFinanceReports';
+const FPT_FINANCE_LEGACY_SETTINGS_MIGRATED_KEY = 'fptFinanceLegacySettingsMigrated';
+
+function getLegacyFinanceUiEnabled(settingKey) {
+    return new Promise(resolve => {
+        if (typeof chrome === 'undefined' || !chrome.storage?.local) {
+            resolve(false);
+            return;
+        }
+        chrome.storage.local.get([FPT_LEGACY_FINANCE_REPORTS_KEY, settingKey], settings => {
+            resolve(settings[FPT_LEGACY_FINANCE_REPORTS_KEY] === true && settings[settingKey] !== false);
+        });
+    });
+}
+
+// T10: the Finance Hub is canonical; legacy injected reports are opt-in during
+// the transition. Existing settings are migrated once, while the old controls
+// remain available as the temporary advanced toggle.
+(function migrateLegacyFinanceSettings() {
+    if (typeof chrome === 'undefined' || !chrome.storage?.local) return;
+
+    chrome.storage.local.get([
+        FPT_FINANCE_LEGACY_SETTINGS_MIGRATED_KEY,
+        FPT_LEGACY_FINANCE_REPORTS_KEY,
+        'showSalesStats',
+        'showFinanceStats'
+    ], settings => {
+        if (settings[FPT_FINANCE_LEGACY_SETTINGS_MIGRATED_KEY] === true) return;
+        chrome.storage.local.set({
+            [FPT_LEGACY_FINANCE_REPORTS_KEY]: false,
+            [FPT_FINANCE_LEGACY_SETTINGS_MIGRATED_KEY]: true,
+            showSalesStats: false,
+            showFinanceStats: false
+        });
+    });
+
+    chrome.storage.onChanged?.addListener((changes, area) => {
+        if (area !== 'local' || (!changes.showSalesStats && !changes.showFinanceStats)) return;
+        chrome.storage.local.get(['showSalesStats', 'showFinanceStats'], settings => {
+            chrome.storage.local.set({
+                [FPT_LEGACY_FINANCE_REPORTS_KEY]: settings.showSalesStats === true || settings.showFinanceStats === true
+            });
+        });
+    });
+})();
+
 // FP Tools: конфиг источника статистики. По умолчанию — продажи.
 // На странице покупок (/orders/) purchases.js переопределяет window.fptStatsCfg.
 function _fptCfg() {
@@ -542,8 +588,11 @@ function _showStatsAccuracyPopup(lastUpd, ordersCount, updateBtn) {
     });
 }
 
-function initializeSalesStatistics() {
+async function initializeSalesStatistics() {
     if (!window.location.pathname.includes(_fptCfg().pathMatch)) return;
+    if (window.__fptLegacySalesStatsInitializing) return;
+    window.__fptLegacySalesStatsInitializing = true;
+    if (!await getLegacyFinanceUiEnabled('showSalesStats')) return;
     const ordersTable = document.querySelector('.orders-table');
     if (!ordersTable || document.getElementById('fpTools-stats-period')) return;
 

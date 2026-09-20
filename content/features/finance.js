@@ -12,14 +12,16 @@
 
     if (!/^\/account\/balance\/?$/.test(window.location.pathname)) return;
 
-    // Глобальный тумблер «Показывать статистику финансов» (Что тебе нужно).
+    // T10: legacy finance report is opt-in while Finance Hub is canonical.
+    const LEGACY_FINANCE_REPORTS_KEY = 'fptLegacyFinanceReports';
+
     function mountIfEnabled() {
         try {
-            chrome.storage.local.get('showFinanceStats', ({ showFinanceStats }) => {
-                if (showFinanceStats === false) return;
+            chrome.storage.local.get([LEGACY_FINANCE_REPORTS_KEY, 'showFinanceStats'], settings => {
+                if (settings[LEGACY_FINANCE_REPORTS_KEY] !== true || settings.showFinanceStats === false) return;
                 mount();
             });
-        } catch (_) { mount(); }
+        } catch (_) {}
     }
 
     const SYM = { RUB: '₽', USD: '$', EUR: '€', UNKNOWN: '' };
