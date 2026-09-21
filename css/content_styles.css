@@ -8700,6 +8700,32 @@ textarea.fp-cw-input { line-height:1.4; }
     min-width: 0;
 }
 
+/*
+ * Grid cells stretch to the tallest item in their CSS-grid row, but the card
+ * inside each cell used to keep its intrinsic content height. This produced
+ * the "one card is shorter than the other" effect whenever the chart/list
+ * content changed. Make the card fill the stretched grid cell instead.
+ */
+.fpt-fin-grid > .fpt-fin-col-3,
+.fpt-fin-grid > .fpt-fin-col-4,
+.fpt-fin-grid > .fpt-fin-col-6,
+.fpt-fin-grid > .fpt-fin-col-8,
+.fpt-fin-grid > .fpt-fin-col-12 {
+    display: flex;
+    align-self: stretch;
+}
+
+.fpt-fin-grid > .fpt-fin-col-3 > .fpt-fin-card,
+.fpt-fin-grid > .fpt-fin-col-4 > .fpt-fin-card,
+.fpt-fin-grid > .fpt-fin-col-6 > .fpt-fin-card,
+.fpt-fin-grid > .fpt-fin-col-8 > .fpt-fin-card,
+.fpt-fin-grid > .fpt-fin-col-12 > .fpt-fin-card {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    height: 100%;
+}
+
 @container (max-width: 720px) {
     .fpt-fin-col-3 {
         grid-column: span 6;
@@ -9186,7 +9212,11 @@ textarea.fp-cw-input { line-height:1.4; }
         margin-left: 0;
     }
 
-    .fpt-fin-col-3 > .fpt-fin-card {
+    .fpt-fin-grid > .fpt-fin-col-3 > .fpt-fin-card,
+    .fpt-fin-grid > .fpt-fin-col-4 > .fpt-fin-card,
+    .fpt-fin-grid > .fpt-fin-col-6 > .fpt-fin-card,
+    .fpt-fin-grid > .fpt-fin-col-8 > .fpt-fin-card,
+    .fpt-fin-grid > .fpt-fin-col-12 > .fpt-fin-card {
         height: auto;
     }
 
