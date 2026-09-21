@@ -61,6 +61,40 @@
     }
 
     /**
+     * Преобразовать календарную дату YYYY-MM-DD в границу суток по МСК.
+     * Date.parse('YYYY-MM-DD') трактует такую строку как UTC-полуночь, поэтому
+     * для пользовательского диапазона дата разбирается явно и не зависит от
+     * часового пояса браузера.
+     *
+     * @param {*} value
+     * @param {boolean} endOfDay
+     * @returns {number|null}
+     */
+    function parseMskDateBoundary(value, endOfDay) {
+        if (typeof value === 'string') {
+            const match = value.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+            if (match) {
+                const year = Number(match[1]);
+                const month = Number(match[2]);
+                const day = Number(match[3]);
+                const utcDate = new Date(0);
+                utcDate.setUTCHours(0, 0, 0, 0);
+                utcDate.setUTCFullYear(year, month - 1, day);
+                if (
+                    utcDate.getUTCFullYear() !== year
+                    || utcDate.getUTCMonth() !== month - 1
+                    || utcDate.getUTCDate() !== day
+                ) {
+                    return null;
+                }
+                const start = utcDate.getTime() - MSK_OFFSET_MS;
+                return endOfDay ? start + ONE_DAY_MS - 1 : start;
+            }
+        }
+        return normalizeTimestamp(value);
+    }
+
+    /**
      * Нормализация цены/числа.
      * @param {*} val
      * @returns {number}
@@ -369,8 +403,10 @@
         const oneDay = ONE_DAY_MS;
 
         if (period && typeof period === 'object') {
-            const start = normalizeTimestamp(period.start !== undefined ? period.start : period.from);
-            const end = normalizeTimestamp(period.end !== undefined ? period.end : period.to);
+            const rawStart = period.start !== undefined ? period.start : period.from;
+            const rawEnd = period.end !== undefined ? period.end : period.to;
+            const start = parseMskDateBoundary(rawStart, false);
+            const end = parseMskDateBoundary(rawEnd, true);
             const label = period.label || (
                 start && end ? 'custom' : (start ? 'custom-from' : (end ? 'custom-to' : 'всё время'))
             );
@@ -418,6 +454,383 @@
             default:
                 return { start: null, end: null, label: 'всё время', period: 'all' };
         }
+    }
+
+    function isDateOnly(value) {
+        return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value.trim());
+    }
+
+    function formatCustomDateLabel(value) {
+        if (isDateOnly(value)) {
+            const [year, month, day] = value.trim().split('-');
+            return `${day}.${month}.${year}`;
+        }
+        return value == null || value === '' ? '…' : String(value);
+    }
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        }[ch]));
+    }
+
+    /**
+     * Разрешить предыдущий период равной длительности для сравнения KPI (T12).
+     * Сравнивает текущий период с непосредственно предшествующим периодом той же продолжительности:
+     * - 7 days → предыдущие 7 дней;
+     * - 30 days → предыдущие 30 дней;
+     * - custom Sep 10–18 → предыдущий равный диапазон дат.
+     *
+     * Для 'all' или бесконечных интервалов возвращает null.
+     *
+     * @param {string|Object} [period]
+     * @param {Object} [options]
+     * @param {number} [options.now]
+     * @param {boolean} [options.useMsk=true] Использовать границу суток по МСК
+     * @returns {{ start: number, end: number, label: string, period: string, from?: string, to?: string }|null}
+     */
+    function resolvePreviousPeriodRange(period, options) {
+        const current = resolvePeriodRange(period, options);
+        if (!current || current.period === 'all' || current.start === null) {
+            return null;
+        }
+
+        const now = (options && typeof options.now === 'number' && !isNaN(options.now))
+            ? options.now
+            : Date.now();
+        const oneDay = ONE_DAY_MS;
+        const useMsk = (options && options.useMsk !== undefined) ? Boolean(options.useMsk) : true;
+
+        // 1. Кастомный диапазон объектов с заданными границами
+        if (period && typeof period === 'object') {
+            if (current.start === null || current.end === null) {
+                return null;
+            }
+            const duration = current.end - current.start + 1;
+            if (duration <= 0) return null;
+            const prevEnd = current.start - 1;
+            const prevStart = prevEnd - duration + 1;
+
+            const rawStart = period.start !== undefined ? period.start : period.from;
+            const rawEnd = period.end !== undefined ? period.end : period.to;
+
+            let fromKey;
+            let toKey;
+            let label;
+            if (isDateOnly(rawStart) && isDateOnly(rawEnd)) {
+                fromKey = getMskDayKey(prevStart);
+                toKey = getMskDayKey(prevEnd);
+                label = `${formatCustomDateLabel(fromKey)} — ${formatCustomDateLabel(toKey)}`;
+            } else {
+                label = 'предыдущий период';
+            }
+
+            return {
+                start: prevStart,
+                end: prevEnd,
+                from: fromKey,
+                to: toKey,
+                label,
+                period: 'custom'
+            };
+        }
+
+        // 2. Строковые пресеты
+        const p = typeof period === 'string' ? period.trim().toLowerCase() : 'all';
+        let todayStart;
+        if (useMsk) {
+            todayStart = Math.floor((now + MSK_OFFSET_MS) / oneDay) * oneDay - MSK_OFFSET_MS;
+        } else {
+            const d = new Date(now);
+            todayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        }
+
+        switch (p) {
+            case 'today':
+                return {
+                    start: todayStart - oneDay,
+                    end: todayStart - 1,
+                    label: 'вчера',
+                    period: 'yesterday'
+                };
+            case 'yesterday':
+                return {
+                    start: todayStart - 2 * oneDay,
+                    end: todayStart - oneDay - 1,
+                    label: 'позавчера',
+                    period: 'day_before_yesterday'
+                };
+            case '24h':
+                return {
+                    start: now - 2 * oneDay,
+                    end: now - oneDay - 1,
+                    label: 'предыдущие 24 часа',
+                    period: '24h'
+                };
+            case '7d':
+            case 'week':
+                return {
+                    start: now - 14 * oneDay,
+                    end: now - 7 * oneDay - 1,
+                    label: 'предыдущие 7 дней',
+                    period: '7d'
+                };
+            case '30d':
+            case 'month':
+                return {
+                    start: now - 60 * oneDay,
+                    end: now - 30 * oneDay - 1,
+                    label: 'предыдущие 30 дней',
+                    period: '30d'
+                };
+            case '90d':
+            case 'quarter':
+                return {
+                    start: now - 180 * oneDay,
+                    end: now - 90 * oneDay - 1,
+                    label: 'предыдущие 90 дней',
+                    period: '90d'
+                };
+            case '365d':
+            case 'year':
+                return {
+                    start: now - 730 * oneDay,
+                    end: now - 365 * oneDay - 1,
+                    label: 'предыдущий год',
+                    period: '365d'
+                };
+            case 'all':
+            case 'total':
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * Форматирование дельты KPI по сравнению с предыдущим периодом (T12).
+     *
+     * Правила:
+     * - Если предыдущее значение = 0 (или отсутствует): neutral unavailable state ('—').
+     *   Категорически запрещено выводить Infinity или NaN.
+     * - При положительной дельте: '+12.4% vs previous period' (positive).
+     * - При отрицательной дельте: '−8.1% vs previous period' (negative, unicode minus).
+     * - При нулевой дельте: '0.0% vs previous period' (neutral).
+     *
+     * @param {number|null} currVal
+     * @param {number|null} prevVal
+     * @param {Object} [options]
+     * @param {string} [options.kpi]
+     * @param {string} [options.id]
+     * @returns {{ diff: number|null, percent: number|null, text: string, fullText: string, state: string, badgeHtml: string }}
+     */
+    function formatKpiComparison(currVal, prevVal, options = {}) {
+        const idAttr = options.id ? ` id="${esc(options.id)}"` : '';
+        const kpiAttr = options.kpi ? ` data-kpi="${esc(options.kpi)}"` : '';
+
+        // Защита от деления на ноль и недопустимых значений (R13)
+        if (
+            prevVal === null || prevVal === undefined || isNaN(prevVal) ||
+            currVal === null || currVal === undefined || isNaN(currVal) ||
+            Math.abs(prevVal) < 1e-9
+        ) {
+            const badgeHtml = `<span class="fpt-fin-kpi-diff fpt-fin-diff-neutral"${kpiAttr}${idAttr} title="Данные за предыдущий период отсутствуют или равны 0"><span class="fpt-fin-diff-value">—</span> <span class="fpt-fin-diff-label">vs previous period</span></span>`;
+            return {
+                available: false,
+                direction: 'neutral',
+                diff: null,
+                percent: null,
+                diffPercent: null,
+                text: '—',
+                formattedText: '—',
+                fullText: '— vs previous period',
+                state: 'unavailable',
+                badgeHtml
+            };
+        }
+
+        const diff = currVal - prevVal;
+        const pct = (diff / Math.abs(prevVal)) * 100;
+        const rounded = Math.round(pct * 10) / 10;
+
+        let text;
+        let state;
+        let direction;
+        if (rounded > 0) {
+            text = `+${rounded.toFixed(1)}%`;
+            state = 'positive';
+            direction = 'up';
+        } else if (rounded < 0) {
+            text = `\u2212${Math.abs(rounded).toFixed(1)}%`;
+            state = 'negative';
+            direction = 'down';
+        } else {
+            text = '0.0%';
+            state = 'neutral';
+            direction = 'neutral';
+        }
+
+        const fullText = `${text} vs previous period`;
+        const badgeClass = state === 'positive'
+            ? 'fpt-fin-diff-positive'
+            : (state === 'negative' ? 'fpt-fin-diff-negative' : 'fpt-fin-diff-neutral');
+
+        const badgeHtml = `<span class="fpt-fin-kpi-diff ${badgeClass}"${kpiAttr}${idAttr}><span class="fpt-fin-diff-value">${esc(text)}</span> <span class="fpt-fin-diff-label">vs previous period</span></span>`;
+
+        return {
+            available: true,
+            direction,
+            diff,
+            percent: rounded,
+            diffPercent: rounded,
+            text,
+            formattedText: fullText,
+            fullText,
+            state,
+            badgeHtml
+        };
+    }
+
+    /**
+     * Сравнение ключевых показателей между текущим и предыдущим периодами (T12).
+     *
+     * Initial KPIs:
+     * - Revenue (Выручка)
+     * - Orders (Оплаченные заказы)
+     * - Average check (Средний чек)
+     * - Realised profit (Реализованная чистая прибыль)
+     *
+     * Валютные сравнения не смешивают валюты (Currency comparisons must stay within the same currency).
+     *
+     * @param {Object} current
+     * @param {Object} [current.salesAgg]
+     * @param {Object} [current.profitData]
+     * @param {Object} previous
+     * @param {Object} [previous.salesAgg]
+     * @param {Object} [previous.profitData]
+     * @param {Object} [options]
+     * @param {string} [options.currency='all']
+     * @param {string} [options.primaryCurrency='RUB']
+     * @returns {{ revenue: Object, orders: Object, averageCheck: Object, profit: Object }}
+     */
+    function compareKpis(current, previous, options = {}) {
+        const primaryCur = (options.currency && options.currency !== 'all')
+            ? String(options.currency).toUpperCase()
+            : String(options.primaryCurrency || 'RUB').toUpperCase();
+
+        // 1. Revenue
+        let revenueDiff = null;
+        if (current && current.salesAgg && previous && previous.salesAgg) {
+            const currByCur = current.salesAgg.byCurrency || {};
+            const prevByCur = previous.salesAgg.byCurrency || {};
+
+            if (options.currency && options.currency !== 'all') {
+                const cur = String(options.currency).toUpperCase();
+                const currVal = typeof currByCur[cur] === 'number' ? currByCur[cur] : null;
+                const prevVal = typeof prevByCur[cur] === 'number' ? prevByCur[cur] : null;
+                revenueDiff = formatKpiComparison(currVal, prevVal, { kpi: 'revenue', id: 'fptFinOverviewRevenueDiff' });
+            } else {
+                // currency === 'all'
+                const currCurs = Object.keys(currByCur).filter(c => currByCur[c] > 0);
+                const prevCurs = Object.keys(prevByCur).filter(c => prevByCur[c] > 0);
+
+                if (currCurs.length === 1 && prevCurs.length === 1 && currCurs[0] === prevCurs[0]) {
+                    const cur = currCurs[0];
+                    revenueDiff = formatKpiComparison(currByCur[cur], prevByCur[cur], { kpi: 'revenue', id: 'fptFinOverviewRevenueDiff' });
+                } else if (currCurs.length > 0 && currCurs.includes(primaryCur) && prevCurs.includes(primaryCur)) {
+                    revenueDiff = formatKpiComparison(currByCur[primaryCur], prevByCur[primaryCur], { kpi: 'revenue', id: 'fptFinOverviewRevenueDiff' });
+                } else {
+                    // Разные или смешанные валюты без единой базы не смешиваются
+                    revenueDiff = formatKpiComparison(null, null, { kpi: 'revenue', id: 'fptFinOverviewRevenueDiff' });
+                }
+            }
+        } else {
+            revenueDiff = formatKpiComparison(null, null, { kpi: 'revenue', id: 'fptFinOverviewRevenueDiff' });
+        }
+
+        // 2. Orders (количество оплаченных заказов)
+        let ordersDiff = null;
+        if (current && current.salesAgg && previous && previous.salesAgg) {
+            const currCount = typeof current.salesAgg.count === 'number' ? current.salesAgg.count : null;
+            const prevCount = typeof previous.salesAgg.count === 'number' ? previous.salesAgg.count : null;
+            ordersDiff = formatKpiComparison(currCount, prevCount, { kpi: 'orders', id: 'fptFinOverviewOrdersDiff' });
+        } else {
+            ordersDiff = formatKpiComparison(null, null, { kpi: 'orders', id: 'fptFinOverviewOrdersDiff' });
+        }
+
+        // 3. Average check (средний чек в той же валюте)
+        let avgCheckDiff = null;
+        if (current && current.salesAgg && previous && previous.salesAgg) {
+            const currAvgByCur = current.salesAgg.averageCheck || {};
+            const prevAvgByCur = previous.salesAgg.averageCheck || {};
+
+            let curToUse = null;
+            if (options.currency && options.currency !== 'all') {
+                curToUse = String(options.currency).toUpperCase();
+            } else {
+                const currCurs = Object.keys(currAvgByCur).filter(c => currAvgByCur[c] > 0);
+                const prevCurs = Object.keys(prevAvgByCur).filter(c => prevAvgByCur[c] > 0);
+                if (currCurs.length === 1 && prevCurs.length === 1 && currCurs[0] === prevCurs[0]) {
+                    curToUse = currCurs[0];
+                } else if (currCurs.length > 0 && currCurs.includes(primaryCur) && prevCurs.includes(primaryCur)) {
+                    curToUse = primaryCur;
+                }
+            }
+
+            if (curToUse) {
+                const currAvg = typeof currAvgByCur[curToUse] === 'number' ? currAvgByCur[curToUse] : null;
+                const prevAvg = typeof prevAvgByCur[curToUse] === 'number' ? prevAvgByCur[curToUse] : null;
+                avgCheckDiff = formatKpiComparison(currAvg, prevAvg, { kpi: 'averageCheck', id: 'fptFinOverviewAvgCheckDiff' });
+            } else {
+                avgCheckDiff = formatKpiComparison(null, null, { kpi: 'averageCheck', id: 'fptFinOverviewAvgCheckDiff' });
+            }
+        } else {
+            avgCheckDiff = formatKpiComparison(null, null, { kpi: 'averageCheck', id: 'fptFinOverviewAvgCheckDiff' });
+        }
+
+        // 4. Realised profit (чистая прибыль в той же валюте)
+        let profitDiff = null;
+        if (current && current.profitData && previous && previous.profitData) {
+            const currProfitByCur = current.profitData.byCurrency || {};
+            const prevProfitByCur = previous.profitData.byCurrency || {};
+
+            let curToUse = null;
+            if (options.currency && options.currency !== 'all') {
+                curToUse = String(options.currency).toUpperCase();
+            } else {
+                const currCurs = Object.keys(currProfitByCur);
+                const prevCurs = Object.keys(prevProfitByCur);
+                if (currCurs.length === 1 && prevCurs.length === 1 && currCurs[0] === prevCurs[0]) {
+                    curToUse = currCurs[0];
+                } else if (currCurs.length > 0 && currCurs.includes(primaryCur) && prevCurs.includes(primaryCur)) {
+                    curToUse = primaryCur;
+                }
+            }
+
+            if (curToUse) {
+                const currProfObj = currProfitByCur[curToUse] || null;
+                const prevProfObj = prevProfitByCur[curToUse] || null;
+
+                const currNet = currProfObj && typeof currProfObj.realisedNetProfit === 'number'
+                    ? currProfObj.realisedNetProfit
+                    : null;
+                const prevNet = prevProfObj && typeof prevProfObj.realisedNetProfit === 'number'
+                    ? prevProfObj.realisedNetProfit
+                    : null;
+
+                profitDiff = formatKpiComparison(currNet, prevNet, { kpi: 'profit', id: 'fptFinOverviewProfitDiff' });
+            } else {
+                profitDiff = formatKpiComparison(null, null, { kpi: 'profit', id: 'fptFinOverviewProfitDiff' });
+            }
+        } else {
+            profitDiff = formatKpiComparison(null, null, { kpi: 'profit', id: 'fptFinOverviewProfitDiff' });
+        }
+
+        return {
+            revenue: revenueDiff,
+            orders: ordersDiff,
+            averageCheck: avgCheckDiff,
+            profit: profitDiff
+        };
     }
 
     /**
@@ -1157,8 +1570,11 @@
         getOperationsRaw,
         getMeta,
 
-        // Методы фильтрации и нормализации (T02B)
+        // Методы фильтрации и нормализации (T02B + T12)
         resolvePeriodRange,
+        resolvePreviousPeriodRange,
+        formatKpiComparison,
+        compareKpis,
         isStatusAllowed,
         isTypeAllowed,
         isCurrencyAllowed,

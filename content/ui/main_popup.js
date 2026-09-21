@@ -712,7 +712,17 @@ function createMainPopup() {
                                     <option value="30d">30 дней</option>
                                     <option value="365d">Год</option>
                                     <option value="all">Всё время</option>
+                                    <option value="custom">Custom range…</option>
                                 </select>
+                                <div id="fptFinCustomRange" class="fpt-fin-custom-range" role="group" aria-label="Custom date range">
+                                    <label for="fptFinCustomFrom">From</label>
+                                    <input id="fptFinCustomFrom" type="date" aria-label="From">
+                                    <label for="fptFinCustomTo">To</label>
+                                    <input id="fptFinCustomTo" type="date" aria-label="To">
+                                    <button type="button" id="fptFinCustomApplyBtn" class="btn btn-default fpt-fin-custom-range-btn">Apply</button>
+                                    <button type="button" id="fptFinCustomResetBtn" class="btn btn-default fpt-fin-custom-range-btn">Reset</button>
+                                    <span id="fptFinCustomRangeError" class="fpt-fin-custom-range-error" role="alert"></span>
+                                </div>
                             </div>
                             <button type="button" id="fptFinRefreshBtn" class="btn btn-default fpt-fin-btn" title="Обновить финансовые данные" aria-label="Обновить">
                                 <span class="material-symbols-rounded">refresh</span>
@@ -2725,85 +2735,6 @@ function setupFinanceHubUI(toolsPopup) {
             switchSubtab(savedSubtab);
         }
     } catch (_) {}
-
-    // Chart metric toggles
-    const chartToggles = finPage.querySelectorAll('.fpt-fin-chart-toggle');
-    chartToggles.forEach(toggle => {
-        toggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const group = toggle.closest('.fpt-fin-chart-toggles');
-            if (group) {
-                group.querySelectorAll('.fpt-fin-chart-toggle').forEach(t => t.classList.remove('active'));
-            }
-            toggle.classList.add('active');
-            const card = toggle.closest('.fpt-fin-card');
-            if (card) {
-                card.classList.remove('fpt-fin-pulse-anim');
-                void card.offsetWidth;
-                card.classList.add('fpt-fin-pulse-anim');
-            }
-        });
-    });
-
-    // Filter chips
-    const filterChips = finPage.querySelectorAll('.fpt-fin-filter-chip');
-    filterChips.forEach(chip => {
-        chip.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const group = chip.closest('.fpt-fin-filter-group');
-            if (group) {
-                group.querySelectorAll('.fpt-fin-filter-chip').forEach(c => c.classList.remove('active'));
-            }
-            chip.classList.add('active');
-            const targetCard = finPage.querySelector('.fpt-fin-tab-pane.active .fpt-fin-card');
-            if (targetCard) {
-                targetCard.classList.remove('fpt-fin-pulse-anim');
-                void targetCard.offsetWidth;
-                targetCard.classList.add('fpt-fin-pulse-anim');
-            }
-        });
-    });
-
-    // Refresh button feedback
-    const refreshBtn = finPage.querySelector('#fptFinRefreshBtn');
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (window.fptFinanceHub && typeof window.fptFinanceHub.refresh === 'function') {
-                window.fptFinanceHub.refresh();
-            }
-        });
-    }
-
-    // Period selector handler
-    const periodSelect = finPage.querySelector('#fptFinPeriodSelect');
-    if (periodSelect) {
-        periodSelect.addEventListener('change', () => {
-            try {
-                sessionStorage.setItem('fpt_fin_last_period', periodSelect.value);
-            } catch (_) {}
-
-            if (window.fptFinanceHub && typeof window.fptFinanceHub.onPeriodChange === 'function') {
-                window.fptFinanceHub.onPeriodChange(periodSelect.value);
-            }
-
-            const activeCards = finPage.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
-            activeCards.forEach(c => {
-                c.classList.remove('fpt-fin-pulse-anim');
-                void c.offsetWidth;
-                c.classList.add('fpt-fin-pulse-anim');
-            });
-        });
-
-        try {
-            const savedPeriod = sessionStorage.getItem('fpt_fin_last_period');
-            if (savedPeriod && periodSelect.querySelector(`option[value="${savedPeriod}"]`)) {
-                periodSelect.value = savedPeriod;
-            }
-        } catch (_) {}
-    }
 
     if (window.fptFinanceHub && typeof window.fptFinanceHub.init === 'function') {
         window.fptFinanceHub.init(finPage);

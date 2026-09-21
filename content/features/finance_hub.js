@@ -28,13 +28,19 @@
         withdraw_cancel: 'Отмены выводов',
         other: 'Другое'
     };
+    const DEFAULT_PERIOD = '7d';
+    const PERIOD_STORAGE_KEY = 'fpt_fin_last_period';
+    const CUSTOM_RANGE_STORAGE_KEY = 'fpt_fin_custom_range';
 
     // Состояние контроллера
     const state = {
         initialized: false,
         container: null,
         activeSubtab: 'overview',
-        period: '7d',
+        period: DEFAULT_PERIOD,
+        customRange: null,
+        periodBeforeCustom: DEFAULT_PERIOD,
+        pendingCustomRange: false,
         currency: 'all',           // 'all' | 'RUB' | 'USD' | 'EUR'
         orderStatus: 'all',        // 'all' | 'closed' | 'paid' | 'refunded'
         operationStatus: 'all',    // 'all' | 'complete' | 'cancel' | 'waiting'
@@ -92,6 +98,10 @@
 
         tooltipEl: null
     };
+
+    // Один mount контроллера на DOM-контейнер. Повторное открытие попапа
+    // использует уже запущенный рендер, а не создает новый fetch.
+    let activeRenderPromise = null;
 
     // ─────────────────────────────────────────────────────────────────────────────
     // ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ФОРМАТИРОВАНИЯ
@@ -241,7 +251,50 @@
             '365d': 'последний год',
             all: 'всё время'
         };
+        if (period && typeof period === 'object') {
+            if (period.label) return period.label;
+            const from = period.from || period.start || '…';
+            const to = period.to || period.end || '…';
+            return `${formatCustomDateLabel(from)} — ${formatCustomDateLabel(to)}`;
+        }
         return map[period] || period;
+    }
+
+    function periodKey(period) {
+        return period && typeof period === 'object' ? (period.period || 'custom') : period;
+    }
+
+    function isDateOnly(value) {
+        return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+    }
+
+    function isValidDateOnly(value) {
+        if (!isDateOnly(value)) return false;
+        const [year, month, day] = value.split('-').map(Number);
+        const date = new Date(0);
+        date.setUTCHours(0, 0, 0, 0);
+        date.setUTCFullYear(year, month - 1, day);
+        return date.getUTCFullYear() === year
+            && date.getUTCMonth() === month - 1
+            && date.getUTCDate() === day;
+    }
+
+    function formatCustomDateLabel(value) {
+        if (isDateOnly(value)) {
+            const [year, month, day] = value.split('-');
+            return `${day}.${month}.${year}`;
+        }
+        return value == null || value === '' ? '…' : String(value);
+    }
+
+    function makeCustomRange(from, to) {
+        if (!isValidDateOnly(from) || !isValidDateOnly(to) || from > to) return null;
+        return {
+            period: 'custom',
+            from,
+            to,
+            label: `${formatCustomDateLabel(from)} — ${formatCustomDateLabel(to)}`
+        };
     }
 
     function pluralOrders(n) {
@@ -1171,8 +1224,25 @@
                     useMsk: true
                 });
 
+                let prevSalesAgg = null;
+                let salesKpiDiffs = null;
+                const prevPeriod = (root.FPTFinanceData && typeof root.FPTFinanceData.resolvePreviousPeriodRange === 'function')
+                    ? root.FPTFinanceData.resolvePreviousPeriodRange(state.period, { useMsk: true })
+                    : null;
+                if (prevPeriod) {
+                    try {
+                        const prevOrders = await root.FPTFinanceData.getSales(Object.assign({}, filterOpts, { period: prevPeriod }));
+                        prevSalesAgg = root.FPTFinanceData.aggregateSales(prevOrders, { period: prevPeriod, useMsk: true });
+                        if (typeof root.FPTFinanceData.compareKpis === 'function') {
+                            salesKpiDiffs = root.FPTFinanceData.compareKpis({ salesAgg: agg }, { salesAgg: prevSalesAgg }, { currency: state.currency, primaryCurrency: state.profitCurrency || 'RUB' });
+                        }
+                    } catch (_) {}
+                }
+
                 state.cachedOrders = orders;
                 state.cachedAgg = agg;
+                state.cachedPrevSalesAgg = prevSalesAgg;
+                state.cachedSalesKpiDiffs = salesKpiDiffs;
                 state.cachedPeriod = state.period;
                 state.visibleOrdersLimit = 50;
                 updateCategorySelectOptions(orders.map(o => o.subcategoryName || o.category));
@@ -1203,26 +1273,28 @@
             const revCard = cards[0];
             revCard.classList.add('fpt-fin-clickable');
             const revStr = formatRevenueMulti(agg.byCurrency);
+            const revDiffHtml = (state.cachedSalesKpiDiffs && state.cachedSalesKpiDiffs.revenue) ? state.cachedSalesKpiDiffs.revenue.badgeHtml : '';
             revCard.innerHTML = `
                 <div class="fpt-fin-card-header">
                     <h5 class="fpt-fin-card-title">Выручка от продаж</h5>
                     <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">payments</span>
                 </div>
                 <div class="fpt-fin-card-value">${esc(revStr)}</div>
-                <div class="fpt-fin-card-sub">${agg.byStatus.closed || 0} закрыто · ${agg.byStatus.paid || 0} в ожидании</div>`;
+                <div class="fpt-fin-card-sub">${revDiffHtml}${revDiffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">${agg.byStatus.closed || 0} закрыто · ${agg.byStatus.paid || 0} в ожидании</span></div>`;
             revCard.title = 'Нажмите для просмотра оплаченных заказов';
             revCard.onclick = () => openDrilldown('Выручка от продаж', `${periodLabel(state.period)} · ${validOrders.length} заказов · ${revStr}`, validOrders);
 
             // Карточка 1: Оплачено заказов
             const ordCard = cards[1];
             ordCard.classList.add('fpt-fin-clickable');
+            const ordDiffHtml = (state.cachedSalesKpiDiffs && state.cachedSalesKpiDiffs.orders) ? state.cachedSalesKpiDiffs.orders.badgeHtml : '';
             ordCard.innerHTML = `
                 <div class="fpt-fin-card-header">
                     <h5 class="fpt-fin-card-title">Оплачено заказов</h5>
                     <span class="material-symbols-rounded" style="font-size:18px;color:var(--fptm-accent, var(--fpt-accent, #1b75bb));">check_circle</span>
                 </div>
                 <div class="fpt-fin-card-value">${agg.count} шт.</div>
-                <div class="fpt-fin-card-sub">Всего заказов: ${agg.total} (учтено: ${agg.count})</div>`;
+                <div class="fpt-fin-card-sub">${ordDiffHtml}${ordDiffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">Всего заказов: ${agg.total} (учтено: ${agg.count})</span></div>`;
             ordCard.title = 'Нажмите для просмотра оплаченных заказов';
             ordCard.onclick = () => openDrilldown('Оплаченные заказы', `${periodLabel(state.period)} · ${validOrders.length} заказов`, validOrders);
 
@@ -1230,13 +1302,14 @@
             const avgCard = cards[2];
             avgCard.classList.add('fpt-fin-clickable');
             const avgStr = formatAvgCheckMulti(agg.averageCheck);
+            const avgDiffHtml = (state.cachedSalesKpiDiffs && state.cachedSalesKpiDiffs.averageCheck) ? state.cachedSalesKpiDiffs.averageCheck.badgeHtml : '';
             avgCard.innerHTML = `
                 <div class="fpt-fin-card-header">
                     <h5 class="fpt-fin-card-title">Средний чек продажи</h5>
                     <span class="material-symbols-rounded" style="font-size:18px;color:#a09af8;">receipt</span>
                 </div>
                 <div class="fpt-fin-card-value">${esc(avgStr)}</div>
-                <div class="fpt-fin-card-sub">По ${agg.count} оплаченным заказам</div>`;
+                <div class="fpt-fin-card-sub">${avgDiffHtml}${avgDiffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">По ${agg.count} оплаченным заказам</span></div>`;
             avgCard.title = 'Нажмите для просмотра учтённых заказов';
             avgCard.onclick = () => openDrilldown('Средний чек продажи', `${periodLabel(state.period)} · средний чек: ${avgStr}`, validOrders);
 
@@ -2114,6 +2187,8 @@
     }
 
     function operationPeriodLabel() {
+        const key = periodKey(state.period);
+        if (key === 'custom') return 'за ' + periodLabel(state.period);
         return ({
             today: 'за сегодня',
             yesterday: 'за вчера',
@@ -2123,12 +2198,12 @@
             '90d': 'за 3 месяца',
             '365d': 'за год',
             all: 'за всё время'
-        })[state.period] || '';
+        })[key] || '';
     }
 
     function operationFlowChart(cardEl, agg) {
         if (!cardEl) return;
-        const daily = ['today', 'yesterday', '24h', '7d', '30d'].includes(state.period);
+        const daily = ['today', 'yesterday', '24h', '7d', '30d', 'custom'].includes(periodKey(state.period));
         const buckets = daily ? (agg.byDay || {}) : (agg.byMonth || {});
         const keys = Object.keys(buckets).sort().slice(daily ? -31 : -12);
         const titleEl = cardEl.querySelector('.fpt-fin-card-title');
@@ -2699,7 +2774,15 @@
         }
         const netSubEl = pane.querySelector('#fptFinProfitNetSub');
         if (netSubEl) {
-            netSubEl.textContent = `Выручка с себестоимостью: ${formatMoney(totals.knownCostRevenue, currency)}`;
+            const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+            const prevNet = (state.cachedPrevProfitData && state.cachedPrevProfitData.byCurrency && state.cachedPrevProfitData.byCurrency[currency])
+                ? state.cachedPrevProfitData.byCurrency[currency].realisedNetProfit
+                : null;
+            const profitDiff = (finData && typeof finData.formatKpiComparison === 'function')
+                ? finData.formatKpiComparison(totals.realisedNetProfit, prevNet, { kpi: 'profit', id: 'fptFinProfitNetDiff' })
+                : null;
+            const diffHtml = profitDiff ? profitDiff.badgeHtml : '';
+            netSubEl.innerHTML = `${diffHtml}${diffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">Выручка с себестоимостью: ${esc(formatMoney(totals.knownCostRevenue, currency))}</span>`;
         }
 
         // 2. Себестоимость продаж
@@ -3016,10 +3099,22 @@
 
                 const result = await profitEngine.getRealisedProfit(profitOpts);
 
+                let prevProfitData = null;
+                const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+                const prevPeriod = (finData && typeof finData.resolvePreviousPeriodRange === 'function')
+                    ? finData.resolvePreviousPeriodRange(state.period, { useMsk: true })
+                    : null;
+                if (prevPeriod) {
+                    try {
+                        prevProfitData = await profitEngine.getRealisedProfit(Object.assign({}, profitOpts, { period: prevPeriod }));
+                    } catch (_) {}
+                }
+
                 if (currentToken !== state.profitRenderToken) return;
 
                 state.cachedProfitOrders = Array.isArray(result.orders) ? result.orders : [];
                 state.cachedProfitAgg = result.byCurrency || {};
+                state.cachedPrevProfitData = prevProfitData;
                 state.cachedProfitPeriod = state.period;
                 await updateLastUpdatedText('profit');
             } catch (err) {
@@ -3119,8 +3214,10 @@
         if (ops) ops.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:36px;"></div>';
     }
 
-    function renderOverviewRow1(pane, salesAgg, profitData, primaryCurrency, salesOrders, profitOrders) {
+    function renderOverviewRow1(pane, salesAgg, profitData, primaryCurrency, salesOrders, profitOrders, kpiDiffs) {
         if (!pane) return;
+
+        const diffs = kpiDiffs || (state.cachedOverviewData && state.cachedOverviewData.kpiDiffs) || null;
 
         // 1. Выручка
         const revEl = pane.querySelector('#fptFinOverviewRevenue');
@@ -3129,9 +3226,12 @@
         }
         const revSubEl = pane.querySelector('#fptFinOverviewRevenueSub');
         if (revSubEl) {
+            const diffHtml = (diffs && diffs.revenue) ? diffs.revenue.badgeHtml : '';
             if (salesAgg && salesAgg.closedRevenue) {
                 const closedStr = formatRevenueMulti(salesAgg.closedRevenue);
-                revSubEl.textContent = `Завершено: ${closedStr}`;
+                revSubEl.innerHTML = `${diffHtml}${diffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">Завершено: ${esc(closedStr)}</span>`;
+            } else if (diffHtml) {
+                revSubEl.innerHTML = diffHtml;
             } else {
                 revSubEl.textContent = '—';
             }
@@ -3154,10 +3254,13 @@
             }
         }
         if (profitSubEl) {
+            const diffHtml = (diffs && diffs.profit) ? diffs.profit.badgeHtml : '';
             if (profitTotals) {
                 const orderCov = typeof profitTotals.orderCoverage === 'number' ? `${profitTotals.orderCoverage}%` : '—';
                 const revCov = typeof profitTotals.revenueCoverage === 'number' ? `${profitTotals.revenueCoverage}%` : '—';
-                profitSubEl.textContent = `Покрытие: ${orderCov} зак. (${revCov} выр.)`;
+                profitSubEl.innerHTML = `${diffHtml}${diffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">Покрытие: ${esc(orderCov)} зак. (${esc(revCov)} выр.)</span>`;
+            } else if (diffHtml) {
+                profitSubEl.innerHTML = diffHtml;
             } else {
                 profitSubEl.textContent = '—';
             }
@@ -3170,9 +3273,12 @@
         }
         const ordersSubEl = pane.querySelector('#fptFinOverviewOrdersSub');
         if (ordersSubEl) {
+            const diffHtml = (diffs && diffs.orders) ? diffs.orders.badgeHtml : '';
             if (salesAgg) {
                 const refCount = (salesAgg.byStatus && salesAgg.byStatus.refunded) || 0;
-                ordersSubEl.textContent = `Всего: ${salesAgg.total || 0} (возвратов: ${refCount})`;
+                ordersSubEl.innerHTML = `${diffHtml}${diffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">Всего: ${salesAgg.total || 0} (возвратов: ${refCount})</span>`;
+            } else if (diffHtml) {
+                ordersSubEl.innerHTML = diffHtml;
             } else {
                 ordersSubEl.textContent = '—';
             }
@@ -3185,7 +3291,14 @@
         }
         const avgSubEl = pane.querySelector('#fptFinOverviewAvgCheckSub');
         if (avgSubEl) {
-            avgSubEl.textContent = salesAgg ? 'Средний чек покупателя' : '—';
+            const diffHtml = (diffs && diffs.averageCheck) ? diffs.averageCheck.badgeHtml : '';
+            if (salesAgg) {
+                avgSubEl.innerHTML = `${diffHtml}${diffHtml ? ' ' : ''}<span class="fpt-fin-sub-extra">Средний чек покупателя</span>`;
+            } else if (diffHtml) {
+                avgSubEl.innerHTML = diffHtml;
+            } else {
+                avgSubEl.textContent = '—';
+            }
         }
 
         // Drilldown wire
@@ -3821,11 +3934,25 @@
                     ? finData.getOperations(opsFilter)
                     : Promise.resolve([]);
 
-                const [salesRes, profitRes, potRes, opsRes] = await Promise.allSettled([
+                const prevPeriod = (finData && typeof finData.resolvePreviousPeriodRange === 'function')
+                    ? finData.resolvePreviousPeriodRange(state.period, { useMsk: true })
+                    : null;
+
+                const prevSalesPromise = (prevPeriod && finData && typeof finData.getSales === 'function')
+                    ? finData.getSales(Object.assign({ sort: 'date-desc' }, filterOpts, { period: prevPeriod }))
+                    : Promise.resolve(null);
+
+                const prevProfitPromise = (prevPeriod && profitEngine && typeof profitEngine.getRealisedProfit === 'function')
+                    ? profitEngine.getRealisedProfit(Object.assign({}, filterOpts, { period: prevPeriod }))
+                    : Promise.resolve(null);
+
+                const [salesRes, profitRes, potRes, opsRes, prevSalesRes, prevProfitRes] = await Promise.allSettled([
                     salesPromise,
                     profitPromise,
                     potentialPromise,
-                    opsPromise
+                    opsPromise,
+                    prevSalesPromise,
+                    prevProfitPromise
                 ]);
 
                 if (currentToken !== state.overviewRenderToken) return;
@@ -3836,6 +3963,20 @@
                     : null;
 
                 const profitData = profitRes.status === 'fulfilled' ? profitRes.value : null;
+
+                const prevSales = (prevSalesRes && prevSalesRes.status === 'fulfilled' && Array.isArray(prevSalesRes.value)) ? prevSalesRes.value : null;
+                const prevSalesAgg = (prevSales && finData && typeof finData.aggregateSales === 'function')
+                    ? finData.aggregateSales(prevSales, { period: prevPeriod, useMsk: true })
+                    : null;
+                const prevProfitData = (prevProfitRes && prevProfitRes.status === 'fulfilled') ? prevProfitRes.value : null;
+
+                const kpiDiffs = (finData && typeof finData.compareKpis === 'function')
+                    ? finData.compareKpis(
+                        { salesAgg, profitData },
+                        { salesAgg: prevSalesAgg, profitData: prevProfitData },
+                        { currency: filterOpts.currency || state.currency, primaryCurrency: state.profitCurrency || 'RUB' }
+                    )
+                    : null;
 
                 let potTotals = null;
                 let potCurrency = 'RUB';
@@ -3874,7 +4015,10 @@
                     potTotals,
                     potCurrency,
                     lots,
-                    operations
+                    operations,
+                    prevSalesAgg,
+                    prevProfitData,
+                    kpiDiffs
                 };
                 state.cachedOverviewPeriod = state.period;
                 await updateLastUpdatedText('overview');
@@ -3893,7 +4037,7 @@
         const data = state.cachedOverviewData || {};
         const primaryCurrency = (data.salesAgg && data.salesAgg.byCurrency && Object.keys(data.salesAgg.byCurrency)[0]) || state.profitCurrency || 'RUB';
 
-        renderOverviewRow1(pane, data.salesAgg, data.profitData, primaryCurrency, data.sales, data.profitData ? data.profitData.orders : []);
+        renderOverviewRow1(pane, data.salesAgg, data.profitData, primaryCurrency, data.sales, data.profitData ? data.profitData.orders : [], data.kpiDiffs);
         renderOverviewRow2(pane, data.potTotals, data.potCurrency || 'RUB', data.lots || []);
         renderOverviewCharts(pane, data.sales, data.profitData, primaryCurrency);
         renderOverviewTopProducts(pane, data.sales, data.salesAgg, primaryCurrency);
@@ -4009,29 +4153,153 @@
         invalidateOverviewCache();
     }
 
-    function reRenderActiveSubtab() {
+    function renderActiveSubtab(forceReload) {
         if (state.activeSubtab === 'overview') {
-            renderOverviewSubtab(true);
+            return renderOverviewSubtab(forceReload);
         } else if (state.activeSubtab === 'sales') {
-            renderSalesSubtab(true);
+            return renderSalesSubtab(forceReload);
         } else if (state.activeSubtab === 'purchases') {
-            renderPurchasesSubtab(true);
+            return renderPurchasesSubtab(forceReload);
         } else if (state.activeSubtab === 'operations') {
-            renderOperationsSubtab(true);
+            return renderOperationsSubtab(forceReload);
         } else if (state.activeSubtab === 'potential') {
-            renderPotentialSubtab(true);
+            return renderPotentialSubtab(forceReload);
         } else if (state.activeSubtab === 'profit') {
-            renderProfitSubtab(true);
+            return renderProfitSubtab(forceReload);
         }
     }
 
-    function onPeriodChange(newPeriod) {
-        state.period = newPeriod || '7d';
+    function reRenderActiveSubtab() {
+        return renderActiveSubtab(true);
+    }
+
+    function getCustomRangeControls() {
+        if (!state.container) return null;
+        return {
+            wrap: state.container.querySelector('#fptFinCustomRange'),
+            from: state.container.querySelector('#fptFinCustomFrom'),
+            to: state.container.querySelector('#fptFinCustomTo'),
+            error: state.container.querySelector('#fptFinCustomRangeError'),
+            period: state.container.querySelector('#fptFinPeriodSelect')
+        };
+    }
+
+    function setCustomRangeError(message) {
+        const controls = getCustomRangeControls();
+        if (!controls || !controls.error) return;
+        controls.error.textContent = message || '';
+        controls.error.style.display = message ? '' : 'none';
+    }
+
+    function syncCustomRangeControls(visible) {
+        const controls = getCustomRangeControls();
+        if (!controls) return;
+        if (controls.wrap) controls.wrap.style.display = visible ? 'flex' : 'none';
+        if (controls.from && state.customRange && !controls.from.value) {
+            controls.from.value = state.customRange.from;
+        }
+        if (controls.to && state.customRange && !controls.to.value) {
+            controls.to.value = state.customRange.to;
+        }
+        setCustomRangeError('');
+    }
+
+    function persistPeriod(period) {
         try {
-            sessionStorage.setItem('fpt_fin_last_period', state.period);
+            sessionStorage.setItem(PERIOD_STORAGE_KEY, typeof period === 'string' ? period : JSON['stringify'](period));
+            if (period && typeof period === 'object') {
+                sessionStorage.setItem(CUSTOM_RANGE_STORAGE_KEY, JSON['stringify'](period));
+            }
         } catch (_) {}
+    }
+
+    function removeCustomRangeStorage() {
+        try {
+            if (typeof sessionStorage.removeItem === 'function') {
+                sessionStorage.removeItem(CUSTOM_RANGE_STORAGE_KEY);
+            }
+        } catch (_) {}
+    }
+
+    function onCustomRangeApply(from, to) {
+        if (from && typeof from === 'object') {
+            to = from.to !== undefined ? from.to : from.end;
+            from = from.from !== undefined ? from.from : from.start;
+        }
+        if (from === undefined || to === undefined) {
+            const controls = getCustomRangeControls();
+            from = controls && controls.from ? controls.from.value : '';
+            to = controls && controls.to ? controls.to.value : '';
+        }
+
+        const range = makeCustomRange(from, to);
+        if (!range) {
+            setCustomRangeError(!from || !to
+                ? 'Укажите обе даты.'
+                : (from > to ? 'Дата From не может быть позже даты To.' : 'Укажите корректные календарные даты.'));
+            return false;
+        }
+
+        if (typeof state.period === 'string' && state.period !== 'custom') {
+            state.periodBeforeCustom = state.period;
+        }
+        state.customRange = range;
+        state.period = range;
+        state.pendingCustomRange = false;
+        persistPeriod(range);
+        const controls = getCustomRangeControls();
+        if (controls && controls.period) controls.period.value = 'custom';
+        syncCustomRangeControls(true);
         invalidateAllCaches();
         reRenderActiveSubtab();
+        return true;
+    }
+
+    function onCustomRangeReset() {
+        const fallback = (typeof state.periodBeforeCustom === 'string' && state.periodBeforeCustom !== 'custom')
+            ? state.periodBeforeCustom
+            : DEFAULT_PERIOD;
+        state.period = fallback;
+        state.customRange = null;
+        state.pendingCustomRange = false;
+        persistPeriod(fallback);
+        removeCustomRangeStorage();
+        const controls = getCustomRangeControls();
+        if (controls) {
+            if (controls.period) controls.period.value = fallback;
+            if (controls.from) controls.from.value = '';
+            if (controls.to) controls.to.value = '';
+        }
+        syncCustomRangeControls(false);
+        invalidateAllCaches();
+        reRenderActiveSubtab();
+        return true;
+    }
+
+    function onPeriodChange(newPeriod) {
+        if (newPeriod && typeof newPeriod === 'object') {
+            return onCustomRangeApply(newPeriod);
+        }
+        if (newPeriod === 'custom') {
+            if (typeof state.period === 'string' && state.period !== 'custom') {
+                state.periodBeforeCustom = state.period;
+            }
+            state.pendingCustomRange = true;
+            const controls = getCustomRangeControls();
+            if (controls && controls.period) controls.period.value = 'custom';
+            syncCustomRangeControls(true);
+            return false;
+        }
+
+        state.period = newPeriod || DEFAULT_PERIOD;
+        state.customRange = null;
+        state.pendingCustomRange = false;
+        persistPeriod(state.period);
+        removeCustomRangeStorage();
+        syncCustomRangeControls(false);
+        invalidateAllCaches();
+        reRenderActiveSubtab();
+        return true;
     }
 
     function onCurrencyChange(newCurrency) {
@@ -4136,7 +4404,31 @@
             }
         }
 
-        // 1. Currency Select
+        // 1. Period Select
+        const periodSelect = container.querySelector('#fptFinPeriodSelect');
+        if (periodSelect) {
+            periodSelect.value = periodKey(state.period) || DEFAULT_PERIOD;
+            periodSelect.onchange = (e) => onPeriodChange(e.target.value);
+        }
+
+        // 2. Custom date range controls
+        const customApplyBtn = container.querySelector('#fptFinCustomApplyBtn');
+        if (customApplyBtn) {
+            customApplyBtn.onclick = (e) => {
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                return onCustomRangeApply();
+            };
+        }
+        const customResetBtn = container.querySelector('#fptFinCustomResetBtn');
+        if (customResetBtn) {
+            customResetBtn.onclick = (e) => {
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                return onCustomRangeReset();
+            };
+        }
+        syncCustomRangeControls(state.pendingCustomRange || periodKey(state.period) === 'custom');
+
+        // 3. Currency Select
         let curSelect = container.querySelector('#fptFinCurrencySelect');
         if (!curSelect) {
             curSelect = document.createElement('select');
@@ -4154,7 +4446,7 @@
         curSelect.value = state.currency || 'all';
         curSelect.onchange = (e) => onCurrencyChange(e.target.value);
 
-        // 2. Status Select (options dynamically configured by updateStatusSelectOptions)
+        // 4. Status Select (options dynamically configured by updateStatusSelectOptions)
         let statusSelect = container.querySelector('#fptFinStatusSelect');
         if (!statusSelect) {
             statusSelect = document.createElement('select');
@@ -4164,7 +4456,7 @@
         }
         statusSelect.onchange = (e) => onStatusChange(e.target.value);
 
-        // 3. Category Select
+        // 5. Category Select
         let catSelect = container.querySelector('#fptFinCategorySelect');
         if (!catSelect) {
             catSelect = document.createElement('select');
@@ -4177,7 +4469,16 @@
         catSelect.value = state.category || 'all';
         catSelect.onchange = (e) => onCategoryChange(e.target.value);
 
-        // 4. Export button activation
+        // 6. Refresh button activation
+        const refreshBtn = container.querySelector('#fptFinRefreshBtn');
+        if (refreshBtn) {
+            refreshBtn.onclick = (e) => {
+                if (e && typeof e.preventDefault === 'function') e.preventDefault();
+                return refresh();
+            };
+        }
+
+        // 7. Export button activation
         const exportBtn = container.querySelector('#fptFinExportBtn');
         if (exportBtn) {
             exportBtn.disabled = false;
@@ -4195,6 +4496,7 @@
         const periodSelect = state.container.querySelector('#fptFinPeriodSelect');
         const snapshotBadge = state.container.querySelector('#fptFinPeriodSnapshotBadge');
         const catSelect = state.container.querySelector('#fptFinCategorySelect');
+        const customRangeWrap = state.container.querySelector('#fptFinCustomRange');
 
         // T05: Potential is a live snapshot, not a historical date range
         if (subtab === 'potential') {
@@ -4208,6 +4510,7 @@
             if (snapshotBadge) {
                 snapshotBadge.style.display = 'inline-flex';
             }
+            if (customRangeWrap) customRangeWrap.style.display = 'none';
         } else {
             if (periodSelect) {
                 if (typeof periodSelect.style.removeProperty === 'function') {
@@ -4216,11 +4519,20 @@
                 periodSelect.style.display = '';
                 // Restore user's previous period selection
                 if (state.period) {
-                    periodSelect.value = state.period;
+                    if (typeof state.period === 'string') {
+                        periodSelect.value = state.period;
+                    } else {
+                        periodSelect.value = periodKey(state.period);
+                    }
                 }
             }
             if (snapshotBadge) {
                 snapshotBadge.style.display = 'none';
+            }
+            if (customRangeWrap) {
+                customRangeWrap.style.display = (state.pendingCustomRange || periodKey(state.period) === 'custom')
+                    ? 'flex'
+                    : 'none';
             }
         }
 
@@ -4533,9 +4845,10 @@
     }
 
     async function exportFinanceData(dataset, format) {
-        const engine = (typeof window !== 'undefined' && window.FPTFinanceExport) || root.FPTFinanceExport;
+        const studio = (typeof window !== 'undefined' && window.FPTExportStudio) || root.FPTExportStudio;
+        const engine = studio && studio.financeExport;
         if (!engine || typeof engine.download !== 'function') {
-            throw new Error('Модуль FPTFinanceExport не найден');
+            throw new Error('Модуль FPTExportStudio.financeExport не найден');
         }
         const data = await getDatasetForExport(dataset);
         return engine.download(data.dataset, format, data.items, data.totals, data.meta);
@@ -4587,7 +4900,7 @@
 
         function getPeriodBadgeText(ds) {
             if (ds === 'potential') return 'Текущий снимок';
-            return periodNames[state.period] || state.period;
+            return periodNames[periodKey(state.period)] || periodLabel(state.period);
         }
 
         function getStatusBadgeText(ds) {
@@ -4997,8 +5310,41 @@
         }
     }
 
+    function startInitialRender() {
+        const renderResult = renderActiveSubtab(false);
+        const promise = Promise.resolve(renderResult);
+        activeRenderPromise = promise;
+        promise.then(
+            () => {
+                if (activeRenderPromise === promise) activeRenderPromise = null;
+            },
+            () => {
+                if (activeRenderPromise === promise) activeRenderPromise = null;
+            }
+        );
+        return promise;
+    }
+
     function init(container) {
-        if (!container) return;
+        if (!container) return null;
+
+        // Повторный mount того же DOM-узла не должен восстанавливать состояние,
+        // перевешивать handlers или запускать второй render/fetch.
+        if (state.initialized && state.container === container) {
+            return activeRenderPromise;
+        }
+
+        if (state.initialized && state.container && state.container !== container) {
+            closeExportModal();
+            cleanupOverview();
+            cleanupSales();
+            cleanupPurchases();
+            cleanupOperations();
+            cleanupPotential();
+            cleanupProfit();
+            activeRenderPromise = null;
+        }
+
         state.container = container;
         state.initialized = true;
 
@@ -5007,64 +5353,49 @@
             const savedSubtab = sessionStorage.getItem('fpt_fin_active_subtab');
             if (savedSubtab) state.activeSubtab = savedSubtab;
 
-            const savedPeriod = sessionStorage.getItem('fpt_fin_last_period');
-            if (savedPeriod) state.period = savedPeriod;
+            const savedPeriod = sessionStorage.getItem(PERIOD_STORAGE_KEY);
+            let restoredRange = null;
+            if (savedPeriod && savedPeriod.trim().charAt(0) === '{') {
+                try {
+                    const parsed = JSON.parse(savedPeriod);
+                    restoredRange = makeCustomRange(parsed.from, parsed.to);
+                } catch (_) {}
+            } else if (savedPeriod === 'custom') {
+                try {
+                    const parsed = JSON.parse(sessionStorage.getItem(CUSTOM_RANGE_STORAGE_KEY) || '');
+                    restoredRange = makeCustomRange(parsed.from, parsed.to);
+                } catch (_) {}
+            }
+            if (restoredRange) {
+                state.period = restoredRange;
+                state.customRange = restoredRange;
+            } else if (savedPeriod && savedPeriod !== 'custom') {
+                state.period = savedPeriod;
+                state.periodBeforeCustom = savedPeriod;
+            }
         } catch (_) {}
 
         const periodSelect = container.querySelector('#fptFinPeriodSelect');
         if (periodSelect && state.period) {
-            periodSelect.value = state.period;
+            periodSelect.value = periodKey(state.period);
         }
 
         setupHeaderFilters(container);
 
         updateLastUpdatedText(state.activeSubtab);
 
-        if (state.activeSubtab === 'overview') {
-            renderOverviewSubtab(false);
-        } else if (state.activeSubtab === 'sales') {
-            renderSalesSubtab(false);
-        } else if (state.activeSubtab === 'purchases') {
-            renderPurchasesSubtab(false);
-        } else if (state.activeSubtab === 'operations') {
-            renderOperationsSubtab(false);
-        } else if (state.activeSubtab === 'potential') {
-            renderPotentialSubtab(false);
-        } else if (state.activeSubtab === 'profit') {
-            renderProfitSubtab(false);
-        }
+        return startInitialRender();
     }
 
     function onOpen() {
         if (!state.container) {
             const el = document.querySelector('.fp-tools-page-content[data-page="finance_hub"]');
-            if (el) init(el);
+            return el ? init(el) : null;
         }
 
-        try {
-            const savedSubtab = sessionStorage.getItem('fpt_fin_active_subtab');
-            if (savedSubtab) state.activeSubtab = savedSubtab;
-        } catch (_) {}
-
-        if (state.container) {
-            setupHeaderFilters(state.container);
-        }
-
-        updateLastUpdatedText(state.activeSubtab);
-
-        if (state.activeSubtab === 'overview') {
-            renderOverviewSubtab(false);
-        } else if (state.activeSubtab === 'sales') {
-            renderSalesSubtab(false);
-        } else if (state.activeSubtab === 'purchases') {
-            renderPurchasesSubtab(false);
-        } else if (state.activeSubtab === 'operations') {
-            renderOperationsSubtab(false);
-        } else if (state.activeSubtab === 'potential') {
-            renderPotentialSubtab(false);
-        } else if (state.activeSubtab === 'profit') {
-            renderProfitSubtab(false);
-        }
+        // init() уже смонтировал контейнер. Пока первый render идет, возвращаем
+        // его promise; после завершения повторное открытие не делает новый fetch.
+        return activeRenderPromise;
     }
 
     // Экспорт контроллера
@@ -5073,17 +5404,25 @@
         onOpen,
         onSubtabChange,
         onPeriodChange,
+        onCustomRangeApply,
+        onCustomRangeReset,
         onCurrencyChange,
         onStatusChange,
         onCategoryChange,
         onPageLeave: () => {
             closeExportModal();
-            cleanupOverview();
-            cleanupSales();
-            cleanupPurchases();
-            cleanupOperations();
-            cleanupPotential();
-            cleanupProfit();
+            hideTooltip();
+            // Не инвалидируем первичный mount, пока он еще получает данные:
+            // повторное открытие той же страницы присоединяется к этому же
+            // promise и не создает параллельный fetch.
+            if (!activeRenderPromise) {
+                cleanupOverview();
+                cleanupSales();
+                cleanupPurchases();
+                cleanupOperations();
+                cleanupPotential();
+                cleanupProfit();
+            }
         },
         refresh,
         openExportModal,
@@ -5114,7 +5453,19 @@
         operationFlowChart,
         renderOverviewDynamicChart,
         formatLastUpdatedText,
-        updateLastUpdatedText
+        updateLastUpdatedText,
+        resolvePreviousPeriodRange: (p, o) => {
+            const fd = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+            return fd && typeof fd.resolvePreviousPeriodRange === 'function' ? fd.resolvePreviousPeriodRange(p, o) : null;
+        },
+        formatKpiComparison: (c, p, o) => {
+            const fd = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+            return fd && typeof fd.formatKpiComparison === 'function' ? fd.formatKpiComparison(c, p, o) : null;
+        },
+        compareKpis: (c, p, o) => {
+            const fd = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+            return fd && typeof fd.compareKpis === 'function' ? fd.compareKpis(c, p, o) : null;
+        }
     };
 
     if (typeof window !== 'undefined') {
