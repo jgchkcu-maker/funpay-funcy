@@ -285,78 +285,111 @@ async function runFinanceUpdateCycle() {
                 }
                 break;
             }
-            if (!response.ok) throw new Error(`Ошибка сети (финансы): ${response.status}`);
+            if (!response || !response.ok) {
+                throw new Error(`Ошибка сети (финансы): ${response ? response.status : 'нет ответа'}`);
+            }
             const html = await response.text();
             return await parseHtmlViaOffscreen(html, 'parseFinancePage');
         };
 
-        // Финансовых операций немного — собираем целиком заново каждый раз.
-        await FPTFinanceDB.clearAll();
+        // T01: сначала полностью собираем и валидируем историю в памяти.
+        // IndexedDB и зеркала в chrome.storage не трогаем до полного успеха.
         let continueToken = null;
-        const seenIds = new Set();        // все id операций, что уже сохранили
-        const seenTokens = new Set();     // continue-токены, что уже использовали
-        let lastFirstId = null;           // id первой операции прошлой страницы (детект зацикливания)
-        const MAX_PAGES = 600;            // жёсткий предохранитель
+        const collectedById = new Map();
+        const seenTokens = new Set();
+        let lastFirstId = null;
+        let collectionComplete = false;
+        const MAX_PAGES = 600;
 
         for (let page = 0; page < MAX_PAGES; page++) {
-            // защита от повторного использования того же токена (зацикливание)
-            if (continueToken && seenTokens.has(continueToken)) {
-                console.log("FP Tools: финансы — повтор continue-токена, останавливаемся.");
+            if (continueToken && seenTokens.has(String(continueToken))) {
+                throw new Error('Ошибка пагинации финансов: повтор continue-токена');
+            }
+            if (continueToken) seenTokens.add(String(continueToken));
+
+            const parsed = await fetchPage(continueToken);
+            if (!parsed || !Array.isArray(parsed.txns)) {
+                throw new Error('Ошибка парсинга финансов: некорректный результат страницы');
+            }
+
+            const txns = parsed.txns;
+            const nextId = parsed.nextId == null || String(parsed.nextId).trim() === ''
+                ? null
+                : parsed.nextId;
+
+            if (txns.length === 0) {
+                collectionComplete = true;
                 break;
             }
-            if (continueToken) seenTokens.add(continueToken);
 
-            const { nextId, txns } = await fetchPage(continueToken);
-            if (!txns || txns.length === 0) break;
-
-            // оставляем только НОВЫЕ операции (которых ещё не видели)
-            const fresh = txns.filter(t => t.id && !seenIds.has(t.id));
-            for (const t of fresh) seenIds.add(t.id);
-
-            if (fresh.length > 0) {
-                await FPTFinanceDB.putOrders(fresh);
-                await chrome.storage.local.set({ fpToolsFinanceCount: seenIds.size });
-                const dts = txns.map(t => t.date).filter(Boolean);
-                if (dts.length) {
-                    const newest = new Date(Math.max(...dts)).toISOString().slice(0, 10);
-                    const oldest = new Date(Math.min(...dts)).toISOString().slice(0, 10);
-                    console.log(`FP Tools: финансы стр.${page + 1} — ${txns.length} операц. (новых ${fresh.length}), ${newest}…${oldest}, всего уникальных ${seenIds.size}`);
+            let newOnPage = 0;
+            for (const txn of txns) {
+                if (!txn || txn.id == null || String(txn.id).trim() === '') {
+                    throw new Error('Ошибка парсинга финансов: операция без id');
+                }
+                const idKey = String(txn.id);
+                if (!collectedById.has(idKey)) {
+                    collectedById.set(idKey, txn);
+                    newOnPage++;
                 }
             }
 
-            // Если страница не принесла ни одной новой операции — дальше идти бессмысленно.
-            if (fresh.length === 0) {
-                console.log("FP Tools: финансы — страница без новых операций, конец.");
-                break;
-            }
-
-            // Детект зацикливания по содержимому: та же «первая» операция, что и раньше.
-            const firstId = txns[0].id;
-            if (firstId && firstId === lastFirstId) {
-                console.log("FP Tools: финансы — та же страница повторилась, конец.");
-                break;
+            const firstId = String(txns[0].id);
+            if (lastFirstId !== null && firstId === lastFirstId) {
+                throw new Error('Ошибка пагинации финансов: повторилась та же страница');
             }
             lastFirstId = firstId;
 
-            // нет следующего токена ИЛИ он совпал с текущим → конец
-            if (!nextId || nextId === continueToken) break;
+            if (page > 0 && newOnPage === 0) {
+                throw new Error('Ошибка пагинации финансов: страница не содержит новых операций');
+            }
+
+            const dts = txns.map(t => t.date).filter(Boolean);
+            if (dts.length) {
+                const newest = new Date(Math.max(...dts)).toISOString().slice(0, 10);
+                const oldest = new Date(Math.min(...dts)).toISOString().slice(0, 10);
+                console.log(`FP Tools: финансы стр.${page + 1} — ${txns.length} операц. (новых ${newOnPage}), ${newest}…${oldest}, собрано уникальных ${collectedById.size}`);
+            }
+
+            if (!nextId) {
+                collectionComplete = true;
+                break;
+            }
+            if (String(nextId) === String(continueToken)) {
+                throw new Error('Ошибка пагинации финансов: continue-токен не изменился');
+            }
+
             continueToken = nextId;
         }
 
-        const total = seenIds.size;
+        if (!collectionComplete) {
+            throw new Error(`Ошибка пагинации финансов: превышен лимит ${MAX_PAGES} страниц`);
+        }
 
+        const collected = Array.from(collectedById.values());
         const now = Date.now();
-        await FPTFinanceDB.setMeta('lastUpdate', now);
-        await chrome.storage.local.set({ fpToolsFinanceLastUpdate: now });
-        console.log(`FP Tools: Финансы собраны, операций: ${total}.`);
+
+        // Единственная точка мутации durable-хранилища. clear + put + metadata
+        // выполняются одной IndexedDB-транзакцией и откатываются целиком при ошибке.
+        await FPTFinanceDB.replaceAll(collected, { lastUpdate: now });
+
+        // Зеркала UI меняем только после успешного durable commit.
+        await chrome.storage.local.set({
+            fpToolsFinanceCount: collected.length,
+            fpToolsFinanceLastUpdate: now
+        });
+
+        console.log(`FP Tools: Финансы собраны, операций: ${collected.length}.`);
     } catch (e) {
         console.error(`FP Tools: Ошибка в цикле сбора финансов: ${e.message}`);
+        throw e;
     } finally {
         _financeCycleRunning = false;
-        await chrome.storage.local.set({
-            fpToolsFinanceLastUpdate: Date.now(),
-            fpToolsFinanceCollecting: false
-        });
+        try {
+            await chrome.storage.local.set({ fpToolsFinanceCollecting: false });
+        } catch (cleanupError) {
+            console.error(`FP Tools: Не удалось сбросить флаг сбора финансов: ${cleanupError.message}`);
+        }
     }
 }
 
