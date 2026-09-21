@@ -15,84 +15,113 @@ function extractNavPages() {
     return [...navMarkup.matchAll(/<li[^>]*data-page="([^"]+)"/g)].map(match => match[1]);
 }
 
-function extractSchemaPages() {
+function extractSchema() {
     const start = source.indexOf('const FPT_NAV_SECTIONS = Object.freeze([');
     const end = source.indexOf('const FPT_NAV_LABEL_OVERRIDES', start);
     assert.ok(start >= 0 && end > start, 'FPT_NAV_SECTIONS must exist before label overrides');
     const schema = source.slice(start, end);
-    const pages = [];
-    for (const match of schema.matchAll(/pages:\s*Object\.freeze\(\[([^\]]*)\]\)/g)) {
-        for (const pageMatch of match[1].matchAll(/'([^']+)'/g)) pages.push(pageMatch[1]);
-    }
-    return { schema, pages };
+    const sections = [...schema.matchAll(/id:\s*'([^']+)'[\s\S]*?pages:\s*Object\.freeze\(\[([^\]]*)\]\)/g)]
+        .map(match => ({ id: match[1], pages: [...match[2].matchAll(/'([^']+)'/g)].map(m => m[1]) }));
+    return { schema, sections, pages: sections.flatMap(section => section.pages) };
 }
 
 function testEveryExistingPageBelongsToExactlyOneSection() {
     const navPages = extractNavPages();
-    const { pages } = extractSchemaPages();
-
+    const { pages } = extractSchema();
+    assert.equal(navPages.length, 25, 'popup must retain all 25 existing page nodes');
     assert.equal(new Set(navPages).size, navPages.length, 'flat nav must not contain duplicate data-page ids');
     assert.equal(new Set(pages).size, pages.length, 'navigation schema must not duplicate page ids');
     assert.deepEqual([...pages].sort(), [...navPages].sort(), 'navigation schema must cover every existing data-page exactly once');
 }
 
-function testFivePrimarySectionsPlusOverflow() {
-    const { schema } = extractSchemaPages();
-    assert.equal((schema.match(/primary:\s*true/g) || []).length, 5, 'there must be exactly five primary navigation sections');
-    assert.equal((schema.match(/primary:\s*false/g) || []).length, 1, 'there must be one overflow section');
-    for (const id of ['core', 'store', 'messages', 'finance', 'settings', 'more']) {
-        assert.match(schema, new RegExp("id:\\s*'" + id + "'"), 'schema must include section ' + id);
-    }
+function testSixIndependentAccordionSections() {
+    const { schema, sections } = extractSchema();
+    assert.deepEqual(sections.map(section => section.id), ['core', 'store', 'messages', 'finance', 'settings', 'more']);
+    assert.equal(sections.length, 6, 'there must be exactly six accordion sections');
+    assert.doesNotMatch(schema, /\bprimary\s*:/, 'schema must not drive a primary/overflow renderer');
 }
 
-function testNavigationBindingPreservesExistingPageContract() {
+function testAccordionRendererMovesExistingNodes() {
+    const start = source.indexOf('function setupNavigationSections(toolsPopup)');
+    const end = source.indexOf('function setupPopupNavigation()', start);
+    assert.ok(start >= 0 && end > start, 'setupNavigationSections must exist before setupPopupNavigation');
+    const block = source.slice(start, end);
+    assert.match(block, /fpt-nav-group/, 'renderer must create accordion groups');
+    assert.match(block, /fpt-nav-group-toggle/, 'renderer must create real group toggle buttons');
+    assert.match(block, /fpt-nav-group-collapse/, 'renderer must create collapse wrappers');
+    assert.match(block, /fpt-nav-group-items/, 'renderer must create group item lists');
+    assert.match(block, /querySelectorAll\(['"]li\[data-page\]['"]\)/, 'renderer must discover existing page nodes');
+    assert.match(block, /\.appendChild\(item\)/, 'renderer must move existing page nodes instead of cloning them');
+    assert.match(block, /aria-expanded/, 'group toggles must expose expanded state');
+    assert.match(block, /aria-controls/, 'group toggles must identify their collapse region');
+    assert.doesNotMatch(block, /\.click\(\)/, 'category toggles must never click a child page');
+    assert.match(block, /fpToolsNavExpandedSections/, 'expanded state must be persisted best-effort');
+}
+
+function testPageClickContractAndRestore() {
     const setupStart = source.indexOf('function setupPopupNavigation()');
-    const navItemsPos = source.indexOf("const navItems = toolsPopup.querySelectorAll('.fp-tools-nav li, .fp-tools-header-tab');", setupStart);
-    const sectionsPos = source.indexOf('const navSections = setupNavigationSections(toolsPopup);', setupStart);
-    assert.ok(sectionsPos > setupStart && sectionsPos < navItemsPos, 'section IA must be initialized before page click handlers');
+    const setupEnd = source.indexOf('function setupFinanceHubUI', setupStart);
+    const setupBlock = source.slice(setupStart, setupEnd);
+    assert.match(setupBlock, /const navSections = setupNavigationSections\(toolsPopup\)/);
+    assert.match(setupBlock, /navSections\.showSectionForPage\(pageId\)/, 'page click must reveal its owning section');
+    assert.match(setupBlock, /fpToolsLastPage:\s*pageId/, 'existing fpToolsLastPage persistence must remain');
 
-    const clickWindow = source.slice(navItemsPos, navItemsPos + 1900);
-    assert.match(clickWindow, /navSections\.showSectionForPage\(pageId\)/, 'page click must reveal its owning section');
-    assert.match(clickWindow, /fpToolsLastPage:\s*pageId/, 'existing fpToolsLastPage persistence must remain');
+    const restoreStart = source.indexOf('async function loadLastActivePage()');
+    const restoreBlock = source.slice(restoreStart, restoreStart + 750);
+    assert.match(restoreBlock, /fpToolsLastPage/);
+    assert.match(restoreBlock, /li\[data-page=/, 'restore must locate the existing data-page item');
+    assert.match(restoreBlock, /itemToActivate\.click\(\)/, 'restore must enter through the normal page click contract');
 }
 
-function testSearchCanCrossSectionBoundariesAndRestoreContext() {
+function testSearchRestoresAccordionState() {
     const searchStart = source.indexOf('function setupNavSearch(toolsPopup)');
     const searchEnd = source.indexOf('async function loadLastActivePage()', searchStart);
     const searchBlock = source.slice(searchStart, searchEnd);
-    assert.match(searchBlock, /navSections\.revealAllForSearch\(\)/, 'search must reveal pages across all sections');
-    assert.match(searchBlock, /navSections\.refresh\(\)/, 'clearing search must restore the active contextual section');
-    assert.match(searchBlock, /compactNav\(toolsPopup\)/, 'search must rebalance the two-column grid');
+    assert.match(searchBlock, /searchExpandedSnapshot/, 'search must snapshot expanded sections');
+    assert.match(searchBlock, /getExpandedSections\(\)/, 'search must read the pre-search accordion state');
+    assert.match(searchBlock, /setExpandedSections\(/, 'search must restore the pre-search accordion state');
+    assert.match(searchBlock, /revealAllForSearch\(/, 'search must reveal matching sections');
+    assert.doesNotMatch(searchBlock, /compactNav\(/, 'search must not rebalance a removed two-column grid');
 }
 
-function testLastPageRestoreStillUsesNormalClickPath() {
-    const start = source.indexOf('async function loadLastActivePage()');
-    const block = source.slice(start, start + 650);
-    assert.match(block, /fpToolsLastPage/, 'restore must still read the saved page id');
-    assert.match(block, /li\[data-page=/, 'restore must still locate the existing data-page item');
-    assert.match(block, /itemToActivate\.click\(\)/, 'restore must still enter through the normal page click contract');
+function testGlobalChatAndShortcutContracts() {
+    assert.match(source, /li\[data-page="global_chat"\]/, 'global_chat must remain an existing nav item');
+    assert.match(source, /(?:ctrlKey|metaKey)[\s\S]{0,180}['"]k['"][\s\S]{0,260}fptNavSearch/, 'Ctrl/Cmd+K must focus the open popup search');
 }
 
-function testContextualNavStylesExist() {
+function testAccordionStyles() {
     for (const selector of [
+        '.fpt-nav-groups',
+        '.fpt-nav-group',
+        '.fpt-nav-group-toggle',
+        '.fpt-nav-group-chevron',
+        '.fpt-nav-group-collapse',
+        '.fpt-nav-group-items',
+        '.fpt-nav-scroll'
+    ]) {
+        assert.ok(css.includes(selector), 'missing accordion style: ' + selector);
+    }
+    assert.match(css, /prefers-reduced-motion/, 'accordion animation must support reduced motion');
+    for (const legacySelector of [
         '.fpt-nav-primary',
         '.fpt-nav-section-btn',
         '.fpt-nav-context-head',
-        '.fpt-nav-context-list',
-        '.fpt-nav-section-hidden',
-        '.fpt-nav-more-btn'
+        '.fpt-nav-more-btn',
+        '.fpt-nav-wide'
     ]) {
-        assert.ok(css.includes(selector), 'missing contextual navigation style: ' + selector);
+        assert.doesNotMatch(css, new RegExp(legacySelector.replace(/[.-]/g, '\\$&')), 'removed contextual selector remains: ' + legacySelector);
     }
+    assert.doesNotMatch(css, /grid-template-columns:\s*1fr\s+1fr/, 'navigation CSS must not depend on a two-column grid');
 }
 
 function runAll() {
     testEveryExistingPageBelongsToExactlyOneSection();
-    testFivePrimarySectionsPlusOverflow();
-    testNavigationBindingPreservesExistingPageContract();
-    testSearchCanCrossSectionBoundariesAndRestoreContext();
-    testLastPageRestoreStillUsesNormalClickPath();
-    testContextualNavStylesExist();
+    testSixIndependentAccordionSections();
+    testAccordionRendererMovesExistingNodes();
+    testPageClickContractAndRestore();
+    testSearchRestoresAccordionState();
+    testGlobalChatAndShortcutContracts();
+    testAccordionStyles();
     console.log('T18_NAVIGATION_IA_PASS');
 }
 
