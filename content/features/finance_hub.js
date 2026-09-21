@@ -4386,8 +4386,34 @@
             trigger: shell.querySelector('.fpt-fin-select-trigger'),
             label: shell.querySelector('.fpt-fin-select-label'),
             dropdown: shell.querySelector('.fpt-fin-select-dropdown'),
-            list: shell.querySelector('.fpt-fin-select-list')
+            list: shell.querySelector('.fpt-fin-select-list'),
+            scrollbar: shell.querySelector('.fpt-fin-select-scrollbar'),
+            thumb: shell.querySelector('.fpt-fin-select-scrollbar-thumb')
         };
+    }
+
+    function syncFinanceCustomSelectScrollbar(select) {
+        const parts = financeCustomSelectParts(select);
+        if (!parts || !parts.list || !parts.scrollbar || !parts.thumb) return;
+
+        const scrollRange = Math.max(0, parts.list.scrollHeight - parts.list.clientHeight);
+        const hasOverflow = scrollRange > 1;
+        parts.scrollbar.hidden = !hasOverflow;
+        parts.shell.classList.toggle('has-scroll', hasOverflow);
+        if (!hasOverflow) {
+            parts.thumb.style.removeProperty('height');
+            parts.thumb.style.removeProperty('transform');
+            return;
+        }
+
+        const trackHeight = Math.max(0, parts.scrollbar.clientHeight);
+        const thumbHeight = Math.min(40, Math.max(32, trackHeight - 8));
+        const travel = Math.max(0, trackHeight - thumbHeight);
+        const ratio = scrollRange > 0 ? parts.list.scrollTop / scrollRange : 0;
+        const top = Math.max(0, Math.min(travel, travel * ratio));
+
+        parts.thumb.style.height = `${thumbHeight}px`;
+        parts.thumb.style.transform = `translate3d(0, ${top}px, 0)`;
     }
 
     function syncFinanceCustomSelect(select, rebuildOptions) {
@@ -4424,6 +4450,11 @@
             item.setAttribute('aria-selected', selected ? 'true' : 'false');
             item.tabIndex = selected ? 0 : -1;
         });
+
+        const raf = typeof requestAnimationFrame === 'function'
+            ? requestAnimationFrame
+            : (callback) => setTimeout(callback, 0);
+        raf(() => syncFinanceCustomSelectScrollbar(select));
     }
 
     function closeFinanceCustomSelect(select, restoreFocus) {
@@ -4453,29 +4484,55 @@
         parts.dropdown.hidden = false;
         parts.shell.classList.add('is-open');
         parts.trigger.setAttribute('aria-expanded', 'true');
+        parts.dropdown.style.setProperty('--fpt-fin-dropdown-shift', '0px');
 
-        // Open upward if the bottom edge of the popup would be clipped.
+        // Open upward if the popup would be clipped at the bottom edge.
         parts.shell.classList.remove('opens-up');
         if (typeof window !== 'undefined' && parts.trigger.getBoundingClientRect) {
             const triggerRect = parts.trigger.getBoundingClientRect();
-            const listHeight = Math.min(parts.list.scrollHeight || 264, 264);
+            const listHeight = Math.min(parts.list.scrollHeight || 240, 240);
+            const popupHeight = listHeight + 16;
             const spaceBelow = window.innerHeight - triggerRect.bottom;
             const spaceAbove = triggerRect.top;
-            if (spaceBelow < listHeight + 18 && spaceAbove > spaceBelow) {
+            if (spaceBelow < popupHeight + 12 && spaceAbove > spaceBelow) {
                 parts.shell.classList.add('opens-up');
             }
         }
 
-        if (focusSelected) {
-            const selected = parts.list.querySelector('.fpt-fin-select-option.is-selected')
-                || parts.list.querySelector('.fpt-fin-select-option');
-            if (selected && typeof selected.focus === 'function') {
-                try { selected.focus({ preventScroll: true }); } catch (_) { selected.focus(); }
-                if (typeof selected.scrollIntoView === 'function') {
-                    try { selected.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+        const raf = typeof requestAnimationFrame === 'function'
+            ? requestAnimationFrame
+            : (callback) => setTimeout(callback, 0);
+
+        raf(() => {
+            // Keep the rounded popup fully inside the viewport even for the
+            // first/last filter column and narrow popup widths.
+            if (typeof window !== 'undefined' && parts.dropdown.getBoundingClientRect) {
+                const pad = 12;
+                const rect = parts.dropdown.getBoundingClientRect();
+                let shift = 0;
+                if (rect.right > window.innerWidth - pad) {
+                    shift -= rect.right - (window.innerWidth - pad);
+                }
+                if (rect.left + shift < pad) {
+                    shift += pad - (rect.left + shift);
+                }
+                parts.dropdown.style.setProperty('--fpt-fin-dropdown-shift', `${Math.round(shift)}px`);
+            }
+
+            if (focusSelected) {
+                const selected = parts.list.querySelector('.fpt-fin-select-option.is-selected')
+                    || parts.list.querySelector('.fpt-fin-select-option');
+                if (selected && typeof selected.focus === 'function') {
+                    try { selected.focus({ preventScroll: true }); } catch (_) { selected.focus(); }
+                    if (typeof selected.scrollIntoView === 'function') {
+                        try { selected.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+                    }
                 }
             }
-        }
+
+            syncFinanceCustomSelectScrollbar(select);
+            raf(() => syncFinanceCustomSelectScrollbar(select));
+        });
     }
 
     function enhanceFinanceCustomSelect(select) {
@@ -4525,9 +4582,19 @@
             trigger.setAttribute('aria-controls', list.id);
         }
 
+        const scrollbar = document.createElement('div');
+        scrollbar.className = 'fpt-fin-select-scrollbar';
+        scrollbar.setAttribute('aria-hidden', 'true');
+        scrollbar.hidden = true;
+
+        const scrollbarThumb = document.createElement('div');
+        scrollbarThumb.className = 'fpt-fin-select-scrollbar-thumb';
+        scrollbar.appendChild(scrollbarThumb);
+
         trigger.appendChild(label);
         trigger.appendChild(chevron);
         dropdown.appendChild(list);
+        dropdown.appendChild(scrollbar);
 
         select.parentNode.insertBefore(shell, select);
         shell.appendChild(select);
@@ -4616,6 +4683,59 @@
             if (next && typeof next.scrollIntoView === 'function') {
                 try { next.scrollIntoView({ block: 'nearest' }); } catch (_) {}
             }
+        });
+
+        list.addEventListener('scroll', () => syncFinanceCustomSelectScrollbar(select), { passive: true });
+
+        scrollbar.addEventListener('pointerdown', event => {
+            if (event.target === scrollbarThumb) return;
+            event.preventDefault();
+            event.stopPropagation();
+
+            const trackRect = scrollbar.getBoundingClientRect();
+            const thumbHeight = scrollbarThumb.offsetHeight || 36;
+            const travel = Math.max(1, trackRect.height - thumbHeight);
+            const pointerTop = Math.max(0, Math.min(travel, event.clientY - trackRect.top - thumbHeight / 2));
+            const scrollRange = Math.max(0, list.scrollHeight - list.clientHeight);
+            list.scrollTop = scrollRange * (pointerTop / travel);
+            syncFinanceCustomSelectScrollbar(select);
+        });
+
+        scrollbarThumb.addEventListener('pointerdown', event => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const startY = event.clientY;
+            const startScrollTop = list.scrollTop;
+            const trackHeight = scrollbar.clientHeight;
+            const thumbHeight = scrollbarThumb.offsetHeight || 36;
+            const travel = Math.max(1, trackHeight - thumbHeight);
+            const scrollRange = Math.max(0, list.scrollHeight - list.clientHeight);
+
+            scrollbarThumb.classList.add('is-dragging');
+            if (typeof scrollbarThumb.setPointerCapture === 'function') {
+                try { scrollbarThumb.setPointerCapture(event.pointerId); } catch (_) {}
+            }
+
+            const onMove = moveEvent => {
+                const delta = moveEvent.clientY - startY;
+                list.scrollTop = startScrollTop + (delta / travel) * scrollRange;
+                syncFinanceCustomSelectScrollbar(select);
+            };
+
+            const onUp = upEvent => {
+                scrollbarThumb.classList.remove('is-dragging');
+                document.removeEventListener('pointermove', onMove, true);
+                document.removeEventListener('pointerup', onUp, true);
+                document.removeEventListener('pointercancel', onUp, true);
+                if (typeof scrollbarThumb.releasePointerCapture === 'function') {
+                    try { scrollbarThumb.releasePointerCapture(upEvent.pointerId); } catch (_) {}
+                }
+            };
+
+            document.addEventListener('pointermove', onMove, true);
+            document.addEventListener('pointerup', onUp, true);
+            document.addEventListener('pointercancel', onUp, true);
         });
 
         select.addEventListener('change', () => syncFinanceCustomSelect(select, false));
