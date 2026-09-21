@@ -55,7 +55,7 @@ function testAccordionRendererMovesExistingNodes() {
     assert.match(block, /aria-expanded/, 'group toggles must expose expanded state');
     assert.match(block, /aria-controls/, 'group toggles must identify their collapse region');
     assert.doesNotMatch(block, /\.click\(\)/, 'category toggles must never click a child page');
-    assert.match(block, /fpToolsNavExpandedSections/, 'expanded state must be persisted best-effort');
+    assert.match(source, /fpToolsNavExpandedSections/, 'expanded state must be persisted best-effort');
 }
 
 function testPageClickContractAndRestore() {
@@ -71,6 +71,7 @@ function testPageClickContractAndRestore() {
     assert.match(restoreBlock, /fpToolsLastPage/);
     assert.match(restoreBlock, /li\[data-page=/, 'restore must locate the existing data-page item');
     assert.match(restoreBlock, /itemToActivate\.click\(\)/, 'restore must enter through the normal page click contract');
+    assert.match(source, /restored\.add\(activeSection\)/, 'async expanded-state restore must keep the active page section open');
 }
 
 function testSearchRestoresAccordionState() {
@@ -85,8 +86,10 @@ function testSearchRestoresAccordionState() {
 }
 
 function testGlobalChatAndShortcutContracts() {
-    assert.match(source, /li\[data-page="global_chat"\]/, 'global_chat must remain an existing nav item');
-    assert.match(source, /(?:ctrlKey|metaKey)[\s\S]{0,180}['"]k['"][\s\S]{0,260}fptNavSearch/, 'Ctrl/Cmd+K must focus the open popup search');
+    assert.match(source, /<li data-page="global_chat"/, 'global_chat must remain an existing nav item');
+    assert.match(source, /e\.ctrlKey \|\| e\.metaKey/, 'shortcut must support Ctrl and Cmd');
+    assert.match(source, /String\(e\.key\)\.toLowerCase\(\) !== ['"]k['"]/, 'shortcut must listen for K');
+    assert.match(source, /input\.focus\(\)[\s\S]{0,80}input\.select\(\)/, 'shortcut must focus and select the popup search');
 }
 
 function testAccordionStyles() {

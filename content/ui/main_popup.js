@@ -1925,11 +1925,38 @@ const FPT_MENU_THEME_CSS = `
 /* ─── навигация ──────────────────────────────────────────────────────────── */
 .fp-tools-popup.fptm-themed .fp-tools-nav{
     background:var(--fptm-nav) !important; border-right:1px solid var(--fptm-border) !important;
-    position:relative; padding:16px 12px; display:flex; flex-direction:column;
+    position:relative; padding:16px 12px; display:flex; flex-direction:column; overflow:hidden; min-height:0;
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav ul{ flex:0 0 auto; }
+.fp-tools-popup.fptm-themed .fp-tools-nav ul{ list-style:none; margin:0; padding:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:3px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{
+    width:100%; min-width:0; min-height:36px; display:flex; align-items:center; gap:8px;
+    padding:7px 8px; border:1px solid transparent; border-radius:9px;
+    background:transparent !important; color:var(--fptm-muted) !important;
+    box-shadow:none !important; font:inherit; font-size:12px; font-weight:700; text-align:left; cursor:pointer;
+    transition:background .18s ease, color .18s ease, border-color .18s ease;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:hover,
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{
+    background:var(--fptm-hover) !important; color:var(--fptm-text) !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{ color:var(--fptm-accent) !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon,
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{ color:inherit !important; font-size:17px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
+    flex:0 0 auto; margin-left:auto; transition:transform .18s cubic-bezier(.22,1,.36,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-chevron{ transform:rotate(90deg); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse{
+    display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .2s cubic-bezier(.22,1,.36,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a{
-    color:var(--fptm-muted) !important; background:transparent !important; border-radius:11px !important;
+    display:flex; align-items:center; min-height:28px; padding:6px 8px 6px 30px;
+    gap:8px; color:var(--fptm-muted) !important; background:transparent !important; border-radius:8px !important;
     box-shadow:none !important; border:1px solid transparent !important; font-weight:600; transition:background .15s ease, color .15s ease;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a:hover{ background:var(--fptm-hover) !important; color:var(--fptm-text) !important; }
@@ -1939,17 +1966,10 @@ const FPT_MENU_THEME_CSS = `
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a .nav-icon{ color:inherit !important; opacity:.92; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li.active a .nav-icon{ color:var(--fptm-accent) !important; opacity:1; }
-.fp-tools-popup.fptm-themed .fp-nav-divider{ color:var(--fptm-faint) !important; background:none !important; pointer-events:none; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ content:'•'; flex:0 0 auto; margin-left:2px; color:var(--fptm-accent); opacity:.72; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a .nav-icon{ display:none; }
 .fp-tools-popup.fptm-themed .fp-tools-nav::-webkit-scrollbar-thumb{ background:var(--fptm-border) !important; }
-.fp-tools-popup.fptm-themed .fp-tools-nav-cloud{
-    pointer-events:none; margin:auto -12px -16px; padding:34px 14px 16px;
-    display:flex; justify-content:center;
-    /* Градиент — фон контейнера: он ВСЕГДА рисуется под содержимым,
-       поэтому облако гарантированно поверх затемнения. Доходит до самого
-       нижнего края панели (margin-bottom:-16px съедает паддинг навигации). */
-    background:linear-gradient(180deg, transparent 0%, var(--fptm-nav-fade) 100%);
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav-cloud-img{ width:100%; max-width:170px; height:auto; display:block; }
+.fp-tools-popup.fptm-themed .fp-tools-nav-cloud{ display:none !important; }
 
 /* ─── контент ────────────────────────────────────────────────────────────── */
 .fp-tools-popup.fptm-themed .fp-tools-content{ background:var(--fptm-bg) !important; color:var(--fptm-text) !important; }
@@ -2619,12 +2639,12 @@ function _updateColorInputs(palette) {
 
 
 const FPT_NAV_SECTIONS = Object.freeze([
-    { id: 'core', label: 'Основное', icon: 'home', primary: true, pages: Object.freeze(['general', 'accounts', 'needs']) },
-    { id: 'store', label: 'Магазин', icon: 'storefront', primary: true, pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit', 'blacklist']) },
-    { id: 'messages', label: 'Сообщения', icon: 'chat', primary: true, pages: Object.freeze(['templates', 'slash_commands', 'auto_review', 'global_chat']) },
-    { id: 'finance', label: 'Финансы', icon: 'payments', primary: true, pages: Object.freeze(['finance_hub', 'piggy_banks', 'calculator', 'currency_calc']) },
-    { id: 'settings', label: 'Настройки', icon: 'settings', primary: true, pages: Object.freeze(['theme', 'effects', 'epic_nicks', 'telegram', 'settings_io']) },
-    { id: 'more', label: 'Ещё', icon: 'more_horiz', primary: false, pages: Object.freeze(['notes', 'overview', 'tickets', 'support']) }
+    { id: 'core', label: 'Основное', icon: 'home', pages: Object.freeze(['general', 'accounts', 'needs']) },
+    { id: 'store', label: 'Магазин', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit', 'blacklist']) },
+    { id: 'messages', label: 'Сообщения', icon: 'chat', pages: Object.freeze(['templates', 'slash_commands', 'auto_review', 'global_chat']) },
+    { id: 'finance', label: 'Финансы', icon: 'payments', pages: Object.freeze(['finance_hub', 'piggy_banks', 'calculator', 'currency_calc']) },
+    { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['theme', 'effects', 'epic_nicks', 'telegram', 'settings_io']) },
+    { id: 'more', label: 'Ещё', icon: 'more_horiz', pages: Object.freeze(['notes', 'overview', 'tickets', 'support']) }
 ]);
 
 const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
@@ -2635,13 +2655,15 @@ const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     settings_io: 'Импорт / экспорт'
 });
 
+const FPT_NAV_EXPANDED_STORAGE_KEY = 'fpToolsNavExpandedSections';
+
 function setupNavigationSections(toolsPopup) {
     if (!toolsPopup) return null;
     if (toolsPopup._fptNavSections) return toolsPopup._fptNavSections;
 
     const nav = toolsPopup.querySelector('.fp-tools-nav');
-    const ul = nav && nav.querySelector('ul');
-    if (!nav || !ul) return null;
+    const legacyList = nav && nav.querySelector('ul');
+    if (!nav || !legacyList) return null;
 
     const sectionById = new Map(FPT_NAV_SECTIONS.map(section => [section.id, section]));
     const pageToSection = new Map();
@@ -2649,170 +2671,170 @@ function setupNavigationSections(toolsPopup) {
         section.pages.forEach(pageId => pageToSection.set(pageId, section.id));
     });
 
-    const pageItems = Array.from(ul.querySelectorAll('li[data-page]'));
+    const pageItems = Array.from(legacyList.querySelectorAll('li[data-page]'));
     pageItems.forEach(item => {
         const pageId = item.dataset.page;
         const sectionId = pageToSection.get(pageId) || 'more';
         item.dataset.navSection = sectionId;
+        item.classList.add('fpt-nav-child');
+        item.classList.remove('fpt-nav-hidden', 'fpt-nav-section-hidden');
+        item.setAttribute('aria-hidden', 'false');
 
         const override = FPT_NAV_LABEL_OVERRIDES[pageId];
         const label = item.querySelector('a > span:last-child');
         if (override && label) label.textContent = override;
     });
 
-    ul.classList.add('fpt-nav-context-list');
-    ul.querySelectorAll('li.fp-nav-divider').forEach(divider => {
-        divider.classList.add('fpt-nav-legacy-divider');
-        divider.setAttribute('aria-hidden', 'true');
-    });
+    const scroll = document.createElement('div');
+    scroll.className = 'fpt-nav-scroll';
+    scroll.setAttribute('aria-label', 'Разделы FP Tools');
+    const groups = document.createElement('div');
+    groups.className = 'fpt-nav-groups';
+    scroll.appendChild(groups);
+    nav.insertBefore(scroll, legacyList);
+    legacyList.remove();
 
-    const primaryNav = document.createElement('div');
-    primaryNav.className = 'fpt-nav-primary';
-    primaryNav.setAttribute('aria-label', 'Основные разделы FP Tools');
-
-    const primaryButtons = new Map();
-    FPT_NAV_SECTIONS.filter(section => section.primary).forEach(section => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'fpt-nav-section-btn';
-        button.dataset.section = section.id;
-        button.setAttribute('aria-pressed', 'false');
-
-        const icon = document.createElement('span');
-        icon.className = 'material-symbols-rounded';
-        icon.textContent = section.icon;
-
-        const label = document.createElement('span');
-        label.className = 'fpt-nav-section-label';
-        label.textContent = section.label;
-
-        button.append(icon, label);
-        primaryNav.appendChild(button);
-        primaryButtons.set(section.id, button);
-    });
-
-    const contextHead = document.createElement('div');
-    contextHead.className = 'fpt-nav-context-head';
-    contextHead.innerHTML = '<span class="fpt-nav-context-label"></span><span class="fpt-nav-context-count"></span>';
-
-    const moreButton = document.createElement('button');
-    moreButton.type = 'button';
-    moreButton.className = 'fpt-nav-more-btn';
-    moreButton.dataset.section = 'more';
-    moreButton.innerHTML = '<span class="material-symbols-rounded">more_horiz</span><span>Ещё</span>';
-    moreButton.setAttribute('aria-pressed', 'false');
-
-    nav.insertBefore(primaryNav, ul);
-    nav.insertBefore(contextHead, ul);
-    ul.insertAdjacentElement('afterend', moreButton);
-
-    const contextLabel = contextHead.querySelector('.fpt-nav-context-label');
-    const contextCount = contextHead.querySelector('.fpt-nav-context-count');
-    const lastPageBySection = Object.create(null);
-
-    pageItems.forEach(item => {
-        if (item.classList.contains('active')) {
-            lastPageBySection[item.dataset.navSection] = item.dataset.page;
-        }
-    });
-
-    let activeSection = (() => {
-        const activePage = pageItems.find(item => item.classList.contains('active'));
-        return activePage?.dataset.navSection || 'core';
-    })();
-
-    function getItemsForSection(sectionId) {
-        return pageItems.filter(item => item.dataset.navSection === sectionId);
+    const cloud = nav.querySelector('.fp-tools-nav-cloud');
+    if (cloud) {
+        cloud.hidden = true;
+        cloud.setAttribute('aria-hidden', 'true');
     }
 
-    function clearSearchIfNeeded() {
-        const search = toolsPopup.querySelector('#fptNavSearch');
-        if (!search || !search.value) return;
-        search.value = '';
+    const groupRefs = new Map();
+    FPT_NAV_SECTIONS.forEach(section => {
+        const group = document.createElement('section');
+        group.className = 'fpt-nav-group';
+        group.dataset.section = section.id;
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'fpt-nav-group-toggle';
+        toggle.dataset.section = section.id;
+        toggle.setAttribute('aria-expanded', 'false');
+
+        const icon = document.createElement('span');
+        icon.className = 'fpt-nav-group-icon material-symbols-rounded';
+        icon.textContent = section.icon;
+        const title = document.createElement('span');
+        title.className = 'fpt-nav-group-title';
+        title.textContent = section.label;
+        const chevron = document.createElement('span');
+        chevron.className = 'fpt-nav-group-chevron material-symbols-rounded';
+        chevron.textContent = 'chevron_right';
+        toggle.append(icon, title, chevron);
+
+        const collapse = document.createElement('div');
+        collapse.className = 'fpt-nav-group-collapse';
+        const items = document.createElement('ul');
+        items.className = 'fpt-nav-group-items';
+        const collapseId = 'fpt-nav-group-' + section.id + '-items';
+        collapse.id = collapseId;
+        toggle.setAttribute('aria-controls', collapseId);
+        section.pages.forEach(pageId => {
+            const item = pageItems.find(entry => entry.dataset.page === pageId);
+            if (item) items.appendChild(item);
+        });
+        collapse.appendChild(items);
+        group.append(toggle, collapse);
+        groups.appendChild(group);
+        groupRefs.set(section.id, { group, toggle, collapse, items });
+    });
+
+    const activePage = pageItems.find(item => item.classList.contains('active'));
+    let activeSection = activePage?.dataset.navSection || 'core';
+    let expandedSections = new Set([activeSection, 'core']);
+
+    function normalizeSectionIds(value) {
+        const ids = Array.isArray(value) || value instanceof Set ? Array.from(value) : [];
+        return ids.filter(id => sectionById.has(id));
+    }
+
+    function persistExpandedSections() {
         try {
-            search.dispatchEvent(new Event('input', { bubbles: true }));
+            if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                chrome.storage.local.set({ [FPT_NAV_EXPANDED_STORAGE_KEY]: Array.from(expandedSections) });
+            }
         } catch (_) {}
     }
 
-    function renderSection(sectionId) {
-        const resolvedId = sectionById.has(sectionId) ? sectionId : 'more';
-        const section = sectionById.get(resolvedId);
-        activeSection = resolvedId;
-        nav.dataset.activeSection = resolvedId;
-
-        pageItems.forEach(item => {
-            const visible = item.dataset.navSection === resolvedId;
-            item.classList.toggle('fpt-nav-section-hidden', !visible);
-            if (!nav.classList.contains('fpt-search-active')) {
-                item.setAttribute('aria-hidden', visible ? 'false' : 'true');
-            }
+    function renderExpandedSections() {
+        nav.dataset.expandedSections = Array.from(expandedSections).join(',');
+        groupRefs.forEach(({ group, toggle, collapse }, sectionId) => {
+            const expanded = expandedSections.has(sectionId);
+            group.classList.toggle('is-expanded', expanded);
+            group.classList.toggle('is-active-section', sectionId === activeSection);
+            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            collapse.setAttribute('aria-hidden', expanded ? 'false' : 'true');
         });
+    }
 
-        primaryButtons.forEach((button, id) => {
-            const isActive = id === resolvedId;
-            button.classList.toggle('active', isActive);
-            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-        });
+    function setExpandedSections(next, persist = true) {
+        expandedSections = new Set(normalizeSectionIds(next));
+        renderExpandedSections();
+        if (persist) persistExpandedSections();
+        return Array.from(expandedSections);
+    }
 
-        const moreActive = resolvedId === 'more';
-        moreButton.classList.toggle('active', moreActive);
-        moreButton.setAttribute('aria-pressed', moreActive ? 'true' : 'false');
+    function expandSection(sectionId, persist = true) {
+        if (!sectionById.has(sectionId)) return;
+        expandedSections.add(sectionId);
+        renderExpandedSections();
+        if (persist) persistExpandedSections();
+    }
 
-        const visibleItems = getItemsForSection(resolvedId);
-        if (contextLabel) contextLabel.textContent = section?.label || 'Ещё';
-        if (contextCount) contextCount.textContent = visibleItems.length + (visibleItems.length === 1 ? ' функция' : ' функций');
-
-        compactNav(toolsPopup);
+    function toggleSection(sectionId) {
+        if (!sectionById.has(sectionId)) return;
+        if (expandedSections.has(sectionId)) expandedSections.delete(sectionId);
+        else expandedSections.add(sectionId);
+        renderExpandedSections();
+        persistExpandedSections();
     }
 
     function showSectionForPage(pageId) {
         const item = pageItems.find(entry => entry.dataset.page === pageId);
         const sectionId = item?.dataset.navSection || pageToSection.get(pageId) || 'more';
-        if (item) lastPageBySection[sectionId] = pageId;
-        renderSection(sectionId);
+        activeSection = sectionId;
+        expandSection(sectionId);
+        renderExpandedSections();
     }
 
-    function openSection(sectionId) {
-        clearSearchIfNeeded();
-        const items = getItemsForSection(sectionId);
-        if (!items.length) return;
-
-        renderSection(sectionId);
-
-        const preferredId = lastPageBySection[sectionId];
-        const target = (preferredId && items.find(item => item.dataset.page === preferredId)) || items[0];
-        if (!target) return;
-
-        if (target.classList.contains('active')) {
-            showSectionForPage(target.dataset.page);
-        } else {
-            target.click();
-        }
-    }
-
-    function revealAllForSearch() {
+    function revealAllForSearch(sectionIds) {
+        const ids = sectionIds == null ? FPT_NAV_SECTIONS.map(section => section.id) : normalizeSectionIds(sectionIds);
+        setExpandedSections(ids, false);
         pageItems.forEach(item => {
             item.classList.remove('fpt-nav-section-hidden');
             item.setAttribute('aria-hidden', 'false');
         });
-        compactNav(toolsPopup);
     }
 
     const api = {
         get activeSection() { return activeSection; },
         showSectionForPage,
-        openSection,
-        refresh: () => renderSection(activeSection),
+        expandSection,
+        toggleSection,
+        getExpandedSections: () => Array.from(expandedSections),
+        setExpandedSections,
+        refresh: renderExpandedSections,
         revealAllForSearch
     };
     toolsPopup._fptNavSections = api;
 
-    primaryButtons.forEach((button, sectionId) => {
-        button.addEventListener('click', () => openSection(sectionId));
+    groupRefs.forEach(({ toggle }, sectionId) => {
+        toggle.addEventListener('click', () => toggleSection(sectionId));
     });
-    moreButton.addEventListener('click', () => openSection('more'));
 
-    renderSection(activeSection);
+    renderExpandedSections();
+    try {
+        if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+            Promise.resolve(chrome.storage.local.get(FPT_NAV_EXPANDED_STORAGE_KEY)).then(result => {
+                if (Array.isArray(result?.[FPT_NAV_EXPANDED_STORAGE_KEY])) {
+                    const restored = new Set(result[FPT_NAV_EXPANDED_STORAGE_KEY]);
+                    if (activeSection) restored.add(activeSection);
+                    setExpandedSections(restored, false);
+                }
+            }).catch(() => {});
+        }
+    } catch (_) {}
     return api;
 }
 
@@ -2878,7 +2900,6 @@ function setupPopupNavigation() {
         });
     }
 
-    compactNav(toolsPopup);
     setupNavSearch(toolsPopup);
     setupAccentPicker(toolsPopup);
     setupFinanceHubUI(toolsPopup);
@@ -3136,37 +3157,6 @@ function attachAutoReplyImageButtons(toolsPopup) {
     }
 }
 
-// Auto-compaction: in the 2-column nav grid, stretch the last button of any section that
-// would otherwise leave a gap (odd count, or a lone button) so the layout never looks empty.
-function compactNav(toolsPopup) {
-    const nav = toolsPopup.querySelector('.fp-tools-nav');
-    const items = Array.from(toolsPopup.querySelectorAll('.fp-tools-nav li[data-page]'));
-    if (!nav || !items.length) return;
-
-    items.forEach(item => item.classList.remove('fpt-nav-wide'));
-
-    if (nav.classList.contains('fpt-search-active')) {
-        const visibleMatches = items.filter(item => !item.classList.contains('fpt-nav-hidden'));
-        if (visibleMatches.length % 2 === 1) {
-            visibleMatches[visibleMatches.length - 1].classList.add('fpt-nav-wide');
-        }
-        return;
-    }
-
-    const groups = new Map();
-    items.forEach(item => {
-        const sectionId = item.dataset.navSection || 'legacy';
-        if (!groups.has(sectionId)) groups.set(sectionId, []);
-        groups.get(sectionId).push(item);
-    });
-
-    groups.forEach(group => {
-        if (group.length % 2 === 1) {
-            group[group.length - 1].classList.add('fpt-nav-wide');
-        }
-    });
-}
-
 function setupAccentPicker(toolsPopup) {
     const btn = toolsPopup.querySelector('#fptAccentBtn');
     const input = toolsPopup.querySelector('#fptAccentInput');
@@ -3220,6 +3210,7 @@ function setupNavSearch(toolsPopup) {
     const body = toolsPopup.querySelector('.fp-tools-body');
     const navSections = toolsPopup._fptNavSections || null;
     if (!input || !nav || !resultsBox) return;
+    let searchExpandedSnapshot = null;
 
     // Выносим выпадашку результатов из левой панели (у неё overflow:auto, который
     // обрезал бы список) в общий контейнер тела попапа — так список может свободно
@@ -3330,12 +3321,19 @@ function setupNavSearch(toolsPopup) {
                 li.setAttribute('aria-hidden', 'false');
             });
             dividers.forEach(d => d.classList.remove('fpt-nav-hidden'));
-            if (navSections) navSections.refresh();
-            compactNav(toolsPopup);
+            if (navSections) {
+                if (searchExpandedSnapshot) navSections.setExpandedSections(searchExpandedSnapshot, false);
+                else navSections.refresh();
+            }
+            searchExpandedSnapshot = null;
             return;
         }
 
-        if (navSections) navSections.revealAllForSearch();
+        if (!searchExpandedSnapshot && navSections) {
+            searchExpandedSnapshot = navSections.getExpandedSections();
+        }
+
+        const matchingSections = new Set();
 
         items.forEach(li => {
             const label = norm(li.querySelector('span:last-child')?.textContent || '');
@@ -3343,10 +3341,11 @@ function setupNavSearch(toolsPopup) {
             li.classList.toggle('fpt-nav-hidden', !match);
             li.classList.toggle('fpt-nav-match', match);
             li.setAttribute('aria-hidden', match ? 'false' : 'true');
+            if (match && li.dataset.navSection) matchingSections.add(li.dataset.navSection);
         });
 
         dividers.forEach(d => d.classList.add('fpt-nav-hidden'));
-        compactNav(toolsPopup);
+        if (navSections) navSections.revealAllForSearch(matchingSections);
     }
 
     let t = null;
@@ -3373,6 +3372,17 @@ function setupNavSearch(toolsPopup) {
         if (!e.target.closest('.fpt-nav-search') && !e.target.closest('.fpt-nav-search-results')) hideResults(false);
     });
     clearBtn.style.display = 'none';
+
+    if (!toolsPopup.dataset.fptNavShortcutBound) {
+        toolsPopup.dataset.fptNavShortcutBound = '1';
+        toolsPopup.addEventListener('keydown', (e) => {
+            if (!(e.ctrlKey || e.metaKey) || String(e.key).toLowerCase() !== 'k') return;
+            if (!toolsPopup.classList.contains('active')) return;
+            e.preventDefault();
+            input.focus();
+            input.select();
+        });
+    }
 }
 
 
