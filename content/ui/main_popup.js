@@ -699,7 +699,7 @@ function createMainPopup() {
                             </div>
                             <div class="fpt-fin-last-updated" id="fptFinLastUpdated">
                                 <span class="material-symbols-rounded">schedule</span>
-                                <span id="fptFinLastUpdatedText">Обновлено: только что</span>
+                                <span id="fptFinLastUpdatedText">Не обновлялось</span>
                             </div>
                         </div>
                         <div class="fpt-fin-header-right">

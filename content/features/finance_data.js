@@ -231,7 +231,9 @@
         const timestamps = [salesLastUpdate, purchasesLastUpdate, operationsLastUpdate].filter(
             t => typeof t === 'number' && !isNaN(t) && t > 0
         );
-        const overallLastUpdate = timestamps.length ? Math.max(...timestamps) : null;
+        // T08: Never use the newest Overview source timestamp as overall freshness because it hides stale dependencies.
+        // Use the oldest required source timestamp (Math.min).
+        const oldestLastUpdate = timestamps.length ? Math.min(...timestamps) : null;
 
         const meta = {
             sales: {
@@ -246,13 +248,104 @@
                 lastUpdate: operationsLastUpdate,
                 count: operationsCount
             },
-            lastUpdate: overallLastUpdate
+            lastUpdate: oldestLastUpdate,
+            oldestLastUpdate,
+            componentFreshness: {
+                sales: salesLastUpdate,
+                purchases: purchasesLastUpdate,
+                operations: operationsLastUpdate
+            }
         };
 
         if (type !== undefined && type !== null) {
             return Object.prototype.hasOwnProperty.call(meta, type) ? meta[type] : null;
         }
         return meta;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ЕДИНАЯ КАЛЕНДАРНАЯ МОДЕЛЬ МСК (UTC+3, без DST) (T06)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    const MSK_OFFSET_MS = 3 * 3600 * 1000;
+    const ONE_DAY_MS = 24 * 3600 * 1000;
+
+    /**
+     * Извлечь компоненты даты/времени в часовом поясе МСК (UTC+3)
+     * строго независимо от часового пояса операционной системы.
+     * @param {number|string|Date} timestamp
+     * @returns {{ year: number, month: number, day: number, hours: number, minutes: number, seconds: number, milliseconds: number, dayOfWeek: number }}
+     */
+    function getMskParts(timestamp) {
+        const ts = normalizeTimestamp(timestamp) || 0;
+        const d = new Date(ts + MSK_OFFSET_MS);
+        return {
+            year: d.getUTCFullYear(),
+            month: d.getUTCMonth() + 1,
+            day: d.getUTCDate(),
+            hours: d.getUTCHours(),
+            minutes: d.getUTCMinutes(),
+            seconds: d.getUTCSeconds(),
+            milliseconds: d.getUTCMilliseconds(),
+            dayOfWeek: d.getUTCDay() // 0 = вс, 1 = пн, ..., 6 = сб
+        };
+    }
+
+    /**
+     * Получить ключ дня в формате YYYY-MM-DD по календарю МСК.
+     * @param {number|string|Date} timestamp
+     * @returns {string}
+     */
+    function getMskDayKey(timestamp) {
+        const p = getMskParts(timestamp);
+        return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+    }
+
+    /**
+     * Получить ключ месяца в формате YYYY-MM по календарю МСК.
+     * @param {number|string|Date} timestamp
+     * @returns {string}
+     */
+    function getMskMonthKey(timestamp) {
+        const p = getMskParts(timestamp);
+        return `${p.year}-${String(p.month).padStart(2, '0')}`;
+    }
+
+    /**
+     * Получить ключ недели в формате YYYY-MM-DD (понедельник недели) по календарю МСК.
+     * @param {number|string|Date} timestamp
+     * @returns {string}
+     */
+    function getMskWeekKey(timestamp) {
+        const ts = normalizeTimestamp(timestamp) || 0;
+        const p = getMskParts(ts);
+        // Смещение до понедельника: понедельник = 0, вторник = 1, ..., воскресенье = 6
+        const dayShift = (p.dayOfWeek + 6) % 7;
+        const mondayTs = ts - (dayShift * ONE_DAY_MS);
+        return getMskDayKey(mondayTs);
+    }
+
+    /**
+     * Форматировать дату и время по МСК (DD.MM.YYYY HH:mm или DD.MM.YYYY HH:mm:ss).
+     * @param {number|string|Date} timestamp
+     * @param {boolean} [includeSeconds=false]
+     * @returns {string}
+     */
+    function formatMskDateTime(timestamp, includeSeconds = false) {
+        if (!timestamp) return '—';
+        const ts = normalizeTimestamp(timestamp);
+        if (!ts) return '—';
+        const p = getMskParts(ts);
+        const dd = String(p.day).padStart(2, '0');
+        const mm = String(p.month).padStart(2, '0');
+        const yyyy = p.year;
+        const hh = String(p.hours).padStart(2, '0');
+        const min = String(p.minutes).padStart(2, '0');
+        if (includeSeconds) {
+            const ss = String(p.seconds).padStart(2, '0');
+            return `${dd}.${mm}.${yyyy} ${hh}:${min}:${ss}`;
+        }
+        return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -266,14 +359,14 @@
      * @param {string|Object} [period]
      * @param {Object} [options]
      * @param {number} [options.now]
-     * @param {boolean} [options.useMsk] Использовать границу суток по МСК (UTC+3)
+     * @param {boolean} [options.useMsk=true] Использовать границу суток по МСК (UTC+3)
      * @returns {{ start: number|null, end: number|null, label: string, period: string }}
      */
     function resolvePeriodRange(period, options) {
         const now = (options && typeof options.now === 'number' && !isNaN(options.now))
             ? options.now
             : Date.now();
-        const oneDay = 24 * 3600 * 1000;
+        const oneDay = ONE_DAY_MS;
 
         if (period && typeof period === 'object') {
             const start = normalizeTimestamp(period.start !== undefined ? period.start : period.from);
@@ -291,11 +384,11 @@
 
         const p = typeof period === 'string' ? period.trim().toLowerCase() : 'all';
 
-        // Расчёт полуночи текущих суток (локально или по МСК)
+        // Расчёт полуночи текущих суток (по умолчанию строго по МСК)
+        const useMsk = (options && options.useMsk !== undefined) ? Boolean(options.useMsk) : true;
         let todayStart;
-        if (options && options.useMsk) {
-            const mskOffset = 3 * 3600 * 1000;
-            todayStart = Math.floor((now + mskOffset) / oneDay) * oneDay - mskOffset;
+        if (useMsk) {
+            todayStart = Math.floor((now + MSK_OFFSET_MS) / oneDay) * oneDay - MSK_OFFSET_MS;
         } else {
             const d = new Date(now);
             todayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -638,8 +731,8 @@
      */
     function calculateSalesAggregation(orders, options) {
         const list = Array.isArray(orders) ? orders : [];
-        // Веса для нормализации к единой оси графика в legacy sales_modes.js:
-        const rates = { RUB: 0.011, USD: 1, EUR: 1.08 };
+        // Веса для нормализации к единой оси графика в legacy sales_modes.js (deprecated, Finance Hub не использует их):
+        const legacyRates = { RUB: 0.011, USD: 1, EUR: 1.08 };
 
         const byDay = {};
         const byCategory = {};
@@ -654,6 +747,20 @@
         const byProduct = {};
         const uniqueBuyerIds = new Set();
 
+        const currenciesPresent = new Set();
+        for (const o of list) {
+            const st = o.orderStatus || 'unknown';
+            if (st === 'closed' || st === 'paid') {
+                currenciesPresent.add(String(o.currency || 'UNKNOWN').toUpperCase());
+            }
+        }
+        const isSingleCurrency = currenciesPresent.size === 1;
+        const singleCur = isSingleCurrency ? [...currenciesPresent][0] : null;
+        const targetCur = (options && options.currency && options.currency !== 'all')
+            ? String(options.currency).toUpperCase()
+            : (isSingleCurrency ? singleCur : null);
+        const isMultiCurrency = !targetCur && currenciesPresent.size > 1;
+
         let pendingRevenueRUB = 0;
         let revenueUSD = 0;
         let count = 0; // число завершённых/оплаченных заказов (valid)
@@ -667,18 +774,18 @@
             const price = normalizePrice(o.price);
             const valid = (st === 'closed' || st === 'paid');
 
-            // Посуточный ключ YYYY-MM-DD
+            // Посуточный ключ YYYY-MM-DD по МСК
             const ts = typeof o.orderDate === 'number' ? o.orderDate : (normalizeTimestamp(o.orderDate) || 0);
-            const d = new Date(ts);
-            const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            const dayKey = getMskDayKey(ts);
             if (!byDay[dayKey]) {
                 byDay[dayKey] = {
                     count: 0,
                     total: 0,
                     validCount: 0,
-                    revenue: 0,
+                    revenue: isMultiCurrency ? null : 0,
                     revenueByCurrency: {},
-                    statusCounts: {}
+                    statusCounts: {},
+                    isMultiCurrency
                 };
             }
             byDay[dayKey].count++;
@@ -717,7 +824,7 @@
                 closedRevenue[cur] = (closedRevenue[cur] || 0) + price;
             } else if (st === 'paid') {
                 pendingRevenue[cur] = (pendingRevenue[cur] || 0) + price;
-                pendingRevenueRUB += price * (rates[cur] || 0) / rates.RUB;
+                pendingRevenueRUB += price * (legacyRates[cur] || 0) / legacyRates.RUB;
             } else if (st === 'refunded') {
                 refundedRevenue[cur] = (refundedRevenue[cur] || 0) + price;
             }
@@ -727,10 +834,12 @@
                 count++;
                 byCurrency[cur] = (byCurrency[cur] || 0) + price;
                 currencyValidOrderCount[cur] = (currencyValidOrderCount[cur] || 0) + 1;
-                revenueUSD += price * (rates[cur] || 0);
+                revenueUSD += price * (legacyRates[cur] || 0);
 
                 byDay[dayKey].validCount++;
-                byDay[dayKey].revenue += price * (rates[cur] || 0) / rates.RUB;
+                if (targetCur && cur === targetCur) {
+                    byDay[dayKey].revenue = (byDay[dayKey].revenue || 0) + price;
+                }
                 byDay[dayKey].revenueByCurrency[cur] = (byDay[dayKey].revenueByCurrency[cur] || 0) + price;
 
                 if (!byCategoryRevenue[cat]) byCategoryRevenue[cat] = {};
@@ -783,6 +892,10 @@
             topProducts,
             topCategories,
             uniqueBuyers: uniqueBuyerIds.size,
+            isMultiCurrency,
+            currency: targetCur,
+            currencies: Array.from(currenciesPresent),
+            // Deprecated legacy fields preserved for older sales_modes.js:
             pendingRevenueRUB,
             revenueUSD
         };
@@ -850,12 +963,22 @@
      */
     function calculateOperationsAggregation(txns, options) {
         const all = Array.isArray(txns) ? txns : [];
-        const rates = { RUB: 1, USD: 90, EUR: 98, UNKNOWN: 0 }; // справочные веса для динамики
 
         const includeNonComplete = options && options.includeNonComplete === true;
         const effectiveList = includeNonComplete
             ? all
             : all.filter(t => t.status === 'complete');
+
+        const effectiveCurrencies = new Set();
+        for (const t of effectiveList) {
+            effectiveCurrencies.add(String(t.currency || 'UNKNOWN').toUpperCase());
+        }
+        const isSingleCurrency = effectiveCurrencies.size === 1;
+        const singleCur = isSingleCurrency ? [...effectiveCurrencies][0] : null;
+        const targetCur = (options && options.currency && options.currency !== 'all')
+            ? String(options.currency).toUpperCase()
+            : (isSingleCurrency ? singleCur : null);
+        const isMultiCurrency = !targetCur && effectiveCurrencies.size > 1;
 
         const inByCur = {};
         const outByCur = {};
@@ -890,29 +1013,47 @@
             byType[type].count++;
 
             const ts = typeof t.date === 'number' ? t.date : (normalizeTimestamp(t.date) || 0);
-            const d = new Date(ts);
-            const mk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            const dk = `${mk}-${String(d.getDate()).padStart(2, '0')}`;
-            const rub = absVal * (rates[cur] || 0);
+            const mk = getMskMonthKey(ts);
+            const dk = getMskDayKey(ts);
 
             if (!byMonth[mk]) {
-                byMonth[mk] = { in: 0, out: 0, inByCur: {}, outByCur: {}, netByCur: {}, count: 0 };
+                byMonth[mk] = {
+                    in: isMultiCurrency ? null : 0,
+                    out: isMultiCurrency ? null : 0,
+                    inByCur: {},
+                    outByCur: {},
+                    netByCur: {},
+                    count: 0,
+                    isMultiCurrency
+                };
             }
             if (!byDay[dk]) {
-                byDay[dk] = { in: 0, out: 0, inByCur: {}, outByCur: {}, netByCur: {}, count: 0 };
+                byDay[dk] = {
+                    in: isMultiCurrency ? null : 0,
+                    out: isMultiCurrency ? null : 0,
+                    inByCur: {},
+                    outByCur: {},
+                    netByCur: {},
+                    count: 0,
+                    isMultiCurrency
+                };
             }
 
             byMonth[mk].count++;
             byDay[dk].count++;
 
             if (signed >= 0) {
-                byMonth[mk].in += rub;
-                byDay[dk].in += rub;
+                if (targetCur && cur === targetCur) {
+                    byMonth[mk].in = (byMonth[mk].in || 0) + absVal;
+                    byDay[dk].in = (byDay[dk].in || 0) + absVal;
+                }
                 byMonth[mk].inByCur[cur] = (byMonth[mk].inByCur[cur] || 0) + absVal;
                 byDay[dk].inByCur[cur] = (byDay[dk].inByCur[cur] || 0) + absVal;
             } else {
-                byMonth[mk].out += rub;
-                byDay[dk].out += rub;
+                if (targetCur && cur === targetCur) {
+                    byMonth[mk].out = (byMonth[mk].out || 0) + absVal;
+                    byDay[dk].out = (byDay[dk].out || 0) + absVal;
+                }
                 byMonth[mk].outByCur[cur] = (byMonth[mk].outByCur[cur] || 0) + absVal;
                 byDay[dk].outByCur[cur] = (byDay[dk].outByCur[cur] || 0) + absVal;
             }
@@ -959,7 +1100,10 @@
             byDay,
             byStatus,
             count: effectiveList.length,
-            total: all.length
+            total: all.length,
+            isMultiCurrency,
+            currency: targetCur,
+            currencies: Array.from(effectiveCurrencies)
         };
     }
 
@@ -1028,7 +1172,16 @@
         aggregateSales,
         aggregatePurchases,
         aggregateOperations,
-        aggregateProfit
+        aggregateProfit,
+
+        // Единая календарная модель МСК (T06)
+        MSK_OFFSET_MS,
+        ONE_DAY_MS,
+        getMskParts,
+        getMskDayKey,
+        getMskMonthKey,
+        getMskWeekKey,
+        formatMskDateTime
     };
 
     root.FPTFinanceData = api;

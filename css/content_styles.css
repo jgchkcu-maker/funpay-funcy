@@ -8824,6 +8824,23 @@ textarea.fp-cw-input { line-height:1.4; }
     background: var(--fptm-hover, rgba(255, 255, 255, 0.09)) !important;
 }
 
+/* Potential snapshot badge (T05) */
+.fp-tools-popup .fpt-fin-snapshot-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: var(--fptm-field, var(--fptm-surface-2, rgba(255, 255, 255, 0.06)));
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.12));
+    border-radius: 8px;
+    color: var(--fptm-muted, #94a3b8);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+    user-select: none;
+    box-sizing: border-box;
+}
+
 /* Header action buttons */
 .fp-tools-popup button.fpt-fin-btn,
 .fp-tools-popup .fpt-fin-btn {

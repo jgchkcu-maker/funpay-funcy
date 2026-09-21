@@ -21,7 +21,6 @@
     ];
 
     const SYMBOLS = { RUB: '₽', USD: '$', EUR: '€' };
-    const RATES = { RUB: 1, USD: 1 / 0.011, EUR: 1.08 / 0.011 };
     const OPERATION_TYPE_LABELS = {
         order: 'Заказы',
         payment: 'Пополнения',
@@ -37,7 +36,9 @@
         activeSubtab: 'overview',
         period: '7d',
         currency: 'all',           // 'all' | 'RUB' | 'USD' | 'EUR'
-        status: 'all',             // 'all' | 'closed' | 'paid' | 'refunded'
+        orderStatus: 'all',        // 'all' | 'closed' | 'paid' | 'refunded'
+        operationStatus: 'all',    // 'all' | 'complete' | 'cancel' | 'waiting'
+        status: 'all',             // compatible mirror of active subtab status
         category: 'all',           // 'all' | <categoryName>
         salesStep: 'day',          // 'day' | 'week' | 'month'
         salesView: 'orders',       // 'orders' | 'buyers' | 'products' | 'categories'
@@ -87,6 +88,7 @@
         cachedOverviewData: null,
         cachedOverviewPeriod: null,
         overviewLastUpdate: null,
+        isRefreshing: false,
 
         tooltipEl: null
     };
@@ -142,16 +144,91 @@
         return parts.length ? parts.join(' · ') : '—';
     }
 
-    function formatDate(ts) {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // ЕДИНАЯ КАЛЕНДАРНАЯ МОДЕЛЬ МСК (UTC+3, без DST) (T06)
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    const MSK_OFFSET_MS = 3 * 3600 * 1000;
+    const ONE_DAY_MS = 24 * 3600 * 1000;
+
+    function getMskParts(timestamp) {
+        const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+        if (finData && typeof finData.getMskParts === 'function') {
+            return finData.getMskParts(timestamp);
+        }
+        const ts = (typeof timestamp === 'number' && !isNaN(timestamp))
+            ? timestamp
+            : (typeof timestamp === 'string' ? (Date.parse(timestamp) || 0) : 0);
+        const d = new Date(ts + MSK_OFFSET_MS);
+        return {
+            year: d.getUTCFullYear(),
+            month: d.getUTCMonth() + 1,
+            day: d.getUTCDate(),
+            hours: d.getUTCHours(),
+            minutes: d.getUTCMinutes(),
+            seconds: d.getUTCSeconds(),
+            milliseconds: d.getUTCMilliseconds(),
+            dayOfWeek: d.getUTCDay()
+        };
+    }
+
+    function getMskDayKey(timestamp) {
+        const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+        if (finData && typeof finData.getMskDayKey === 'function') {
+            return finData.getMskDayKey(timestamp);
+        }
+        const p = getMskParts(timestamp);
+        return `${p.year}-${String(p.month).padStart(2, '0')}-${String(p.day).padStart(2, '0')}`;
+    }
+
+    function getMskMonthKey(timestamp) {
+        const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+        if (finData && typeof finData.getMskMonthKey === 'function') {
+            return finData.getMskMonthKey(timestamp);
+        }
+        const p = getMskParts(timestamp);
+        return `${p.year}-${String(p.month).padStart(2, '0')}`;
+    }
+
+    function getMskWeekKey(timestamp) {
+        const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+        if (finData && typeof finData.getMskWeekKey === 'function') {
+            return finData.getMskWeekKey(timestamp);
+        }
+        const ts = (typeof timestamp === 'number' && !isNaN(timestamp))
+            ? timestamp
+            : (typeof timestamp === 'string' ? (Date.parse(timestamp) || 0) : 0);
+        const p = getMskParts(ts);
+        const dayShift = (p.dayOfWeek + 6) % 7;
+        const mondayTs = ts - (dayShift * ONE_DAY_MS);
+        return getMskDayKey(mondayTs);
+    }
+
+    function formatMskDateTime(timestamp, includeSeconds = false) {
+        const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+        if (finData && typeof finData.formatMskDateTime === 'function') {
+            return finData.formatMskDateTime(timestamp, includeSeconds);
+        }
+        if (!timestamp) return '—';
+        const ts = (typeof timestamp === 'number' && !isNaN(timestamp))
+            ? timestamp
+            : (typeof timestamp === 'string' ? (Date.parse(timestamp) || 0) : 0);
         if (!ts) return '—';
-        const d = new Date(ts);
-        if (isNaN(d.getTime())) return '—';
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        const hours = String(d.getHours()).padStart(2, '0');
-        const mins = String(d.getMinutes()).padStart(2, '0');
-        return `${day}.${month}.${year} ${hours}:${mins}`;
+        const p = getMskParts(ts);
+        const dd = String(p.day).padStart(2, '0');
+        const mm = String(p.month).padStart(2, '0');
+        const yyyy = p.year;
+        const hh = String(p.hours).padStart(2, '0');
+        const min = String(p.minutes).padStart(2, '0');
+        if (includeSeconds) {
+            const ss = String(p.seconds).padStart(2, '0');
+            return `${dd}.${mm}.${yyyy} ${hh}:${min}:${ss}`;
+        }
+        return `${dd}.${mm}.${yyyy} ${hh}:${min}`;
+    }
+
+    function formatDate(ts) {
+        return formatMskDateTime(ts, false);
     }
 
     function periodLabel(period) {
@@ -295,7 +372,7 @@
         }
 
         const sortedCats = Array.from(state.knownCategories).sort((a, b) => a.localeCompare(b, 'ru'));
-        const currentOptions = Array.from(select.options).map(o => o.value);
+        const currentOptions = Array.from(select.options || []).map(o => o.value);
         const newOptions = ['all', ...sortedCats];
 
         if (currentOptions.length === newOptions.length && currentOptions.every((v, i) => v === newOptions[i])) {
@@ -416,57 +493,75 @@
     }
 
     /**
-     * Группировка заказов по шагам: день, неделя, месяц
+     * Группировка заказов по шагам: день, неделя, месяц (по календарю МСК, T06)
      */
-    function groupOrdersByStep(orders, step) {
+    function groupOrdersByStep(orders, step, targetCurrency) {
         const buckets = {};
         const allOrders = Array.isArray(orders) ? orders : [];
         const validOrders = allOrders.filter(o => o.orderStatus === 'closed' || o.orderStatus === 'paid');
+        const ruMonths = ['янв.', 'февр.', 'мар.', 'апр.', 'мая', 'июн.', 'июл.', 'авг.', 'сент.', 'окт.', 'нояб.', 'дек.'];
+
+        const currenciesPresent = new Set();
+        for (const o of validOrders) {
+            currenciesPresent.add(String(o.currency || 'RUB').toUpperCase());
+        }
+        const isSingleCurrency = currenciesPresent.size === 1;
+        const singleCur = isSingleCurrency ? [...currenciesPresent][0] : null;
+        const effectiveCur = (targetCurrency && targetCurrency !== 'all')
+            ? String(targetCurrency).toUpperCase()
+            : (isSingleCurrency ? singleCur : null);
+        const isMultiCurrency = !effectiveCur && currenciesPresent.size > 1;
 
         for (const o of validOrders) {
             const ts = typeof o.orderDate === 'number' ? o.orderDate : (Date.parse(o.orderDate) || 0);
-            const d = new Date(ts);
-            if (isNaN(d.getTime())) continue;
+            if (!ts) continue;
 
+            const msk = getMskParts(ts);
             let key;
             let displayLabel;
             if (step === 'month') {
-                key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                displayLabel = d.toLocaleString('ru-RU', { month: 'short', year: 'numeric' });
+                key = getMskMonthKey(ts);
+                displayLabel = `${ruMonths[msk.month - 1] || ''} ${msk.year} г.`;
             } else if (step === 'week') {
-                // Понедельник текущей недели
-                const dayOfWeek = (d.getDay() + 6) % 7;
-                const monday = new Date(d);
-                monday.setDate(d.getDate() - dayOfWeek);
-                key = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
-                displayLabel = `${String(monday.getDate()).padStart(2, '0')}.${String(monday.getMonth() + 1).padStart(2, '0')}`;
+                key = getMskWeekKey(ts);
+                const wp = getMskParts(key);
+                displayLabel = `${String(wp.day).padStart(2, '0')}.${String(wp.month).padStart(2, '0')}`;
             } else {
-                key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                displayLabel = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+                key = getMskDayKey(ts);
+                displayLabel = `${String(msk.day).padStart(2, '0')}.${String(msk.month).padStart(2, '0')}`;
             }
 
             if (!buckets[key]) {
                 buckets[key] = {
                     key,
                     label: displayLabel,
-                    revenue: 0,
+                    revenue: isMultiCurrency ? null : 0,
                     revenueByCur: {},
                     count: 0,
-                    orders: []
+                    orders: [],
+                    isMultiCurrency
                 };
             }
 
             const p = Number(o.price) || 0;
             const cur = String(o.currency || 'RUB').toUpperCase();
-            const norm = p * (RATES[cur] || 1);
             buckets[key].count++;
             buckets[key].orders.push(o);
-            buckets[key].revenue += norm;
             buckets[key].revenueByCur[cur] = (buckets[key].revenueByCur[cur] || 0) + p;
+
+            if (effectiveCur) {
+                if (cur === effectiveCur) {
+                    buckets[key].revenue = (buckets[key].revenue || 0) + p;
+                }
+            }
         }
 
         const keys = Object.keys(buckets).sort();
-        return keys.map(k => buckets[k]);
+        const res = keys.map(k => buckets[k]);
+        res.isMultiCurrency = isMultiCurrency;
+        res.currency = effectiveCur;
+        res.currencies = Array.from(currenciesPresent);
+        return res;
     }
 
     function renderDynamicChart(cardEl, orders, step, options) {
@@ -490,7 +585,8 @@
         const accent = opts.color || (isPurchases ? '#e57373' : 'var(--fptm-accent, var(--fpt-accent, #1b75bb))');
         const stopColor = isPurchases ? '#e57373' : '#1b75bb';
 
-        const buckets = groupOrdersByStep(orders, step);
+        const targetCur = opts.currency || (state.currency !== 'all' ? state.currency : (cardEl.dataset.chosenCur || null));
+        const buckets = groupOrdersByStep(orders, step, targetCur);
 
         if (!buckets.length) {
             chartContainer.innerHTML = `
@@ -502,6 +598,31 @@
             return;
         }
 
+        if (buckets.isMultiCurrency) {
+            const curButtons = (buckets.currencies || []).map(c =>
+                `<button type="button" class="fpt-fin-btn fpt-fin-btn-secondary fpt-fin-cur-select-btn" data-cur="${esc(c)}" style="margin:4px;padding:4px 12px;font-size:12px;border-radius:14px;cursor:pointer;">${esc(c)} (${esc(SYMBOLS[c] || c)})</button>`
+            ).join('');
+            chartContainer.innerHTML = `
+                <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;text-align:center;">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:32px;color:var(--fptm-muted, #9099b8);">currency_exchange</span>
+                    <div class="fpt-fin-empty-title" style="font-size:14px;font-weight:600;margin-top:8px;">Выберите валюту для отображения денежного графика</div>
+                    <div class="fpt-fin-empty-desc" style="font-size:12px;color:var(--fptm-muted, #9099b8);margin-top:4px;max-width:460px;margin-left:auto;margin-right:auto;">
+                        В выборке присутствуют операции в нескольких валютах. Финансовый хаб не строит общую денежную ось с приблизительной конвертацией.
+                    </div>
+                    <div class="fpt-fin-chart-cur-actions" style="margin-top:12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                        ${curButtons}
+                    </div>
+                </div>`;
+            chartContainer.querySelectorAll('.fpt-fin-cur-select-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    cardEl.dataset.chosenCur = btn.dataset.cur;
+                    renderDynamicChart(cardEl, orders, step, Object.assign({}, opts, { currency: btn.dataset.cur }));
+                });
+            });
+            return;
+        }
+
         const W = 680;
         const H = 200;
         const PAD = { t: 20, r: 20, b: 36, l: 56 };
@@ -510,7 +631,7 @@
         const baseY = PAD.t + ch;
         const slot = cw / Math.max(1, buckets.length);
 
-        const vals = buckets.map(b => b.revenue);
+        const vals = buckets.map(b => Number(b.revenue) || 0);
         const rawMax = Math.max(1, ...vals);
         const maxV = niceMax(rawMax);
 
@@ -1031,8 +1152,8 @@
                     useMsk: true,
                     sort: 'date-desc'
                 };
-                if (state.status && state.status !== 'all') {
-                    filterOpts.statuses = state.status;
+                if (state.orderStatus && state.orderStatus !== 'all') {
+                    filterOpts.statuses = state.orderStatus;
                 }
                 if (state.currency && state.currency !== 'all') {
                     filterOpts.currency = state.currency;
@@ -1221,57 +1342,121 @@
         if (ddOverlay) ddOverlay.remove();
     }
 
+    function formatLastUpdatedText(timestamp) {
+        if (!timestamp) {
+            return 'Не обновлялось';
+        }
+        let num = Number(timestamp);
+        if (isNaN(num) || num <= 0) {
+            const parsed = Date.parse(timestamp);
+            if (!isNaN(parsed) && parsed > 0) num = parsed;
+        }
+        if (isNaN(num) || num <= 0) {
+            return 'Не обновлялось';
+        }
+        const mskTs = getMskParts(num);
+        const mskNow = getMskParts(Date.now());
+        const timeStr = `${String(mskTs.hours).padStart(2, '0')}:${String(mskTs.minutes).padStart(2, '0')}`;
+
+        if (mskTs.year === mskNow.year && mskTs.month === mskNow.month && mskTs.day === mskNow.day) {
+            return `Обновлено: в ${timeStr}`;
+        }
+        return `Обновлено: ${String(mskTs.day).padStart(2, '0')}.${String(mskTs.month).padStart(2, '0')}.${mskTs.year} ${timeStr}`;
+    }
+
     async function updateLastUpdatedText(subtab) {
         if (!state.container) return;
         const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
         if (!lastUpdatedEl) return;
 
+        const finData = (typeof window !== 'undefined' && window.FPTFinanceData) || root.FPTFinanceData;
+
         if (subtab === 'overview') {
-            if (state.overviewLastUpdate) {
-                const d = new Date(state.overviewLastUpdate);
-                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            let salesLastUpdate = null;
+            let opsLastUpdate = null;
+            if (finData && typeof finData.getMeta === 'function') {
+                try {
+                    const [sMeta, oMeta] = await Promise.all([
+                        finData.getMeta('sales'),
+                        finData.getMeta('operations')
+                    ]);
+                    if (sMeta && sMeta.lastUpdate) salesLastUpdate = sMeta.lastUpdate;
+                    if (oMeta && oMeta.lastUpdate) opsLastUpdate = oMeta.lastUpdate;
+                } catch (_) {}
+            }
+            const potLastUpdate = state.potentialLastUpdate || null;
+
+            // T08: Overview -> use oldest required source timestamp (Math.min). Never newest.
+            const requiredTimestamps = [];
+            if (salesLastUpdate) requiredTimestamps.push(salesLastUpdate);
+            if (opsLastUpdate) requiredTimestamps.push(opsLastUpdate);
+            if (potLastUpdate) requiredTimestamps.push(potLastUpdate);
+
+            const sStr = salesLastUpdate ? formatLastUpdatedText(salesLastUpdate).replace('Обновлено: ', '') : 'не обновлялось';
+            const oStr = opsLastUpdate ? formatLastUpdatedText(opsLastUpdate).replace('Обновлено: ', '') : 'не обновлялось';
+            const pStr = potLastUpdate ? formatLastUpdatedText(potLastUpdate).replace('Обновлено: ', '') : 'не обновлялось';
+            lastUpdatedEl.title = `Продажи: ${sStr} · Операции: ${oStr} · Инвентарь: ${pStr}`;
+
+            if (requiredTimestamps.length > 0) {
+                const oldestTs = Math.min(...requiredTimestamps);
+                state.overviewLastUpdate = oldestTs;
+                lastUpdatedEl.textContent = formatLastUpdatedText(oldestTs);
+            } else if (state.overviewLastUpdate) {
+                lastUpdatedEl.textContent = formatLastUpdatedText(state.overviewLastUpdate);
             } else {
-                lastUpdatedEl.textContent = 'Обновлено: только что';
+                lastUpdatedEl.textContent = 'Не обновлялось';
             }
             return;
         }
 
         if (subtab === 'profit') {
-            if (state.profitLastUpdate) {
-                const d = new Date(state.profitLastUpdate);
-                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+            // T08: Profit -> sales freshness
+            let salesLastUpdate = null;
+            if (finData && typeof finData.getMeta === 'function') {
+                try {
+                    const sMeta = await finData.getMeta('sales');
+                    if (sMeta && sMeta.lastUpdate) salesLastUpdate = sMeta.lastUpdate;
+                } catch (_) {}
+            }
+            if (salesLastUpdate) {
+                state.profitLastUpdate = salesLastUpdate;
+                lastUpdatedEl.textContent = formatLastUpdatedText(salesLastUpdate);
+                lastUpdatedEl.title = 'Свежесть рассчитана по исходным данным о продажах';
+            } else if (state.profitLastUpdate) {
+                lastUpdatedEl.textContent = formatLastUpdatedText(state.profitLastUpdate);
+                lastUpdatedEl.title = '';
             } else {
-                lastUpdatedEl.textContent = 'Обновлено: только что';
+                lastUpdatedEl.textContent = 'Не обновлялось';
+                lastUpdatedEl.title = '';
             }
             return;
         }
 
         if (subtab === 'potential') {
+            // T08: Potential -> time of real inventory fetch
             if (state.potentialLastUpdate) {
-                const d = new Date(state.potentialLastUpdate);
-                const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+                lastUpdatedEl.textContent = formatLastUpdatedText(state.potentialLastUpdate);
+                lastUpdatedEl.title = 'Время последнего получения данных инвентаря';
             } else {
-                lastUpdatedEl.textContent = 'Обновлено: только что';
+                lastUpdatedEl.textContent = 'Не обновлялось';
+                lastUpdatedEl.title = '';
             }
             return;
         }
 
         const type = subtab === 'purchases' ? 'purchases' : (subtab === 'operations' ? 'operations' : 'sales');
-        if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
+        if (finData && typeof finData.getMeta === 'function') {
             try {
-                const meta = await root.FPTFinanceData.getMeta(type);
+                const meta = await finData.getMeta(type);
                 if (meta && meta.lastUpdate) {
-                    const d = new Date(meta.lastUpdate);
-                    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+                    lastUpdatedEl.textContent = formatLastUpdatedText(meta.lastUpdate);
+                    lastUpdatedEl.title = '';
                     return;
                 }
             } catch (_) {}
         }
         lastUpdatedEl.textContent = 'Не обновлялось';
+        lastUpdatedEl.title = '';
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -1660,8 +1845,8 @@
                     useMsk: true,
                     sort: 'date-desc'
                 };
-                if (state.status && state.status !== 'all') {
-                    filterOpts.statuses = state.status;
+                if (state.orderStatus && state.orderStatus !== 'all') {
+                    filterOpts.statuses = state.orderStatus;
                 }
                 if (state.currency && state.currency !== 'all') {
                     filterOpts.currency = state.currency;
@@ -1961,11 +2146,55 @@
             return;
         }
 
+        const opCurs = new Set([
+            ...Object.keys(agg.inByCur || {}),
+            ...Object.keys(agg.outByCur || {})
+        ]);
+        const isSingleCurrency = opCurs.size === 1;
+        const singleCur = isSingleCurrency ? [...opCurs][0] : null;
+        const activeCur = (state.currency && state.currency !== 'all')
+            ? state.currency
+            : (cardEl.dataset.chosenCur || (isSingleCurrency ? singleCur : null));
+
+        if (!activeCur && opCurs.size > 1) {
+            const curButtons = Array.from(opCurs).map(c =>
+                `<button type="button" class="fpt-fin-btn fpt-fin-btn-secondary fpt-fin-cur-select-btn" data-cur="${esc(c)}" style="margin:4px;padding:4px 12px;font-size:12px;border-radius:14px;cursor:pointer;">${esc(c)} (${esc(SYMBOLS[c] || c)})</button>`
+            ).join('');
+            body.innerHTML = `
+                <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;text-align:center;">
+                    <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:32px;color:var(--fptm-muted, #9099b8);">currency_exchange</span>
+                    <div class="fpt-fin-empty-title" style="font-size:14px;font-weight:600;margin-top:8px;">Выберите валюту для отображения денежного графика</div>
+                    <div class="fpt-fin-empty-desc" style="font-size:12px;color:var(--fptm-muted, #9099b8);margin-top:4px;max-width:460px;margin-left:auto;margin-right:auto;">
+                        В операциях за выбранный период присутствуют разные валюты. Финансовый хаб отображает динамику по каждой валюте без искусственной конвертации.
+                    </div>
+                    <div class="fpt-fin-chart-cur-actions" style="margin-top:12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                        ${curButtons}
+                    </div>
+                </div>`;
+            body.querySelectorAll('.fpt-fin-cur-select-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    cardEl.dataset.chosenCur = btn.dataset.cur;
+                    operationFlowChart(cardEl, agg);
+                });
+            });
+            return;
+        }
+
+        const sym = SYMBOLS[activeCur] || (activeCur ? ` ${activeCur}` : ' ₽');
         const W = 680, H = 220, PAD = { t: 18, r: 18, b: 38, l: 56 };
         const chartWidth = W - PAD.l - PAD.r;
         const chartHeight = H - PAD.t - PAD.b;
-        const incoming = keys.map(key => Number(buckets[key].in) || 0);
-        const outgoing = keys.map(key => Number(buckets[key].out) || 0);
+        const incoming = keys.map(key => {
+            const b = buckets[key];
+            if (activeCur && b.inByCur) return Number(b.inByCur[activeCur]) || 0;
+            return Number(b.in) || 0;
+        });
+        const outgoing = keys.map(key => {
+            const b = buckets[key];
+            if (activeCur && b.outByCur) return Number(b.outByCur[activeCur]) || 0;
+            return Number(b.out) || 0;
+        });
         const maxValue = Math.max(1, ...incoming, ...outgoing);
         const slot = chartWidth / keys.length;
         const barWidth = Math.max(3, Math.min(20, slot / 2 - 3));
@@ -1979,7 +2208,7 @@
             const inHeight = incoming[index] / maxValue * halfHeight;
             const outHeight = outgoing[index] / maxValue * halfHeight;
             const label = daily ? key.slice(5).replace('-', '.') : key.slice(5) + '.' + key.slice(2, 4);
-            const tip = `${key}: +${fmtAxis(incoming[index])} ₽ / −${fmtAxis(outgoing[index])} ₽`;
+            const tip = `${key}: +${fmtAxis(incoming[index])} ${sym} / −${fmtAxis(outgoing[index])} ${sym}`;
             bars += `<rect class="fpt-fin-op-bar" x="${center - barWidth - 1}" y="${zeroY - inHeight}" width="${barWidth}" height="${inHeight}" rx="2" fill="#22c55e" data-tip="${esc(tip)}"></rect>`;
             bars += `<rect class="fpt-fin-op-bar" x="${center + 1}" y="${zeroY}" width="${barWidth}" height="${outHeight}" rx="2" fill="#ef4444" data-tip="${esc(tip)}"></rect>`;
             if (index % labelStep === 0 || index === keys.length - 1) {
@@ -1992,7 +2221,7 @@
             <text x="${PAD.l - 7}" y="${zeroY + 3}" text-anchor="end" font-size="9" fill="var(--fptm-muted,#9099b8)">0</text>
             <text x="${PAD.l - 7}" y="${H - PAD.b + 2}" text-anchor="end" font-size="9" fill="var(--fptm-muted,#9099b8)">${esc(fmtAxis(maxValue))}</text>
             ${bars}${labels}</svg>
-            <div class="fpt-fin-operation-chart-legend"><span class="fpt-fin-operation-in">▮</span> приход <span class="fpt-fin-operation-out">▮</span> расход <span>· визуальная ось нормализована к ₽</span></div>`;
+            <div class="fpt-fin-operation-chart-legend"><span class="fpt-fin-operation-in">▮</span> приход <span class="fpt-fin-operation-out">▮</span> расход ${activeCur ? `<span>· валюта: ${esc(activeCur)}</span>` : ''}</div>`;
         body.querySelectorAll('.fpt-fin-op-bar').forEach(bar => {
             bar.addEventListener('mouseenter', event => showTooltip(esc(bar.dataset.tip || ''), event.clientX, event.clientY));
             bar.addEventListener('mousemove', event => showTooltip(esc(bar.dataset.tip || ''), event.clientX, event.clientY));
@@ -2127,7 +2356,7 @@
                 }
                 const filterOpts = { period: state.period, sort: 'date-desc', useMsk: true };
                 if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
-                if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                if (state.operationStatus && state.operationStatus !== 'all') filterOpts.statuses = state.operationStatus;
                 const operations = await root.FPTFinanceData.getOperations(filterOpts);
                 const aggregate = root.FPTFinanceData.aggregateOperations(operations);
                 if (currentToken !== state.operationsRenderToken) return;
@@ -2428,6 +2657,7 @@
         renderPotentialCards(pane, totals, primaryCurrency, filteredLots);
         renderPotentialTable(pane);
         bindPotentialFilters(pane);
+        await updateLastUpdatedText('potential');
     }
 
     function cleanupPotential() {
@@ -2780,8 +3010,8 @@
                 if (state.category && state.category !== 'all') {
                     profitOpts.category = state.category;
                 }
-                if (state.status && state.status !== 'all') {
-                    profitOpts.statuses = state.status;
+                if (state.orderStatus && state.orderStatus !== 'all') {
+                    profitOpts.statuses = state.orderStatus;
                 }
 
                 const result = await profitEngine.getRealisedProfit(profitOpts);
@@ -2791,8 +3021,7 @@
                 state.cachedProfitOrders = Array.isArray(result.orders) ? result.orders : [];
                 state.cachedProfitAgg = result.byCurrency || {};
                 state.cachedProfitPeriod = state.period;
-                state.profitLastUpdate = Date.now();
-                updateLastUpdatedText('profit');
+                await updateLastUpdatedText('profit');
             } catch (err) {
                 console.error('[FPTFinanceHub] Error loading realised profit:', err);
                 if (currentToken !== state.profitRenderToken) return;
@@ -2846,6 +3075,7 @@
         renderProfitChart(pane, totals, filteredOrders, primaryCurrency);
         renderProfitTable(pane);
         bindProfitFilters(pane);
+        await updateLastUpdatedText('profit');
     }
 
     function cleanupProfit() {
@@ -3110,6 +3340,7 @@
         let valLabel = 'Выручка';
         let emptyTitle = 'Нет данных о динамике';
         let emptyDesc = 'За выбранный период нет данных для графика.';
+        let activeCur = null;
 
         if (metric === 'profit') {
             accent = 'var(--fptm-accent, var(--fpt-accent, #1b75bb))';
@@ -3119,25 +3350,62 @@
             emptyDesc = 'За выбранный период нет закрытых заказов с известной себестоимостью.';
 
             const pOrders = (profitData && Array.isArray(profitData.orders)) ? profitData.orders : [];
-            const bucketsMap = {};
-            for (const o of pOrders) {
+            const profitClosed = pOrders.filter(o => {
                 const info = o.profitInfo;
-                if (!info || !info.isClosed) continue;
-                const ts = typeof o.orderDate === 'number' ? o.orderDate : (Date.parse(o.orderDate || o.date) || 0);
-                const d = new Date(ts);
-                if (isNaN(d.getTime())) continue;
+                return info && info.isClosed && info.netProfit !== null;
+            });
+            const pCurs = new Set(profitClosed.map(o => String((o.profitInfo && o.profitInfo.currency) || o.currency || 'RUB').toUpperCase()));
+            const isSingleCur = pCurs.size === 1;
+            const singleCur = isSingleCur ? [...pCurs][0] : null;
+            const chosenCur = wrapEl.dataset.chosenCur || null;
+            activeCur = (currency && currency !== 'all')
+                ? currency
+                : (chosenCur || (isSingleCur ? singleCur : null));
 
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                const label = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+            if (!activeCur && pCurs.size > 1) {
+                const curButtons = Array.from(pCurs).map(c =>
+                    `<button type="button" class="fpt-fin-btn fpt-fin-btn-secondary fpt-fin-cur-select-btn" data-cur="${esc(c)}" style="margin:4px;padding:4px 12px;font-size:12px;border-radius:14px;cursor:pointer;">${esc(c)} (${esc(SYMBOLS[c] || c)})</button>`
+                ).join('');
+                wrapEl.innerHTML = `
+                    <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;text-align:center;">
+                        <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:32px;color:var(--fptm-muted, #9099b8);">currency_exchange</span>
+                        <div class="fpt-fin-empty-title" style="font-size:14px;font-weight:600;margin-top:8px;">Выберите валюту для отображения денежного графика</div>
+                        <div class="fpt-fin-empty-desc" style="font-size:12px;color:var(--fptm-muted, #9099b8);margin-top:4px;max-width:460px;margin-left:auto;margin-right:auto;">
+                            В расчёте прибыли присутствуют заказы в нескольких валютах. Выберите валюту для отображения графика чистой прибыли.
+                        </div>
+                        <div class="fpt-fin-chart-cur-actions" style="margin-top:12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                            ${curButtons}
+                        </div>
+                    </div>`;
+                wrapEl.querySelectorAll('.fpt-fin-cur-select-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        wrapEl.dataset.chosenCur = btn.dataset.cur;
+                        renderOverviewDynamicChart(wrapEl, salesOrders, profitData, metric, currency);
+                    });
+                });
+                return;
+            }
+
+            const bucketsMap = {};
+            for (const o of profitClosed) {
+                const info = o.profitInfo;
+                const oCur = String(info.currency || o.currency || 'RUB').toUpperCase();
+                if (activeCur && oCur !== activeCur) continue;
+
+                const ts = typeof o.orderDate === 'number' ? o.orderDate : (Date.parse(o.orderDate || o.date) || 0);
+                if (!ts) continue;
+
+                const key = getMskDayKey(ts);
+                const p = getMskParts(ts);
+                const label = `${String(p.day).padStart(2, '0')}.${String(p.month).padStart(2, '0')}`;
                 if (!bucketsMap[key]) {
                     bucketsMap[key] = { key, label, val: 0, count: 0, knownCostCount: 0, orders: [] };
                 }
                 bucketsMap[key].count++;
                 bucketsMap[key].orders.push(o);
-                if (info.netProfit !== null && typeof info.netProfit === 'number') {
-                    bucketsMap[key].val += info.netProfit;
-                    bucketsMap[key].knownCostCount++;
-                }
+                bucketsMap[key].val += info.netProfit;
+                bucketsMap[key].knownCostCount++;
             }
             const keys = Object.keys(bucketsMap).sort();
             buckets = keys.map(k => bucketsMap[k]);
@@ -3165,11 +3433,45 @@
             emptyTitle = 'Нет данных о выручке';
             emptyDesc = 'За выбранный период нет закрытых или оплаченных заказов.';
 
-            const rawBuckets = groupOrdersByStep(salesOrders, 'day');
+            const validOrders = (Array.isArray(salesOrders) ? salesOrders : []).filter(o => o.orderStatus === 'closed' || o.orderStatus === 'paid');
+            const revCurs = new Set(validOrders.map(o => String(o.currency || 'RUB').toUpperCase()));
+            const isSingleCur = revCurs.size === 1;
+            const singleCur = isSingleCur ? [...revCurs][0] : null;
+            const chosenCur = wrapEl.dataset.chosenCur || null;
+            activeCur = (currency && currency !== 'all')
+                ? currency
+                : (chosenCur || (isSingleCur ? singleCur : null));
+
+            if (!activeCur && revCurs.size > 1) {
+                const curButtons = Array.from(revCurs).map(c =>
+                    `<button type="button" class="fpt-fin-btn fpt-fin-btn-secondary fpt-fin-cur-select-btn" data-cur="${esc(c)}" style="margin:4px;padding:4px 12px;font-size:12px;border-radius:14px;cursor:pointer;">${esc(c)} (${esc(SYMBOLS[c] || c)})</button>`
+                ).join('');
+                wrapEl.innerHTML = `
+                    <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;text-align:center;">
+                        <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:32px;color:var(--fptm-muted, #9099b8);">currency_exchange</span>
+                        <div class="fpt-fin-empty-title" style="font-size:14px;font-weight:600;margin-top:8px;">Выберите валюту для отображения денежного графика</div>
+                        <div class="fpt-fin-empty-desc" style="font-size:12px;color:var(--fptm-muted, #9099b8);margin-top:4px;max-width:460px;margin-left:auto;margin-right:auto;">
+                            В продажах за период присутствуют разные валюты. Финансовый хаб строит денежные графики строго по каждой валюте без приблизительной конвертации.
+                        </div>
+                        <div class="fpt-fin-chart-cur-actions" style="margin-top:12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                            ${curButtons}
+                        </div>
+                    </div>`;
+                wrapEl.querySelectorAll('.fpt-fin-cur-select-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        wrapEl.dataset.chosenCur = btn.dataset.cur;
+                        renderOverviewDynamicChart(wrapEl, salesOrders, profitData, metric, currency);
+                    });
+                });
+                return;
+            }
+
+            const rawBuckets = groupOrdersByStep(salesOrders, 'day', activeCur);
             buckets = rawBuckets.map(b => ({
                 key: b.key,
                 label: b.label,
-                val: b.revenue,
+                val: b.revenue || 0,
                 count: b.count,
                 revenueByCur: b.revenueByCur,
                 orders: b.orders
@@ -3207,10 +3509,9 @@
         let yLabels = '';
         const steps = 4;
         for (let i = 0; i <= steps; i++) {
+            const y = baseY - (i / steps) * ch;
+            grid += `<line x1="${PAD.l}" y1="${y}" x2="${W - PAD.r}" y2="${y}" stroke="var(--fptm-border, rgba(255,255,255,0.08))" stroke-width="1" opacity="${i === 0 ? 0.8 : 0.4}"/>`;
             const v = minV + (vRange / steps) * i;
-            const y = baseY - ((v - minV) / vRange) * ch;
-            const isZero = Math.abs(v) < 0.001;
-            grid += `<line x1="${PAD.l}" y1="${y}" x2="${W - PAD.r}" y2="${y}" stroke="var(--fptm-border, rgba(255,255,255,0.08))" stroke-width="${isZero ? '1.5' : '1'}" opacity="${isZero ? 0.9 : 0.4}"/>`;
             yLabels += `<text x="${PAD.l - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="var(--fptm-muted, #9099b8)" font-family="inherit">${fmtAxis(v)}</text>`;
         }
 
@@ -3225,7 +3526,7 @@
             ? `${line} L${pts[pts.length - 1].x},${zeroY} L${pts[0].x},${zeroY} Z`
             : '';
 
-        const uid = 'fptFinOverGrad_' + Math.random().toString(36).slice(2, 8);
+        const uid = 'fptFinGradOverview_' + Math.random().toString(36).slice(2, 8);
 
         // X labels
         const MIN_GAP = 54;
@@ -3249,7 +3550,7 @@
             ).join('');
         }
 
-        // Hit zones
+        // Hit zones for hover tooltip & drill-down
         const hits = pts.map((p, i) => {
             return `<rect class="fpt-fin-svg-hit" data-idx="${i}" x="${p.x - slot / 2}" y="${PAD.t}" width="${slot}" height="${ch}" fill="transparent" style="cursor:pointer;" tabindex="0"></rect>`;
         }).join('');
@@ -3279,13 +3580,13 @@
 
             const makeTooltipHtml = () => {
                 if (metric === 'profit') {
-                    const profStr = formatMoney(b.val, currency);
+                    const profStr = formatMoney(b.val, activeCur || currency);
                     return `<strong>${esc(b.label)}</strong><br/>Чистая прибыль: ${esc(profStr)}<br/>С себестоимостью: ${b.knownCostCount} из ${b.count} зак.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
                 } else if (metric === 'orders') {
                     const revStr = b.revenueByCur ? formatRevenueMulti(b.revenueByCur) : '';
                     return `<strong>${esc(b.label)}</strong><br/>Заказов: ${b.count} шт.<br/>${revStr ? `Выручка: ${esc(revStr)}<br/>` : ''}<span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
                 } else {
-                    const revStr = b.revenueByCur ? formatRevenueMulti(b.revenueByCur) : formatMoney(b.val, currency);
+                    const revStr = b.revenueByCur ? (activeCur ? formatMoney(b.val, activeCur) : formatRevenueMulti(b.revenueByCur)) : formatMoney(b.val, activeCur || currency);
                     return `<strong>${esc(b.label)}</strong><br/>Выручка: ${esc(revStr)}<br/>Заказов: ${b.count} шт.<br/><span style="font-size:10px;opacity:.7;">Кликните для деталей</span>`;
                 }
             };
@@ -3492,8 +3793,8 @@
                 if (state.currency && state.currency !== 'all') {
                     filterOpts.currency = state.currency;
                 }
-                if (state.status && state.status !== 'all') {
-                    filterOpts.statuses = state.status;
+                if (state.orderStatus && state.orderStatus !== 'all') {
+                    filterOpts.statuses = state.orderStatus;
                 }
                 if (state.category && state.category !== 'all') {
                     filterOpts.category = state.category;
@@ -3508,12 +3809,14 @@
                     : Promise.resolve(null);
 
                 const potentialPromise = (potentialEngine && typeof potentialEngine.getInventory === 'function')
-                    ? potentialEngine.getInventory({ enrichPotential: true, forceRefresh: forceReload })
+                    ? (state.cachedPotentialLots && !forceReload
+                        ? Promise.resolve(state.cachedPotentialLots)
+                        : potentialEngine.getInventory({ enrichPotential: true, forceRefresh: forceReload }))
                     : Promise.resolve(null);
 
                 const opsFilter = { period: state.period, sort: 'date-desc', useMsk: true };
                 if (filterOpts.currency) opsFilter.currency = filterOpts.currency;
-                if (filterOpts.statuses) opsFilter.statuses = filterOpts.statuses;
+                // T04: Strictly do not pass order-status into operations filter
                 const opsPromise = (finData && typeof finData.getOperations === 'function')
                     ? finData.getOperations(opsFilter)
                     : Promise.resolve([]);
@@ -3543,6 +3846,10 @@
                         lots = (filterOpts.category)
                             ? rawLots.filter(l => (l.category || '').toLowerCase() === filterOpts.category.toLowerCase())
                             : rawLots;
+                        if (!state.cachedPotentialLots || forceReload) {
+                            state.cachedPotentialLots = rawLots;
+                            state.potentialLastUpdate = Date.now();
+                        }
                         if (Array.isArray(lots) && potentialEngine && typeof potentialEngine.calculatePotentialAggregates === 'function') {
                             const enriched = (typeof potentialEngine.calculateRowPotential === 'function')
                                 ? lots.map(l => (l && l.stockKind) ? l : Object.assign({}, l, potentialEngine.calculateRowPotential(l)))
@@ -3570,8 +3877,7 @@
                     operations
                 };
                 state.cachedOverviewPeriod = state.period;
-                state.overviewLastUpdate = Date.now();
-                updateLastUpdatedText('overview');
+                await updateLastUpdatedText('overview');
                 updateCategorySelectOptions(sales.map(o => o.subcategoryName || o.category).concat(lots.map(l => l.category)));
             } catch (err) {
                 console.error('[FPTFinanceHub] Error loading overview data:', err);
@@ -3594,6 +3900,7 @@
         renderOverviewTopCategories(pane, data.sales, data.salesAgg, primaryCurrency);
         renderOverviewOperations(pane, data.operations, primaryCurrency);
         bindOverviewChartToggles(pane);
+        await updateLastUpdatedText('overview');
     }
 
     function cleanupOverview() {
@@ -3645,24 +3952,61 @@
         }
     }
 
-    function invalidateAllCaches() {
+    function invalidateSalesCache() {
         state.cachedOrders = null;
         state.cachedAgg = null;
         state.cachedPeriod = null;
-
-        state.cachedPurchasesOrders = null;
-        state.cachedPurchasesAgg = null;
-        state.cachedPurchasesPeriod = null;
-        state.cachedOperations = null;
-        state.cachedOperationsAgg = null;
-        state.cachedOperationsPeriod = null;
         state.cachedProfitOrders = null;
         state.cachedProfitAgg = null;
         state.cachedProfitPeriod = null;
+        state.cachedOverviewData = null;
+        state.cachedOverviewPeriod = null;
+    }
+
+    function invalidatePurchasesCache() {
+        state.cachedPurchasesOrders = null;
+        state.cachedPurchasesAgg = null;
+        state.cachedPurchasesPeriod = null;
+    }
+
+    function invalidateOperationsCache() {
+        state.cachedOperations = null;
+        state.cachedOperationsAgg = null;
+        state.cachedOperationsPeriod = null;
+        state.cachedOverviewData = null;
+        state.cachedOverviewPeriod = null;
+    }
+
+    function invalidateProfitCache() {
+        state.cachedProfitOrders = null;
+        state.cachedProfitAgg = null;
+        state.cachedProfitPeriod = null;
+        state.cachedOrders = null;
+        state.cachedAgg = null;
+        state.cachedPeriod = null;
+        state.cachedOverviewData = null;
+        state.cachedOverviewPeriod = null;
+    }
+
+    function invalidatePotentialCache() {
         state.cachedPotentialLots = null;
         state.cachedPotentialAgg = null;
         state.cachedOverviewData = null;
         state.cachedOverviewPeriod = null;
+    }
+
+    function invalidateOverviewCache() {
+        state.cachedOverviewData = null;
+        state.cachedOverviewPeriod = null;
+    }
+
+    function invalidateAllCaches() {
+        invalidateSalesCache();
+        invalidatePurchasesCache();
+        invalidateOperationsCache();
+        invalidateProfitCache();
+        invalidatePotentialCache();
+        invalidateOverviewCache();
     }
 
     function reRenderActiveSubtab() {
@@ -3697,9 +4041,35 @@
     }
 
     function onStatusChange(newStatus) {
-        state.status = newStatus || 'all';
-        invalidateAllCaches();
-        reRenderActiveSubtab();
+        const val = newStatus || 'all';
+        if (state.container) {
+            const statusSelect = state.container.querySelector('#fptFinStatusSelect');
+            if (statusSelect && statusSelect.value !== val) {
+                statusSelect.value = val;
+            }
+        }
+        if (state.activeSubtab === 'operations') {
+            state.operationStatus = val;
+            state.status = val;
+            invalidateOperationsCache();
+            renderOperationsSubtab(true);
+        } else {
+            state.orderStatus = val;
+            state.status = val;
+            if (state.activeSubtab === 'overview') {
+                invalidateOverviewCache();
+                renderOverviewSubtab(true);
+            } else if (state.activeSubtab === 'sales') {
+                invalidateSalesCache();
+                renderSalesSubtab(true);
+            } else if (state.activeSubtab === 'purchases') {
+                invalidatePurchasesCache();
+                renderPurchasesSubtab(true);
+            } else if (state.activeSubtab === 'profit') {
+                invalidateProfitCache();
+                renderProfitSubtab(true);
+            }
+        }
     }
 
     function onCategoryChange(newCategory) {
@@ -3708,10 +4078,63 @@
         reRenderActiveSubtab();
     }
 
+    function updateStatusSelectOptions(subtab) {
+        if (!state.container) return;
+        const statusSelect = state.container.querySelector('#fptFinStatusSelect');
+        if (!statusSelect) return;
+
+        if (subtab === 'potential') {
+            statusSelect.style.display = 'none';
+            return;
+        }
+
+        statusSelect.style.display = '';
+
+        if (subtab === 'operations') {
+            statusSelect.setAttribute('aria-label', 'Статус операций');
+            statusSelect.innerHTML = `
+                <option value="all">Все статусы</option>
+                <option value="complete">Завершено</option>
+                <option value="cancel">Отменено</option>
+                <option value="waiting">Ожидание</option>
+            `;
+            statusSelect.value = state.operationStatus || 'all';
+            state.status = state.operationStatus || 'all';
+        } else {
+            statusSelect.setAttribute('aria-label', 'Статус заказов');
+            statusSelect.innerHTML = `
+                <option value="all">Все статусы</option>
+                <option value="closed">Закрытые</option>
+                <option value="paid">Оплаченные</option>
+                <option value="refunded">Возвраты</option>
+            `;
+            statusSelect.value = state.orderStatus || 'all';
+            state.status = state.orderStatus || 'all';
+        }
+    }
+
     function setupHeaderFilters(container) {
         if (!container) return;
         const periodWrap = container.querySelector('.fpt-fin-period-wrap');
         if (!periodWrap) return;
+
+        // 0. Potential Snapshot Badge (T05)
+        let snapshotBadge = container.querySelector('#fptFinPeriodSnapshotBadge');
+        if (!snapshotBadge) {
+            snapshotBadge = document.createElement('div');
+            snapshotBadge.id = 'fptFinPeriodSnapshotBadge';
+            snapshotBadge.className = 'fpt-fin-snapshot-badge';
+            snapshotBadge.setAttribute('role', 'status');
+            snapshotBadge.setAttribute('aria-label', 'Текущий снимок инвентаря');
+            snapshotBadge.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;color:#94a3b8;vertical-align:middle;margin-right:4px;">inventory_2</span><span>Текущий снимок</span>';
+            snapshotBadge.style.display = 'none';
+            const periodSelect = container.querySelector('#fptFinPeriodSelect');
+            if (periodSelect && periodSelect.parentNode) {
+                periodSelect.parentNode.insertBefore(snapshotBadge, periodSelect.nextSibling);
+            } else {
+                periodWrap.appendChild(snapshotBadge);
+            }
+        }
 
         // 1. Currency Select
         let curSelect = container.querySelector('#fptFinCurrencySelect');
@@ -3731,22 +4154,14 @@
         curSelect.value = state.currency || 'all';
         curSelect.onchange = (e) => onCurrencyChange(e.target.value);
 
-        // 2. Status Select
+        // 2. Status Select (options dynamically configured by updateStatusSelectOptions)
         let statusSelect = container.querySelector('#fptFinStatusSelect');
         if (!statusSelect) {
             statusSelect = document.createElement('select');
             statusSelect.id = 'fptFinStatusSelect';
             statusSelect.className = 'fpt-fin-period-select';
-            statusSelect.setAttribute('aria-label', 'Статус заказов');
-            statusSelect.innerHTML = `
-                <option value="all">Все статусы</option>
-                <option value="closed">Закрытые</option>
-                <option value="paid">Оплаченные</option>
-                <option value="refunded">Возвраты</option>
-            `;
             periodWrap.appendChild(statusSelect);
         }
-        statusSelect.value = state.status || 'all';
         statusSelect.onchange = (e) => onStatusChange(e.target.value);
 
         // 3. Category Select
@@ -3777,14 +4192,42 @@
 
     function updateHeaderFiltersVisibility(subtab) {
         if (!state.container) return;
+        const periodSelect = state.container.querySelector('#fptFinPeriodSelect');
+        const snapshotBadge = state.container.querySelector('#fptFinPeriodSnapshotBadge');
         const catSelect = state.container.querySelector('#fptFinCategorySelect');
+
+        // T05: Potential is a live snapshot, not a historical date range
+        if (subtab === 'potential') {
+            if (periodSelect) {
+                if (typeof periodSelect.style.setProperty === 'function') {
+                    periodSelect.style.setProperty('display', 'none', 'important');
+                } else {
+                    periodSelect.style.display = 'none';
+                }
+            }
+            if (snapshotBadge) {
+                snapshotBadge.style.display = 'inline-flex';
+            }
+        } else {
+            if (periodSelect) {
+                if (typeof periodSelect.style.removeProperty === 'function') {
+                    periodSelect.style.removeProperty('display');
+                }
+                periodSelect.style.display = '';
+                // Restore user's previous period selection
+                if (state.period) {
+                    periodSelect.value = state.period;
+                }
+            }
+            if (snapshotBadge) {
+                snapshotBadge.style.display = 'none';
+            }
+        }
+
         if (catSelect) {
             catSelect.style.display = (subtab === 'operations') ? 'none' : '';
         }
-        const statusSelect = state.container.querySelector('#fptFinStatusSelect');
-        if (statusSelect) {
-            statusSelect.style.display = (subtab === 'potential') ? 'none' : '';
-        }
+        updateStatusSelectOptions(subtab);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -3960,9 +4403,11 @@
         const dataset = datasetKey || (state.activeSubtab === 'overview' ? 'sales' : state.activeSubtab);
         const meta = {
             dataset,
-            period: state.period,
+            period: dataset === 'potential' ? 'snapshot' : state.period,
             currency: state.currency,
-            status: state.status,
+            status: dataset === 'operations' ? state.operationStatus : state.orderStatus,
+            orderStatus: state.orderStatus,
+            operationStatus: state.operationStatus,
             category: state.category,
             exportedAt: new Date().toISOString()
         };
@@ -3973,7 +4418,7 @@
             if (!orders || state.cachedPeriod !== state.period) {
                 if (root.FPTFinanceData && typeof root.FPTFinanceData.getSales === 'function') {
                     const filterOpts = { period: state.period, useMsk: true, sort: 'date-desc' };
-                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    if (state.orderStatus && state.orderStatus !== 'all') filterOpts.statuses = state.orderStatus;
                     if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
                     if (state.category && state.category !== 'all') filterOpts.category = state.category;
                     orders = await root.FPTFinanceData.getSales(filterOpts);
@@ -3992,7 +4437,7 @@
             if (!orders || state.cachedPurchasesPeriod !== state.period) {
                 if (root.FPTFinanceData && typeof root.FPTFinanceData.getPurchases === 'function') {
                     const filterOpts = { period: state.period, useMsk: true, sort: 'date-desc' };
-                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    if (state.orderStatus && state.orderStatus !== 'all') filterOpts.statuses = state.orderStatus;
                     if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
                     if (state.category && state.category !== 'all') filterOpts.category = state.category;
                     orders = await root.FPTFinanceData.getPurchases(filterOpts);
@@ -4012,7 +4457,7 @@
                 if (root.FPTFinanceData && typeof root.FPTFinanceData.getOperations === 'function') {
                     const filterOpts = { period: state.period, useMsk: true, sort: 'date-desc' };
                     if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
-                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    if (state.operationStatus && state.operationStatus !== 'all') filterOpts.statuses = state.operationStatus;
                     operations = await root.FPTFinanceData.getOperations(filterOpts);
                     agg = root.FPTFinanceData.aggregateOperations(operations);
                 } else {
@@ -4032,7 +4477,7 @@
                     const filterOpts = { period: state.period, useMsk: true };
                     if (state.currency && state.currency !== 'all') filterOpts.currency = state.currency;
                     if (state.category && state.category !== 'all') filterOpts.category = state.category;
-                    if (state.status && state.status !== 'all') filterOpts.statuses = state.status;
+                    if (state.orderStatus && state.orderStatus !== 'all') filterOpts.statuses = state.orderStatus;
                     const result = await profitEngine.getRealisedProfit(filterOpts);
                     allOrders = Array.isArray(result.orders) ? result.orders : [];
                     agg = result.byCurrency || {};
@@ -4126,6 +4571,35 @@
             all: 'Всё время'
         };
 
+        const orderStatusNames = {
+            all: 'Все статусы',
+            closed: 'Закрытые',
+            paid: 'Оплаченные',
+            refunded: 'Возвраты'
+        };
+
+        const operationStatusNames = {
+            all: 'Все статусы',
+            complete: 'Завершено',
+            cancel: 'Отменено',
+            waiting: 'Ожидание'
+        };
+
+        function getPeriodBadgeText(ds) {
+            if (ds === 'potential') return 'Текущий снимок';
+            return periodNames[state.period] || state.period;
+        }
+
+        function getStatusBadgeText(ds) {
+            if (ds === 'potential') return '—';
+            if (ds === 'operations') {
+                const s = state.operationStatus || 'all';
+                return operationStatusNames[s] || s;
+            }
+            const s = state.orderStatus || 'all';
+            return orderStatusNames[s] || s;
+        }
+
         overlay.innerHTML = `
             <div class="fpt-fin-export-dialog" role="dialog" aria-modal="true" aria-labelledby="fpt-fin-export-title">
                 <div class="fpt-fin-export-head">
@@ -4137,9 +4611,9 @@
                 </div>
                 <div class="fpt-fin-export-body">
                     <div class="fpt-fin-export-filters-bar" id="fptFinExportFiltersBar">
-                        <span>Период: <strong>${esc(periodNames[state.period] || state.period)}</strong></span>
+                        <span id="fptFinExportPeriodBadge">Период: <strong>${esc(getPeriodBadgeText(currentDataset))}</strong></span>
                         <span>Валюта: <strong>${esc(state.currency === 'all' ? 'Все валюты' : state.currency)}</strong></span>
-                        <span>Статус: <strong>${esc(state.status === 'all' ? 'Все статусы' : state.status)}</strong></span>
+                        <span id="fptFinExportStatusBadge">Статус: <strong>${esc(getStatusBadgeText(currentDataset))}</strong></span>
                         ${state.category !== 'all' ? `<span>Категория: <strong>${esc(state.category)}</strong></span>` : ''}
                     </div>
 
@@ -4256,6 +4730,14 @@
             tabsEl.querySelectorAll('.fpt-fin-export-tab').forEach(t => t.classList.remove('active'));
             btn.classList.add('active');
             currentDataset = btn.dataset.ds;
+            const statusBadge = overlay.querySelector('#fptFinExportStatusBadge');
+            if (statusBadge) {
+                statusBadge.innerHTML = `Статус: <strong>${esc(getStatusBadgeText(currentDataset))}</strong>`;
+            }
+            const periodBadge = overlay.querySelector('#fptFinExportPeriodBadge');
+            if (periodBadge) {
+                periodBadge.innerHTML = `Период: <strong>${esc(getPeriodBadgeText(currentDataset))}</strong>`;
+            }
             updateCard();
         };
 
@@ -4301,99 +4783,196 @@
     }
 
     /**
-     * Фоновое обновление финансовых данных (продажи или покупки в зависимости от активного таба)
+     * Фоновое обновление финансовых данных в зависимости от активного таба (T03)
      */
     async function refresh() {
         if (!state.container) return;
+        if (state.isRefreshing) return;
+        state.isRefreshing = true;
+
         const refreshBtn = state.container.querySelector('#fptFinRefreshBtn');
         const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
 
-        if (refreshBtn) refreshBtn.classList.add('fpt-fin-btn-spin');
+        if (refreshBtn) {
+            refreshBtn.disabled = true;
+            refreshBtn.classList.add('fpt-fin-btn-spin');
+        }
 
-        const isOverview = state.activeSubtab === 'overview';
-        const isPurchases = state.activeSubtab === 'purchases';
-        const isOperations = state.activeSubtab === 'operations';
-        const isPotential = state.activeSubtab === 'potential';
-        const isProfit = state.activeSubtab === 'profit';
-        const pCfg = getPurchasesConfig();
-        const actionName = isOperations ? 'updateFinance' : (isPurchases ? (pCfg.updateAction || 'updatePurchases') : 'updateSales');
-        const subtabType = isOperations ? 'operations' : (isPurchases ? 'purchases' : 'sales');
-        const notificationMsg = isOverview ? 'Данные обзора обновлены' : (isPotential ? 'Данные о потенциале обновлены' : (isProfit ? 'Данные о прибыли обновлены' : (isOperations ? 'Данные об операциях обновлены' : (isPurchases ? 'Данные о покупках обновлены' : 'Данные о продажах обновлены'))));
+        function runBackgroundUpdate(actionName) {
+            return new Promise((resolve, reject) => {
+                let settled = false;
+                let timer = null;
+                const finish = (fn, value) => {
+                    if (settled) return;
+                    settled = true;
+                    if (timer) clearTimeout(timer);
+                    fn(value);
+                };
+                timer = setTimeout(() => {
+                    finish(reject, new Error('Не удалось дождаться ответа фонового обновления'));
+                }, 8000);
+
+                try {
+                    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+                        chrome.runtime.sendMessage({ action: actionName }, (response) => {
+                            if (chrome.runtime.lastError) {
+                                finish(reject, new Error(chrome.runtime.lastError.message || 'Ошибка фонового обновления'));
+                                return;
+                            }
+                            if (!response || response.success !== true) {
+                                finish(reject, new Error(response && response.error ? response.error : 'Фоновое обновление завершилось с ошибкой'));
+                                return;
+                            }
+                            finish(resolve, response);
+                        });
+                    } else {
+                        finish(reject, new Error('Фоновое обновление недоступно'));
+                    }
+                } catch (error) {
+                    finish(reject, error);
+                }
+            });
+        }
+
+        async function applyFreshness(updateResult, subtab) {
+            if (lastUpdatedEl && updateResult && updateResult.updatedAt) {
+                lastUpdatedEl.textContent = formatLastUpdatedText(updateResult.updatedAt);
+                lastUpdatedEl.title = '';
+            } else if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
+                try {
+                    const meta = await root.FPTFinanceData.getMeta(subtab);
+                    if (lastUpdatedEl && meta && meta.lastUpdate) {
+                        lastUpdatedEl.textContent = formatLastUpdatedText(meta.lastUpdate);
+                        lastUpdatedEl.title = '';
+                        return;
+                    }
+                } catch (_) {}
+                await updateLastUpdatedText(subtab);
+            } else {
+                await updateLastUpdatedText(subtab);
+            }
+        }
 
         try {
-            if (!isPotential && !isProfit) {
-                const updateResult = await new Promise((resolve, reject) => {
-                    let settled = false;
-                    const finish = (fn, value) => {
-                        if (settled) return;
-                        settled = true;
-                        clearTimeout(timer);
-                        fn(value);
-                    };
-                    const timer = setTimeout(() => {
-                        finish(reject, new Error('Не удалось дождаться ответа фонового обновления'));
-                    }, 8000);
+            const currentSubtab = state.activeSubtab;
 
-                    try {
-                        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
-                            chrome.runtime.sendMessage({ action: actionName }, (response) => {
-                                if (chrome.runtime.lastError) {
-                                    finish(reject, new Error(chrome.runtime.lastError.message || 'Ошибка фонового обновления'));
-                                    return;
-                                }
-                                if (!response || response.success !== true) {
-                                    finish(reject, new Error(response && response.error ? response.error : 'Фоновое обновление завершилось с ошибкой'));
-                                    return;
-                                }
-                                finish(resolve, response);
-                            });
-                        } else {
-                            finish(reject, new Error('Фоновое обновление недоступно'));
-                        }
-                    } catch (error) {
-                        finish(reject, error);
-                    }
-                });
-
-                // Источник уже вернул честный updatedAt. Если старый background не
-                // прислал его, оставляем совместимый fallback через data-adapter.
-                if (lastUpdatedEl && updateResult && updateResult.updatedAt) {
-                    const d = new Date(updateResult.updatedAt);
-                    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
-                } else if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
-                    try {
-                        const meta = await root.FPTFinanceData.getMeta(subtabType);
-                        if (lastUpdatedEl && meta && meta.lastUpdate) {
-                            const d = new Date(meta.lastUpdate);
-                            const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                            lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
-                        }
-                    } catch (_) {}
-                }
-            }
-
-            if (!lastUpdatedEl || !lastUpdatedEl.textContent.includes('в ')) {
-                if (lastUpdatedEl) {
-                    const now = new Date();
-                    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                    lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
-                }
-            }
-
-            // Принудительно перерисовываем активную подвкладку
-            if (state.activeSubtab === 'overview') {
-                await renderOverviewSubtab(true);
-            } else if (state.activeSubtab === 'sales') {
+            if (currentSubtab === 'sales') {
+                const updateResult = await runBackgroundUpdate('updateSales');
+                invalidateSalesCache();
                 await renderSalesSubtab(true);
-            } else if (state.activeSubtab === 'purchases') {
+                await applyFreshness(updateResult, 'sales');
+                if (typeof root.showNotification === 'function') {
+                    root.showNotification('Данные о продажах обновлены', false);
+                }
+            } else if (currentSubtab === 'purchases') {
+                const pCfg = getPurchasesConfig();
+                const actionName = pCfg.updateAction || 'updatePurchases';
+                const updateResult = await runBackgroundUpdate(actionName);
+                invalidatePurchasesCache();
                 await renderPurchasesSubtab(true);
-            } else if (state.activeSubtab === 'operations') {
+                await applyFreshness(updateResult, 'purchases');
+                if (typeof root.showNotification === 'function') {
+                    root.showNotification('Данные о покупках обновлены', false);
+                }
+            } else if (currentSubtab === 'operations') {
+                const updateResult = await runBackgroundUpdate('updateFinance');
+                invalidateOperationsCache();
                 await renderOperationsSubtab(true);
-            } else if (state.activeSubtab === 'potential') {
-                await renderPotentialSubtab(true);
-            } else if (state.activeSubtab === 'profit') {
+                await applyFreshness(updateResult, 'operations');
+                if (typeof root.showNotification === 'function') {
+                    root.showNotification('Данные об операциях обновлены', false);
+                }
+            } else if (currentSubtab === 'profit') {
+                // Прибыль рассчитывается на основе продаж и не может обновляться без продаж
+                const updateResult = await runBackgroundUpdate('updateSales');
+                invalidateProfitCache();
                 await renderProfitSubtab(true);
+                if (updateResult && updateResult.updatedAt) {
+                    state.profitLastUpdate = updateResult.updatedAt;
+                }
+                await updateLastUpdatedText('profit');
+                if (typeof root.showNotification === 'function') {
+                    root.showNotification('Данные о прибыли обновлены', false);
+                }
+            } else if (currentSubtab === 'potential') {
+                invalidatePotentialCache();
+                const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+                if (!potentialEngine || typeof potentialEngine.getInventory !== 'function') {
+                    throw new Error('Модуль инвентаря недоступен');
+                }
+                const lots = await potentialEngine.getInventory({ enrichPotential: true, forceRefresh: true });
+                state.cachedPotentialLots = Array.isArray(lots) ? lots : [];
+                if (typeof potentialEngine.calculatePotentialAggregates === 'function') {
+                    state.cachedPotentialAgg = potentialEngine.calculatePotentialAggregates(state.cachedPotentialLots);
+                }
+                state.potentialLastUpdate = Date.now();
+                await renderPotentialSubtab(false);
+                await updateLastUpdatedText('potential');
+                if (typeof root.showNotification === 'function') {
+                    root.showNotification('Данные о потенциале обновлены', false);
+                }
+            } else if (currentSubtab === 'overview') {
+                const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+                const [salesRes, opsRes, invRes] = await Promise.allSettled([
+                    runBackgroundUpdate('updateSales'),
+                    runBackgroundUpdate('updateFinance'),
+                    (async () => {
+                        if (!potentialEngine || typeof potentialEngine.getInventory !== 'function') {
+                            throw new Error('Модуль инвентаря недоступен');
+                        }
+                        return await potentialEngine.getInventory({ enrichPotential: true, forceRefresh: true });
+                    })()
+                ]);
+
+                const salesOk = salesRes.status === 'fulfilled';
+                const opsOk = opsRes.status === 'fulfilled';
+                const invOk = invRes.status === 'fulfilled';
+
+                // Инвалидируем только релевантные кэши
+                invalidateOverviewCache();
+                if (salesOk) invalidateSalesCache();
+                if (opsOk) invalidateOperationsCache();
+                if (invOk) {
+                    state.cachedPotentialLots = Array.isArray(invRes.value) ? invRes.value : [];
+                    if (potentialEngine && typeof potentialEngine.calculatePotentialAggregates === 'function') {
+                        state.cachedPotentialAgg = potentialEngine.calculatePotentialAggregates(state.cachedPotentialLots);
+                    }
+                    state.potentialLastUpdate = Date.now();
+                }
+
+                const failed = [];
+                if (!salesOk) failed.push(`продажи (${salesRes.reason && salesRes.reason.message ? salesRes.reason.message : 'ошибка'})`);
+                if (!opsOk) failed.push(`операции (${opsRes.reason && opsRes.reason.message ? opsRes.reason.message : 'ошибка'})`);
+                if (!invOk) failed.push(`инвентарь (${invRes.reason && invRes.reason.message ? invRes.reason.message : 'ошибка'})`);
+
+                if (failed.length === 3) {
+                    throw new Error(`Не удалось обновить данные обзора: ${failed.join(', ')}`);
+                }
+
+                const prevOverviewUpdate = state.overviewLastUpdate;
+                await renderOverviewSubtab(false);
+
+                if (failed.length > 0) {
+                    state.overviewLastUpdate = prevOverviewUpdate;
+                    await updateLastUpdatedText('overview');
+                    if (typeof root.showNotification === 'function') {
+                        root.showNotification(`Обновлено частично. Ошибки: ${failed.join(', ')}`, true);
+                    }
+                } else {
+                    await updateLastUpdatedText('overview');
+                    if (typeof root.showNotification === 'function') {
+                        root.showNotification('Данные обзора обновлены', false);
+                    }
+                }
+            } else {
+                // Fallback для неизвестной подвкладки: обновляем продажи
+                const updateResult = await runBackgroundUpdate('updateSales');
+                invalidateSalesCache();
+                await renderSalesSubtab(true);
+                await applyFreshness(updateResult, 'sales');
+                if (typeof root.showNotification === 'function') {
+                    root.showNotification('Данные о продажах обновлены', false);
+                }
             }
 
             // Анимация пульсации активных карточек
@@ -4403,10 +4982,6 @@
                 void c.offsetWidth;
                 c.classList.add('fpt-fin-pulse-anim');
             });
-
-            if (typeof root.showNotification === 'function') {
-                root.showNotification(notificationMsg, false);
-            }
         } catch (err) {
             console.warn('[FPTFinanceHub] Refresh error:', err);
             if (typeof root.showNotification === 'function') {
@@ -4414,10 +4989,10 @@
                 root.showNotification(`Ошибка обновления: ${message}`, true);
             }
         } finally {
+            state.isRefreshing = false;
             if (refreshBtn) {
-                setTimeout(() => {
-                    refreshBtn.classList.remove('fpt-fin-btn-spin');
-                }, 500);
+                refreshBtn.disabled = false;
+                refreshBtn.classList.remove('fpt-fin-btn-spin');
             }
         }
     }
@@ -4527,7 +5102,19 @@
         cleanupOperations,
         cleanupPotential,
         cleanupProfit,
-        getState: () => Object.assign({}, state)
+        getState: () => Object.assign({}, state),
+        getMskParts,
+        getMskDayKey,
+        getMskMonthKey,
+        getMskWeekKey,
+        formatMskDateTime,
+        MSK_OFFSET_MS,
+        groupOrdersByStep,
+        renderDynamicChart,
+        operationFlowChart,
+        renderOverviewDynamicChart,
+        formatLastUpdatedText,
+        updateLastUpdatedText
     };
 
     if (typeof window !== 'undefined') {

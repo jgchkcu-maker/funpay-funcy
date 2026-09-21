@@ -4,9 +4,9 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const ROOT = path.join(__dirname, '..');
-const backgroundSource = fs.readFileSync(path.join(ROOT, 'background', 'background.js'), 'utf8');
-const offscreenSource = fs.readFileSync(path.join(ROOT, 'offscreen', 'offscreen.js'), 'utf8');
-const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8');
+const backgroundSource = fs.readFileSync(path.join(ROOT, 'background', 'background.js'), 'utf8').replace(/\r\n/g, '\n');
+const offscreenSource = fs.readFileSync(path.join(ROOT, 'offscreen', 'offscreen.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
 
 function extractBetween(source, startMarker, endMarker) {
     const start = source.indexOf(startMarker);
