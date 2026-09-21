@@ -124,7 +124,7 @@
             minimumFractionDigits: hasFraction ? 2 : 0,
             maximumFractionDigits: 2
         });
-        return `${formatted} ${sym}`;
+        return `${formatted}\u00A0${sym}`;
     }
 
     function formatRevenueMulti(byCurrency) {

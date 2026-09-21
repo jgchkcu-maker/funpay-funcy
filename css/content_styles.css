@@ -9682,6 +9682,29 @@ textarea.fp-cw-input { line-height:1.4; }
     min-width: 0;
 }
 
+/*
+ * KPI metric rows must share the same internal rhythm on desktop/tablet.
+ * Titles are allowed to wrap, but a one-line title must not pull its value
+ * upward relative to a neighbouring two-line title.
+ */
+.fpt-fin-kpi-card > .fpt-fin-card-header {
+    min-height: 29px;
+    align-items: flex-start;
+}
+
+.fpt-fin-kpi-card > .fpt-fin-card-header > .fpt-fin-card-title {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.fpt-fin-kpi-card > .fpt-fin-card-header > .material-symbols-rounded {
+    flex: 0 0 auto;
+}
+
+.fpt-fin-kpi-card > .fpt-fin-skeleton-text:last-child {
+    margin-top: auto;
+}
+
 .fpt-fin-card:hover {
     border-color: var(--fptm-accent-border, rgba(255, 255, 255, 0.16));
 }
@@ -9751,6 +9774,11 @@ textarea.fp-cw-input { line-height:1.4; }
 
     .fpt-fin-kpi-card {
         min-height: auto;
+    }
+
+    .fpt-fin-kpi-card > .fpt-fin-card-header {
+        min-height: auto;
+        align-items: center;
     }
 }
 
