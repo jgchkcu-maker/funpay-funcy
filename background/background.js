@@ -308,6 +308,9 @@ async function runFinanceUpdateCycle() {
             if (continueToken) seenTokens.add(String(continueToken));
 
             const parsed = await fetchPage(continueToken);
+            if (parsed && parsed.error) {
+                throw new Error(`Ошибка парсинга финансов: ${parsed.error}`);
+            }
             if (!parsed || !Array.isArray(parsed.txns)) {
                 throw new Error('Ошибка парсинга финансов: некорректный результат страницы');
             }
