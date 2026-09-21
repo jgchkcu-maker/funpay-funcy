@@ -6,9 +6,9 @@ const ROOT = path.join(__dirname, '..');
 const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
 const css = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 
-assert.match(hub, /function syncFinancePortalTheme\(portal\)/, 'portal theme synchronizer must exist');
 assert.match(hub, /state\.container\.closest\('\.fp-tools-popup'\)/, 'modal must inherit active popup theme');
-assert.match(hub, /syncFinancePortalTheme\(overlay\);\s*document\.body\.appendChild\(overlay\);/, 'theme must be applied before mounting the body portal');
+assert.match(hub, /themeProps\.forEach\(name => \{[\s\S]*?overlay\.style\.setProperty\(name, value\)/, 'modal must copy Finance theme variables to the body portal');
+assert.match(hub, /overlay\.style\.colorScheme[\s\S]*?document\.body\.appendChild\(overlay\);/, 'theme must be applied before mounting the body portal');
 assert.match(hub, /role="dialog" aria-modal="true"/, 'operations modal must expose dialog semantics');
 assert.match(hub, /material-symbols-rounded" aria-hidden="true">close</, 'close button must use the standard icon');
 assert.match(hub, /event\.key === 'Escape'/, 'Escape must close the modal');
