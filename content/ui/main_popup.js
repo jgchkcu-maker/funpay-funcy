@@ -716,6 +716,7 @@ function createMainPopup() {
 
                     <div class="fpt-fin-subtabs-wrap">
                         <div class="fpt-fin-subtabs" id="fptFinSubtabs" role="tablist">
+                            <span class="fpt-fin-subtabs-indicator" id="fptFinSubtabsIndicator" aria-hidden="true"></span>
                             <button type="button" class="fpt-fin-subtab active" data-subtab="overview" role="tab" aria-selected="true">
                                 <span class="material-symbols-rounded">dashboard</span>
                                 <span>Обзор</span>
@@ -2696,28 +2697,65 @@ function setupFinanceHubUI(toolsPopup) {
     if (!finPage || finPage.dataset.fptBound) return;
     finPage.dataset.fptBound = '1';
 
-    // Subtabs switching with smooth scroll & persistence
+    // Subtabs: one shared "liquid glass" indicator slides under the active item.
+    const subtabsBar = finPage.querySelector('#fptFinSubtabs');
+    const indicator = finPage.querySelector('#fptFinSubtabsIndicator');
     const subtabs = finPage.querySelectorAll('.fpt-fin-subtab');
     const panes = finPage.querySelectorAll('.fpt-fin-tab-pane');
+    let indicatorMotionTimer = null;
+
+    function positionSubtabIndicator(activeButton, animate) {
+        if (!subtabsBar || !indicator) return;
+        const active = activeButton || finPage.querySelector('.fpt-fin-subtab.active');
+        if (!active) return;
+
+        const left = active.offsetLeft;
+        const width = active.offsetWidth;
+        if (!Number.isFinite(left) || !Number.isFinite(width) || width <= 0) return;
+
+        indicator.style.setProperty('--fpt-fin-pill-x', `${left}px`);
+        indicator.style.setProperty('--fpt-fin-pill-w', `${width}px`);
+
+        if (!indicator.classList.contains('is-ready')) {
+            indicator.classList.add('is-ready');
+            return;
+        }
+
+        if (animate !== false) {
+            indicator.classList.remove('is-moving');
+            // Force a tiny style flush so repeated fast tab clicks restart the liquid stretch.
+            void indicator.offsetWidth;
+            indicator.classList.add('is-moving');
+            if (indicatorMotionTimer) clearTimeout(indicatorMotionTimer);
+            indicatorMotionTimer = setTimeout(() => {
+                indicator.classList.remove('is-moving');
+                indicatorMotionTimer = null;
+            }, 260);
+        }
+    }
 
     function switchSubtab(target) {
         if (!target) return;
         const prevSubtab = finPage.querySelector('.fpt-fin-subtab.active')?.dataset?.subtab;
+        let activeButton = null;
+
         subtabs.forEach(s => {
             const isActive = (s.dataset.subtab === target);
             s.classList.toggle('active', isActive);
             s.setAttribute('aria-selected', isActive ? 'true' : 'false');
-            if (isActive) {
-                const subtabsBar = finPage.querySelector('.fpt-fin-subtabs');
-                if (subtabsBar) {
-                    const subLeft = s.offsetLeft;
-                    const subWidth = s.offsetWidth;
-                    const barWidth = subtabsBar.clientWidth;
-                    const targetScroll = subLeft - (barWidth - subWidth) / 2;
-                    subtabsBar.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
-                }
-            }
+            s.tabIndex = isActive ? 0 : -1;
+            if (isActive) activeButton = s;
         });
+
+        if (activeButton && subtabsBar) {
+            positionSubtabIndicator(activeButton, prevSubtab && prevSubtab !== target);
+
+            const subLeft = activeButton.offsetLeft;
+            const subWidth = activeButton.offsetWidth;
+            const barWidth = subtabsBar.clientWidth;
+            const targetScroll = subLeft - (barWidth - subWidth) / 2;
+            subtabsBar.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
+        }
 
         panes.forEach(pane => {
             pane.classList.toggle('active', pane.dataset.subtab === target);
@@ -2732,21 +2770,65 @@ function setupFinanceHubUI(toolsPopup) {
         }
     }
 
-    subtabs.forEach(btn => {
+    subtabs.forEach((btn, index) => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             switchSubtab(btn.dataset.subtab);
         });
+
+        btn.addEventListener('keydown', (e) => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+            e.preventDefault();
+            let nextIndex = index;
+            if (e.key === 'ArrowLeft') nextIndex = (index - 1 + subtabs.length) % subtabs.length;
+            if (e.key === 'ArrowRight') nextIndex = (index + 1) % subtabs.length;
+            if (e.key === 'Home') nextIndex = 0;
+            if (e.key === 'End') nextIndex = subtabs.length - 1;
+            const next = subtabs[nextIndex];
+            if (next) {
+                switchSubtab(next.dataset.subtab);
+                next.focus({ preventScroll: true });
+            }
+        });
     });
 
-    // Restore saved subtab if any
+    // Keep the indicator aligned after popup resize/theme/font changes.
+    if (subtabsBar && typeof ResizeObserver !== 'undefined') {
+        const subtabResizeObserver = new ResizeObserver(() => {
+            positionSubtabIndicator(null, false);
+        });
+        subtabResizeObserver.observe(subtabsBar);
+        subtabs.forEach(btn => subtabResizeObserver.observe(btn));
+        finPage.__fptFinanceSubtabResizeObserver = subtabResizeObserver;
+    } else if (typeof window !== 'undefined') {
+        const onFinanceResize = () => positionSubtabIndicator(null, false);
+        window.addEventListener('resize', onFinanceResize, { passive: true });
+        finPage.__fptFinanceSubtabResizeFallback = onFinanceResize;
+    }
+
+    // Restore saved subtab if any.
+    let restored = false;
     try {
         const savedSubtab = sessionStorage.getItem('fpt_fin_active_subtab');
         if (savedSubtab && finPage.querySelector(`.fpt-fin-subtab[data-subtab="${savedSubtab}"]`)) {
             switchSubtab(savedSubtab);
+            restored = true;
         }
     } catch (_) {}
+
+    if (!restored) {
+        const initial = finPage.querySelector('.fpt-fin-subtab.active');
+        subtabs.forEach(s => {
+            const isActive = s === initial;
+            s.tabIndex = isActive ? 0 : -1;
+        });
+        if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => positionSubtabIndicator(initial, false));
+        } else {
+            positionSubtabIndicator(initial, false);
+        }
+    }
 
     if (window.fptFinanceHub && typeof window.fptFinanceHub.init === 'function') {
         window.fptFinanceHub.init(finPage);
