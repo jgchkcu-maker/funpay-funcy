@@ -159,12 +159,6 @@ function parseFinancePage(html) {
                 throw e;
             }
         });
-        // Резервный курсор: если форма не отдала continue, берём id ПОСЛЕДНЕЙ
-        // операции на странице — FunPay-пагинация курсорная по id транзакции.
-        if (!nextId && txns.length) {
-            const lastId = txns[txns.length - 1].id;
-            if (lastId) nextId = lastId;
-        }
         return { nextId, txns };
     } catch (e) {
         console.error("FP Tools Offscreen: глобальная ошибка парсинга финансов:", e);
