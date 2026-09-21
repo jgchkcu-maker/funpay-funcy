@@ -8659,6 +8659,10 @@ textarea.fp-cw-input { line-height:1.4; }
    Finance Hub — Styles & 12-Column Responsive Grid Primitives (TASK-01)
    ========================================================================== */
 
+.fpt-fin-control-hidden {
+    display: none !important;
+}
+
 /* 12-column responsive grid */
 .fpt-fin-grid {
     display: grid;
@@ -8688,6 +8692,14 @@ textarea.fp-cw-input { line-height:1.4; }
     grid-column: span 12;
 }
 
+.fpt-fin-col-3,
+.fpt-fin-col-4,
+.fpt-fin-col-6,
+.fpt-fin-col-8,
+.fpt-fin-col-12 {
+    min-width: 0;
+}
+
 @container (max-width: 720px) {
     .fpt-fin-col-3 {
         grid-column: span 6;
@@ -8711,6 +8723,7 @@ textarea.fp-cw-input { line-height:1.4; }
     .fpt-fin-grid {
         gap: 8px;
     }
+
 }
 
 /* Finance Hub Page wrapper */
@@ -8782,11 +8795,13 @@ textarea.fp-cw-input { line-height:1.4; }
     opacity: 0.85;
 }
 
-.fpt-fin-header-right {
+.fpt-fin-header-actions {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    min-width: 0;
+    margin-left: auto;
 }
 
 .fpt-fin-period-wrap {
@@ -8795,6 +8810,23 @@ textarea.fp-cw-input { line-height:1.4; }
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+}
+
+.fpt-fin-filterbar {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+    margin-bottom: 16px;
+}
+
+.fpt-fin-filterbar .fpt-fin-period-wrap {
+    display: flex;
+    align-items: flex-end;
+    flex: 1 1 100%;
+    min-width: 0;
 }
 
 .fp-tools-popup .fpt-fin-custom-range {
@@ -8835,6 +8867,12 @@ textarea.fp-cw-input { line-height:1.4; }
 .fp-tools-popup select.fpt-fin-period-select,
 .fp-tools-popup .fpt-fin-period-select {
     display: inline-block !important;
+    width: auto !important;
+    min-width: 118px !important;
+    max-width: min(100%, 200px) !important;
+    margin: 0 !important;
+    flex: 0 1 auto !important;
+    box-sizing: border-box !important;
     padding: 6px 28px 6px 12px !important;
     background: var(--fptm-field, var(--fptm-surface-2, rgba(255, 255, 255, 0.06))) !important;
     border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.12)) !important;
@@ -8850,6 +8888,10 @@ textarea.fp-cw-input { line-height:1.4; }
     height: auto !important;
     box-shadow: none !important;
     transition: border-color .18s ease, background-color .18s ease !important;
+}
+
+.fp-tools-popup #fptFinCategorySelect {
+    max-width: min(100%, 240px) !important;
 }
 
 .fp-tools-popup select.fpt-fin-period-select:focus,
@@ -9073,6 +9115,18 @@ textarea.fp-cw-input { line-height:1.4; }
     transition: border-color .18s ease, box-shadow .18s ease;
 }
 
+.fpt-fin-col-3 > .fpt-fin-card {
+    height: 100%;
+}
+
+.fpt-fin-kpi-card {
+    min-height: 138px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
 .fpt-fin-card:hover {
     border-color: var(--fptm-accent-border, rgba(255, 255, 255, 0.16));
 }
@@ -9110,6 +9164,35 @@ textarea.fp-cw-input { line-height:1.4; }
     align-items: center !important;
     gap: 6px !important;
     line-height: 1.3 !important;
+}
+
+.fpt-fin-kpi-card .fpt-fin-card-sub {
+    margin-top: auto;
+    flex-wrap: wrap;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.fpt-fin-kpi-card .fpt-fin-card-sub > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@container (max-width: 480px) {
+    .fpt-fin-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+    }
+
+    .fpt-fin-col-3 > .fpt-fin-card {
+        height: auto;
+    }
+
+    .fpt-fin-kpi-card {
+        min-height: auto;
+    }
 }
 
 .fpt-fin-card-sub .material-symbols-rounded {

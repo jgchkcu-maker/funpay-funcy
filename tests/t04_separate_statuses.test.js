@@ -18,7 +18,7 @@ function runStaticContractChecks() {
 
     // 2. updateStatusSelectOptions presence and logic
     assert.match(financeHubSource, /function updateStatusSelectOptions\(subtab\)/, 'updateStatusSelectOptions must exist');
-    assert.match(financeHubSource, /statusSelect\.style\.display\s*=\s*['"]none['"]/, 'potential tab must hide status select');
+    assert.match(financeHubSource, /setFinanceControlVisible\(statusSelect,\s*!isPotential\)/, 'potential tab must hide status select through the shared visibility contract');
     assert.match(financeHubSource, /value=["']complete["']/, 'operations options must include complete');
     assert.match(financeHubSource, /value=["']cancel["']/, 'operations options must include cancel');
     assert.match(financeHubSource, /value=["']waiting["']/, 'operations options must include waiting');

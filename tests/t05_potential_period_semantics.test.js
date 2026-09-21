@@ -20,8 +20,8 @@ function runStaticContractChecks() {
     assert.match(financeHubSource, /Текущий снимок/, 'setupHeaderFilters must define neutral snapshot label');
 
     // 3. Visibility toggling in updateHeaderFiltersVisibility
-    assert.match(financeHubSource, /if\s*\(\s*subtab\s*===\s*['"]potential['"]\s*\)\s*\{[\s\S]*?periodSelect[\s\S]*?none/, 'potential subtab must hide period selector');
-    assert.match(financeHubSource, /snapshotBadge\.style\.display\s*=\s*['"]inline-flex['"]/, 'potential subtab must show snapshot badge');
+    assert.match(financeHubSource, /setFinanceControlVisible\(periodSelect,\s*!isPotential\)/, 'potential subtab must hide period selector through the shared visibility contract');
+    assert.match(financeHubSource, /setFinanceControlVisible\(snapshotBadge,\s*isPotential,\s*['"]inline-flex['"]\)/, 'potential subtab must show snapshot badge through the shared visibility contract');
     assert.match(financeHubSource, /periodSelect\.value\s*=\s*state\.period/, 'returning from potential must restore user period selection');
 
     // 4. Export metadata snapshot semantics

@@ -1,0 +1,31 @@
+{
+  "pack": "Finance Hub UI/UX Fix Pack",
+  "version": "1.0",
+  "repository": "jgchkcu-maker/funpay-funcy",
+  "baseline_inspected": "79ee0585c3d8e92f78b8baf828c4c57800a3e4bd",
+  "tasks": [
+    "T15_finance_filter_css_isolation.md",
+    "T16_contextual_filter_visibility.md",
+    "T17_finance_header_information_architecture.md",
+    "T18_labeled_contextual_filters.md",
+    "T19_finance_ui_localization.md",
+    "T20_export_modal_theme_integration.md",
+    "T21_potential_stock_semantics.md",
+    "T22_profit_missing_cost_onboarding.md",
+    "T23_scroll_and_empty_state_cleanup.md",
+    "T24_finance_hub_modularization.md"
+  ],
+  "execution_order": [
+    "T15",
+    "T16",
+    "T17",
+    "T18",
+    "T19",
+    "T20",
+    "T21",
+    "T22",
+    "T23",
+    "T24"
+  ],
+  "production_files_modified_by_pack": false
+}

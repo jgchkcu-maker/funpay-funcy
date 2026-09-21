@@ -177,7 +177,7 @@ async function testRepeatedInitAndPotentialPeriodSemantics() {
 
 async function main() {
     testMskBoundaryIsDeterministic();
-    assert.match(financeHubSource, /subtab === ['"]potential['"][\s\S]*?periodSelect[\s\S]*?display\s*=\s*['"]none['"]/);
+    assert.match(financeHubSource, /setFinanceControlVisible\(periodSelect,\s*!isPotential\)/);
     await testRepeatedInitAndPotentialPeriodSemantics();
     console.log('FINANCE_TIME_PASS');
 }

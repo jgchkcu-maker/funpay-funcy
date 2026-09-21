@@ -4184,6 +4184,37 @@
         };
     }
 
+    function setFinanceControlVisible(el, visible, visibleDisplay) {
+        if (!el) return;
+        const isVisible = Boolean(visible);
+        if (el.classList && typeof el.classList.toggle === 'function') {
+            el.classList.toggle('fpt-fin-control-hidden', !isVisible);
+        } else if (el.classList) {
+            if (isVisible && typeof el.classList.remove === 'function') {
+                el.classList.remove('fpt-fin-control-hidden');
+            } else if (!isVisible && typeof el.classList.add === 'function') {
+                el.classList.add('fpt-fin-control-hidden');
+            }
+        }
+        if (typeof el.setAttribute === 'function') {
+            el.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+        }
+
+        // Keep the old inline fallback in one place for lightweight DOMs and
+        // browsers that do not apply the Finance utility stylesheet yet.
+        if (el.style) {
+            if (!isVisible && typeof el.style.setProperty === 'function') {
+                el.style.setProperty('display', 'none', 'important');
+            } else if (isVisible && visibleDisplay && typeof el.style.setProperty === 'function') {
+                el.style.setProperty('display', visibleDisplay);
+            } else if (isVisible && typeof el.style.removeProperty === 'function') {
+                el.style.removeProperty('display');
+            } else {
+                el.style.display = isVisible ? (visibleDisplay || '') : 'none';
+            }
+        }
+    }
+
     function setCustomRangeError(message) {
         const controls = getCustomRangeControls();
         if (!controls || !controls.error) return;
@@ -4194,7 +4225,13 @@
     function syncCustomRangeControls(visible) {
         const controls = getCustomRangeControls();
         if (!controls) return;
-        if (controls.wrap) controls.wrap.style.display = visible ? 'flex' : 'none';
+        if (controls.wrap) {
+            setFinanceControlVisible(
+                controls.wrap,
+                visible && state.activeSubtab !== 'potential',
+                'flex'
+            );
+        }
         if (controls.from && state.customRange && !controls.from.value) {
             controls.from.value = state.customRange.from;
         }
@@ -4351,13 +4388,6 @@
         const statusSelect = state.container.querySelector('#fptFinStatusSelect');
         if (!statusSelect) return;
 
-        if (subtab === 'potential') {
-            statusSelect.style.display = 'none';
-            return;
-        }
-
-        statusSelect.style.display = '';
-
         if (subtab === 'operations') {
             statusSelect.setAttribute('aria-label', 'Статус операций');
             statusSelect.innerHTML = `
@@ -4395,7 +4425,7 @@
             snapshotBadge.setAttribute('role', 'status');
             snapshotBadge.setAttribute('aria-label', 'Текущий снимок инвентаря');
             snapshotBadge.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;color:#94a3b8;vertical-align:middle;margin-right:4px;">inventory_2</span><span>Текущий снимок</span>';
-            snapshotBadge.style.display = 'none';
+            setFinanceControlVisible(snapshotBadge, false);
             const periodSelect = container.querySelector('#fptFinPeriodSelect');
             if (periodSelect && periodSelect.parentNode) {
                 periodSelect.parentNode.insertBefore(snapshotBadge, periodSelect.nextSibling);
@@ -4495,49 +4525,33 @@
         if (!state.container) return;
         const periodSelect = state.container.querySelector('#fptFinPeriodSelect');
         const snapshotBadge = state.container.querySelector('#fptFinPeriodSnapshotBadge');
+        const currencySelect = state.container.querySelector('#fptFinCurrencySelect');
+        const statusSelect = state.container.querySelector('#fptFinStatusSelect');
         const catSelect = state.container.querySelector('#fptFinCategorySelect');
         const customRangeWrap = state.container.querySelector('#fptFinCustomRange');
+        const isPotential = subtab === 'potential';
 
-        // T05: Potential is a live snapshot, not a historical date range
-        if (subtab === 'potential') {
-            if (periodSelect) {
-                if (typeof periodSelect.style.setProperty === 'function') {
-                    periodSelect.style.setProperty('display', 'none', 'important');
+        // T05: Potential is a live snapshot, not a historical date range.
+        setFinanceControlVisible(periodSelect, !isPotential);
+        setFinanceControlVisible(snapshotBadge, isPotential, 'inline-flex');
+        setFinanceControlVisible(currencySelect, true);
+        setFinanceControlVisible(statusSelect, !isPotential);
+        setFinanceControlVisible(catSelect, subtab !== 'operations');
+        setFinanceControlVisible(
+            customRangeWrap,
+            !isPotential && (state.pendingCustomRange || periodKey(state.period) === 'custom'),
+            'flex'
+        );
+
+        if (!isPotential && periodSelect) {
+            // Restore user's previous period selection.
+            if (state.period) {
+                if (typeof state.period === 'string') {
+                    periodSelect.value = state.period;
                 } else {
-                    periodSelect.style.display = 'none';
+                    periodSelect.value = periodKey(state.period);
                 }
             }
-            if (snapshotBadge) {
-                snapshotBadge.style.display = 'inline-flex';
-            }
-            if (customRangeWrap) customRangeWrap.style.display = 'none';
-        } else {
-            if (periodSelect) {
-                if (typeof periodSelect.style.removeProperty === 'function') {
-                    periodSelect.style.removeProperty('display');
-                }
-                periodSelect.style.display = '';
-                // Restore user's previous period selection
-                if (state.period) {
-                    if (typeof state.period === 'string') {
-                        periodSelect.value = state.period;
-                    } else {
-                        periodSelect.value = periodKey(state.period);
-                    }
-                }
-            }
-            if (snapshotBadge) {
-                snapshotBadge.style.display = 'none';
-            }
-            if (customRangeWrap) {
-                customRangeWrap.style.display = (state.pendingCustomRange || periodKey(state.period) === 'custom')
-                    ? 'flex'
-                    : 'none';
-            }
-        }
-
-        if (catSelect) {
-            catSelect.style.display = (subtab === 'operations') ? 'none' : '';
         }
         updateStatusSelectOptions(subtab);
     }
