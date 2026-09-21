@@ -1,0 +1,31 @@
+{
+  "package": "finance-hub-hardening-architect-pack",
+  "version": "1.0.0",
+  "repository": "jgchkcu-maker/funpay-funcy",
+  "target_agent": "Gemini 3.8 Flash",
+  "task_order": [
+    "T00",
+    "T01",
+    "T02",
+    "T03",
+    "T04",
+    "T05",
+    "T06",
+    "T07",
+    "T08",
+    "T09",
+    "T10",
+    "T11",
+    "T12",
+    "T13",
+    "T14"
+  ],
+  "critical_invariants": [
+    "No destructive replacement before complete fetch+validation",
+    "No lastUpdate on failure",
+    "No success response after failure",
+    "No guessed cross-currency financial truth",
+    "Single MSK calendar semantics",
+    "Idempotent Finance Hub lifecycle"
+  ]
+}
