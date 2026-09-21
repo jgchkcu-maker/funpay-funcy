@@ -217,12 +217,17 @@ function parseSalesPage(html) {
                 orders.push({ orderId, description, subcategoryName, price, currency, buyerUsername, buyerId, orderStatus, orderDate, orderDateText, paymentType });
             } catch (e) {
                 console.error("FP Tools Offscreen: Ошибка при парсинге одного заказа:", e, row);
+                throw e;
             }
         });
         return { nextOrderId, orders };
     } catch (e) {
         console.error("FP Tools Offscreen: Глобальная ошибка парсинга страницы продаж:", e);
-        return { nextOrderId: null, orders: [] };
+        return {
+            nextOrderId: null,
+            orders: [],
+            error: e && e.message ? e.message : "Не удалось разобрать страницу заказов"
+        };
     }
 }
 

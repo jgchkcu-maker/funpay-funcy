@@ -85,7 +85,9 @@ async function fptFetchResilient(url, options, { retries = 3, baseDelay = 700 } 
 // поэтому квота ~10 МБ больше не упирается на ~18800 заказах. Между страницами —
 // небольшая вежливая пауза, чтобы FunPay не банил IP за флуд.
 async function runSalesUpdateCycle() {
-    if (_salesCycleRunning) { console.log("FP Tools: цикл продаж уже идёт — пропуск повторного запуска."); return; }
+    if (_salesCycleRunning) {
+        throw new Error("Обновление продаж уже выполняется.");
+    }
     _salesCycleRunning = true;
     console.log("FP Tools: Запуск полного цикла сбора статистики продаж...");
     try {
@@ -127,18 +129,25 @@ async function runSalesUpdateCycle() {
                 }
                 break;
             }
-            if (!response.ok) throw new Error(`Ошибка сети: ${response.status}`);
+            if (!response || !response.ok) {
+                throw new Error(`Ошибка сети: ${response ? response.status : 'нет ответа'}`);
+            }
             const html = await response.text();
-            return await parseHtmlViaOffscreen(html, 'parseSalesPage');
+            const parsed = await parseHtmlViaOffscreen(html, 'parseSalesPage');
+            if (parsed && parsed.error) {
+                throw new Error(`Ошибка парсинга продаж: ${parsed.error}`);
+            }
+            if (!parsed || !Array.isArray(parsed.orders)) {
+                throw new Error('Ошибка парсинга продаж: некорректный результат страницы');
+            }
+            return parsed;
         };
 
-        const commitMeta = async (firstId, lastId) => {
+        // Курсоры можно сохранять инкрементально, но freshness меняется только
+        // после полного успешного цикла.
+        const commitCursorMeta = async (firstId, lastId) => {
             if (firstId !== undefined) await FPTSalesDB.setMeta('firstOrderId', firstId);
             if (lastId !== undefined) await FPTSalesDB.setMeta('lastOrderId', lastId);
-            const now = Date.now();
-            await FPTSalesDB.setMeta('lastUpdate', now);
-            // Маленькое зеркало для UI, который читает дату из storage.local — это байты, не мегабайты.
-            await chrome.storage.local.set({ fpToolsSalesLastUpdate: now });
         };
 
         // --- Догрузка НОВЫХ заказов сверху (инкрементально) ---
@@ -155,7 +164,7 @@ async function runSalesUpdateCycle() {
                 if (newOrders.length > 0) {
                     await FPTSalesDB.putOrders(newOrders);
                     firstOrderId = newOrders[0].orderId;
-                    await commitMeta(firstOrderId, undefined);
+                    await commitCursorMeta(firstOrderId, undefined);
                     console.log(`FP Tools: Добавлено ${newOrders.length} новых заказов сверху.`);
                 } else {
                     newOrdersFoundInCycle = false;
@@ -179,7 +188,7 @@ async function runSalesUpdateCycle() {
                 await FPTSalesDB.putOrders(orders);
                 firstOrderId = orders[0].orderId;
                 lastOrderId = orders[orders.length - 1].orderId;
-                await commitMeta(firstOrderId, lastOrderId);
+                await commitCursorMeta(firstOrderId, lastOrderId);
                 console.log(`FP Tools: Инициализация статистики с ${orders.length} заказами.`);
                 continueToken = nextOrderId;
             } else {
@@ -208,14 +217,14 @@ async function runSalesUpdateCycle() {
             if (newOrdersOnPageCount > 0) {
                 await FPTSalesDB.putOrders(toPut);
                 lastOrderId = orders[orders.length - 1].orderId;
-                await commitMeta(undefined, lastOrderId);
+                await commitCursorMeta(undefined, lastOrderId);
                 const total = await FPTSalesDB.count();
                 console.log(`FP Tools: Добавлено ${newOrdersOnPageCount} старых заказов. Всего: ${total}.`);
                 _emptyPages = 0;
             } else {
                 _emptyPages++;
                 lastOrderId = orders[orders.length - 1].orderId;
-                await commitMeta(undefined, lastOrderId);
+                await commitCursorMeta(undefined, lastOrderId);
                 console.log(`FP Tools: Страница без новых заказов (${_emptyPages}/${MAX_EMPTY_PAGES}).`);
                 if (_emptyPages >= MAX_EMPTY_PAGES) {
                     console.log("FP Tools: Несколько страниц подряд без новых заказов - остановка.");
@@ -233,20 +242,30 @@ async function runSalesUpdateCycle() {
             continueToken = nextOrderId;
         }
 
+        const count = await FPTSalesDB.count();
+        const updatedAt = Date.now();
+        await FPTSalesDB.setMeta('lastUpdate', updatedAt);
+        await chrome.storage.local.set({ fpToolsSalesLastUpdate: updatedAt });
+
+        console.log(`FP Tools: Сбор статистики продаж завершен, заказов: ${count}.`);
+        return { updatedAt, count };
     } catch (e) {
-        console.error(`FP Tools: Ошибка в цикле сбора статистики: ${e.message}`);
+        console.error(`FP Tools: Ошибка в цикле сбора статистики продаж: ${e.message}`);
+        throw e;
     } finally {
         _salesCycleRunning = false;
-        console.log("FP Tools: Сбор статистики продаж завершен.");
-        await chrome.storage.local.set({
-            fpToolsSalesLastUpdate: Date.now(),
-            fpToolsSalesCollecting: false
-        });
+        try {
+            await chrome.storage.local.set({ fpToolsSalesCollecting: false });
+        } catch (cleanupError) {
+            console.error(`FP Tools: Не удалось сбросить флаг сбора продаж: ${cleanupError.message}`);
+        }
     }
 }
 
 async function runFinanceUpdateCycle() {
-    if (_financeCycleRunning) { console.log("FP Tools: цикл финансов уже идёт — пропуск."); return; }
+    if (_financeCycleRunning) {
+        throw new Error("Обновление финансов уже выполняется.");
+    }
     _financeCycleRunning = true;
     console.log("FP Tools: Запуск сбора статистики финансов...");
     try {
@@ -383,6 +402,7 @@ async function runFinanceUpdateCycle() {
         });
 
         console.log(`FP Tools: Финансы собраны, операций: ${collected.length}.`);
+        return { updatedAt: now, count: collected.length };
     } catch (e) {
         console.error(`FP Tools: Ошибка в цикле сбора финансов: ${e.message}`);
         throw e;
@@ -397,7 +417,9 @@ async function runFinanceUpdateCycle() {
 }
 
 async function runPurchasesUpdateCycle() {
-    if (_purchasesCycleRunning) { console.log("FP Tools: цикл покупок уже идёт — пропуск."); return; }
+    if (_purchasesCycleRunning) {
+        throw new Error("Обновление покупок уже выполняется.");
+    }
     _purchasesCycleRunning = true;
     console.log("FP Tools: Запуск полного цикла сбора статистики покупок...");
     try {
@@ -437,18 +459,25 @@ async function runPurchasesUpdateCycle() {
                 }
                 break;
             }
-            if (!response.ok) throw new Error(`Ошибка сети: ${response.status}`);
+            if (!response || !response.ok) {
+                throw new Error(`Ошибка сети: ${response ? response.status : 'нет ответа'}`);
+            }
             const html = await response.text();
-            return await parseHtmlViaOffscreen(html, 'parseSalesPage');
+            const parsed = await parseHtmlViaOffscreen(html, 'parseSalesPage');
+            if (parsed && parsed.error) {
+                throw new Error(`Ошибка парсинга покупок: ${parsed.error}`);
+            }
+            if (!parsed || !Array.isArray(parsed.orders)) {
+                throw new Error('Ошибка парсинга покупок: некорректный результат страницы');
+            }
+            return parsed;
         };
 
-        const commitMeta = async (firstId, lastId) => {
+        // Курсоры можно сохранять инкрементально, но freshness меняется только
+        // после полного успешного цикла.
+        const commitCursorMeta = async (firstId, lastId) => {
             if (firstId !== undefined) await FPTPurchasesDB.setMeta('firstOrderId', firstId);
             if (lastId !== undefined) await FPTPurchasesDB.setMeta('lastOrderId', lastId);
-            const now = Date.now();
-            await FPTPurchasesDB.setMeta('lastUpdate', now);
-            // Маленькое зеркало для UI, который читает дату из storage.local — это байты, не мегабайты.
-            await chrome.storage.local.set({ fpToolsPurchasesLastUpdate: now });
         };
 
         // --- Догрузка НОВЫХ покупок сверху (инкрементально) ---
@@ -465,7 +494,7 @@ async function runPurchasesUpdateCycle() {
                 if (newOrders.length > 0) {
                     await FPTPurchasesDB.putOrders(newOrders);
                     firstOrderId = newOrders[0].orderId;
-                    await commitMeta(firstOrderId, undefined);
+                    await commitCursorMeta(firstOrderId, undefined);
                     console.log(`FP Tools: Добавлено ${newOrders.length} новых покупок сверху.`);
                 } else {
                     newOrdersFoundInCycle = false;
@@ -489,7 +518,7 @@ async function runPurchasesUpdateCycle() {
                 await FPTPurchasesDB.putOrders(orders);
                 firstOrderId = orders[0].orderId;
                 lastOrderId = orders[orders.length - 1].orderId;
-                await commitMeta(firstOrderId, lastOrderId);
+                await commitCursorMeta(firstOrderId, lastOrderId);
                 console.log(`FP Tools: Инициализация статистики с ${orders.length} заказами.`);
                 continueToken = nextOrderId;
             } else {
@@ -518,14 +547,14 @@ async function runPurchasesUpdateCycle() {
             if (newOrdersOnPageCount > 0) {
                 await FPTPurchasesDB.putOrders(toPut);
                 lastOrderId = orders[orders.length - 1].orderId;
-                await commitMeta(undefined, lastOrderId);
+                await commitCursorMeta(undefined, lastOrderId);
                 const total = await FPTPurchasesDB.count();
                 console.log(`FP Tools: Добавлено ${newOrdersOnPageCount} старых покупок. Всего: ${total}.`);
                 _emptyPages = 0;
             } else {
                 _emptyPages++;
                 lastOrderId = orders[orders.length - 1].orderId;
-                await commitMeta(undefined, lastOrderId);
+                await commitCursorMeta(undefined, lastOrderId);
                 console.log(`FP Tools: Страница без новых покупок (${_emptyPages}/${MAX_EMPTY_PAGES}).`);
                 if (_emptyPages >= MAX_EMPTY_PAGES) {
                     console.log("FP Tools: Несколько страниц подряд без новых покупок - остановка.");
@@ -543,15 +572,23 @@ async function runPurchasesUpdateCycle() {
             continueToken = nextOrderId;
         }
 
+        const count = await FPTPurchasesDB.count();
+        const updatedAt = Date.now();
+        await FPTPurchasesDB.setMeta('lastUpdate', updatedAt);
+        await chrome.storage.local.set({ fpToolsPurchasesLastUpdate: updatedAt });
+
+        console.log(`FP Tools: Сбор статистики покупок завершен, покупок: ${count}.`);
+        return { updatedAt, count };
     } catch (e) {
-        console.error(`FP Tools: Ошибка в цикле сбора статистики: ${e.message}`);
+        console.error(`FP Tools: Ошибка в цикле сбора статистики покупок: ${e.message}`);
+        throw e;
     } finally {
         _purchasesCycleRunning = false;
-        console.log("FP Tools: Сбор статистики покупок завершен.");
-        await chrome.storage.local.set({
-            fpToolsPurchasesLastUpdate: Date.now(),
-            fpToolsPurchasesCollecting: false
-        });
+        try {
+            await chrome.storage.local.set({ fpToolsPurchasesCollecting: false });
+        } catch (cleanupError) {
+            console.error(`FP Tools: Не удалось сбросить флаг сбора покупок: ${cleanupError.message}`);
+        }
     }
 }
 
@@ -2374,7 +2411,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
     if (request.action === 'updateSales') {
-        runSalesUpdateCycle().then(() => sendResponse({success: true})).catch(e => sendResponse({success: false, error: e.message}));
+        runSalesUpdateCycle()
+            .then(result => sendResponse({ success: true, updatedAt: result.updatedAt, count: result.count }))
+            .catch(e => sendResponse({ success: false, error: e.message }));
         return true;
     }
     if (request.action === 'resetSalesStorage') {
@@ -2417,7 +2456,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
     if (request.action === 'updatePurchases') {
-        runPurchasesUpdateCycle().then(() => sendResponse({success: true})).catch(e => sendResponse({success: false, error: e.message}));
+        runPurchasesUpdateCycle()
+            .then(result => sendResponse({ success: true, updatedAt: result.updatedAt, count: result.count }))
+            .catch(e => sendResponse({ success: false, error: e.message }));
         return true;
     }
     if (request.action === 'resetPurchasesStorage') {
@@ -2457,7 +2498,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
     if (request.action === 'updateFinance') {
-        runFinanceUpdateCycle().then(() => sendResponse({ success: true })).catch(e => sendResponse({ success: false, error: e.message }));
+        runFinanceUpdateCycle()
+            .then(result => sendResponse({ success: true, updatedAt: result.updatedAt, count: result.count }))
+            .catch(e => sendResponse({ success: false, error: e.message }));
         return true;
     }
     if (request.action === 'resetFinanceStorage') {

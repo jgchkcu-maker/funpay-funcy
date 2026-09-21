@@ -4322,26 +4322,46 @@
 
         try {
             if (!isPotential && !isProfit) {
-                await new Promise(resolve => {
-                    const timer = setTimeout(resolve, 8000);
+                const updateResult = await new Promise((resolve, reject) => {
+                    let settled = false;
+                    const finish = (fn, value) => {
+                        if (settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        fn(value);
+                    };
+                    const timer = setTimeout(() => {
+                        finish(reject, new Error('Не удалось дождаться ответа фонового обновления'));
+                    }, 8000);
+
                     try {
                         if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
-                            chrome.runtime.sendMessage({ action: actionName }, () => {
-                                clearTimeout(timer);
-                                resolve();
+                            chrome.runtime.sendMessage({ action: actionName }, (response) => {
+                                if (chrome.runtime.lastError) {
+                                    finish(reject, new Error(chrome.runtime.lastError.message || 'Ошибка фонового обновления'));
+                                    return;
+                                }
+                                if (!response || response.success !== true) {
+                                    finish(reject, new Error(response && response.error ? response.error : 'Фоновое обновление завершилось с ошибкой'));
+                                    return;
+                                }
+                                finish(resolve, response);
                             });
                         } else {
-                            clearTimeout(timer);
-                            resolve();
+                            finish(reject, new Error('Фоновое обновление недоступно'));
                         }
-                    } catch (_) {
-                        clearTimeout(timer);
-                        resolve();
+                    } catch (error) {
+                        finish(reject, error);
                     }
                 });
 
-                // Перечитываем метаданные через адаптер
-                if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
+                // Источник уже вернул честный updatedAt. Если старый background не
+                // прислал его, оставляем совместимый fallback через data-adapter.
+                if (lastUpdatedEl && updateResult && updateResult.updatedAt) {
+                    const d = new Date(updateResult.updatedAt);
+                    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    lastUpdatedEl.textContent = `Обновлено: в ${timeStr}`;
+                } else if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
                     try {
                         const meta = await root.FPTFinanceData.getMeta(subtabType);
                         if (lastUpdatedEl && meta && meta.lastUpdate) {
@@ -4389,6 +4409,10 @@
             }
         } catch (err) {
             console.warn('[FPTFinanceHub] Refresh error:', err);
+            if (typeof root.showNotification === 'function') {
+                const message = err && err.message ? err.message : 'Не удалось обновить финансовые данные';
+                root.showNotification(`Ошибка обновления: ${message}`, true);
+            }
         } finally {
             if (refreshBtn) {
                 setTimeout(() => {
