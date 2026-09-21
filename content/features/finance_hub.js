@@ -117,7 +117,14 @@
         if (v == null || isNaN(v)) return '0 ₽';
         const c = String(cur || 'RUB').toUpperCase();
         const sym = SYMBOLS[c] || c;
-        return `${Math.round(v).toLocaleString('ru-RU')} ${sym}`;
+        const value = Number(v);
+        const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+        const hasFraction = Math.abs(rounded - Math.trunc(rounded)) > 0.000001;
+        const formatted = rounded.toLocaleString('ru-RU', {
+            minimumFractionDigits: hasFraction ? 2 : 0,
+            maximumFractionDigits: 2
+        });
+        return `${formatted} ${sym}`;
     }
 
     function formatRevenueMulti(byCurrency) {
@@ -2153,17 +2160,41 @@
         return parts.length ? parts.join(' · ') : '0 ₽';
     }
 
-    function formatOperationsNet(inByCur, outByCur) {
+    function getOperationsNetEntries(inByCur, outByCur) {
         const currencies = new Set([
             ...Object.keys(inByCur || {}),
             ...Object.keys(outByCur || {})
         ]);
-        const net = {};
-        currencies.forEach(currency => {
-            const value = (inByCur && inByCur[currency] || 0) - (outByCur && outByCur[currency] || 0);
-            if (Math.abs(value) > 0.005) net[currency] = value;
-        });
-        return formatOperationsMap(net);
+        const priority = { RUB: 0, USD: 1, EUR: 2 };
+        return Array.from(currencies)
+            .map(currency => ({
+                currency,
+                value: (inByCur && inByCur[currency] || 0) - (outByCur && outByCur[currency] || 0)
+            }))
+            .filter(item => Math.abs(item.value) > 0.005)
+            .sort((a, b) => {
+                const ap = Object.prototype.hasOwnProperty.call(priority, a.currency) ? priority[a.currency] : 99;
+                const bp = Object.prototype.hasOwnProperty.call(priority, b.currency) ? priority[b.currency] : 99;
+                return ap - bp || a.currency.localeCompare(b.currency);
+            });
+    }
+
+    function formatOperationsNet(inByCur, outByCur) {
+        const entries = getOperationsNetEntries(inByCur, outByCur);
+        return entries.length
+            ? entries.map(item => formatMoney(item.value, item.currency)).join(' · ')
+            : '0 ₽';
+    }
+
+    function renderOperationsNetBadges(inByCur, outByCur) {
+        const entries = getOperationsNetEntries(inByCur, outByCur);
+        if (!entries.length) {
+            return '<span class="fpt-fin-operation-amount-badge is-neutral">0 ₽</span>';
+        }
+        return entries.map(item => {
+            const cls = item.value > 0 ? 'is-positive' : (item.value < 0 ? 'is-negative' : 'is-neutral');
+            return `<span class="fpt-fin-operation-amount-badge ${cls}">${esc(formatMoney(item.value, item.currency))}</span>`;
+        }).join('');
     }
 
     function operationDateValue(txn) {
@@ -2433,8 +2464,30 @@
 
     function renderOperationsBreakdown(card, agg) {
         if (!card) return;
-        const rows = Object.entries(agg.byType || {}).sort(([, a], [, b]) => b.count - a.count).map(([type, item]) => `<button type="button" class="fpt-fin-operation-type-row" data-fin-operation-type="${esc(type)}"><span><strong>${esc(operationTypeLabel(type))}</strong><small>${item.count} операций</small></span><b>${esc(formatOperationsNet(item.in, item.out))}</b></button>`).join('');
-        card.innerHTML = `<div class="fpt-fin-card-header"><h5 class="fpt-fin-card-title">По типам операций</h5><span class="material-symbols-rounded">category</span></div><div class="fpt-fin-operation-types">${rows || '<div class="fpt-fin-empty-state">Нет операций за период.</div>'}</div>`;
+        card.classList.add('fpt-fin-operation-breakdown-card');
+
+        const rows = Object.entries(agg.byType || {})
+            .sort(([, a], [, b]) => b.count - a.count)
+            .map(([type, item]) => {
+                const label = operationTypeLabel(type);
+                return `<button type="button" class="fpt-fin-operation-type-row" data-fin-operation-type="${esc(type)}" aria-label="${esc(label)}: ${item.count} операций. Открыть список">
+                    <span class="fpt-fin-operation-type-copy">
+                        <strong>${esc(label)}</strong>
+                        <small>${item.count} операций</small>
+                    </span>
+                    <span class="fpt-fin-operation-type-value" aria-label="Сальдо по валютам">
+                        ${renderOperationsNetBadges(item.in, item.out)}
+                    </span>
+                    <span class="material-symbols-rounded fpt-fin-operation-type-chevron" aria-hidden="true">chevron_right</span>
+                </button>`;
+            }).join('');
+
+        card.innerHTML = `<div class="fpt-fin-card-header">
+            <h5 class="fpt-fin-card-title">По типам операций</h5>
+            <span class="material-symbols-rounded" aria-hidden="true">account_balance_wallet</span>
+        </div>
+        <div class="fpt-fin-operation-types">${rows || '<div class="fpt-fin-empty-state">Нет операций за период.</div>'}</div>`;
+
         card.querySelectorAll('[data-fin-operation-type]').forEach(row => row.addEventListener('click', () => {
             const type = row.dataset.finOperationType;
             openOperationsDrilldown(operationTypeLabel(type) + ' ' + operationPeriodLabel(), agg.list.filter(txn => txn.type === type));
