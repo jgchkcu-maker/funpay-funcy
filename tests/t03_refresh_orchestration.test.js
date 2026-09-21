@@ -196,73 +196,36 @@ function setupHubEnv({
 }
 
 async function testConcurrencyAndButtonLifecycle() {
-    let resolveFirstUpdate = null;
+    const pendingCallbacks = [];
     let updateCalls = 0;
-
     const env = setupHubEnv({
         sendMessageHandler: (_req, cb) => {
             updateCalls++;
-            new Promise((resolve) => {
-                resolveFirstUpdate = () => {
-                    cb({ success: true, updatedAt: 1700000001000, count: 5 });
-                    resolve();
-                };
-            });
+            pendingCallbacks.push(cb);
         }
     });
 
     const { hub, mockContainer } = env;
     hub.onSubtabChange('sales');
-    const state = hub.getState();
-    assert.equal(state.isRefreshing, false, 'initially not refreshing');
-    assert.equal(mockContainer.refreshBtn.disabled, false, 'initially button enabled');
-
-    // Запускаем первое обновление
     const firstRefreshPromise = hub.refresh();
 
-    // Во время выполнения: флаг взведён, кнопка заблокирована со спиннером
-    const runningState = hub.getState();
-    assert.equal(runningState.isRefreshing, true, 'isRefreshing is true during refresh');
-    assert.equal(mockContainer.refreshBtn.disabled, true, 'button is disabled during refresh');
-    assert.ok(mockContainer.refreshBtn.classList.contains('fpt-fin-btn-spin'), 'spinner class is added');
+    assert.equal(hub.getState().isRefreshing, true, 'global refresh enters refreshing state');
+    assert.equal(mockContainer.refreshBtn.disabled, true, 'button disabled during global refresh');
+    assert.ok(mockContainer.refreshBtn.classList.contains('fpt-fin-btn-spin'), 'spinner added during global refresh');
+    assert.equal(updateCalls, 3, 'one global refresh starts exactly three background collectors');
 
-    // Пытаемся запустить второе конкурентное обновление
-    const secondRefreshPromise = hub.refresh();
-    await secondRefreshPromise;
+    await hub.refresh();
+    assert.equal(updateCalls, 3, 'concurrent click must not start a second global refresh');
 
-    // Второе обновление должно было быть проигнорировано
-    assert.equal(updateCalls, 1, 'concurrent call must not send a second message');
-
-    // Завершаем первое обновление
-    resolveFirstUpdate();
+    pendingCallbacks.forEach(cb => cb({ success: true, updatedAt: 1700000001000, count: 5 }));
     await firstRefreshPromise;
 
-    // После завершения: кнопка разблокирована, спиннер убран, флаг сброшен
-    const finalState = hub.getState();
-    assert.equal(finalState.isRefreshing, false, 'isRefreshing reset to false');
-    assert.equal(mockContainer.refreshBtn.disabled, false, 'button restored to enabled in finally');
-    assert.equal(mockContainer.refreshBtn.classList.contains('fpt-fin-btn-spin'), false, 'spinner class removed');
+    assert.equal(hub.getState().isRefreshing, false, 'refresh flag resets after completion');
+    assert.equal(mockContainer.refreshBtn.disabled, false, 'button enabled after completion');
+    assert.equal(mockContainer.refreshBtn.classList.contains('fpt-fin-btn-spin'), false, 'spinner removed after completion');
 }
 
-async function testButtonLifecycleOnError() {
-    const env = setupHubEnv({
-        sendMessageHandler: (_req, cb) => {
-            cb({ success: false, error: 'simulated failure' });
-        }
-    });
-
-    const { hub, mockContainer, notifications } = env;
-    hub.onSubtabChange('sales');
-    await hub.refresh();
-
-    const state = hub.getState();
-    assert.equal(state.isRefreshing, false, 'isRefreshing reset after error');
-    assert.equal(mockContainer.refreshBtn.disabled, false, 'button enabled after error');
-    assert.equal(mockContainer.refreshBtn.classList.contains('fpt-fin-btn-spin'), false, 'spinner removed after error');
-    assert.ok(notifications.some(n => n.isError && n.msg.includes('simulated failure')), 'error notification shown');
-}
-
-async function testSubtabRefreshMatrix() {
+async function testGlobalRefreshRunsAllSourcesFromAnyTab() {
     let inventoryRefreshes = 0;
     const env = setupHubEnv({
         getInventoryHandler: async (opts) => {
@@ -270,205 +233,101 @@ async function testSubtabRefreshMatrix() {
             return [{ lotId: '10', price: 100 }];
         }
     });
-
     const { hub, sentMessages } = env;
 
-    // 1. Sales
-    hub.onSubtabChange('sales');
-    sentMessages.length = 0;
-    await hub.refresh();
-    assert.equal(sentMessages.length, 1, 'sales triggers 1 message');
-    assert.equal(sentMessages[0].action, 'updateSales', 'sales triggers updateSales');
-
-    // 2. Purchases
-    hub.onSubtabChange('purchases');
-    sentMessages.length = 0;
-    await hub.refresh();
-    assert.equal(sentMessages.length, 1, 'purchases triggers 1 message');
-    assert.equal(sentMessages[0].action, 'updatePurchases', 'purchases triggers updatePurchases');
-
-    // 3. Operations
-    hub.onSubtabChange('operations');
-    sentMessages.length = 0;
-    await hub.refresh();
-    assert.equal(sentMessages.length, 1, 'operations triggers 1 message');
-    assert.equal(sentMessages[0].action, 'updateFinance', 'operations triggers updateFinance');
-
-    // 4. Profit
-    hub.onSubtabChange('profit');
-    sentMessages.length = 0;
-    await hub.refresh();
-    assert.equal(sentMessages.length, 1, 'profit triggers 1 message');
-    assert.equal(sentMessages[0].action, 'updateSales', 'profit triggers updateSales before recalculating');
-
-    // 5. Potential
-    hub.onSubtabChange('potential');
-    sentMessages.length = 0;
-    inventoryRefreshes = 0;
-    await hub.refresh();
-    assert.equal(sentMessages.length, 0, 'potential does not send background message');
-    assert.equal(inventoryRefreshes, 1, 'potential triggers inventory forceRefresh:true');
-
-    // 6. Overview
-    hub.onSubtabChange('overview');
-    sentMessages.length = 0;
-    inventoryRefreshes = 0;
-    await hub.refresh();
-    const actions = sentMessages.map(m => m.action).sort();
-    assert.deepEqual(actions, ['updateFinance', 'updateSales'], 'overview triggers updateSales and updateFinance');
-    assert.equal(inventoryRefreshes, 1, 'overview triggers inventory forceRefresh:true');
-}
-
-async function testSelectiveCacheInvalidation() {
-    const env = setupHubEnv();
-    const { hub, ctx } = env;
-
-    async function populateAllCaches() {
-        await hub.renderSalesSubtab(true);
-        await hub.renderPurchasesSubtab(true);
-        await hub.renderOperationsSubtab(true);
-        await hub.renderPotentialSubtab(true);
+    for (const tab of ['sales', 'purchases', 'operations', 'profit', 'potential', 'overview']) {
+        hub.onSubtabChange(tab);
+        sentMessages.length = 0;
+        inventoryRefreshes = 0;
+        await hub.refresh();
+        const actions = sentMessages.map(m => m.action).sort();
+        assert.deepEqual(actions, ['updateFinance', 'updatePurchases', 'updateSales'], `${tab}: refresh must update all durable sources`);
+        assert.equal(inventoryRefreshes, 1, `${tab}: refresh must force-refresh inventory exactly once`);
     }
+}
 
-    // Обновляем покупки (purchases) — кэши продаж, операций и инвентаря должны остаться нетронутыми
-    await populateAllCaches();
+async function testGlobalCacheInvalidationAndLazyRerender() {
+    const env = setupHubEnv();
+    const { hub } = env;
+
+    await hub.renderSalesSubtab(true);
+    await hub.renderPurchasesSubtab(true);
+    await hub.renderOperationsSubtab(true);
+    await hub.renderPotentialSubtab(true);
+    await hub.renderProfitSubtab(true);
+
     hub.onSubtabChange('purchases');
-    await hub.refresh();
-
-    let state = hub.getState();
-    assert.notEqual(state.cachedPurchasesOrders, null, 'purchases rendered fresh');
-    assert.notEqual(state.cachedOrders, null, 'sales cache preserved when refreshing purchases');
-    assert.notEqual(state.cachedOperations, null, 'operations cache preserved when refreshing purchases');
-    assert.notEqual(state.cachedPotentialLots, null, 'potential cache preserved when refreshing purchases');
-
-    // Обновляем операции (operations) — кэши покупок, продаж и инвентаря должны остаться нетронутыми
-    await populateAllCaches();
-    hub.onSubtabChange('operations');
-    await hub.refresh();
-
-    state = hub.getState();
-    assert.notEqual(state.cachedOperations, null, 'operations rendered fresh');
-    assert.notEqual(state.cachedOrders, null, 'sales cache preserved when refreshing operations');
-    assert.notEqual(state.cachedPurchasesOrders, null, 'purchases cache preserved when refreshing operations');
-    assert.notEqual(state.cachedPotentialLots, null, 'potential cache preserved when refreshing operations');
-
-    // Обновляем продажи (sales) — кэши покупок, операций и инвентаря должны остаться нетронутыми
-    await populateAllCaches();
-    hub.onSubtabChange('sales');
-    await hub.refresh();
-
-    state = hub.getState();
-    assert.notEqual(state.cachedOrders, null, 'sales rendered fresh');
-    assert.notEqual(state.cachedPurchasesOrders, null, 'purchases cache preserved when refreshing sales');
-    assert.notEqual(state.cachedOperations, null, 'operations cache preserved when refreshing sales');
-    assert.notEqual(state.cachedPotentialLots, null, 'potential cache preserved when refreshing sales');
-
-    // Обновляем потенциал (potential) — кэши покупок, операций и продаж должны остаться нетронутыми
-    await populateAllCaches();
-    hub.onSubtabChange('potential');
-    await hub.refresh();
-
-    state = hub.getState();
-    assert.notEqual(state.cachedPotentialLots, null, 'potential rendered fresh');
-    assert.notEqual(state.cachedPurchasesOrders, null, 'purchases cache preserved when refreshing potential');
-    assert.notEqual(state.cachedOperations, null, 'operations cache preserved when refreshing potential');
-    assert.notEqual(state.cachedOrders, null, 'sales cache preserved when refreshing potential');
-}
-
-async function testOverviewTruthfulPartialFailure() {
-    // 1. Частичный сбой: продажи упали, операции и инвентарь успешны
-    const env = setupHubEnv({
-        sendMessageHandler: (req, cb) => {
-            if (req.action === 'updateSales') {
-                cb({ success: false, error: 'Sales network down' });
-            } else {
-                cb({ success: true, updatedAt: 1700000002000, count: 5 });
-            }
-        },
-        getInventoryHandler: async () => [{ lotId: '1', price: 100 }]
-    });
-
-    const { hub, notifications } = env;
-    hub.onSubtabChange('overview');
-    await hub.renderOverviewSubtab(false);
-
-    const stateBefore = hub.getState();
-    const initialOverviewUpdate = stateBefore.overviewLastUpdate;
-
-    await hub.refresh();
-
-    const stateAfter = hub.getState();
-    assert.equal(stateAfter.overviewLastUpdate, initialOverviewUpdate, 'overviewLastUpdate NOT updated on partial failure');
-
-    const partialNotif = notifications.find(n => n.msg.includes('Обновлено частично'));
-    assert.ok(partialNotif, 'partial failure notification must be emitted');
-    assert.equal(partialNotif.isError, true, 'partial failure must have isError: true');
-    assert.ok(partialNotif.msg.includes('продажи'), 'partial failure specifies failed source');
-
-    const genericSuccess = notifications.find(n => n.msg === 'Данные обзора обновлены');
-    assert.equal(genericSuccess, undefined, 'must NOT emit generic overview success on partial failure');
-}
-
-async function testOverviewCompleteSuccess() {
-    const env = setupHubEnv({
-        sendMessageHandler: (_req, cb) => {
-            cb({ success: true, updatedAt: 1700000003000, count: 5 });
-        },
-        getInventoryHandler: async () => [{ lotId: '1', price: 100 }]
-    });
-
-    const { hub, notifications } = env;
-    hub.onSubtabChange('overview');
-
     await hub.refresh();
 
     const state = hub.getState();
-    assert.ok(Number.isFinite(state.overviewLastUpdate), 'overviewLastUpdate set on full success');
-
-    const successNotif = notifications.find(n => n.msg === 'Данные обзора обновлены');
-    assert.ok(successNotif, 'full success notification emitted');
-    assert.equal(successNotif.isError, false, 'full success has isError: false');
+    assert.notEqual(state.cachedPurchasesOrders, null, 'active purchases tab is rerendered immediately');
+    assert.equal(state.cachedOrders, null, 'inactive sales cache stays invalidated until opened');
+    assert.equal(state.cachedOperations, null, 'inactive operations cache stays invalidated until opened');
+    assert.equal(state.cachedProfitOrders, null, 'profit cache is invalidated with fresh sales');
+    assert.notEqual(state.cachedPotentialLots, null, 'fresh inventory result is retained without a duplicate fetch');
 }
 
-async function testProfitRequiresSalesRefresh() {
+async function testPartialFailureIsTruthful() {
     const env = setupHubEnv({
         sendMessageHandler: (req, cb) => {
-            if (req.action === 'updateSales') {
-                cb({ success: false, error: 'Sales failed for profit' });
-            } else {
-                cb({ success: true });
-            }
-        }
+            if (req.action === 'updateSales') cb({ success: false, error: 'Sales network down' });
+            else cb({ success: true, updatedAt: 1700000002000, count: 5 });
+        },
+        getInventoryHandler: async () => [{ lotId: '1', price: 100 }]
     });
 
     const { hub, notifications } = env;
     hub.onSubtabChange('profit');
     await hub.renderProfitSubtab(false);
-
-    const stateBefore = hub.getState();
-    const initialProfitUpdate = stateBefore.profitLastUpdate;
-
+    const before = hub.getState().profitLastUpdate;
     await hub.refresh();
 
-    const stateAfter = hub.getState();
-    assert.equal(stateAfter.profitLastUpdate, initialProfitUpdate, 'profitLastUpdate NOT updated when sales fails');
+    assert.equal(hub.getState().profitLastUpdate, before, 'profit freshness must not advance when sales refresh fails');
+    const partial = notifications.find(n => n.msg.includes('Обновлено частично'));
+    assert.ok(partial, 'partial global refresh emits a partial notification');
+    assert.equal(partial.isError, true, 'partial global refresh is surfaced as warning/error');
+    assert.ok(partial.msg.includes('3 из 4'), 'partial notification reports completed source count');
+    assert.ok(partial.msg.includes('продажи'), 'partial notification names failed source');
+    assert.equal(notifications.some(n => n.msg === 'Все разделы финансов обновлены'), false, 'partial refresh must not claim full success');
+}
 
-    const errNotif = notifications.find(n => n.isError && n.msg.includes('Sales failed for profit'));
-    assert.ok(errNotif, 'profit surfaces sales refresh failure');
+async function testCompleteSuccessNotification() {
+    const env = setupHubEnv({
+        sendMessageHandler: (_req, cb) => cb({ success: true, updatedAt: 1700000003000, count: 5 }),
+        getInventoryHandler: async () => [{ lotId: '1', price: 100 }]
+    });
+    const { hub, notifications } = env;
+    hub.onSubtabChange('overview');
+    await hub.refresh();
+    const success = notifications.find(n => n.msg === 'Все разделы финансов обновлены');
+    assert.ok(success, 'full global refresh emits one global success message');
+    assert.equal(success.isError, false, 'global success is not an error');
+}
 
-    const profitSuccess = notifications.find(n => n.msg === 'Данные о прибыли обновлены');
-    assert.equal(profitSuccess, undefined, 'profit must not claim success if sales refresh failed');
+async function testAllSourcesFailureRestoresButton() {
+    const env = setupHubEnv({
+        sendMessageHandler: (_req, cb) => cb({ success: false, error: 'background failed' }),
+        getInventoryHandler: async () => { throw new Error('inventory failed'); }
+    });
+    const { hub, mockContainer, notifications } = env;
+    hub.onSubtabChange('sales');
+    await hub.refresh();
+
+    assert.equal(hub.getState().isRefreshing, false, 'refresh flag resets after total failure');
+    assert.equal(mockContainer.refreshBtn.disabled, false, 'button restored after total failure');
+    assert.equal(mockContainer.refreshBtn.classList.contains('fpt-fin-btn-spin'), false, 'spinner removed after total failure');
+    const err = notifications.find(n => n.isError && n.msg.includes('Не удалось обновить ни один источник'));
+    assert.ok(err, 'total failure reports a clear global refresh error');
 }
 
 async function main() {
     runStaticContractChecks();
     await testConcurrencyAndButtonLifecycle();
-    await testButtonLifecycleOnError();
-    await testSubtabRefreshMatrix();
-    await testSelectiveCacheInvalidation();
-    await testOverviewTruthfulPartialFailure();
-    await testOverviewCompleteSuccess();
-    await testProfitRequiresSalesRefresh();
+    await testGlobalRefreshRunsAllSourcesFromAnyTab();
+    await testGlobalCacheInvalidationAndLazyRerender();
+    await testPartialFailureIsTruthful();
+    await testCompleteSuccessNotification();
+    await testAllSourcesFailureRestoresButton();
     console.log('T03_REFRESH_ORCHESTRATION_PASS');
 }
 

@@ -5207,7 +5207,9 @@
     }
 
     /**
-     * Фоновое обновление финансовых данных в зависимости от активного таба (T03)
+     * Глобальное обновление Finance Hub.
+     * Один клик синхронизирует все независимые источники данных:
+     * продажи, покупки, операции и инвентарь. Прибыль пересчитывается из продаж.
      */
     async function refresh() {
         if (!state.container) return;
@@ -5215,12 +5217,24 @@
         state.isRefreshing = true;
 
         const refreshBtn = state.container.querySelector('#fptFinRefreshBtn');
-        const lastUpdatedEl = state.container.querySelector('#fptFinLastUpdatedText');
+        const refreshLabel = refreshBtn && typeof refreshBtn.querySelector === 'function'
+            ? refreshBtn.querySelector('span:last-child')
+            : null;
+        const originalLabel = refreshLabel && refreshLabel.textContent ? refreshLabel.textContent : 'Обновить';
+        const originalTitle = refreshBtn && refreshBtn.title ? refreshBtn.title : '';
 
         if (refreshBtn) {
             refreshBtn.disabled = true;
             refreshBtn.classList.add('fpt-fin-btn-spin');
+            refreshBtn.title = 'Обновляются продажи, покупки, операции и потенциал';
         }
+
+        const totalSources = 4;
+        let completedSources = 0;
+        const setProgress = (done) => {
+            if (refreshLabel) refreshLabel.textContent = `Обновление ${done}/${totalSources}`;
+        };
+        setProgress(0);
 
         function runBackgroundUpdate(actionName) {
             return new Promise((resolve, reject) => {
@@ -5234,7 +5248,7 @@
                 };
                 timer = setTimeout(() => {
                     finish(reject, new Error('Не удалось дождаться ответа фонового обновления'));
-                }, 8000);
+                }, 120000);
 
                 try {
                     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
@@ -5258,154 +5272,94 @@
             });
         }
 
-        async function applyFreshness(updateResult, subtab) {
-            if (lastUpdatedEl && updateResult && updateResult.updatedAt) {
-                lastUpdatedEl.textContent = formatLastUpdatedText(updateResult.updatedAt);
-                lastUpdatedEl.title = '';
-            } else if (root.FPTFinanceData && typeof root.FPTFinanceData.getMeta === 'function') {
-                try {
-                    const meta = await root.FPTFinanceData.getMeta(subtab);
-                    if (lastUpdatedEl && meta && meta.lastUpdate) {
-                        lastUpdatedEl.textContent = formatLastUpdatedText(meta.lastUpdate);
-                        lastUpdatedEl.title = '';
-                        return;
-                    }
-                } catch (_) {}
-                await updateLastUpdatedText(subtab);
-            } else {
-                await updateLastUpdatedText(subtab);
-            }
-        }
+        const track = (promise) => Promise.resolve(promise).finally(() => {
+            completedSources += 1;
+            setProgress(completedSources);
+        });
 
         try {
-            const currentSubtab = state.activeSubtab;
+            const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
+            const purchasesConfig = getPurchasesConfig();
+            const purchasesAction = purchasesConfig.updateAction || 'updatePurchases';
 
-            if (currentSubtab === 'sales') {
-                const updateResult = await runBackgroundUpdate('updateSales');
+            const results = await Promise.allSettled([
+                track(runBackgroundUpdate('updateSales')),
+                track(runBackgroundUpdate(purchasesAction)),
+                track(runBackgroundUpdate('updateFinance')),
+                track(Promise.resolve().then(async () => {
+                    if (!potentialEngine || typeof potentialEngine.getInventory !== 'function') {
+                        throw new Error('Модуль инвентаря недоступен');
+                    }
+                    return potentialEngine.getInventory({ enrichPotential: true, forceRefresh: true });
+                }))
+            ]);
+
+            const sourceResults = [
+                { key: 'sales', label: 'продажи', result: results[0] },
+                { key: 'purchases', label: 'покупки', result: results[1] },
+                { key: 'operations', label: 'операции', result: results[2] },
+                { key: 'potential', label: 'потенциал', result: results[3] }
+            ];
+
+            const salesOk = results[0].status === 'fulfilled';
+            const purchasesOk = results[1].status === 'fulfilled';
+            const operationsOk = results[2].status === 'fulfilled';
+            const potentialOk = results[3].status === 'fulfilled';
+
+            // Инвалидируем только те durable-источники, которые реально обновились.
+            // Неактивные вкладки не перерисовываем: они подхватят свежие данные при открытии.
+            if (salesOk) {
                 invalidateSalesCache();
-                await renderSalesSubtab(true);
-                await applyFreshness(updateResult, 'sales');
-                if (typeof root.showNotification === 'function') {
-                    root.showNotification('Данные о продажах обновлены', false);
-                }
-            } else if (currentSubtab === 'purchases') {
-                const pCfg = getPurchasesConfig();
-                const actionName = pCfg.updateAction || 'updatePurchases';
-                const updateResult = await runBackgroundUpdate(actionName);
-                invalidatePurchasesCache();
-                await renderPurchasesSubtab(true);
-                await applyFreshness(updateResult, 'purchases');
-                if (typeof root.showNotification === 'function') {
-                    root.showNotification('Данные о покупках обновлены', false);
-                }
-            } else if (currentSubtab === 'operations') {
-                const updateResult = await runBackgroundUpdate('updateFinance');
-                invalidateOperationsCache();
-                await renderOperationsSubtab(true);
-                await applyFreshness(updateResult, 'operations');
-                if (typeof root.showNotification === 'function') {
-                    root.showNotification('Данные об операциях обновлены', false);
-                }
-            } else if (currentSubtab === 'profit') {
-                // Прибыль рассчитывается на основе продаж и не может обновляться без продаж
-                const updateResult = await runBackgroundUpdate('updateSales');
                 invalidateProfitCache();
-                await renderProfitSubtab(true);
-                if (updateResult && updateResult.updatedAt) {
-                    state.profitLastUpdate = updateResult.updatedAt;
-                }
-                await updateLastUpdatedText('profit');
-                if (typeof root.showNotification === 'function') {
-                    root.showNotification('Данные о прибыли обновлены', false);
-                }
-            } else if (currentSubtab === 'potential') {
+                const salesUpdatedAt = results[0].value && results[0].value.updatedAt;
+                if (salesUpdatedAt) state.profitLastUpdate = salesUpdatedAt;
+            }
+            if (purchasesOk) {
+                invalidatePurchasesCache();
+            }
+            if (operationsOk) {
+                invalidateOperationsCache();
+            }
+            if (potentialOk) {
                 invalidatePotentialCache();
-                const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
-                if (!potentialEngine || typeof potentialEngine.getInventory !== 'function') {
-                    throw new Error('Модуль инвентаря недоступен');
-                }
-                const lots = await potentialEngine.getInventory({ enrichPotential: true, forceRefresh: true });
-                state.cachedPotentialLots = Array.isArray(lots) ? lots : [];
-                if (typeof potentialEngine.calculatePotentialAggregates === 'function') {
-                    state.cachedPotentialAgg = potentialEngine.calculatePotentialAggregates(state.cachedPotentialLots);
+                const lots = Array.isArray(results[3].value) ? results[3].value : [];
+                state.cachedPotentialLots = lots;
+                if (potentialEngine && typeof potentialEngine.calculatePotentialAggregates === 'function') {
+                    state.cachedPotentialAgg = potentialEngine.calculatePotentialAggregates(lots);
                 }
                 state.potentialLastUpdate = Date.now();
-                await renderPotentialSubtab(false);
-                await updateLastUpdatedText('potential');
-                if (typeof root.showNotification === 'function') {
-                    root.showNotification('Данные о потенциале обновлены', false);
-                }
-            } else if (currentSubtab === 'overview') {
-                const potentialEngine = (typeof window !== 'undefined' && window.FPTPotential) || root.FPTPotential;
-                const [salesRes, opsRes, invRes] = await Promise.allSettled([
-                    runBackgroundUpdate('updateSales'),
-                    runBackgroundUpdate('updateFinance'),
-                    (async () => {
-                        if (!potentialEngine || typeof potentialEngine.getInventory !== 'function') {
-                            throw new Error('Модуль инвентаря недоступен');
-                        }
-                        return await potentialEngine.getInventory({ enrichPotential: true, forceRefresh: true });
-                    })()
-                ]);
-
-                const salesOk = salesRes.status === 'fulfilled';
-                const opsOk = opsRes.status === 'fulfilled';
-                const invOk = invRes.status === 'fulfilled';
-
-                // Инвалидируем только релевантные кэши
+            }
+            if (salesOk || operationsOk || potentialOk) {
                 invalidateOverviewCache();
-                if (salesOk) invalidateSalesCache();
-                if (opsOk) invalidateOperationsCache();
-                if (invOk) {
-                    state.cachedPotentialLots = Array.isArray(invRes.value) ? invRes.value : [];
-                    if (potentialEngine && typeof potentialEngine.calculatePotentialAggregates === 'function') {
-                        state.cachedPotentialAgg = potentialEngine.calculatePotentialAggregates(state.cachedPotentialLots);
-                    }
-                    state.potentialLastUpdate = Date.now();
-                }
-
-                const failed = [];
-                if (!salesOk) failed.push(`продажи (${salesRes.reason && salesRes.reason.message ? salesRes.reason.message : 'ошибка'})`);
-                if (!opsOk) failed.push(`операции (${opsRes.reason && opsRes.reason.message ? opsRes.reason.message : 'ошибка'})`);
-                if (!invOk) failed.push(`инвентарь (${invRes.reason && invRes.reason.message ? invRes.reason.message : 'ошибка'})`);
-
-                if (failed.length === 3) {
-                    throw new Error(`Не удалось обновить данные обзора: ${failed.join(', ')}`);
-                }
-
-                const prevOverviewUpdate = state.overviewLastUpdate;
-                await renderOverviewSubtab(false);
-
-                if (failed.length > 0) {
-                    state.overviewLastUpdate = prevOverviewUpdate;
-                    await updateLastUpdatedText('overview');
-                    if (typeof root.showNotification === 'function') {
-                        root.showNotification(`Обновлено частично. Ошибки: ${failed.join(', ')}`, true);
-                    }
-                } else {
-                    await updateLastUpdatedText('overview');
-                    if (typeof root.showNotification === 'function') {
-                        root.showNotification('Данные обзора обновлены', false);
-                    }
-                }
-            } else {
-                // Fallback для неизвестной подвкладки: обновляем продажи
-                const updateResult = await runBackgroundUpdate('updateSales');
-                invalidateSalesCache();
-                await renderSalesSubtab(true);
-                await applyFreshness(updateResult, 'sales');
-                if (typeof root.showNotification === 'function') {
-                    root.showNotification('Данные о продажах обновлены', false);
-                }
             }
 
-            // Анимация пульсации активных карточек
+            const failed = sourceResults.filter(item => item.result.status === 'rejected');
+            const successCount = totalSources - failed.length;
+            if (successCount === 0) {
+                const details = failed.map(item => `${item.label}: ${item.result.reason && item.result.reason.message ? item.result.reason.message : 'ошибка'}`);
+                throw new Error(`Не удалось обновить ни один источник. ${details.join(' · ')}`);
+            }
+
+            if (refreshLabel) refreshLabel.textContent = 'Применение…';
+            await Promise.resolve(renderActiveSubtab(false));
+            await updateLastUpdatedText(state.activeSubtab);
+
+            // Анимация пульсации только текущей вкладки — остальные рендерятся лениво при открытии.
             const activeCards = state.container.querySelectorAll('.fpt-fin-tab-pane.active .fpt-fin-card');
             activeCards.forEach(c => {
                 c.classList.remove('fpt-fin-pulse-anim');
                 void c.offsetWidth;
                 c.classList.add('fpt-fin-pulse-anim');
             });
+
+            if (failed.length > 0) {
+                const details = failed.map(item => `${item.label} (${item.result.reason && item.result.reason.message ? item.result.reason.message : 'ошибка'})`);
+                if (typeof root.showNotification === 'function') {
+                    root.showNotification(`Обновлено частично: ${successCount} из ${totalSources}. Ошибки: ${details.join(', ')}`, true);
+                }
+            } else if (typeof root.showNotification === 'function') {
+                root.showNotification('Все разделы финансов обновлены', false);
+            }
         } catch (err) {
             console.warn('[FPTFinanceHub] Refresh error:', err);
             if (typeof root.showNotification === 'function') {
@@ -5417,10 +5371,11 @@
             if (refreshBtn) {
                 refreshBtn.disabled = false;
                 refreshBtn.classList.remove('fpt-fin-btn-spin');
+                refreshBtn.title = originalTitle;
             }
+            if (refreshLabel) refreshLabel.textContent = originalLabel;
         }
     }
-
     function startInitialRender() {
         const renderResult = renderActiveSubtab(false);
         const promise = Promise.resolve(renderResult);
