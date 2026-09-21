@@ -437,6 +437,7 @@
 
         if (currentOptions.length === newOptions.length && currentOptions.every((v, i) => v === newOptions[i])) {
             select.value = state.category;
+            syncFinanceCustomSelect(select, false);
             return;
         }
 
@@ -449,6 +450,7 @@
             select.value = 'all';
             state.category = 'all';
         }
+        syncFinanceCustomSelect(select, true);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────
@@ -4329,34 +4331,305 @@
         };
     }
 
+    function getFinanceControlVisualHost(el) {
+        if (!el) return el;
+        const parent = el.parentElement || el.parentNode;
+        if (
+            parent &&
+            parent.classList &&
+            typeof parent.classList.contains === 'function' &&
+            parent.classList.contains('fpt-fin-select-shell')
+        ) {
+            return parent;
+        }
+        return el;
+    }
+
     function setFinanceControlVisible(el, visible, visibleDisplay) {
         if (!el) return;
+        const target = getFinanceControlVisualHost(el);
         const isVisible = Boolean(visible);
-        if (el.classList && typeof el.classList.toggle === 'function') {
-            el.classList.toggle('fpt-fin-control-hidden', !isVisible);
-        } else if (el.classList) {
-            if (isVisible && typeof el.classList.remove === 'function') {
-                el.classList.remove('fpt-fin-control-hidden');
-            } else if (!isVisible && typeof el.classList.add === 'function') {
-                el.classList.add('fpt-fin-control-hidden');
+        if (target.classList && typeof target.classList.toggle === 'function') {
+            target.classList.toggle('fpt-fin-control-hidden', !isVisible);
+        } else if (target.classList) {
+            if (isVisible && typeof target.classList.remove === 'function') {
+                target.classList.remove('fpt-fin-control-hidden');
+            } else if (!isVisible && typeof target.classList.add === 'function') {
+                target.classList.add('fpt-fin-control-hidden');
             }
         }
-        if (typeof el.setAttribute === 'function') {
-            el.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
+        if (typeof target.setAttribute === 'function') {
+            target.setAttribute('aria-hidden', isVisible ? 'false' : 'true');
         }
 
         // Keep the old inline fallback in one place for lightweight DOMs and
         // browsers that do not apply the Finance utility stylesheet yet.
-        if (el.style) {
-            if (!isVisible && typeof el.style.setProperty === 'function') {
-                el.style.setProperty('display', 'none', 'important');
-            } else if (isVisible && visibleDisplay && typeof el.style.setProperty === 'function') {
-                el.style.setProperty('display', visibleDisplay);
-            } else if (isVisible && typeof el.style.removeProperty === 'function') {
-                el.style.removeProperty('display');
+        if (target.style) {
+            if (!isVisible && typeof target.style.setProperty === 'function') {
+                target.style.setProperty('display', 'none', 'important');
+            } else if (isVisible && visibleDisplay && typeof target.style.setProperty === 'function') {
+                target.style.setProperty('display', visibleDisplay);
+            } else if (isVisible && typeof target.style.removeProperty === 'function') {
+                target.style.removeProperty('display');
             } else {
-                el.style.display = isVisible ? (visibleDisplay || '') : 'none';
+                target.style.display = isVisible ? (visibleDisplay || '') : 'none';
             }
+        }
+    }
+
+    function financeCustomSelectParts(select) {
+        if (!select) return null;
+        const shell = getFinanceControlVisualHost(select);
+        if (!shell || shell === select || !shell.querySelector) return null;
+        return {
+            shell,
+            trigger: shell.querySelector('.fpt-fin-select-trigger'),
+            label: shell.querySelector('.fpt-fin-select-label'),
+            dropdown: shell.querySelector('.fpt-fin-select-dropdown'),
+            list: shell.querySelector('.fpt-fin-select-list')
+        };
+    }
+
+    function syncFinanceCustomSelect(select, rebuildOptions) {
+        const parts = financeCustomSelectParts(select);
+        if (!parts || !parts.trigger || !parts.label || !parts.list) return;
+
+        if (rebuildOptions) {
+            parts.list.innerHTML = '';
+            Array.from(select.options || []).forEach((option, index) => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'fpt-fin-select-option';
+                item.setAttribute('role', 'option');
+                item.setAttribute('data-value', option.value);
+                item.setAttribute('data-index', String(index));
+                item.textContent = option.textContent || option.label || option.value;
+                parts.list.appendChild(item);
+            });
+        }
+
+        const selectedOption = select.options && select.selectedIndex >= 0
+            ? select.options[select.selectedIndex]
+            : null;
+        parts.label.textContent = selectedOption
+            ? (selectedOption.textContent || selectedOption.label || selectedOption.value)
+            : '';
+
+        parts.trigger.disabled = Boolean(select.disabled);
+        parts.trigger.setAttribute('aria-disabled', select.disabled ? 'true' : 'false');
+
+        parts.list.querySelectorAll('.fpt-fin-select-option').forEach(item => {
+            const selected = item.getAttribute('data-value') === String(select.value);
+            item.classList.toggle('is-selected', selected);
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            item.tabIndex = selected ? 0 : -1;
+        });
+    }
+
+    function closeFinanceCustomSelect(select, restoreFocus) {
+        const parts = financeCustomSelectParts(select);
+        if (!parts || !parts.dropdown) return;
+        parts.shell.classList.remove('is-open', 'opens-up');
+        parts.trigger.setAttribute('aria-expanded', 'false');
+        parts.dropdown.hidden = true;
+        if (restoreFocus && typeof parts.trigger.focus === 'function') {
+            try { parts.trigger.focus({ preventScroll: true }); } catch (_) { parts.trigger.focus(); }
+        }
+    }
+
+    function closeOtherFinanceCustomSelects(currentSelect) {
+        if (!state.container || typeof state.container.querySelectorAll !== 'function') return;
+        state.container.querySelectorAll('.fpt-fin-native-select').forEach(select => {
+            if (select !== currentSelect) closeFinanceCustomSelect(select, false);
+        });
+    }
+
+    function openFinanceCustomSelect(select, focusSelected) {
+        const parts = financeCustomSelectParts(select);
+        if (!parts || !parts.dropdown || select.disabled) return;
+        closeOtherFinanceCustomSelects(select);
+        syncFinanceCustomSelect(select, false);
+
+        parts.dropdown.hidden = false;
+        parts.shell.classList.add('is-open');
+        parts.trigger.setAttribute('aria-expanded', 'true');
+
+        // Open upward if the bottom edge of the popup would be clipped.
+        parts.shell.classList.remove('opens-up');
+        if (typeof window !== 'undefined' && parts.trigger.getBoundingClientRect) {
+            const triggerRect = parts.trigger.getBoundingClientRect();
+            const listHeight = Math.min(parts.list.scrollHeight || 264, 264);
+            const spaceBelow = window.innerHeight - triggerRect.bottom;
+            const spaceAbove = triggerRect.top;
+            if (spaceBelow < listHeight + 18 && spaceAbove > spaceBelow) {
+                parts.shell.classList.add('opens-up');
+            }
+        }
+
+        if (focusSelected) {
+            const selected = parts.list.querySelector('.fpt-fin-select-option.is-selected')
+                || parts.list.querySelector('.fpt-fin-select-option');
+            if (selected && typeof selected.focus === 'function') {
+                try { selected.focus({ preventScroll: true }); } catch (_) { selected.focus(); }
+                if (typeof selected.scrollIntoView === 'function') {
+                    try { selected.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+                }
+            }
+        }
+    }
+
+    function enhanceFinanceCustomSelect(select) {
+        if (
+            !select ||
+            select.dataset && select.dataset.fptCustomSelectBound === '1' ||
+            typeof document === 'undefined' ||
+            typeof document.createElement !== 'function' ||
+            !select.parentNode ||
+            typeof select.parentNode.insertBefore !== 'function'
+        ) {
+            return;
+        }
+
+        if (select.dataset) select.dataset.fptCustomSelectBound = '1';
+
+        const shell = document.createElement('div');
+        shell.className = 'fpt-fin-select-shell';
+        shell.setAttribute('data-fin-select-for', select.id || '');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'fpt-fin-select-trigger';
+        trigger.setAttribute('aria-haspopup', 'listbox');
+        trigger.setAttribute('aria-expanded', 'false');
+        if (select.getAttribute) {
+            const label = select.getAttribute('aria-label');
+            if (label) trigger.setAttribute('aria-label', label);
+        }
+
+        const label = document.createElement('span');
+        label.className = 'fpt-fin-select-label';
+
+        const chevron = document.createElement('span');
+        chevron.className = 'fpt-fin-select-chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'fpt-fin-select-dropdown';
+        dropdown.hidden = true;
+
+        const list = document.createElement('div');
+        list.className = 'fpt-fin-select-list';
+        list.setAttribute('role', 'listbox');
+        if (select.id) {
+            list.id = `${select.id}CustomListbox`;
+            trigger.setAttribute('aria-controls', list.id);
+        }
+
+        trigger.appendChild(label);
+        trigger.appendChild(chevron);
+        dropdown.appendChild(list);
+
+        select.parentNode.insertBefore(shell, select);
+        shell.appendChild(select);
+        shell.appendChild(trigger);
+        shell.appendChild(dropdown);
+
+        select.classList.add('fpt-fin-native-select');
+        select.tabIndex = -1;
+        select.setAttribute('aria-hidden', 'true');
+
+        syncFinanceCustomSelect(select, true);
+
+        trigger.addEventListener('click', event => {
+            event.preventDefault();
+            event.stopPropagation();
+            const parts = financeCustomSelectParts(select);
+            if (parts && parts.shell.classList.contains('is-open')) {
+                closeFinanceCustomSelect(select, false);
+            } else {
+                openFinanceCustomSelect(select, false);
+            }
+        });
+
+        trigger.addEventListener('keydown', event => {
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                openFinanceCustomSelect(select, true);
+            } else if (event.key === 'Escape') {
+                closeFinanceCustomSelect(select, false);
+            }
+        });
+
+        list.addEventListener('click', event => {
+            const item = event.target && event.target.closest
+                ? event.target.closest('.fpt-fin-select-option')
+                : null;
+            if (!item || !list.contains(item)) return;
+            const value = item.getAttribute('data-value');
+            select.value = value;
+            let changeEvent = null;
+            try {
+                changeEvent = new Event('change', { bubbles: true });
+            } catch (_) {
+                if (document.createEvent) {
+                    changeEvent = document.createEvent('Event');
+                    changeEvent.initEvent('change', true, false);
+                }
+            }
+            if (changeEvent && typeof select.dispatchEvent === 'function') {
+                select.dispatchEvent(changeEvent);
+            } else if (typeof select.onchange === 'function') {
+                select.onchange({ target: select });
+            }
+            syncFinanceCustomSelect(select, false);
+            closeFinanceCustomSelect(select, true);
+        });
+
+        list.addEventListener('keydown', event => {
+            const items = Array.from(list.querySelectorAll('.fpt-fin-select-option'));
+            const current = event.target && event.target.closest
+                ? event.target.closest('.fpt-fin-select-option')
+                : null;
+            if (!current || !items.length) return;
+            const currentIndex = Math.max(0, items.indexOf(current));
+            let nextIndex = currentIndex;
+
+            if (event.key === 'ArrowDown') nextIndex = Math.min(items.length - 1, currentIndex + 1);
+            else if (event.key === 'ArrowUp') nextIndex = Math.max(0, currentIndex - 1);
+            else if (event.key === 'Home') nextIndex = 0;
+            else if (event.key === 'End') nextIndex = items.length - 1;
+            else if (event.key === 'Escape') {
+                event.preventDefault();
+                closeFinanceCustomSelect(select, true);
+                return;
+            } else if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                current.click();
+                return;
+            } else {
+                return;
+            }
+
+            event.preventDefault();
+            const next = items[nextIndex];
+            if (next && typeof next.focus === 'function') next.focus({ preventScroll: true });
+            if (next && typeof next.scrollIntoView === 'function') {
+                try { next.scrollIntoView({ block: 'nearest' }); } catch (_) {}
+            }
+        });
+
+        select.addEventListener('change', () => syncFinanceCustomSelect(select, false));
+
+        const outsideHandler = event => {
+            if (!shell.contains(event.target)) closeFinanceCustomSelect(select, false);
+        };
+        document.addEventListener('pointerdown', outsideHandler, true);
+        shell.__fptFinanceSelectOutsideHandler = outsideHandler;
+
+        if (typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(() => syncFinanceCustomSelect(select, true));
+            observer.observe(select, { childList: true, subtree: true });
+            shell.__fptFinanceSelectObserver = observer;
         }
     }
 
@@ -4430,7 +4703,10 @@
         state.pendingCustomRange = false;
         persistPeriod(range);
         const controls = getCustomRangeControls();
-        if (controls && controls.period) controls.period.value = 'custom';
+        if (controls && controls.period) {
+            controls.period.value = 'custom';
+            syncFinanceCustomSelect(controls.period, false);
+        }
         syncCustomRangeControls(true);
         invalidateAllCaches();
         reRenderActiveSubtab();
@@ -4448,7 +4724,10 @@
         removeCustomRangeStorage();
         const controls = getCustomRangeControls();
         if (controls) {
-            if (controls.period) controls.period.value = fallback;
+            if (controls.period) {
+                controls.period.value = fallback;
+                syncFinanceCustomSelect(controls.period, false);
+            }
             if (controls.from) controls.from.value = '';
             if (controls.to) controls.to.value = '';
         }
@@ -4468,7 +4747,10 @@
             }
             state.pendingCustomRange = true;
             const controls = getCustomRangeControls();
-            if (controls && controls.period) controls.period.value = 'custom';
+            if (controls && controls.period) {
+                controls.period.value = 'custom';
+                syncFinanceCustomSelect(controls.period, false);
+            }
             syncCustomRangeControls(true);
             return false;
         }
@@ -4554,6 +4836,7 @@
             statusSelect.value = state.orderStatus || 'all';
             state.status = state.orderStatus || 'all';
         }
+        syncFinanceCustomSelect(statusSelect, true);
     }
 
     function setupHeaderFilters(container) {
@@ -4663,6 +4946,12 @@
             exportBtn.onclick = () => openExportModal();
         }
 
+        // Replace native browser dropdown popups with Finance-styled listboxes,
+        // while keeping the original selects as the single source of truth.
+        [periodSelect, curSelect, statusSelect, catSelect]
+            .filter(Boolean)
+            .forEach(enhanceFinanceCustomSelect);
+
         updateHeaderFiltersVisibility(state.activeSubtab);
     }
 
@@ -4699,6 +4988,10 @@
             }
         }
         updateStatusSelectOptions(subtab);
+        syncFinanceCustomSelect(periodSelect, false);
+        syncFinanceCustomSelect(currencySelect, false);
+        syncFinanceCustomSelect(statusSelect, false);
+        syncFinanceCustomSelect(catSelect, false);
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

@@ -8861,7 +8861,8 @@ textarea.fp-cw-input { line-height:1.4; }
     min-width: 0;
 }
 
-.fp-tools-popup .fpt-fin-filterbar .fpt-fin-period-wrap > select.fpt-fin-period-select {
+.fp-tools-popup .fpt-fin-filterbar .fpt-fin-period-wrap > select.fpt-fin-period-select,
+.fp-tools-popup .fpt-fin-filterbar .fpt-fin-period-wrap > .fpt-fin-select-shell {
     width: 100% !important;
     min-width: 0 !important;
     max-width: none !important;
@@ -8997,6 +8998,262 @@ textarea.fp-cw-input { line-height:1.4; }
 .fp-tools-popup select.fpt-fin-period-select option {
     color: var(--fptm-text, #1f2937) !important;
     background: var(--fptm-bg, #ffffff) !important;
+}
+
+
+/* Custom Finance select popup: rounded panel + oval custom scrollbar */
+.fpt-fin-select-shell {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    z-index: 1;
+}
+
+.fpt-fin-select-shell.is-open {
+    z-index: 80;
+}
+
+.fp-tools-popup .fpt-fin-select-shell > select.fpt-fin-native-select {
+    position: absolute !important;
+    width: 1px !important;
+    min-width: 1px !important;
+    max-width: 1px !important;
+    height: 1px !important;
+    min-height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    clip-path: inset(50%) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.fp-tools-popup button.fpt-fin-select-trigger,
+.fp-tools-popup .fpt-fin-select-trigger {
+    all: unset;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 46px !important;
+    padding: 0 16px !important;
+    color: var(--fptm-text, #1f2937) !important;
+    background:
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--fptm-field, var(--fptm-surface-2, #ffffff)) 88%, white 12%),
+            color-mix(in srgb, var(--fptm-field, var(--fptm-surface-2, #ffffff)) 94%, transparent 6%)) !important;
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, .14)) !important;
+    border-radius: 14px !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .55),
+        inset 0 -1px 0 color-mix(in srgb, var(--fptm-border, rgba(0, 0, 0, .10)) 68%, transparent) !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    font-weight: 560 !important;
+    line-height: 1 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition:
+        border-color .16s ease,
+        background .16s ease,
+        box-shadow .16s ease,
+        transform .16s ease !important;
+}
+
+.fp-tools-popup button.fpt-fin-select-trigger:hover,
+.fp-tools-popup .fpt-fin-select-trigger:hover {
+    border-color: color-mix(in srgb, var(--fptm-accent, var(--fpt-accent, #1b75bb)) 30%, var(--fptm-border, rgba(255, 255, 255, .14))) !important;
+    transform: translateY(-1px) !important;
+}
+
+.fp-tools-popup button.fpt-fin-select-trigger:focus-visible,
+.fp-tools-popup .fpt-fin-select-trigger:focus-visible,
+.fpt-fin-select-shell.is-open .fpt-fin-select-trigger {
+    border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .58),
+        inset 0 -1px 0 color-mix(in srgb, var(--fptm-border, rgba(0, 0, 0, .10)) 68%, transparent),
+        0 0 0 3px color-mix(in srgb, var(--fptm-accent, var(--fpt-accent, #1b75bb)) 14%, transparent) !important;
+    transform: none !important;
+}
+
+.fp-tools-popup button.fpt-fin-select-trigger:disabled,
+.fp-tools-popup .fpt-fin-select-trigger:disabled {
+    opacity: .58 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+}
+
+.fpt-fin-select-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fpt-fin-select-chevron {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    margin: -4px 1px 0 0;
+    border-right: 2px solid var(--fptm-muted, #667085);
+    border-bottom: 2px solid var(--fptm-muted, #667085);
+    transform: rotate(45deg);
+    transform-origin: center;
+    transition: transform .18s cubic-bezier(.22, 1, .36, 1), border-color .16s ease;
+}
+
+.fpt-fin-select-shell.is-open .fpt-fin-select-chevron {
+    margin-top: 4px;
+    border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+    transform: rotate(225deg);
+}
+
+.fpt-fin-select-dropdown {
+    position: absolute;
+    z-index: 120;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    box-sizing: border-box;
+    padding: 6px;
+    overflow: hidden;
+    color: var(--fptm-text, #1f2937);
+    background:
+        linear-gradient(180deg,
+            color-mix(in srgb, var(--fptm-bg, #ffffff) 96%, white 4%),
+            color-mix(in srgb, var(--fptm-surface, #f5f7fa) 95%, transparent 5%));
+    border: 1px solid var(--fptm-border, rgba(0, 0, 0, .10));
+    border-radius: 14px;
+    box-shadow:
+        0 12px 28px color-mix(in srgb, var(--fptm-shadow, rgba(20, 35, 60, .16)) 72%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, .58);
+    backdrop-filter: blur(18px) saturate(1.16);
+    -webkit-backdrop-filter: blur(18px) saturate(1.16);
+    transform-origin: top center;
+    animation: fptFinSelectOpen .15s cubic-bezier(.22, 1, .36, 1);
+}
+
+.fpt-fin-select-shell.opens-up .fpt-fin-select-dropdown {
+    top: auto;
+    bottom: calc(100% + 8px);
+    transform-origin: bottom center;
+}
+
+.fpt-fin-select-dropdown[hidden] {
+    display: none !important;
+}
+
+@keyframes fptFinSelectOpen {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(.985);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.fpt-fin-select-list {
+    max-height: 264px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1px 3px 1px 1px;
+    scrollbar-width: thin;
+    scrollbar-color:
+        color-mix(in srgb, var(--fptm-muted, #667085) 62%, transparent)
+        transparent;
+}
+
+.fpt-fin-select-list::-webkit-scrollbar {
+    width: 10px;
+}
+
+.fpt-fin-select-list::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 8px 0;
+}
+
+.fpt-fin-select-list::-webkit-scrollbar-thumb {
+    min-height: 30px;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background:
+        color-mix(in srgb, var(--fptm-muted, #667085) 62%, transparent);
+    background-clip: padding-box;
+}
+
+.fpt-fin-select-list::-webkit-scrollbar-thumb:hover {
+    background:
+        color-mix(in srgb, var(--fptm-muted, #667085) 82%, transparent);
+    background-clip: padding-box;
+}
+
+.fp-tools-popup button.fpt-fin-select-option,
+.fp-tools-popup .fpt-fin-select-option {
+    all: unset;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-height: 38px !important;
+    padding: 8px 12px !important;
+    color: var(--fptm-text, #1f2937) !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 9px !important;
+    box-shadow: none !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    line-height: 1.25 !important;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+    cursor: pointer !important;
+    transition:
+        background-color .12s ease,
+        color .12s ease,
+        transform .12s ease !important;
+}
+
+.fp-tools-popup button.fpt-fin-select-option:hover,
+.fp-tools-popup .fpt-fin-select-option:hover,
+.fp-tools-popup button.fpt-fin-select-option:focus-visible,
+.fp-tools-popup .fpt-fin-select-option:focus-visible {
+    color: var(--fptm-text, #1f2937) !important;
+    background: var(--fptm-hover, rgba(27, 117, 187, .08)) !important;
+    outline: none !important;
+}
+
+.fp-tools-popup button.fpt-fin-select-option.is-selected,
+.fp-tools-popup .fpt-fin-select-option.is-selected {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+    background: var(--fptm-accent-soft, rgba(27, 117, 187, .12)) !important;
+    font-weight: 650 !important;
+}
+
+.fp-tools-popup button.fpt-fin-select-option:active,
+.fp-tools-popup .fpt-fin-select-option:active {
+    transform: scale(.99) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fpt-fin-select-dropdown,
+    .fpt-fin-select-chevron,
+    .fp-tools-popup button.fpt-fin-select-trigger,
+    .fp-tools-popup button.fpt-fin-select-option {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
+    }
 }
 
 /* Potential snapshot badge uses the same control shell so the filter grid stays coherent. */
