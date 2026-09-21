@@ -357,14 +357,6 @@ async function runFinanceUpdateCycle() {
             }
 
             const firstId = String(txns[0].id);
-            if (lastFirstId !== null && firstId === lastFirstId) {
-                throw new Error('Ошибка пагинации финансов: повторилась та же страница');
-            }
-            lastFirstId = firstId;
-
-            if (page > 0 && newOnPage === 0) {
-                throw new Error('Ошибка пагинации финансов: страница не содержит новых операций');
-            }
 
             const dts = txns.map(t => t.date).filter(Boolean);
             if (dts.length) {
@@ -373,14 +365,29 @@ async function runFinanceUpdateCycle() {
                 console.log(`FP Tools: финансы стр.${page + 1} — ${txns.length} операц. (новых ${newOnPage}), ${newest}…${oldest}, собрано уникальных ${collectedById.size}`);
             }
 
+            // Пустой continue — штатный конец истории. FunPay может вернуть на
+            // последней странице только уже встречавшиеся операции из-за
+            // перекрывающейся cursor-пагинации, поэтому это не ошибка.
             if (!nextId) {
                 collectionComplete = true;
                 break;
             }
+
+            // Реальный признак зацикливания — cursor не двигается или повторяется.
             if (String(nextId) === String(continueToken)) {
                 throw new Error('Ошибка пагинации финансов: continue-токен не изменился');
             }
 
+            // Страница без новых уникальных операций допустима, если FunPay выдал
+            // новый continue-токен: продолжаем идти по курсору, а не объявляем
+            // частичное обновление.
+            if (page > 0 && newOnPage === 0) {
+                console.warn('FP Tools: финансы — страница содержит только уже известные операции; continue-токен изменился, продолжаем пагинацию.');
+            }
+
+            // Одинаковый firstId сам по себе не означает цикл: страницы FunPay
+            // могут перекрываться. За цикл отвечают seenTokens / неизменившийся token.
+            lastFirstId = firstId;
             continueToken = nextId;
         }
 
