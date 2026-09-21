@@ -147,16 +147,15 @@ function testOnlyMetricCardsUseTheKpiContract() {
 
 function testKpiCssContract() {
     const filterbarRule = getRuleBody(cssSource, '.fpt-fin-filterbar');
-    assert.match(filterbarRule, /display:\s*flex\s*;/, 'Filterbar must use flex layout');
-    assert.match(filterbarRule, /flex-wrap:\s*wrap\s*;/, 'Filterbar controls must wrap');
-    assert.match(filterbarRule, /gap:\s*[^;]+;/, 'Filterbar controls need consistent spacing');
-    assert.match(filterbarRule, /margin-bottom:\s*16px\s*;/, 'Filterbar must separate controls from content');
+    assert.match(filterbarRule, /display:\s*block\s*;/, 'Filterbar must provide a full-width layout shell');
+    assert.match(filterbarRule, /margin-bottom:\s*18px\s*;/, 'Filterbar must separate controls from content');
 
     const filterbarPeriodRule = getRuleBody(cssSource, '.fpt-fin-filterbar .fpt-fin-period-wrap');
-    assert.match(filterbarPeriodRule, /display:\s*flex\s*;/, 'Filter controls must use a shrinkable flex wrapper');
-    assert.match(filterbarPeriodRule, /flex:\s*1\s+1\s+100%\s*;/, 'Filter controls must occupy and wrap within the filterbar');
+    assert.match(filterbarPeriodRule, /display:\s*grid\s*;/, 'Filter controls must use the Finance grid');
+    assert.match(filterbarPeriodRule, /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)\s*;/, 'Desktop filters must align with the four KPI columns');
+    assert.match(filterbarPeriodRule, /gap:\s*12px\s*;/, 'Filter grid gap must match the Finance card grid');
+    assert.match(filterbarPeriodRule, /width:\s*100%\s*;/, 'Filter wrapper must span the Finance content width');
     assert.match(filterbarPeriodRule, /min-width:\s*0\s*;/, 'Filter wrapper must be allowed to shrink');
-    assert.match(getRuleBody(cssSource, '.fpt-fin-period-wrap'), /flex-wrap:\s*wrap\s*;/, 'Period controls must wrap within their shared wrapper');
 
     const kpiRule = [...cssSource.matchAll(/\.fpt-fin-kpi-card\s*\{([\s\S]*?)\}/g)]
         .map(match => match[1])

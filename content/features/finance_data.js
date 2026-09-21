@@ -633,7 +633,6 @@
             currVal === null || currVal === undefined || isNaN(currVal) ||
             Math.abs(prevVal) < 1e-9
         ) {
-            const badgeHtml = `<span class="fpt-fin-kpi-diff fpt-fin-diff-neutral"${kpiAttr}${idAttr} title="Данные за предыдущий период отсутствуют или равны 0"><span class="fpt-fin-diff-value">—</span> <span class="fpt-fin-diff-label">vs previous period</span></span>`;
             return {
                 available: false,
                 direction: 'neutral',
@@ -642,9 +641,9 @@
                 diffPercent: null,
                 text: '—',
                 formattedText: '—',
-                fullText: '— vs previous period',
+                fullText: '—',
                 state: 'unavailable',
-                badgeHtml
+                badgeHtml: ''
             };
         }
 
@@ -669,12 +668,12 @@
             direction = 'neutral';
         }
 
-        const fullText = `${text} vs previous period`;
+        const fullText = `${text} к пред. периоду`;
         const badgeClass = state === 'positive'
             ? 'fpt-fin-diff-positive'
             : (state === 'negative' ? 'fpt-fin-diff-negative' : 'fpt-fin-diff-neutral');
 
-        const badgeHtml = `<span class="fpt-fin-kpi-diff ${badgeClass}"${kpiAttr}${idAttr}><span class="fpt-fin-diff-value">${esc(text)}</span> <span class="fpt-fin-diff-label">vs previous period</span></span>`;
+        const badgeHtml = `<span class="fpt-fin-kpi-diff ${badgeClass}"${kpiAttr}${idAttr}><span class="fpt-fin-diff-value">${esc(text)}</span> <span class="fpt-fin-diff-label">к пред. периоду</span></span>`;
 
         return {
             available: true,

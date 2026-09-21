@@ -153,7 +153,7 @@ function testDivideByZeroProtection() {
     assert.equal(zeroPrev.available, false, 'zero baseline is marked unavailable');
     assert.equal(zeroPrev.diffPercent, null, 'diffPercent is null on zero baseline (no Infinity)');
     assert.equal(zeroPrev.formattedText, '—', 'formattedText is neutral dash');
-    assert.match(zeroPrev.badgeHtml, /fpt-fin-diff-neutral/, 'badge has neutral class');
+    assert.equal(zeroPrev.badgeHtml, '', 'unavailable comparison does not render a placeholder badge');
     assert.doesNotMatch(zeroPrev.badgeHtml, /Infinity|NaN/, 'no Infinity or NaN in output');
 
     // previous = 0, current = 0
@@ -186,7 +186,7 @@ function testFormattingAndUnicodeMinus() {
     assert.equal(pos.available, true);
     assert.equal(pos.direction, 'up');
     assert.equal(pos.diffPercent, 12.4);
-    assert.equal(pos.formattedText, '+12.4% vs previous period');
+    assert.equal(pos.formattedText, '+12.4% к пред. периоду');
     assert.match(pos.badgeHtml, /fpt-fin-diff-positive/, 'positive badge class');
     assert.match(pos.badgeHtml, /\+12\.4%/, 'includes positive sign');
 
@@ -195,7 +195,7 @@ function testFormattingAndUnicodeMinus() {
     assert.equal(neg.available, true);
     assert.equal(neg.direction, 'down');
     assert.equal(neg.diffPercent, -8.1);
-    assert.equal(neg.formattedText, '\u22128.1% vs previous period');
+    assert.equal(neg.formattedText, '\u22128.1% к пред. периоду');
     assert.ok(neg.formattedText.includes('\u2212'), 'Uses unicode minus character');
     assert.match(neg.badgeHtml, /fpt-fin-diff-negative/, 'negative badge class');
     assert.match(neg.badgeHtml, /\u22128\.1%/, 'badge includes unicode minus');
@@ -205,7 +205,7 @@ function testFormattingAndUnicodeMinus() {
     assert.equal(zeroDelta.available, true);
     assert.equal(zeroDelta.direction, 'neutral');
     assert.equal(zeroDelta.diffPercent, 0);
-    assert.equal(zeroDelta.formattedText, '0.0% vs previous period');
+    assert.equal(zeroDelta.formattedText, '0.0% к пред. периоду');
     assert.match(zeroDelta.badgeHtml, /fpt-fin-diff-neutral/);
 }
 
@@ -347,7 +347,7 @@ function testZeroBaselineFixturesR13() {
         assert.equal(item.diffPercent, null, `${kpiKey} diffPercent is null (no Infinity)`);
         assert.equal(item.formattedText, '—', `${kpiKey} formattedText is neutral dash`);
         assert.doesNotMatch(item.badgeHtml, /Infinity|NaN/, `${kpiKey} markup does not contain Infinity or NaN`);
-        assert.match(item.badgeHtml, /fpt-fin-diff-neutral/, `${kpiKey} uses neutral styling`);
+        assert.equal(item.badgeHtml, '', `${kpiKey} does not render a meaningless unavailable badge`);
     }
 
     // Both periods zero

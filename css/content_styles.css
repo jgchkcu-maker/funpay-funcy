@@ -8776,9 +8776,9 @@ textarea.fp-cw-input { line-height:1.4; }
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    margin-bottom: 16px;
-    padding-bottom: 14px;
-    border-bottom: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.08));
+    margin-bottom: 18px;
+    padding-bottom: 0;
+    border-bottom: 0;
 }
 
 .fpt-fin-header-left {
@@ -8796,6 +8796,8 @@ textarea.fp-cw-input { line-height:1.4; }
 
 .fpt-fin-title {
     margin: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
     font-size: 18px !important;
     font-weight: 700 !important;
     color: var(--fptm-text, var(--fpt-text, #fff)) !important;
@@ -8840,27 +8842,54 @@ textarea.fp-cw-input { line-height:1.4; }
 
 .fpt-fin-period-wrap {
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    min-width: 0;
 }
 
 .fpt-fin-filterbar {
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 8px;
+    display: block;
     width: 100%;
     min-width: 0;
-    margin-bottom: 16px;
+    margin-bottom: 18px;
 }
 
 .fpt-fin-filterbar .fpt-fin-period-wrap {
-    display: flex;
-    align-items: flex-end;
-    flex: 1 1 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
     min-width: 0;
+}
+
+.fp-tools-popup .fpt-fin-filterbar .fpt-fin-period-wrap > select.fpt-fin-period-select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: none !important;
+}
+
+.fp-tools-popup .fpt-fin-filterbar .fpt-fin-period-wrap > .fpt-fin-custom-range {
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.fp-tools-popup .fpt-fin-filterbar .fpt-fin-period-wrap > .fpt-fin-snapshot-badge {
+    width: 100%;
+    justify-content: center;
+}
+
+@container (max-width: 720px) {
+    .fpt-fin-filterbar .fpt-fin-period-wrap {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@container (max-width: 480px) {
+    .fpt-fin-filterbar .fpt-fin-period-wrap {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+    }
 }
 
 .fp-tools-popup .fpt-fin-custom-range {
@@ -8925,7 +8954,7 @@ textarea.fp-cw-input { line-height:1.4; }
 }
 
 .fp-tools-popup #fptFinCategorySelect {
-    max-width: min(100%, 240px) !important;
+    max-width: none !important;
 }
 
 .fp-tools-popup select.fpt-fin-period-select:focus,
