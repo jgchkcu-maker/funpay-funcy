@@ -2617,9 +2617,209 @@ function _updateColorInputs(palette) {
 
 
 
+
+const FPT_NAV_SECTIONS = Object.freeze([
+    { id: 'core', label: 'Основное', icon: 'home', primary: true, pages: Object.freeze(['general', 'accounts', 'needs']) },
+    { id: 'store', label: 'Магазин', icon: 'storefront', primary: true, pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit', 'blacklist']) },
+    { id: 'messages', label: 'Сообщения', icon: 'chat', primary: true, pages: Object.freeze(['templates', 'slash_commands', 'auto_review', 'global_chat']) },
+    { id: 'finance', label: 'Финансы', icon: 'payments', primary: true, pages: Object.freeze(['finance_hub', 'piggy_banks', 'calculator', 'currency_calc']) },
+    { id: 'settings', label: 'Настройки', icon: 'settings', primary: true, pages: Object.freeze(['theme', 'effects', 'epic_nicks', 'telegram', 'settings_io']) },
+    { id: 'more', label: 'Ещё', icon: 'more_horiz', primary: false, pages: Object.freeze(['notes', 'overview', 'tickets', 'support']) }
+]);
+
+const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
+    needs: 'Функции',
+    auto_review: 'Отзывы',
+    epic_nicks: 'Эпический ник',
+    overview: 'Видео-обзор',
+    settings_io: 'Импорт / экспорт'
+});
+
+function setupNavigationSections(toolsPopup) {
+    if (!toolsPopup) return null;
+    if (toolsPopup._fptNavSections) return toolsPopup._fptNavSections;
+
+    const nav = toolsPopup.querySelector('.fp-tools-nav');
+    const ul = nav && nav.querySelector('ul');
+    if (!nav || !ul) return null;
+
+    const sectionById = new Map(FPT_NAV_SECTIONS.map(section => [section.id, section]));
+    const pageToSection = new Map();
+    FPT_NAV_SECTIONS.forEach(section => {
+        section.pages.forEach(pageId => pageToSection.set(pageId, section.id));
+    });
+
+    const pageItems = Array.from(ul.querySelectorAll('li[data-page]'));
+    pageItems.forEach(item => {
+        const pageId = item.dataset.page;
+        const sectionId = pageToSection.get(pageId) || 'more';
+        item.dataset.navSection = sectionId;
+
+        const override = FPT_NAV_LABEL_OVERRIDES[pageId];
+        const label = item.querySelector('a > span:last-child');
+        if (override && label) label.textContent = override;
+    });
+
+    ul.classList.add('fpt-nav-context-list');
+    ul.querySelectorAll('li.fp-nav-divider').forEach(divider => {
+        divider.classList.add('fpt-nav-legacy-divider');
+        divider.setAttribute('aria-hidden', 'true');
+    });
+
+    const primaryNav = document.createElement('div');
+    primaryNav.className = 'fpt-nav-primary';
+    primaryNav.setAttribute('aria-label', 'Основные разделы FP Tools');
+
+    const primaryButtons = new Map();
+    FPT_NAV_SECTIONS.filter(section => section.primary).forEach(section => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'fpt-nav-section-btn';
+        button.dataset.section = section.id;
+        button.setAttribute('aria-pressed', 'false');
+
+        const icon = document.createElement('span');
+        icon.className = 'material-symbols-rounded';
+        icon.textContent = section.icon;
+
+        const label = document.createElement('span');
+        label.className = 'fpt-nav-section-label';
+        label.textContent = section.label;
+
+        button.append(icon, label);
+        primaryNav.appendChild(button);
+        primaryButtons.set(section.id, button);
+    });
+
+    const contextHead = document.createElement('div');
+    contextHead.className = 'fpt-nav-context-head';
+    contextHead.innerHTML = '<span class="fpt-nav-context-label"></span><span class="fpt-nav-context-count"></span>';
+
+    const moreButton = document.createElement('button');
+    moreButton.type = 'button';
+    moreButton.className = 'fpt-nav-more-btn';
+    moreButton.dataset.section = 'more';
+    moreButton.innerHTML = '<span class="material-symbols-rounded">more_horiz</span><span>Ещё</span>';
+    moreButton.setAttribute('aria-pressed', 'false');
+
+    nav.insertBefore(primaryNav, ul);
+    nav.insertBefore(contextHead, ul);
+    ul.insertAdjacentElement('afterend', moreButton);
+
+    const contextLabel = contextHead.querySelector('.fpt-nav-context-label');
+    const contextCount = contextHead.querySelector('.fpt-nav-context-count');
+    const lastPageBySection = Object.create(null);
+
+    pageItems.forEach(item => {
+        if (item.classList.contains('active')) {
+            lastPageBySection[item.dataset.navSection] = item.dataset.page;
+        }
+    });
+
+    let activeSection = (() => {
+        const activePage = pageItems.find(item => item.classList.contains('active'));
+        return activePage?.dataset.navSection || 'core';
+    })();
+
+    function getItemsForSection(sectionId) {
+        return pageItems.filter(item => item.dataset.navSection === sectionId);
+    }
+
+    function clearSearchIfNeeded() {
+        const search = toolsPopup.querySelector('#fptNavSearch');
+        if (!search || !search.value) return;
+        search.value = '';
+        try {
+            search.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch (_) {}
+    }
+
+    function renderSection(sectionId) {
+        const resolvedId = sectionById.has(sectionId) ? sectionId : 'more';
+        const section = sectionById.get(resolvedId);
+        activeSection = resolvedId;
+        nav.dataset.activeSection = resolvedId;
+
+        pageItems.forEach(item => {
+            const visible = item.dataset.navSection === resolvedId;
+            item.classList.toggle('fpt-nav-section-hidden', !visible);
+            if (!nav.classList.contains('fpt-search-active')) {
+                item.setAttribute('aria-hidden', visible ? 'false' : 'true');
+            }
+        });
+
+        primaryButtons.forEach((button, id) => {
+            const isActive = id === resolvedId;
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+
+        const moreActive = resolvedId === 'more';
+        moreButton.classList.toggle('active', moreActive);
+        moreButton.setAttribute('aria-pressed', moreActive ? 'true' : 'false');
+
+        const visibleItems = getItemsForSection(resolvedId);
+        if (contextLabel) contextLabel.textContent = section?.label || 'Ещё';
+        if (contextCount) contextCount.textContent = visibleItems.length + (visibleItems.length === 1 ? ' функция' : ' функций');
+
+        compactNav(toolsPopup);
+    }
+
+    function showSectionForPage(pageId) {
+        const item = pageItems.find(entry => entry.dataset.page === pageId);
+        const sectionId = item?.dataset.navSection || pageToSection.get(pageId) || 'more';
+        if (item) lastPageBySection[sectionId] = pageId;
+        renderSection(sectionId);
+    }
+
+    function openSection(sectionId) {
+        clearSearchIfNeeded();
+        const items = getItemsForSection(sectionId);
+        if (!items.length) return;
+
+        renderSection(sectionId);
+
+        const preferredId = lastPageBySection[sectionId];
+        const target = (preferredId && items.find(item => item.dataset.page === preferredId)) || items[0];
+        if (!target) return;
+
+        if (target.classList.contains('active')) {
+            showSectionForPage(target.dataset.page);
+        } else {
+            target.click();
+        }
+    }
+
+    function revealAllForSearch() {
+        pageItems.forEach(item => {
+            item.classList.remove('fpt-nav-section-hidden');
+            item.setAttribute('aria-hidden', 'false');
+        });
+        compactNav(toolsPopup);
+    }
+
+    const api = {
+        get activeSection() { return activeSection; },
+        showSectionForPage,
+        openSection,
+        refresh: () => renderSection(activeSection),
+        revealAllForSearch
+    };
+    toolsPopup._fptNavSections = api;
+
+    primaryButtons.forEach((button, sectionId) => {
+        button.addEventListener('click', () => openSection(sectionId));
+    });
+    moreButton.addEventListener('click', () => openSection('more'));
+
+    renderSection(activeSection);
+    return api;
+}
+
 function setupPopupNavigation() {
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (!toolsPopup) return;
+    const navSections = setupNavigationSections(toolsPopup);
     const navItems = toolsPopup.querySelectorAll('.fp-tools-nav li, .fp-tools-header-tab');
     const contentPages = toolsPopup.querySelectorAll('.fp-tools-page-content');
 
@@ -2628,6 +2828,7 @@ function setupPopupNavigation() {
         li.addEventListener('click', (e) => {
             e.preventDefault();
             const pageId = li.dataset.page;
+            if (navSections) navSections.showSectionForPage(pageId);
 
             navItems.forEach(item => item.classList.remove('active'));
             li.classList.add('active');
@@ -2938,24 +3139,32 @@ function attachAutoReplyImageButtons(toolsPopup) {
 // Auto-compaction: in the 2-column nav grid, stretch the last button of any section that
 // would otherwise leave a gap (odd count, or a lone button) so the layout never looks empty.
 function compactNav(toolsPopup) {
-    const ul = toolsPopup.querySelector('.fp-tools-nav ul');
-    if (!ul) return;
-    const children = Array.from(ul.children);
-    let group = [];
-    const flush = () => {
-        // clear previous wide flags in this group
-        group.forEach(li => li.classList.remove('fpt-nav-wide'));
-        if (group.length && group.length % 2 === 1) {
-            // odd count → stretch the last one across both columns
+    const nav = toolsPopup.querySelector('.fp-tools-nav');
+    const items = Array.from(toolsPopup.querySelectorAll('.fp-tools-nav li[data-page]'));
+    if (!nav || !items.length) return;
+
+    items.forEach(item => item.classList.remove('fpt-nav-wide'));
+
+    if (nav.classList.contains('fpt-search-active')) {
+        const visibleMatches = items.filter(item => !item.classList.contains('fpt-nav-hidden'));
+        if (visibleMatches.length % 2 === 1) {
+            visibleMatches[visibleMatches.length - 1].classList.add('fpt-nav-wide');
+        }
+        return;
+    }
+
+    const groups = new Map();
+    items.forEach(item => {
+        const sectionId = item.dataset.navSection || 'legacy';
+        if (!groups.has(sectionId)) groups.set(sectionId, []);
+        groups.get(sectionId).push(item);
+    });
+
+    groups.forEach(group => {
+        if (group.length % 2 === 1) {
             group[group.length - 1].classList.add('fpt-nav-wide');
         }
-        group = [];
-    };
-    for (const li of children) {
-        if (li.classList.contains('fp-nav-divider')) { flush(); continue; }
-        if (li.dataset.page) group.push(li);
-    }
-    flush();
+    });
 }
 
 function setupAccentPicker(toolsPopup) {
@@ -3009,6 +3218,7 @@ function setupNavSearch(toolsPopup) {
     const resultsBox = toolsPopup.querySelector('#fptNavSearchResults');
     const nav = toolsPopup.querySelector('.fp-tools-nav');
     const body = toolsPopup.querySelector('.fp-tools-body');
+    const navSections = toolsPopup._fptNavSections || null;
     if (!input || !nav || !resultsBox) return;
 
     // Выносим выпадашку результатов из левой панели (у неё overflow:auto, который
@@ -3115,25 +3325,28 @@ function setupNavSearch(toolsPopup) {
         clearBtn.style.display = q ? 'block' : 'none';
 
         if (!q) {
-            items.forEach(li => { li.classList.remove('fpt-nav-hidden', 'fpt-nav-match'); });
+            items.forEach(li => {
+                li.classList.remove('fpt-nav-hidden', 'fpt-nav-match');
+                li.setAttribute('aria-hidden', 'false');
+            });
             dividers.forEach(d => d.classList.remove('fpt-nav-hidden'));
+            if (navSections) navSections.refresh();
+            compactNav(toolsPopup);
             return;
         }
+
+        if (navSections) navSections.revealAllForSearch();
+
         items.forEach(li => {
             const label = norm(li.querySelector('span:last-child')?.textContent || '');
             const match = label.includes(q);
             li.classList.toggle('fpt-nav-hidden', !match);
             li.classList.toggle('fpt-nav-match', match);
+            li.setAttribute('aria-hidden', match ? 'false' : 'true');
         });
-        dividers.forEach(d => {
-            let anyVisible = false;
-            let sib = d.nextElementSibling;
-            while (sib && !sib.classList.contains('fp-nav-divider')) {
-                if (sib.dataset.page && !sib.classList.contains('fpt-nav-hidden')) { anyVisible = true; break; }
-                sib = sib.nextElementSibling;
-            }
-            d.classList.toggle('fpt-nav-hidden', !anyVisible);
-        });
+
+        dividers.forEach(d => d.classList.add('fpt-nav-hidden'));
+        compactNav(toolsPopup);
     }
 
     let t = null;

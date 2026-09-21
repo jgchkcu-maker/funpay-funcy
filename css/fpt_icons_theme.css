@@ -1443,3 +1443,161 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup #fptNeedsAskBtn .material-icons {
     color: var(--fpt-on-accent, #fff) !important;
 }
+
+
+/* ---------- 10. Navigation IA: compact hubs + contextual pages ---------- */
+.fp-tools-nav .fpt-nav-primary {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin: 8px 0 10px;
+}
+
+.fp-tools-nav .fpt-nav-section-btn {
+    min-width: 0 !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 8px !important;
+    margin: 0 !important;
+    border-radius: 11px !important;
+    border: 1px solid var(--fptm-border, rgba(255,255,255,0.10)) !important;
+    background: var(--fptm-surface-2, rgba(255,255,255,0.035)) !important;
+    color: var(--fptm-muted, #9ea3b5) !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+.fp-tools-nav .fpt-nav-section-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+}
+
+.fp-tools-nav .fpt-nav-section-btn .material-symbols-rounded {
+    flex: 0 0 auto;
+    font-size: 18px !important;
+    line-height: 1;
+    color: inherit !important;
+}
+
+.fp-tools-nav .fpt-nav-section-btn .fpt-nav-section-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fp-tools-nav .fpt-nav-section-btn:hover {
+    background: var(--fptm-hover, rgba(255,255,255,0.07)) !important;
+    border-color: var(--fptm-border-strong, rgba(255,255,255,0.16)) !important;
+    color: var(--fptm-text, #e9eaf0) !important;
+}
+
+.fp-tools-nav .fpt-nav-section-btn.active {
+    background: var(--fptm-accent-soft, rgba(27,117,187,0.14)) !important;
+    border-color: var(--fptm-accent-border, rgba(27,117,187,0.36)) !important;
+    color: var(--fptm-accent, #1b75bb) !important;
+}
+
+.fp-tools-nav .fpt-nav-context-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 24px;
+    padding: 2px 3px 6px;
+    color: var(--fptm-muted, #7f8496);
+}
+
+.fp-tools-nav .fpt-nav-context-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.fp-tools-nav .fpt-nav-context-count {
+    flex: 0 0 auto;
+    font-size: 9.5px;
+    font-weight: 600;
+    opacity: .62;
+}
+
+.fp-tools-nav .fpt-nav-context-list {
+    margin: 0 !important;
+}
+
+.fp-tools-nav .fpt-nav-context-list li[data-page] a {
+    height: 64px;
+    padding: 9px 6px;
+    gap: 5px;
+}
+
+.fp-tools-nav .fpt-nav-context-list li[data-page] a .nav-icon {
+    font-size: 22px;
+}
+
+.fp-tools-nav .fpt-nav-context-list li[data-page] a > span:last-child {
+    font-size: 11px;
+    line-height: 1.18;
+}
+
+.fp-tools-nav li.fpt-nav-section-hidden {
+    display: none !important;
+}
+
+.fp-tools-nav li.fp-nav-divider.fpt-nav-legacy-divider {
+    display: none !important;
+}
+
+.fp-tools-nav .fpt-nav-more-btn {
+    width: 100% !important;
+    min-height: 34px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    margin: 9px 0 0 !important;
+    padding: 7px 10px !important;
+    border-radius: 10px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    color: var(--fptm-muted, #8b90a2) !important;
+    box-shadow: none !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+.fp-tools-nav .fpt-nav-more-btn .material-symbols-rounded {
+    font-size: 17px !important;
+    color: inherit !important;
+}
+
+.fp-tools-nav .fpt-nav-more-btn:hover,
+.fp-tools-nav .fpt-nav-more-btn.active {
+    background: var(--fptm-hover, rgba(255,255,255,0.055)) !important;
+    color: var(--fptm-accent, #1b75bb) !important;
+}
+
+.fp-tools-nav.fpt-search-active .fpt-nav-context-head {
+    opacity: .5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-nav .fpt-nav-section-btn,
+    .fp-tools-nav .fpt-nav-more-btn {
+        transition-duration: .01ms !important;
+    }
+}
