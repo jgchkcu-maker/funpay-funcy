@@ -9993,6 +9993,27 @@ textarea.fp-cw-input { line-height:1.4; }
     flex: 1;
 }
 
+/* Keep the native operations sort popup readable on Windows/Chromium.
+   The modal is mounted under document.body (outside .fp-tools-popup), so the
+   generic .fp-tools-popup select option theme rule does not reach it. */
+.fpt-fin-operations-tools select {
+    flex: 0 0 auto;
+    min-width: 132px;
+    cursor: pointer;
+    color-scheme: dark;
+}
+
+.fpt-fin-operations-tools select option {
+    color: var(--fptm-text, #f5f7fb);
+    background-color: var(--fptm-surface, #171922);
+}
+
+.fpt-fin-operations-tools select:focus {
+    outline: none;
+    border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--fptm-accent, var(--fpt-accent, #1b75bb)) 22%, transparent);
+}
+
 .fpt-fin-operations-modal-list {
     display: flex;
     flex-direction: column;
