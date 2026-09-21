@@ -322,7 +322,9 @@ async function runFinanceUpdateCycle() {
 
         for (let page = 0; page < MAX_PAGES; page++) {
             if (continueToken && seenTokens.has(String(continueToken))) {
-                throw new Error('Ошибка пагинации финансов: повтор continue-токена');
+                console.warn('FP Tools: финансовая пагинация вернула ранее использованный continue-токен; считаем историю завершённой.');
+                collectionComplete = true;
+                break;
             }
             if (continueToken) seenTokens.add(String(continueToken));
 
@@ -373,9 +375,13 @@ async function runFinanceUpdateCycle() {
                 break;
             }
 
-            // Реальный признак зацикливания — cursor не двигается или повторяется.
-            if (String(nextId) === String(continueToken)) {
-                throw new Error('Ошибка пагинации финансов: continue-токен не изменился');
+            // FunPay может вернуть текущий или ранее использованный cursor после
+            // перекрывающейся страницы. Данные уже собраны и дедуплицированы,
+            // поэтому завершаем цикл без повторного запроса и сохраняем результат.
+            if (String(nextId) === String(continueToken) || seenTokens.has(String(nextId))) {
+                console.warn('FP Tools: финансовая пагинация вернула повторный continue-токен; считаем историю завершённой.');
+                collectionComplete = true;
+                break;
             }
 
             // Страница без новых уникальных операций допустима, если FunPay выдал

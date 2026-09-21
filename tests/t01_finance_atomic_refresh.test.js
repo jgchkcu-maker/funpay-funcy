@@ -274,7 +274,7 @@ async function runFinanceCycleScenario({
         String,
         Math,
         Error,
-        console: { log() {}, error() {} },
+        console: { log() {}, warn() {}, error() {} },
         setTimeout(callback) {
             callback();
             return 0;
@@ -357,6 +357,20 @@ async function runRefreshRegressionCases() {
         ['1', '2', '3', '4'],
         'D: unique operation ids are retained'
     );
+
+    const repeatedCursorPages = [
+        { txns: makeRows(2, 1), nextId: 'cursor-a' },
+        { txns: [makeRows(1, 2)[0], makeRows(1, 3)[0]], nextId: 'cursor-b' },
+        { txns: [makeRows(1, 3)[0]], nextId: 'cursor-a' }
+    ];
+    const repeatedCursor = await runFinanceCycleScenario({
+        pages: repeatedCursorPages,
+        initialCount: 500
+    });
+    assert.equal(repeatedCursor.error, null, 'E: repeated cursor ends a deduplicated refresh cleanly');
+    assert.equal(repeatedCursor.dbState.rows.length, 3, 'E: repeated cursor commits collected unique operations');
+    assert.equal(repeatedCursor.storageState.fpToolsFinanceCount, 3, 'E: repeated cursor updates the committed count');
+    assert.equal(repeatedCursor.replaceCalls, 1, 'E: repeated cursor performs one durable replacement');
 
     const parserFailure = await runFinanceCycleScenario({
         pages: [{ txns: [], nextId: null, error: 'simulated parser failure' }],
