@@ -126,7 +126,7 @@ function parseFinancePage(html) {
         rows.forEach(row => {
             try {
                 const id = row.getAttribute("data-transaction") || "";
-                if (!id) return;
+                if (!id) throw new Error("Финансовая операция без data-transaction");
                 // статус: complete / cancel (по классу строки)
                 let status = "complete";
                 if (row.classList.contains("transaction-status-cancel")) status = "cancel";
@@ -156,6 +156,7 @@ function parseFinancePage(html) {
                 txns.push({ id, type, status, title, amount: Math.abs(amount), signed, currency, date, dateText, wallet });
             } catch (e) {
                 console.error("FP Tools Offscreen: ошибка парсинга финоперации:", e);
+                throw e;
             }
         });
         // Резервный курсор: если форма не отдала continue, берём id ПОСЛЕДНЕЙ
@@ -167,7 +168,11 @@ function parseFinancePage(html) {
         return { nextId, txns };
     } catch (e) {
         console.error("FP Tools Offscreen: глобальная ошибка парсинга финансов:", e);
-        return { nextId: null, txns: [] };
+        return {
+            nextId: null,
+            txns: [],
+            error: e && e.message ? e.message : "Не удалось разобрать страницу финансов"
+        };
     }
 }
 
