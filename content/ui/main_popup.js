@@ -2703,6 +2703,8 @@ function setupFinanceHubUI(toolsPopup) {
     const subtabs = finPage.querySelectorAll('.fpt-fin-subtab');
     const panes = finPage.querySelectorAll('.fpt-fin-tab-pane');
     let indicatorMotionTimer = null;
+    let paneTransitionTimer = null;
+    let paneTransitionToken = 0;
 
     function positionSubtabIndicator(activeButton, animate) {
         if (!subtabsBar || !indicator) return;
@@ -2737,6 +2739,8 @@ function setupFinanceHubUI(toolsPopup) {
     function switchSubtab(target) {
         if (!target) return;
         const prevSubtab = finPage.querySelector('.fpt-fin-subtab.active')?.dataset?.subtab;
+        const currentPane = finPage.querySelector('.fpt-fin-tab-pane.active');
+        const targetPane = finPage.querySelector(`.fpt-fin-tab-pane[data-subtab="${target}"]`);
         let activeButton = null;
 
         subtabs.forEach(s => {
@@ -2757,14 +2761,61 @@ function setupFinanceHubUI(toolsPopup) {
             subtabsBar.scrollTo({ left: Math.max(0, targetScroll), behavior: 'smooth' });
         }
 
-        panes.forEach(pane => {
-            pane.classList.toggle('active', pane.dataset.subtab === target);
-        });
+        const reducedMotion = typeof window !== 'undefined'
+            && typeof window.matchMedia === 'function'
+            && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        const activateTargetPane = () => {
+            panes.forEach(pane => {
+                pane.classList.remove('is-leaving', 'is-entering');
+                const isTarget = pane === targetPane;
+                pane.classList.toggle('active', isTarget);
+                pane.setAttribute('aria-hidden', isTarget ? 'false' : 'true');
+            });
+
+            if (!targetPane || reducedMotion) return;
+
+            targetPane.classList.add('is-entering');
+            const raf = typeof requestAnimationFrame === 'function'
+                ? requestAnimationFrame
+                : (callback) => setTimeout(callback, 0);
+
+            raf(() => {
+                raf(() => {
+                    if (targetPane.classList.contains('active')) {
+                        targetPane.classList.remove('is-entering');
+                    }
+                });
+            });
+        };
+
+        if (paneTransitionTimer) {
+            clearTimeout(paneTransitionTimer);
+            paneTransitionTimer = null;
+        }
+        paneTransitionToken += 1;
+        const transitionToken = paneTransitionToken;
+
+        if (currentPane && targetPane && currentPane !== targetPane && !reducedMotion) {
+            currentPane.classList.remove('is-entering');
+            currentPane.classList.add('is-leaving');
+            currentPane.setAttribute('aria-hidden', 'true');
+
+            paneTransitionTimer = setTimeout(() => {
+                if (transitionToken !== paneTransitionToken) return;
+                paneTransitionTimer = null;
+                activateTargetPane();
+            }, 90);
+        } else {
+            activateTargetPane();
+        }
 
         try {
             sessionStorage.setItem('fpt_fin_active_subtab', target);
         } catch (_) {}
 
+        // Start loading/rendering the selected Finance section immediately while the
+        // outgoing pane is fading, so the motion does not add data-loading latency.
         if (window.fptFinanceHub && typeof window.fptFinanceHub.onSubtabChange === 'function') {
             window.fptFinanceHub.onSubtabChange(target, prevSubtab);
         }
