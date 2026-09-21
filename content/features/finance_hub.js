@@ -2311,29 +2311,103 @@
         const sign = value >= 0 ? '+' : '−';
         const id = txn && (txn.id || txn.operationId || txn.transactionId) || '—';
         const title = txn && (txn.title || txn.description || operationTypeLabel(txn.type)) || 'Операция';
-        return `<div class="fpt-fin-operation-modal-row">
+        return `<div class="fpt-fin-operation-modal-row" role="listitem">
             <div class="fpt-fin-operation-modal-main"><strong>${esc(title)}</strong>
                 <span>${esc(operationTypeLabel(txn && txn.type))} · ${esc(operationStatusLabel(txn && txn.status))} · ${esc(operationDateLabel(txn))}</span>
                 <small>ID: ${esc(id)}</small></div>
             <b class="${valueClass}">${sign} ${esc(formatMoney(Math.abs(value), currency))}</b>
-        </div>`;
+            function financePortalColorIsLight(value) {
+        const color = String(value || '').trim();
+        let rgb = null;
+        let match = color.match(/^#([0-9a-f]{3})$/i);
+        if (match) {
+            rgb = match[1].split('').map(ch => parseInt(ch + ch, 16));
+        } else {
+            match = color.match(/^#([0-9a-f]{6})$/i);
+            if (match) {
+                rgb = [parseInt(match[1].slice(0, 2), 16), parseInt(match[1].slice(2, 4), 16), parseInt(match[1].slice(4, 6), 16)];
+            } else {
+                match = color.match(/^rgba?\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)/i);
+                if (match) rgb = [Number(match[1]), Number(match[2]), Number(match[3])];
+            }
+        }
+        if (!rgb) return false;
+        const luma = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+        return luma >= 0.72;
+    }
+
+    function syncFinancePortalTheme(portal) {
+        if (!portal) return;
+        const themeSource = (state.container && typeof state.container.closest === 'function'
+            ? state.container.closest('.fp-tools-popup')
+            : null) || document.querySelector('.fp-tools-popup');
+        if (!themeSource) return;
+
+        const computed = typeof getComputedStyle === 'function' ? getComputedStyle(themeSource) : null;
+        const themeProps = [
+            '--fptm-bg', '--fptm-head', '--fptm-nav', '--fptm-text', '--fptm-muted', '--fptm-faint',
+            '--fptm-border', '--fptm-surface', '--fptm-surface-2', '--fptm-hover', '--fptm-field',
+            '--fptm-accent', '--fptm-accent-soft', '--fptm-accent-border', '--fptm-on-accent',
+            '--fptm-shadow', '--fptm-nav-fade', '--fpt-accent', '--fpt-accent-soft', '--fpt-accent-border',
+            '--fpt-text', '--fpt-text-muted', '--fpt-bg', '--fpt-surface', '--fpt-surface-2', '--fpt-border'
+        ];
+
+        themeProps.forEach(name => {
+            let value = '';
+            if (themeSource.style && typeof themeSource.style.getPropertyValue === 'function') {
+                value = themeSource.style.getPropertyValue(name).trim();
+            }
+            if (!value && computed) value = computed.getPropertyValue(name).trim();
+            if (value) portal.style.setProperty(name, value);
+        });
+
+        const bg = portal.style.getPropertyValue('--fptm-bg') || (computed ? computed.getPropertyValue('--fptm-bg') : '');
+        portal.style.colorScheme = financePortalColorIsLight(bg) ? 'light' : 'dark';
     }
 
     function openOperationsDrilldown(title, list) {
         const operations = Array.isArray(list) ? list.slice() : [];
         const old = document.getElementById('fpt-fin-operations-modal');
-        if (old) old.remove();
+        if (old) {
+            if (typeof old.__fptClose === 'function') old.__fptClose({ restoreFocus: false });
+            else old.remove();
+        }
+
+        const previouslyFocused = document.activeElement;
         const overlay = document.createElement('div');
         overlay.id = 'fpt-fin-operations-modal';
         overlay.className = 'fpt-fin-operations-modal';
-        overlay.innerHTML = `<div class="fpt-fin-operations-dialog">
-            <div class="fpt-fin-operations-dialog-head"><div><strong>${esc(title)}</strong><span>${operations.length} операций</span></div><button type="button" class="fpt-fin-operations-close" aria-label="Закрыть">×</button></div>
-            <div class="fpt-fin-operations-tools"><input type="search" placeholder="Поиск по операциям…" autocomplete="off"><select><option value="date-desc">Сначала новые</option><option value="date-asc">Сначала старые</option><option value="amount-desc">Большая сумма</option><option value="amount-asc">Малая сумма</option></select></div>
-            <div class="fpt-fin-operations-modal-list"></div></div>`;
+        overlay.innerHTML = `<div class="fpt-fin-operations-dialog" role="dialog" aria-modal="true" aria-labelledby="fpt-fin-operations-title">
+            <div class="fpt-fin-operations-dialog-head">
+                <div class="fpt-fin-operations-heading">
+                    <strong id="fpt-fin-operations-title">${esc(title)}</strong>
+                    <span>${operations.length} операций</span>
+                </div>
+                <button type="button" class="fpt-fin-operations-close" aria-label="Закрыть" title="Закрыть">
+                    <span class="material-symbols-rounded" aria-hidden="true">close</span>
+                </button>
+            </div>
+            <div class="fpt-fin-operations-tools">
+                <label class="fpt-fin-operations-search">
+                    <span class="material-symbols-rounded" aria-hidden="true">search</span>
+                    <input type="search" placeholder="Поиск по операциям…" autocomplete="off" aria-label="Поиск по операциям">
+                </label>
+                <select class="fpt-fin-operations-sort" aria-label="Сортировка операций">
+                    <option value="date-desc">Сначала новые</option>
+                    <option value="date-asc">Сначала старые</option>
+                    <option value="amount-desc">Сначала крупные</option>
+                    <option value="amount-asc">Сначала мелкие</option>
+                </select>
+            </div>
+            <div class="fpt-fin-operations-modal-list" role="list"></div>
+        </div>`;
+
+        syncFinancePortalTheme(overlay);
         document.body.appendChild(overlay);
         const search = overlay.querySelector('input');
         const sort = overlay.querySelector('select');
         const listEl = overlay.querySelector('.fpt-fin-operations-modal-list');
+
         const renderList = () => {
             let filtered = operations.slice();
             const query = search.value.trim().toLowerCase();
@@ -2345,16 +2419,39 @@
             else if (sort.value === 'amount-desc') filtered.sort((a, b) => Math.abs(operationSignedValue(b)) - Math.abs(operationSignedValue(a)));
             else if (sort.value === 'amount-asc') filtered.sort((a, b) => Math.abs(operationSignedValue(a)) - Math.abs(operationSignedValue(b)));
             else filtered.sort((a, b) => operationDateValue(b) - operationDateValue(a));
-            listEl.innerHTML = filtered.length
-                ? filtered.map(operationModalRow).join('')
-                : '<div class="fpt-fin-empty-state">Ничего не найдено.</div>';
+            listEl.innerHTML = filtered.length ? filtered.map(operationModalRow).join('') : '<div class="fpt-fin-empty-state">Ничего не найдено.</div>';
         };
+
+        const close = (options) => {
+            if (!overlay.isConnected) return;
+            document.removeEventListener('keydown', onKeydown);
+            overlay.remove();
+            const shouldRestoreFocus = !options || options.restoreFocus !== false;
+            if (shouldRestoreFocus && previouslyFocused && typeof previouslyFocused.focus === 'function') {
+                try { previouslyFocused.focus({ preventScroll: true }); } catch (_) { previouslyFocused.focus(); }
+            }
+        };
+
+        function onKeydown(event) {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                close();
+            }
+        }
+
+        overlay.__fptClose = close;
         renderList();
         search.addEventListener('input', renderList);
         sort.addEventListener('change', renderList);
-        const close = () => overlay.remove();
         overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
         overlay.querySelector('.fpt-fin-operations-close').addEventListener('click', close);
+        document.addEventListener('keydown', onKeydown);
+        if (typeof search.focus === 'function') {
+            try { search.focus({ preventScroll: true }); } catch (_) { search.focus(); }
+        }
+    }
+
+ close);
     }
 
     function renderOperationsCards(pane, agg) {
