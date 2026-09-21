@@ -9177,9 +9177,15 @@ textarea.fp-cw-input { line-height:1.4; }
     overflow-y: auto;
     overscroll-behavior: contain;
     box-sizing: border-box;
-    padding: 1px 14px 1px 1px;
+    padding: 1px;
     scrollbar-width: none;
     -ms-overflow-style: none;
+}
+
+/* Reserve space for the oval scrollbar only when the list actually scrolls.
+   Short menus can use the entire inner width. */
+.fpt-fin-select-shell.has-scroll .fpt-fin-select-list {
+    padding-right: 9px;
 }
 
 .fpt-fin-select-list::-webkit-scrollbar {
@@ -9271,6 +9277,11 @@ textarea.fp-cw-input { line-height:1.4; }
 .fp-tools-popup .fpt-fin-select-option:last-child {
     margin-bottom: 0 !important;
 }
+
+.fpt-fin-select-shell.has-scroll .fpt-fin-select-option {
+    width: 100% !important;
+}
+
 
 .fp-tools-popup button.fpt-fin-select-option:hover,
 .fp-tools-popup .fpt-fin-select-option:hover,
