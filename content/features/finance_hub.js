@@ -2962,15 +2962,56 @@
                 chipsContainer.querySelectorAll('.fpt-fin-currency-chip').forEach(btn => {
                     btn.addEventListener('click', () => {
                         state.profitCurrency = btn.dataset.cur;
-                        renderProfitCards(pane, byCurrency[state.profitCurrency] || totals, state.profitCurrency, byCurrency, filteredOrders);
-                        renderProfitCoverage(pane, byCurrency[state.profitCurrency] || totals, state.profitCurrency);
-                        renderProfitChart(pane, byCurrency[state.profitCurrency] || totals, filteredOrders, state.profitCurrency);
+                        const selectedTotals = byCurrency[state.profitCurrency] || totals;
+                        renderProfitMissingCostWarning(pane, selectedTotals, state.profitCurrency);
+                        renderProfitCards(pane, selectedTotals, state.profitCurrency, byCurrency, filteredOrders);
+                        renderProfitCoverage(pane, selectedTotals, state.profitCurrency);
+                        renderProfitChart(pane, selectedTotals, filteredOrders, state.profitCurrency);
                         renderProfitTable(pane);
                     });
                 });
             } else {
                 chipsContainer.innerHTML = '';
             }
+        }
+    }
+
+    function renderProfitMissingCostWarning(pane, totals, currency) {
+        if (!pane) return;
+        const warning = pane.querySelector('#fptFinProfitCostWarning');
+        if (!warning) return;
+
+        const eligible = totals && Number.isFinite(Number(totals.eligibleOrdersCount))
+            ? Number(totals.eligibleOrdersCount)
+            : 0;
+        const known = totals && Number.isFinite(Number(totals.knownCostOrdersCount))
+            ? Number(totals.knownCostOrdersCount)
+            : 0;
+        const mismatched = totals && Number.isFinite(Number(totals.currencyMismatchCount))
+            ? Number(totals.currencyMismatchCount)
+            : 0;
+
+        const shouldShow = eligible > 0 && known === 0;
+        warning.classList.toggle('fpt-fin-control-hidden', !shouldShow);
+        warning.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+
+        if (!shouldShow) return;
+
+        const title = warning.querySelector('.fpt-fin-profit-cost-warning-copy strong');
+        const desc = warning.querySelector('.fpt-fin-profit-cost-warning-copy span');
+
+        if (mismatched > 0) {
+            if (title) title.textContent = 'Себестоимость не удалось применить';
+            if (desc) {
+                desc.textContent = `${mismatched} ${mismatched === 1 ? 'заказ имеет' : 'заказов имеют'} себестоимость в другой валюте. Проверьте валюту себестоимости, чтобы рассчитать прибыль, маржинальность и ROI.`;
+            }
+            return;
+        }
+
+        if (title) title.textContent = 'Нет заказов с указанной себестоимостью';
+        if (desc) {
+            const orderWord = eligible === 1 ? 'завершённый заказ' : (eligible >= 2 && eligible <= 4 ? 'завершённых заказа' : 'завершённых заказов');
+            desc.textContent = `За выбранный период найдено ${eligible} ${orderWord}, но ни у одного не указана себестоимость. Добавьте себестоимость проданных лотов и обновите финансы — после этого появятся прибыль, маржинальность и ROI.`;
         }
     }
 
@@ -3016,27 +3057,27 @@
             ? `${totals.realisedNetProfit > 0 ? '+' : ''}${formatMoney(totals.realisedNetProfit, currency)}`
             : '—';
 
-        const profitColor = (totals.realisedNetProfit !== null && typeof totals.realisedNetProfit === 'number')
-            ? (totals.realisedNetProfit > 0 ? '#4caf82' : (totals.realisedNetProfit < 0 ? '#e57373' : '#fff'))
-            : '#fff';
+        const profitClass = (totals.realisedNetProfit !== null && typeof totals.realisedNetProfit === 'number')
+            ? (totals.realisedNetProfit > 0 ? ' is-positive' : (totals.realisedNetProfit < 0 ? ' is-negative' : ''))
+            : '';
 
         chartEl.innerHTML = `
-            <div style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-                    <span style="color:var(--fptm-muted, #9099b8);">Выручка закрытых заказов</span>
-                    <span style="font-weight: 600; color: #fff;">${formatMoney(totals.eligibleRevenue, currency)}</span>
+            <div class="fpt-fin-profit-summary">
+                <div class="fpt-fin-profit-summary-row">
+                    <span class="fpt-fin-profit-summary-label">Выручка закрытых заказов</span>
+                    <span class="fpt-fin-profit-summary-value">${esc(formatMoney(totals.eligibleRevenue, currency))}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-                    <span style="color:var(--fptm-muted, #9099b8);">Выручка с известной себестоимостью</span>
-                    <span style="font-weight: 600; color: var(--fptm-accent, #1b75bb);">${formatMoney(totals.knownCostRevenue, currency)}</span>
+                <div class="fpt-fin-profit-summary-row">
+                    <span class="fpt-fin-profit-summary-label">Выручка с известной себестоимостью</span>
+                    <span class="fpt-fin-profit-summary-value is-accent">${esc(formatMoney(totals.knownCostRevenue, currency))}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px;">
-                    <span style="color:var(--fptm-muted, #9099b8);">Себестоимость проданного</span>
-                    <span style="font-weight: 600; color: #e57373;">${costStr}</span>
+                <div class="fpt-fin-profit-summary-row">
+                    <span class="fpt-fin-profit-summary-label">Себестоимость проданного</span>
+                    <span class="fpt-fin-profit-summary-value is-cost">${esc(costStr)}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
-                    <span style="font-weight: 600; color: #fff;">Реализованная чистая прибыль</span>
-                    <span style="font-weight: 700; color: ${profitColor};">${profitStr}</span>
+                <div class="fpt-fin-profit-summary-row is-total">
+                    <span class="fpt-fin-profit-summary-label is-strong">Реализованная чистая прибыль</span>
+                    <span class="fpt-fin-profit-summary-value is-strong${profitClass}">${esc(profitStr)}</span>
                 </div>
             </div>
         `;
@@ -3144,6 +3185,7 @@
                 const aggResult = profitEngine ? profitEngine.calculateProfitAggregates(filteredOrders, { currency: primaryCurrency }) : null;
                 const totals = aggResult ? aggResult.totals : null;
 
+                renderProfitMissingCostWarning(pane, totals, primaryCurrency);
                 renderProfitCards(pane, totals, primaryCurrency, aggResult ? aggResult.byCurrency : null, filteredOrders);
                 renderProfitCoverage(pane, totals, primaryCurrency);
                 renderProfitChart(pane, totals, filteredOrders, primaryCurrency);
@@ -3154,6 +3196,11 @@
 
     function renderProfitSubtabLoading(pane) {
         if (!pane) return;
+        const costWarning = pane.querySelector('#fptFinProfitCostWarning');
+        if (costWarning) {
+            costWarning.classList.add('fpt-fin-control-hidden');
+            costWarning.setAttribute('aria-hidden', 'true');
+        }
         ['#fptFinProfitNet', '#fptFinProfitCost', '#fptFinProfitMargin', '#fptFinProfitRoi'].forEach(sel => {
             const el = pane.querySelector(sel);
             if (el) el.innerHTML = '<div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div>';
@@ -3262,6 +3309,7 @@
             currencyMismatchCount: 0
         });
 
+        renderProfitMissingCostWarning(pane, totals, primaryCurrency);
         renderProfitCards(pane, totals, primaryCurrency, aggResult ? aggResult.byCurrency : agg, filteredOrders);
         renderProfitCoverage(pane, totals, primaryCurrency);
         renderProfitChart(pane, totals, filteredOrders, primaryCurrency);

@@ -10539,6 +10539,137 @@ textarea.fp-cw-input { line-height:1.4; }
     font-weight: 600;
 }
 
+
+/* Profit subtab: theme-safe summary + missing-cost onboarding */
+.fpt-fin-profit-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    color: var(--fptm-text, #fff);
+}
+
+.fpt-fin-profit-summary-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 0;
+    font-size: 12px;
+}
+
+.fpt-fin-profit-summary-row.is-total {
+    margin-top: 1px;
+    padding-top: 9px;
+    border-top: 1px solid var(--fptm-border, rgba(255, 255, 255, .08));
+}
+
+.fpt-fin-profit-summary-label {
+    min-width: 0;
+    color: var(--fptm-muted, #9099b8);
+    line-height: 1.35;
+}
+
+.fpt-fin-profit-summary-label.is-strong {
+    color: var(--fptm-text, #fff);
+    font-weight: 650;
+}
+
+.fpt-fin-profit-summary-value {
+    flex: 0 0 auto;
+    color: var(--fptm-text, #fff);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.fpt-fin-profit-summary-value.is-strong {
+    font-weight: 750;
+}
+
+.fpt-fin-profit-summary-value.is-accent {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+}
+
+.fpt-fin-profit-summary-value.is-cost,
+.fpt-fin-profit-summary-value.is-negative {
+    color: #c95757;
+}
+
+.fpt-fin-profit-summary-value.is-positive {
+    color: #278b5b;
+}
+
+.fpt-fin-profit-cost-warning-col {
+    width: 100%;
+}
+
+.fpt-fin-profit-cost-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px 14px;
+    color: var(--fptm-text, #fff);
+    background: rgba(245, 158, 11, .10);
+    border: 1px solid rgba(245, 158, 11, .28);
+    border-radius: 10px;
+}
+
+.fpt-fin-profit-cost-warning-icon {
+    flex: 0 0 auto;
+    margin-top: 1px;
+    color: #c98500;
+    font-size: 20px !important;
+}
+
+.fpt-fin-profit-cost-warning-copy {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fpt-fin-profit-cost-warning-copy strong {
+    color: var(--fptm-text, #fff);
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.fpt-fin-profit-cost-warning-copy span {
+    color: var(--fptm-muted, #9099b8);
+    font-size: 11.5px;
+    line-height: 1.45;
+}
+
+.fpt-fin-coverage-bar {
+    background: var(--fptm-border, rgba(255, 255, 255, .08));
+}
+
+.fpt-fin-badge-unknown {
+    background: var(--fptm-surface, rgba(255, 255, 255, .06));
+    border: 1px solid var(--fptm-border, rgba(255, 255, 255, .08));
+}
+
+.fpt-fin-currency-chip {
+    background: var(--fptm-surface, rgba(255, 255, 255, .05));
+    border-color: var(--fptm-border, rgba(255, 255, 255, .10));
+}
+
+@container (max-width: 560px) {
+    .fpt-fin-profit-summary-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .fpt-fin-profit-summary-value {
+        white-space: normal;
+    }
+}
+
 /* T08: Overview dashboard styling */
 .fpt-fin-overview-chart-wrap {
     min-height: 200px;

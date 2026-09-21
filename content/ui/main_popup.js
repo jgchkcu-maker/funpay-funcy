@@ -1132,6 +1132,15 @@ function createMainPopup() {
                     <!-- Subtab: Прибыль -->
                     <div class="fpt-fin-tab-pane" data-subtab="profit">
                         <div class="fpt-fin-grid">
+                            <div class="fpt-fin-col-12 fpt-fin-profit-cost-warning-col fpt-fin-control-hidden" id="fptFinProfitCostWarning" role="status" aria-live="polite" aria-hidden="true">
+                                <div class="fpt-fin-profit-cost-warning">
+                                    <span class="material-symbols-rounded fpt-fin-profit-cost-warning-icon" aria-hidden="true">warning_amber</span>
+                                    <div class="fpt-fin-profit-cost-warning-copy">
+                                        <strong>Нет заказов с указанной себестоимостью</strong>
+                                        <span>Прибыль, маржинальность и ROI пока нельзя рассчитать.</span>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="fpt-fin-col-3">
                                 <div class="fpt-fin-card fpt-fin-kpi-card">
                                     <div class="fpt-fin-card-header">
