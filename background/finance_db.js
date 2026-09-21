@@ -8,6 +8,7 @@
  *
  * Экспортирует глобальный объект FPTFinanceDB со следующим API:
  *   await FPTFinanceDB.putOrders(arrayOfOrders)   — добавить/обновить заказы (ключ orderId)
+ *   await FPTFinanceDB.replaceAll(txns, metadata)  — атомарно заменить все операции и метаданные
  *   await FPTFinanceDB.getAllAsMap()              — { orderId: order, ... } (как старый fpToolsSalesData)
  *   await FPTFinanceDB.getAllAsArray()            — [order, ...]
  *   await FPTFinanceDB.count()                    — число заказов
@@ -71,6 +72,43 @@
         await txDone(tx);
     }
 
+    async function replaceAll(txns, metadata = {}) {
+        if (!Array.isArray(txns)) {
+            throw new TypeError('FPTFinanceDB.replaceAll: txns must be an array');
+        }
+        if (metadata == null || typeof metadata !== 'object' || Array.isArray(metadata)) {
+            throw new TypeError('FPTFinanceDB.replaceAll: metadata must be an object');
+        }
+
+        const db = await openDB();
+        const tx = db.transaction([STORE_ORDERS, STORE_META], 'readwrite');
+        const done = txDone(tx);
+
+        try {
+            const store = tx.objectStore(STORE_ORDERS);
+            const metaStore = tx.objectStore(STORE_META);
+
+            store.clear();
+
+            for (const txn of txns) {
+                if (!txn || txn.id == null || String(txn.id).trim() === '') {
+                    throw new Error('FPTFinanceDB.replaceAll: transaction without id');
+                }
+                store.put(txn);
+            }
+
+            for (const [key, value] of Object.entries(metadata)) {
+                metaStore.put({ k: key, v: value });
+            }
+        } catch (error) {
+            try { tx.abort(); } catch (_) {}
+            try { await done; } catch (_) {}
+            throw error;
+        }
+
+        await done;
+    }
+
     async function getAllAsArray() {
         const db = await openDB();
         return new Promise((resolve, reject) => {
@@ -129,6 +167,7 @@
 
     const api = {
         putOrders,
+        replaceAll,
         getAllAsArray,
         getAllAsMap,
         count,
