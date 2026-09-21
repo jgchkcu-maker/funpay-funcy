@@ -358,6 +358,16 @@ async function runRefreshRegressionCases() {
         'D: unique operation ids are retained'
     );
 
+    const parserFailure = await runFinanceCycleScenario({
+        pages: [{ txns: [], nextId: null, error: 'simulated parser failure' }],
+        initialCount: 500
+    });
+    assert.ok(parserFailure.error, 'Parser failure is reported');
+    assert.equal(parserFailure.dbState.rows.length, 500, 'Parser failure preserves old rows');
+    assert.equal(parserFailure.storageState.fpToolsFinanceCount, 500, 'Parser failure preserves old count');
+    assert.equal(parserFailure.storageState.fpToolsFinanceLastUpdate, 123, 'Parser failure preserves old lastUpdate');
+    assert.equal(parserFailure.replaceCalls, 0, 'Parser failure never starts replacement');
+
     const dbFailure = await runFinanceCycleScenario({
         pages: makePages(makeRows(10), 10),
         initialCount: 500,
