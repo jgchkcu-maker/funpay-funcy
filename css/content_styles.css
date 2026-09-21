@@ -8701,29 +8701,37 @@ textarea.fp-cw-input { line-height:1.4; }
 }
 
 /*
- * Grid cells stretch to the tallest item in their CSS-grid row, but the card
- * inside each cell used to keep its intrinsic content height. This produced
- * the "one card is shorter than the other" effect whenever the chart/list
- * content changed. Make the card fill the stretched grid cell instead.
+ * CSS Grid already stretches each grid item to the tallest item in its row.
+ * Only a card that is the sole child of a grid cell should fill that height.
+ * Do NOT turn the grid cell itself into flex: some full-width cells contain
+ * controls + a card (Profit filters, etc.), and flex would place them side by
+ * side and make the card look "half width".
  */
 .fpt-fin-grid > .fpt-fin-col-3,
 .fpt-fin-grid > .fpt-fin-col-4,
 .fpt-fin-grid > .fpt-fin-col-6,
 .fpt-fin-grid > .fpt-fin-col-8,
 .fpt-fin-grid > .fpt-fin-col-12 {
-    display: flex;
     align-self: stretch;
+    width: 100%;
+    min-width: 0;
 }
 
-.fpt-fin-grid > .fpt-fin-col-3 > .fpt-fin-card,
-.fpt-fin-grid > .fpt-fin-col-4 > .fpt-fin-card,
-.fpt-fin-grid > .fpt-fin-col-6 > .fpt-fin-card,
-.fpt-fin-grid > .fpt-fin-col-8 > .fpt-fin-card,
-.fpt-fin-grid > .fpt-fin-col-12 > .fpt-fin-card {
-    flex: 1 1 auto;
+.fpt-fin-grid > .fpt-fin-col-3 > .fpt-fin-card:only-child,
+.fpt-fin-grid > .fpt-fin-col-4 > .fpt-fin-card:only-child,
+.fpt-fin-grid > .fpt-fin-col-6 > .fpt-fin-card:only-child,
+.fpt-fin-grid > .fpt-fin-col-8 > .fpt-fin-card:only-child,
+.fpt-fin-grid > .fpt-fin-col-12 > .fpt-fin-card:only-child {
     width: 100%;
     min-width: 0;
     height: 100%;
+}
+
+/* Multi-child full-width cells (filters/toolbars + card) must stack vertically. */
+.fpt-fin-grid > .fpt-fin-col-12 > .fpt-fin-card:not(:only-child) {
+    width: 100%;
+    min-width: 0;
+    height: auto;
 }
 
 @container (max-width: 720px) {
@@ -9212,11 +9220,11 @@ textarea.fp-cw-input { line-height:1.4; }
         margin-left: 0;
     }
 
-    .fpt-fin-grid > .fpt-fin-col-3 > .fpt-fin-card,
-    .fpt-fin-grid > .fpt-fin-col-4 > .fpt-fin-card,
-    .fpt-fin-grid > .fpt-fin-col-6 > .fpt-fin-card,
-    .fpt-fin-grid > .fpt-fin-col-8 > .fpt-fin-card,
-    .fpt-fin-grid > .fpt-fin-col-12 > .fpt-fin-card {
+    .fpt-fin-grid > .fpt-fin-col-3 > .fpt-fin-card:only-child,
+    .fpt-fin-grid > .fpt-fin-col-4 > .fpt-fin-card:only-child,
+    .fpt-fin-grid > .fpt-fin-col-6 > .fpt-fin-card:only-child,
+    .fpt-fin-grid > .fpt-fin-col-8 > .fpt-fin-card:only-child,
+    .fpt-fin-grid > .fpt-fin-col-12 > .fpt-fin-card:only-child {
         height: auto;
     }
 
