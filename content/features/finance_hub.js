@@ -4031,6 +4031,20 @@
         });
     }
 
+    function bindOverviewKpiKeyboard(pane) {
+        if (!pane) return;
+
+        pane.querySelectorAll('.fpt-fin-overview-kpi[role="button"]').forEach(card => {
+            if (card.dataset.fptKpiKeyboardBound === 'true') return;
+            card.dataset.fptKpiKeyboardBound = 'true';
+            card.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                event.preventDefault();
+                card.click();
+            });
+        });
+    }
+
     async function renderOverviewSubtab(forceReload) {
         const pane = state.container && state.container.querySelector('.fpt-fin-tab-pane[data-subtab="overview"]');
         if (!pane) return;
@@ -4191,6 +4205,7 @@
         renderOverviewTopCategories(pane, data.sales, data.salesAgg, primaryCurrency);
         renderOverviewOperations(pane, data.operations, primaryCurrency);
         bindOverviewChartToggles(pane);
+        bindOverviewKpiKeyboard(pane);
         await updateLastUpdatedText('overview');
     }
 

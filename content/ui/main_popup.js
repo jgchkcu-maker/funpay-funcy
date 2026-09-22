@@ -773,85 +773,101 @@ function createMainPopup() {
                         <div class="fpt-fin-grid">
                             <!-- Row 1: KPI (4x col-3) -->
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--revenue" data-finance-overview-target="sales" role="button" tabindex="0" aria-label="Открыть продажи по выручке">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Выручка</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">payments</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--revenue" aria-hidden="true">payments</span>
+                                        <h5 class="fpt-fin-card-title">Выручка <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewRevenue"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewRevenueSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--revenue" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--profit" data-finance-overview-target="profit" role="button" tabindex="0" aria-label="Открыть чистую прибыль">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Чистая прибыль</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">account_balance_wallet</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--profit" aria-hidden="true">account_balance_wallet</span>
+                                        <h5 class="fpt-fin-card-title">Чистая прибыль <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewProfit"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewProfitSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--profit" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--orders" data-finance-overview-target="sales" role="button" tabindex="0" aria-label="Открыть продажи по заказам">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Заказы</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:#f4c84a;">shopping_cart</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--orders" aria-hidden="true">shopping_cart</span>
+                                        <h5 class="fpt-fin-card-title">Заказы <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewOrders"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewOrdersSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--orders" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--average" data-finance-overview-target="sales" role="button" tabindex="0" aria-label="Открыть продажи по среднему чеку">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Средний чек</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:#a09af8;">receipt</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--average" aria-hidden="true">receipt</span>
+                                        <h5 class="fpt-fin-card-title">Средний чек <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewAvgCheck"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewAvgCheckSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--average" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
 
                             <!-- Row 2: Потенциал (4x col-3) -->
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--potential-revenue" data-finance-overview-target="potential" role="button" tabindex="0" aria-label="Открыть потенциал выручки">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Потенциал выручки</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:#4caf82;">trending_up</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--potential-revenue" aria-hidden="true">trending_up</span>
+                                        <h5 class="fpt-fin-card-title">Потенциальная выручка <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotRevenue"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotRevenueSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--potential-revenue" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--potential-profit" data-finance-overview-target="potential" role="button" tabindex="0" aria-label="Открыть потенциал прибыли">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Потенциал прибыли</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:var(--fpt-accent, #1b75bb);">insights</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--potential-profit" aria-hidden="true">insights</span>
+                                        <h5 class="fpt-fin-card-title">Потенциал прибыли <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotProfit"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotProfitSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--potential-profit" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--cost" data-finance-overview-target="potential" role="button" tabindex="0" aria-label="Открыть стоимость склада">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Стоимость склада</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:#e57373;">warehouse</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--cost" aria-hidden="true">warehouse</span>
+                                        <h5 class="fpt-fin-card-title">Стоимость склада <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotCost"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotCostSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--cost" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
-                                <div class="fpt-fin-card fpt-fin-kpi-card">
+                                <div class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi fpt-fin-overview-kpi--offers" data-finance-overview-target="potential" role="button" tabindex="0" aria-label="Открыть активные лоты">
                                     <div class="fpt-fin-card-header">
-                                        <h5 class="fpt-fin-card-title">Активные лоты</h5>
-                                        <span class="material-symbols-rounded" style="font-size:18px;color:#4a9fd4;">inventory_2</span>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--offers" aria-hidden="true">inventory_2</span>
+                                        <h5 class="fpt-fin-card-title">Активные лоты <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
+                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotOffers"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotOffersSub"><span class="fpt-fin-mini-badge">+ 0 без остатка</span></div>
+                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--offers" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
 

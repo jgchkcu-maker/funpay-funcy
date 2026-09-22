@@ -1,51 +1,46 @@
-# Design QA — FP Tools navigation, selected reference 1
+# Design QA — Finance overview KPI cards
 
 ## Comparison target
 
-- Source visual truth: `C:\Users\Nikita\.codex\generated_images\01a0c771-e526-7e71-91a0-e09a3c35f4f2\exec-393229d8-484c-4c5a-910f-3baea375b394.png`
-- Intended implementation state: light adaptive theme, `Основное` expanded, `Функции` active, at the source viewport of 273 × 698 CSS px.
-- Implementation screenshot: unavailable.
+- Source visual truth: `C:\Users\Nikita\AppData\Local\Temp\codex-clipboard-0462fe40-4398-4e16-a97d-bf5386c65443.png` (user reference #1, 1326 × 338 px).
+- Implementation preview: `http://127.0.0.1:4173/AppData/Local/Temp/funpay-funcy-finance-preview.html`.
+- Comparison scope: the eight-card overview KPI grid. The right-side “interactive states” column in the reference is a visual state showcase, not an additional production panel.
 
 ## Evidence and comparison status
 
-The available browser inventory contains only an empty Codex in-app Browser. It has no loaded FP Tools extension or browser tab that can render the unpacked extension, so no browser-rendered screenshot exists to compare with the source visual.
+The implementation was rendered in the Codex in-app browser with representative finance values, the light theme, and the complete 4 × 2 overview grid. The focused region was compared against the source visual for card geometry, hierarchy, icon treatment, spacing, color accents, and decorative chart treatment.
 
-Static evidence from the implementation:
+Additional interaction evidence:
 
-- `node tests/t18_navigation_ia.test.js` → `T18_NAVIGATION_IA_PASS`
-- `node --check content/ui/main_popup.js` → passed
-- `git diff --check` → passed
-
-These checks cover the new 44px section hit areas, 36px nested-page hit areas, neutral active-category state, soft-blue selected-page surface, theme parity, internal scrolling, and the existing accordion/navigation contracts. They do not replace a browser screenshot comparison.
+- The first KPI card receives keyboard focus through the normal Tab sequence.
+- Enter and Space activate the existing card drill-down behavior.
+- The existing dynamic finance values and click targets remain owned by `finance_hub.js`.
 
 ## Required fidelity surfaces
 
-- Fonts and typography: Material Symbols Rounded remains the icon system; section labels are raised to 13px in both static and runtime theme CSS. Browser-rendered weight, antialiasing, and wrapping remain unverified.
-- Spacing and layout rhythm: the selected-reference rhythm is encoded as 44px section rows, 36px nested rows, 5px group gaps, and 10px scroll-bottom padding. Visual comparison remains blocked.
-- Colors and visual tokens: active categories stay transparent and borderless; selected nested pages use existing `--fptm-accent-soft` and `--fptm-accent-border` tokens in both style layers. Actual light/dark token output remains unverified.
-- Image quality and asset fidelity: this navigation contains no raster assets; it keeps the existing bundled Material Symbols Rounded icon font rather than adding substitute artwork.
-- Copy and content: the real six-section labels and existing nested-page labels are preserved. The target state is reached through the existing accordion and page-click contracts.
+- Fonts and typography: existing bundled Material Symbols Rounded plus the repository’s inherited UI font; no literal icon-name artifacts remain in the rendered preview.
+- Spacing and layout rhythm: 4 × 2 grid, 15px card radius, 35px colored icon tiles, aligned value column, compact footer metadata, and responsive tablet/mobile overrides.
+- Colors and visual tokens: pale adaptive card surfaces with per-metric green, blue, amber, violet, red, and cyan accents; hover and focus-visible states use the existing theme variables.
+- Image quality and asset fidelity: the source contains no raster artwork in the KPI cards; existing icon-font assets are reused and the sparkline treatment is represented by a low-contrast decorative chart glyph.
+- Copy and content: source-aligned KPI labels are preserved, including `Потенциальная выручка`; live values, subtitles, and drill-down destinations remain dynamic.
+- States: hover, active, keyboard focus, empty values, and existing loading/skeleton behavior are covered without replacing the finance data controller.
 
 ## Findings
 
-- [P1] Browser-rendered design comparison is blocked.
-  Location: live FP Tools extension popup.
-  Evidence: the source visual is available, but no browser profile/window has FP Tools loaded and the in-app Browser has no extension tab.
-  Impact: actual layout, clipping, wrapping, theme-token output, focus styles, and expand/collapse motion cannot be judged from a screenshot.
-  Fix: load the unpacked extension in a browser profile, open the popup on FunPay at 273 × 698, capture the `Основное` / `Функции` state, then compare that capture with the source visual.
+- No P0, P1, or P2 visual issues remain in the scoped overview grid.
+- [P3] The bundled icon font renders `more_vert` reliably while `more_horiz` produces an unsupported glyph in this extension build. The implementation uses the clean vertical overflow affordance to avoid a visible text/square artifact; this is a minor icon-shape difference from the reference.
+
+## Verification
+
+- `node tests/finance_overview_visual_contract.test.js` → `FINANCE_OVERVIEW_VISUAL_CONTRACT_PASS`
+- Full test suite → `TEST_SUMMARY passed=36 failed=0`
+- `node --check content/ui/main_popup.js` → passed
+- `node --check content/features/finance_hub.js` → passed
+- `git diff --check` → passed
 
 ## Comparison history
 
-1. Initial pass: blocked before visual comparison because an implementation screenshot is unavailable. No P0/P1/P2 design differences could be evaluated from visible evidence.
+1. Initial implementation: old dense KPI cards replaced with the reference-inspired soft card treatment while preserving finance behavior.
+2. Visual QA pass: removed unsupported overflow-icon artifacts, verified the 4 × 2 grid, and confirmed keyboard focus/activation.
 
-## Implementation checklist
-
-1. Load FP Tools in a browser and open the selected navigation state.
-2. Capture the popup at 273 × 698.
-3. Compare source and implementation in one visual review, resolve any P0/P1/P2 differences, and update this report.
-
-## Follow-up polish
-
-- Inspect the hover and keyboard-focus states in the loaded extension; they were preserved but are not visually captured here.
-
-final result: blocked
+final result: passed

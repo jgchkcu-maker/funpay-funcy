@@ -140,7 +140,7 @@ function testFinanceInformationArchitecture() {
 
 function testOnlyMetricCardsUseTheKpiContract() {
     const markup = getFinanceMarkup();
-    const kpiCards = markup.match(/<div class="fpt-fin-card fpt-fin-kpi-card">/g) || [];
+    const kpiCards = markup.match(/<div class="[^"]*\bfpt-fin-card\b[^\"]*\bfpt-fin-kpi-card\b[^\"]*"[^>]*>/g) || [];
     assert.equal(kpiCards.length, 28, 'The six Finance metric groups should mark only their 28 KPI cards');
     assert.doesNotMatch(markup, /fpt-fin-col-(?:4|6|8|12)[^>]*>[\s\S]{0,120}fpt-fin-kpi-card/, 'Chart, table, and wide cards must not use the KPI class');
 }
