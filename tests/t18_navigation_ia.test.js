@@ -121,9 +121,9 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const staticToggleStart = css.indexOf('.fp-tools-nav .fpt-nav-group-toggle {');
     const staticToggleEnd = css.indexOf('\n}', staticToggleStart);
     const staticToggle = css.slice(staticToggleStart, staticToggleEnd + 2);
-    assert.match(staticToggle, /min-height:\s*44px/, 'section toggles must keep the reference\'s 44px hit area');
-    assert.match(staticToggle, /padding:\s*9px 10px/, 'section toggles must preserve the reference\'s horizontal rhythm');
-    assert.match(staticToggle, /font-size:\s*13px/, 'section labels must remain readable in the narrow popup');
+    assert.match(staticToggle, /min-height:\s*58px/, 'section toggles must keep the selected reference hit area');
+    assert.match(staticToggle, /padding:\s*12px 14px/, 'section toggles must preserve the selected reference rhythm');
+    assert.match(staticToggle, /font-size:\s*16px/, 'section labels must remain readable in the standalone menu');
 
     const staticActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {');
     const staticActiveEnd = css.indexOf('\n}', staticActiveStart);
@@ -139,8 +139,8 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const staticChildStart = css.indexOf('.fp-tools-nav .fpt-nav-child a {');
     const staticChildEnd = css.indexOf('\n}', staticChildStart);
     const staticChild = css.slice(staticChildStart, staticChildEnd + 2);
-    assert.match(staticChild, /min-height:\s*36px/, 'nested pages must keep a comfortable narrow-popup hit area');
-    assert.match(staticChild, /padding:\s*7px 10px 7px 32px/, 'nested pages must stay aligned beneath their section icon');
+    assert.match(staticChild, /min-height:\s*44px/, 'nested pages must keep a comfortable standalone-menu hit area');
+    assert.match(staticChild, /padding:\s*8px 12px 8px 14px/, 'nested pages must stay aligned inside the selected reference hierarchy');
 
     const themeStart = source.indexOf('const FPT_MENU_THEME_CSS = `');
     const themeEnd = source.indexOf('`;', themeStart);
@@ -148,8 +148,8 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const themeToggleStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{');
     const themeToggleEnd = themeCss.indexOf('\n}', themeToggleStart);
     const themeToggle = themeCss.slice(themeToggleStart, themeToggleEnd + 2);
-    assert.match(themeToggle, /min-height:\s*44px/, 'runtime theme must not shrink the reference section hit area');
-    assert.match(themeToggle, /padding:\s*9px 10px/, 'runtime theme must preserve the reference section spacing');
+    assert.match(themeToggle, /min-height:\s*58px/, 'runtime theme must not shrink the selected section hit area');
+    assert.match(themeToggle, /padding:\s*12px 14px/, 'runtime theme must preserve the selected section spacing');
 
     const themeActiveStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{');
     const themeActiveEnd = themeCss.indexOf('\n}', themeActiveStart);
@@ -160,8 +160,8 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const themeChildStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav li a{');
     const themeChildEnd = themeCss.indexOf('\n}', themeChildStart);
     const themeChild = themeCss.slice(themeChildStart, themeChildEnd + 2);
-    assert.match(themeChild, /min-height:\s*36px/, 'runtime theme must keep nested-page hit areas spacious');
-    assert.match(themeChild, /padding:\s*7px 10px 7px 32px/, 'runtime theme must keep nested-page alignment stable');
+    assert.match(themeChild, /min-height:\s*44px/, 'runtime theme must keep nested-page hit areas spacious');
+    assert.match(themeChild, /padding:\s*8px 12px 8px 14px/, 'runtime theme must keep nested-page alignment stable');
 
     const themeChildActiveStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav li.active a{');
     const themeChildActiveEnd = themeCss.indexOf('\n}', themeChildActiveStart);
@@ -173,11 +173,9 @@ function testNavigationRegressionGuards() {
     const setupStart = source.indexOf('function setupNavigationSections(toolsPopup)');
     const setupEnd = source.indexOf('function setupPopupNavigation()', setupStart);
     const setupBlock = source.slice(setupStart, setupEnd);
-    assert.match(setupBlock, /icon\.textContent\s*=\s*section\.id\s*===\s*['"]more['"]\s*\?\s*FPT_MORE_ICON_CODEPOINT\s*:\s*section\.icon/, 'the overflow icon must use a bundled glyph codepoint instead of leaking the ligature name');
-    assert.match(setupBlock, /icon\.setAttribute\(['"]aria-hidden['"],\s*['"]true['"]\)/, 'decorative section icons must be hidden from assistive technology');
+    assert.match(setupBlock, /navIcon\.dataset\.icon\s*=\s*section\.id/, 'section icons must be keyed to their supplied sprite set');
+    assert.match(setupBlock, /navIcon\.setAttribute\(['"]aria-hidden['"],\s*['"]true['"]\)/, 'decorative section icons must be hidden from assistive technology');
     assert.match(setupBlock, /collapse\.toggleAttribute\(['"]inert['"],\s*!expanded\)/, 'collapsed sections must be removed from keyboard navigation');
-
-    assert.match(source, /const FPT_MORE_ICON_CODEPOINT\s*=\s*['"]\\ue5d3['"]/, 'the overflow icon must use the verified more-horizontal codepoint');
 
     const staticItemsStart = css.indexOf('.fp-tools-nav .fpt-nav-group-items {');
     const staticItemsEnd = css.indexOf('\n}', staticItemsStart);
@@ -187,7 +185,7 @@ function testNavigationRegressionGuards() {
     const staticExpandedStart = css.indexOf('.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items {');
     const staticExpandedEnd = css.indexOf('\n}', staticExpandedStart);
     const staticExpanded = css.slice(staticExpandedStart, staticExpandedEnd + 2);
-    assert.match(staticExpanded, /padding:\s*2px 0 6px\s*;/, 'expanded group content must restore its visual breathing room');
+    assert.match(staticExpanded, /padding:\s*8px 6px 10px\s*;/, 'expanded group content must restore its visual breathing room');
 
     const themeStart = source.indexOf('const FPT_MENU_THEME_CSS = `');
     const themeEnd = source.indexOf('`;', themeStart);
@@ -199,7 +197,7 @@ function testNavigationRegressionGuards() {
     const themeExpandedStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{');
     const themeExpandedEnd = themeCss.indexOf('\n}', themeExpandedStart);
     const themeExpanded = themeCss.slice(themeExpandedStart, themeExpandedEnd + 2);
-    assert.match(themeExpanded, /padding:2px 0 6px;/, 'runtime theme must restore expanded-group padding');
+    assert.match(themeExpanded, /padding:8px 6px 10px;/, 'runtime theme must restore expanded-group padding');
 
     assert.match(css, /\.fp-tools-popup button:not\(\.fpt-nav-group-toggle\)/, 'generic button transitions must not override the accordion motion');
     assert.match(css, /\.fp-tools-nav \.fpt-nav-group-toggle\s*\{[\s\S]*?transition:[^;]*\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'section toggles must use the shared eased duration');

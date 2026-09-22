@@ -28,12 +28,32 @@
     user-select: none;
 }
 
-/* ---------- 2. Vertical navigation base ---------- */
+/* ---------- 2. Independent menu brand surface ---------- */
+.fp-tools-brand-logo {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+    object-fit: contain;
+    border-radius: 12px;
+    display: block;
+}
+
+.fp-tools-popup .fp-tools-header h2.fp-tools-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* ---------- 3. Vertical navigation base ---------- */
 .fp-tools-nav {
-    width: 220px;
-    padding: 16px 10px;
-    border-right: 1px solid var(--fptm-border, #1a1a1f);
-    background: var(--fptm-surface-2, #050506);
+    width: 292px;
+    flex: 0 0 292px;
+    margin: 16px 0 16px 16px;
+    padding: 18px 14px;
+    border: 1px solid var(--fptm-nav-border, var(--fptm-border, #dce8f7));
+    border-radius: 20px;
+    background: var(--fptm-nav-surface, var(--fptm-surface-2, #f7faff));
+    box-shadow: 0 14px 34px var(--fptm-nav-shadow, rgba(84, 133, 199, 0.12));
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -108,6 +128,40 @@
 }
 .fp-tools-nav li[data-page].active a .nav-icon {
     color: var(--fptm-accent, #4a9fd4);
+}
+
+.fp-tools-nav .fpt-nav-search {
+    padding: 0;
+    margin: 0 0 18px;
+}
+
+.fp-tools-nav .fpt-nav-search-ico {
+    left: 18px;
+    width: 22px;
+    height: 22px;
+    margin-top: 0;
+    font-size: 22px;
+    opacity: 0.72;
+    color: var(--fptm-muted, #5f6f8c);
+}
+.fp-tools-nav .fpt-nav-search-ico svg {
+    width: 22px;
+    height: 22px;
+}
+
+.fp-tools-nav .fpt-nav-search-input {
+    min-height: 56px;
+    padding: 12px 42px 12px 52px;
+    border-radius: 18px;
+    border-color: var(--fptm-nav-border, var(--fptm-border, #dce8f7));
+    background: var(--fptm-nav-field, #f4f8ff);
+    color: var(--fptm-text, #141b2e);
+    font-size: 15px;
+}
+
+.fp-tools-nav .fpt-nav-search-input:focus {
+    border-color: var(--fptm-accent-border, rgba(27, 117, 187, 0.35));
+    background: var(--fptm-nav-field-focus, #ffffff);
 }
 
 /* ---------- 3. Full-black theme, minimal heavy effects ---------- */
@@ -1436,29 +1490,30 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-nav .fpt-nav-groups {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 10px;
     min-width: 0;
 }
 
 .fp-tools-nav .fpt-nav-group {
     min-width: 0;
+    border-radius: 22px;
 }
 
 .fp-tools-nav .fpt-nav-group-toggle {
     width: 100%;
     min-width: 0;
-    min-height: 44px;
+    min-height: 58px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 9px 10px;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--fptm-muted, #9ea3b5);
-    box-shadow: none;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--fptm-nav-border, var(--fptm-border, #dce8f7));
+    border-radius: 18px;
+    background: var(--fptm-nav-row, #ffffff);
+    color: var(--fptm-text, #141b2e);
+    box-shadow: 0 8px 20px var(--fptm-nav-row-shadow, rgba(84, 133, 199, 0.08));
     font: inherit;
-    font-size: 13px;
+    font-size: 16px;
     font-weight: 700;
     text-align: left;
     cursor: pointer;
@@ -1466,8 +1521,19 @@ button.add-image-btn .material-symbols-rounded {
 }
 
 .fp-tools-nav .fpt-nav-group-toggle:hover {
-    background: var(--fptm-hover, rgba(255,255,255,.055));
+    background: var(--fptm-nav-row-hover, var(--fptm-hover, rgba(255,255,255,.055)));
     color: var(--fptm-text, #e9eaf0);
+}
+
+.fp-tools-nav .fpt-nav-group.is-expanded {
+    padding: 8px;
+    background: var(--fptm-nav-expanded, rgba(226, 239, 255, 0.88));
+}
+
+.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle {
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
 }
 
 .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {
@@ -1482,9 +1548,11 @@ button.add-image-btn .material-symbols-rounded {
 }
 
 .fp-tools-nav .fpt-nav-group-icon {
-    flex: 0 0 auto;
-    font-size: 17px;
-    color: inherit;
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    object-fit: contain;
+    display: block;
 }
 
 .fp-tools-nav .fpt-nav-group-title {
@@ -1497,9 +1565,19 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-nav .fpt-nav-group-chevron {
     flex: 0 0 auto;
     margin-left: auto;
-    font-size: 17px;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     color: inherit;
     transition: transform .24s cubic-bezier(.22,1,.36,1);
+}
+
+.fp-tools-nav .fpt-nav-group-chevron svg {
+    width: 20px;
+    height: 20px;
+    display: block;
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-chevron {
@@ -1522,11 +1600,13 @@ button.add-image-btn .material-symbols-rounded {
     overflow: hidden;
     display: block;
     padding: 0;
+    border-radius: 16px;
     transition: padding .24s cubic-bezier(.22,1,.36,1);
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items {
-    padding: 2px 0 6px;
+    padding: 8px 6px 10px;
+    background: var(--fptm-nav-child-surface, rgba(255, 255, 255, 0.82));
 }
 
 .fp-tools-nav .fpt-nav-child {
@@ -1544,22 +1624,29 @@ button.add-image-btn .material-symbols-rounded {
 }
 
 .fp-tools-nav .fpt-nav-child a {
-    min-height: 36px;
-    padding: 7px 10px 7px 32px;
-    border-radius: 10px !important;
+    min-height: 44px;
+    padding: 8px 12px 8px 14px;
+    border-radius: 14px !important;
+    color: var(--fptm-text, #141b2e);
+    font-size: 15px;
+    font-weight: 600;
 }
 
 .fp-tools-nav .fpt-nav-child.active a {
     background: var(--fptm-accent-soft, rgba(27,117,187,.14)) !important;
-    border-color: var(--fptm-accent-border, rgba(27,117,187,.35)) !important;
+    border-color: transparent !important;
+    color: var(--fptm-text, #141b2e) !important;
 }
 
 .fp-tools-nav .fpt-nav-child a::before {
-    content: '•';
+    content: '';
+    width: 10px;
+    height: 10px;
     flex: 0 0 auto;
     margin-left: 2px;
-    color: var(--fptm-accent, #1b75bb);
-    opacity: .72;
+    border-radius: 50%;
+    background: var(--fptm-nav-dot, #adc4e7);
+    opacity: 1;
 }
 
 .fp-tools-nav .fpt-nav-child a .nav-icon {
@@ -1567,7 +1654,7 @@ button.add-image-btn .material-symbols-rounded {
 }
 
 .fp-tools-nav .fpt-nav-child.active a::before {
-    opacity: 1;
+    background: var(--fptm-accent, #1b75bb);
 }
 
 @media (prefers-reduced-motion: reduce) {

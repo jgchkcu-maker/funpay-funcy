@@ -48,6 +48,31 @@ function getModalOverlaysHTML() {
     `;
 }
 
+const FPT_MENU_ASSET_PATHS = Object.freeze({
+    'funcy-logo': 'icons/funcy-logo.png',
+    cloud: 'icons/cloud.png',
+    discord: 'icons/discord.png',
+    telegram: 'icons/telegram.png'
+});
+
+const FPT_NAV_ICON_ASSETS = Object.freeze({
+    core: Object.freeze({ collapsed: 'nav-home-collapsed.png', expanded: 'nav-home-expanded.png' }),
+    store: Object.freeze({ collapsed: 'nav-store-collapsed.png', expanded: 'nav-store-expanded.png' }),
+    messages: Object.freeze({ collapsed: 'nav-chat-collapsed.png', expanded: 'nav-chat-expanded.png' }),
+    finance: Object.freeze({ collapsed: 'nav-analytics-collapsed.png', expanded: 'nav-analytics-expanded.png' }),
+    settings: Object.freeze({ collapsed: 'nav-settings-collapsed.png', expanded: 'nav-settings-expanded.png' }),
+    more: Object.freeze({ collapsed: 'nav-apps-collapsed.png', expanded: 'nav-apps-expanded.png' })
+});
+
+function fptGetMenuAssetUrl(assetPath) {
+    try {
+        if (typeof chrome !== 'undefined' && chrome.runtime?.id) {
+            return chrome.runtime.getURL(assetPath);
+        }
+    } catch (_) {}
+    return assetPath;
+}
+
 function createMainPopup() {
     if (!document.getElementById('fp-popup-extra-styles')) {
         const s = document.createElement('style');
@@ -72,9 +97,10 @@ function createMainPopup() {
     }
 
     const toolsPopup = document.createElement('div');
-    toolsPopup.className = 'fp-tools-popup';
+    toolsPopup.className = 'fp-tools-popup fpt-menu-shell';
     toolsPopup.innerHTML = `
         <div class="fp-tools-header">
+            <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="">
             <h2 class="fp-tools-title-wrap"><span class="fp-tools-site-link">FunPay Funcy</span><button type="button" id="fptAccentBtn" class="fpt-accent-btn" title="Цвет акцента" aria-label="Цвет акцента"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.36-.6-.36-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="15" cy="8" r="1.1" fill="currentColor"/><circle cx="16.8" cy="12" r="1.1" fill="currentColor"/></svg><input type="color" id="fptAccentInput" class="fpt-accent-input" value="#1b75bb" aria-hidden="true" tabindex="-1"></button></h2>
             <div class="fp-tools-social">
             </div>
@@ -90,6 +116,7 @@ function createMainPopup() {
         <div class="fp-tools-body">
             <nav class="fp-tools-nav">
                 <div class="fpt-nav-search">
+                    <span class="fpt-nav-search-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
                     <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">
                     <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>
                     <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>
@@ -1854,11 +1881,12 @@ function createMainPopup() {
         </div>
     `;
 
-    // Подставляем локальные иконки (Telegram / Discord / облачко) из папки icons.
+    // Подставляем локальные иконки бренда и интеграций из папки icons.
     try {
         toolsPopup.querySelectorAll('img[data-icon]').forEach(img => {
             const key = img.getAttribute('data-icon');
-            if (key && chrome.runtime?.id) img.src = chrome.runtime.getURL(`icons/${key}.png`);
+            const assetPath = FPT_MENU_ASSET_PATHS[key] || `icons/${key}.png`;
+            if (key) img.src = fptGetMenuAssetUrl(assetPath);
         });
     } catch (_) {}
 
@@ -1919,6 +1947,9 @@ const FPT_MENU_THEME_CSS = `
     border-radius:16px 16px 0 0; padding:4px 8px 4px 4px;
 }
 .fp-tools-popup.fptm-themed .fp-tools-header h2{ color:var(--fptm-text) !important; font-weight:800 !important; }
+.fp-tools-popup.fptm-themed .fp-tools-brand-logo{
+    width:44px; height:44px; flex:0 0 44px; object-fit:contain; border-radius:12px; display:block; margin-left:14px;
+}
 .fp-tools-popup.fptm-themed .fp-tools-site-link,
 .fp-tools-popup.fptm-themed .fp-tools-site-link:hover{
     color:var(--fptm-text) !important; -webkit-text-fill-color:var(--fptm-text) !important;
@@ -1950,21 +1981,43 @@ const FPT_MENU_THEME_CSS = `
 
 /* ─── навигация ──────────────────────────────────────────────────────────── */
 .fp-tools-popup.fptm-themed .fp-tools-nav{
-    background:var(--fptm-nav) !important; border-right:1px solid var(--fptm-border) !important;
-    position:relative; padding:16px 12px; display:flex; flex-direction:column; overflow:hidden; min-height:0;
+    width:292px; flex:0 0 292px; margin:16px 0 16px 16px; padding:18px 14px;
+    background:var(--fptm-nav-surface) !important; border:1px solid var(--fptm-nav-border) !important;
+    border-radius:20px; box-shadow:0 14px 34px var(--fptm-nav-row-shadow) !important;
+    position:relative; display:flex; flex-direction:column; overflow:hidden; min-height:0;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search{ padding:0; margin:0 0 18px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico{
+    left:18px; width:22px; height:22px; margin-top:0; font-size:22px; opacity:.72; color:var(--fptm-muted) !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico svg{ width:22px; height:22px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-input{
+    min-height:56px; padding:12px 42px 12px 52px; border-radius:18px;
+    border-color:var(--fptm-nav-border) !important; background:var(--fptm-nav-field) !important;
+    color:var(--fptm-text) !important; font-size:15px;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-input:focus{
+    border-color:var(--fptm-accent-border) !important; background:var(--fptm-nav-field-focus) !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav ul{ list-style:none; margin:0; padding:0; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:2px 0 10px; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:5px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:10px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group{ min-width:0; border-radius:22px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{
-    width:100%; min-width:0; min-height:44px; display:flex; align-items:center; gap:8px;
-    padding:9px 10px; border:1px solid transparent; border-radius:10px;
-    background:transparent !important; color:var(--fptm-muted) !important;
-    box-shadow:none !important; font:inherit; font-size:13px; font-weight:700; text-align:left; cursor:pointer;
+    width:100%; min-width:0; min-height:58px; display:flex; align-items:center; gap:12px;
+    padding:12px 14px; border:1px solid var(--fptm-nav-border) !important; border-radius:18px;
+    background:var(--fptm-nav-row) !important; color:var(--fptm-text) !important;
+    box-shadow:0 8px 20px var(--fptm-nav-row-shadow) !important; font:inherit; font-size:16px; font-weight:700; text-align:left; cursor:pointer;
     transition:background-color .24s cubic-bezier(.22,1,.36,1), color .24s cubic-bezier(.22,1,.36,1), border-color .24s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:hover{
-    background:var(--fptm-hover) !important; color:var(--fptm-text) !important;
+    background:var(--fptm-nav-row-hover, var(--fptm-hover)) !important; color:var(--fptm-text) !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded{
+    padding:8px; background:var(--fptm-nav-expanded) !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle{
+    background:transparent !important; border-color:transparent !important; box-shadow:none !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{
     background:transparent !important; border-color:transparent !important; color:var(--fptm-text) !important;
@@ -1972,8 +2025,11 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle:hover{
     background:var(--fptm-hover) !important; color:var(--fptm-text) !important;
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon,
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{ color:inherit !important; font-size:17px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon{ width:34px; height:34px; flex:0 0 34px; object-fit:contain; display:block; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
+    width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; color:inherit !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron svg{ width:20px; height:20px; display:block; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
     flex:0 0 auto; margin-left:auto; transition:transform .24s cubic-bezier(.22,1,.36,1);
@@ -1983,21 +2039,21 @@ const FPT_MENU_THEME_CSS = `
     display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .24s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; transition:padding .24s cubic-bezier(.22,1,.36,1); }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{ padding:2px 0 6px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; border-radius:16px; transition:padding .24s cubic-bezier(.22,1,.36,1); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{ padding:8px 6px 10px; background:var(--fptm-nav-child-surface); }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a{
-    display:flex; align-items:center; min-height:36px; padding:7px 10px 7px 32px;
-    gap:8px; color:var(--fptm-muted) !important; background:transparent !important; border-radius:10px !important;
-    box-shadow:none !important; border:1px solid transparent !important; font-weight:600; transition:background .15s ease, color .15s ease;
+    display:flex; align-items:center; min-height:44px; padding:8px 12px 8px 14px;
+    gap:10px; color:var(--fptm-text) !important; background:transparent !important; border-radius:14px !important;
+    box-shadow:none !important; border:1px solid transparent !important; font-size:15px; font-weight:600; transition:background .15s ease, color .15s ease;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a:hover{ background:var(--fptm-hover) !important; color:var(--fptm-text) !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li.active a{
-    background:var(--fptm-accent-soft) !important; color:var(--fptm-accent) !important;
-    border:1px solid var(--fptm-accent-border) !important; font-weight:700;
+    background:var(--fptm-accent-soft) !important; color:var(--fptm-text) !important;
+    border:1px solid transparent !important; font-weight:700;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a .nav-icon{ color:inherit !important; opacity:.92; }
-.fp-tools-popup.fptm-themed .fp-tools-nav li.active a .nav-icon{ color:var(--fptm-accent) !important; opacity:1; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ content:'•'; flex:0 0 auto; margin-left:2px; color:var(--fptm-accent); opacity:.72; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ content:''; width:10px; height:10px; flex:0 0 10px; margin-left:2px; border-radius:50%; background:var(--fptm-nav-dot); opacity:1; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child.active a::before{ background:var(--fptm-accent); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a .nav-icon{ display:none; }
 .fp-tools-popup.fptm-themed .fp-tools-nav::-webkit-scrollbar-thumb{ background:var(--fptm-border) !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav-cloud{ display:none !important; }
@@ -2297,14 +2353,20 @@ function fptApplyMenuTheme(root) {
                 bg:'#ffffff', head:'#f7f8fb', nav:'#fbfcfe', text:'#16181d',
                 muted:'rgba(22,24,29,0.74)', faint:'rgba(22,24,29,0.56)', border:'rgba(22,24,29,0.10)',
                 surface:'#f5f7fa', surface2:'#eef1f6', hover:'rgba(22,24,29,0.05)', field:'#ffffff',
-                shadow:'rgba(22,24,29,0.16)', navFade:'rgba(22,24,29,0.12)'
+                shadow:'rgba(22,24,29,0.16)', navFade:'rgba(22,24,29,0.12)',
+                navSurface:'#fafdff', navRow:'#ffffff', navExpanded:'#e9f3ff', navChildSurface:'rgba(255,255,255,0.82)',
+                navField:'#f4f8ff', navFieldFocus:'#ffffff', navBorder:'rgba(105,146,199,0.20)',
+                navRowShadow:'rgba(84,133,199,0.08)', navDot:'#b4c8e8'
             };
         } else {
             vars = {
                 bg:'#1e1f24', head:'#191a1e', nav:'#1b1c21', text:'#e7e8ec',
                 muted:'rgba(231,232,236,0.76)', faint:'rgba(231,232,236,0.56)', border:'rgba(255,255,255,0.10)',
                 surface:'#26272d', surface2:'#2c2e35', hover:'rgba(255,255,255,0.07)', field:'#26272d',
-                shadow:'rgba(0,0,0,0.55)', navFade:'rgba(0,0,0,0.30)'
+                shadow:'rgba(0,0,0,0.55)', navFade:'rgba(0,0,0,0.30)',
+                navSurface:'#24262d', navRow:'#2b2e36', navExpanded:'rgba(89,146,220,0.22)', navChildSurface:'rgba(19,22,28,0.72)',
+                navField:'#2a2e37', navFieldFocus:'#313640', navBorder:'rgba(255,255,255,0.10)',
+                navRowShadow:'rgba(0,0,0,0.20)', navDot:'rgba(231,232,236,0.40)'
             };
         }
         let rgb;
@@ -2341,6 +2403,15 @@ function fptApplyMenuTheme(root) {
         st.setProperty('--fptm-on-accent', onAccent);
         st.setProperty('--fptm-shadow', vars.shadow);
         st.setProperty('--fptm-nav-fade', vars.navFade);
+        st.setProperty('--fptm-nav-surface', vars.navSurface);
+        st.setProperty('--fptm-nav-row', vars.navRow);
+        st.setProperty('--fptm-nav-expanded', vars.navExpanded);
+        st.setProperty('--fptm-nav-child-surface', vars.navChildSurface);
+        st.setProperty('--fptm-nav-field', vars.navField);
+        st.setProperty('--fptm-nav-field-focus', vars.navFieldFocus);
+        st.setProperty('--fptm-nav-border', vars.navBorder);
+        st.setProperty('--fptm-nav-row-shadow', vars.navRowShadow);
+        st.setProperty('--fptm-nav-dot', vars.navDot);
 
         // Множество старых правил используют var(--fpt-accent, #1b75bb) и прочие
         // фиолетовые фолбэки. Задаём эти переменные прямо на окне — и весь легаси
@@ -2669,8 +2740,6 @@ function _updateColorInputs(palette) {
 
 
 
-const FPT_MORE_ICON_CODEPOINT = '\ue5d3';
-
 const FPT_NAV_SECTIONS = Object.freeze([
     { id: 'core', label: 'Основное', icon: 'home', pages: Object.freeze(['general', 'accounts', 'needs']) },
     { id: 'store', label: 'Магазин', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit', 'blacklist']) },
@@ -2745,18 +2814,20 @@ function setupNavigationSections(toolsPopup) {
         toggle.dataset.section = section.id;
         toggle.setAttribute('aria-expanded', 'false');
 
-        const icon = document.createElement('span');
-        icon.className = 'fpt-nav-group-icon material-symbols-rounded';
-        icon.textContent = section.id === 'more' ? FPT_MORE_ICON_CODEPOINT : section.icon;
-        icon.setAttribute('aria-hidden', 'true');
+        const navIcon = document.createElement('img');
+        navIcon.className = 'fpt-nav-group-icon';
+        navIcon.dataset.icon = section.id;
+        navIcon.alt = '';
+        navIcon.decoding = 'async';
+        navIcon.setAttribute('aria-hidden', 'true');
         const title = document.createElement('span');
         title.className = 'fpt-nav-group-title';
         title.textContent = section.label;
         const chevron = document.createElement('span');
-        chevron.className = 'fpt-nav-group-chevron material-symbols-rounded';
-        chevron.textContent = 'chevron_right';
+        chevron.className = 'fpt-nav-group-chevron';
+        chevron.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="m9 5 7 7-7 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
         chevron.setAttribute('aria-hidden', 'true');
-        toggle.append(icon, title, chevron);
+        toggle.append(navIcon, title, chevron);
 
         const collapse = document.createElement('div');
         collapse.className = 'fpt-nav-group-collapse';
@@ -2772,7 +2843,7 @@ function setupNavigationSections(toolsPopup) {
         collapse.appendChild(items);
         group.append(toggle, collapse);
         groups.appendChild(group);
-        groupRefs.set(section.id, { group, toggle, collapse, items });
+        groupRefs.set(section.id, { group, toggle, collapse, items, icon: navIcon });
     });
 
     const activePage = pageItems.find(item => item.classList.contains('active'));
@@ -2794,13 +2865,19 @@ function setupNavigationSections(toolsPopup) {
 
     function renderExpandedSections() {
         nav.dataset.expandedSections = Array.from(expandedSections).join(',');
-        groupRefs.forEach(({ group, toggle, collapse }, sectionId) => {
+        groupRefs.forEach(({ group, toggle, collapse, icon }, sectionId) => {
             const expanded = expandedSections.has(sectionId);
             group.classList.toggle('is-expanded', expanded);
             group.classList.toggle('is-active-section', sectionId === activeSection);
             toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
             collapse.setAttribute('aria-hidden', expanded ? 'false' : 'true');
             collapse.toggleAttribute('inert', !expanded);
+            const assetSet = FPT_NAV_ICON_ASSETS[sectionId];
+            if (icon && assetSet) {
+                const state = expanded ? 'expanded' : 'collapsed';
+                icon.src = fptGetMenuAssetUrl(`icons/${assetSet[state]}`);
+                icon.dataset.state = state;
+            }
         });
     }
 
