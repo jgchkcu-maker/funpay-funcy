@@ -154,7 +154,7 @@ async function sendChatMessage(chatId, text, auth) {
     if (!res.ok) throw new Error(`sendMessage HTTP ${res.status}`);
     const json = await res.json().catch(() => null);
     if (json?.error) throw new Error(`FunPay runner error: ${json.error}`);
-    console.log(`FP Tools AR: → чат ${chatId}`);
+    console.log(`FunPay Funcy AR: → чат ${chatId}`);
 }
 
 // 3.0: upload an image (data URL) to FunPay and send it to a chat, in the background.
@@ -191,7 +191,7 @@ async function sendChatImage(chatId, dataUrl, auth) {
     if (!res.ok) throw new Error(`sendImage HTTP ${res.status}`);
     const json = await res.json().catch(() => null);
     if (json?.error) throw new Error(`FunPay runner error: ${json.error}`);
-    console.log(`FP Tools AR: 🖼 → чат ${chatId}`);
+    console.log(`FunPay Funcy AR: 🖼 → чат ${chatId}`);
 }
 
 // 3.0: send autoreply content that may contain [image:dataURL] tags. Pieces are sent in the
@@ -209,7 +209,7 @@ async function sendReplyContent(chatId, content, auth, images, sendOrder) {
                 if (delayFirst || i > 0) await new Promise(r => setTimeout(r, 400));
                 await sendChatImage(chatId, imgs[i], auth);
             } catch (e) {
-                console.error('FP Tools AR: ошибка отправки картинки автоответа', e.message);
+                console.error('FunPay Funcy AR: ошибка отправки картинки автоответа', e.message);
             }
         }
     };
@@ -325,9 +325,9 @@ async function handleGreeting(msg, auth, settings) {
             ts[msg.chatId] = Date.now();
             s.greetedTimestamps = ts;
         });
-        console.log(`FP Tools AR: приветствие → ${msg.chatId}`);
+        console.log(`FunPay Funcy AR: приветствие → ${msg.chatId}`);
     } catch (e) {
-        console.error('FP Tools AR: ошибка приветствия', e.message);
+        console.error('FunPay Funcy AR: ошибка приветствия', e.message);
     }
 }
 
@@ -361,7 +361,7 @@ async function handleKeywords(msg, auth, settings) {
                 await sendReplyContent(msg.chatId, text, auth, rule.images, rule.sendOrder);
                 return;
             } catch (e) {
-                console.error('FP Tools AR: ошибка keyword', e.message);
+                console.error('FunPay Funcy AR: ошибка keyword', e.message);
             }
         }
     }
@@ -405,11 +405,11 @@ async function handleReview(msg, auth, settings) {
                 if (Array.isArray(rImgs) && rImgs.length) {
                     for (const dataUrl of rImgs) {
                         try { await sendChatImage(msg.chatId, dataUrl, auth); await new Promise(r => setTimeout(r, 400)); }
-                        catch (e) { console.error('FP Tools AR: review image error', e.message); }
+                        catch (e) { console.error('FunPay Funcy AR: review image error', e.message); }
                     }
                 }
             } catch (e) {
-                console.error(`FP Tools AR: ошибка ответа на отзыв #${orderId}`, e.message);
+                console.error(`FunPay Funcy AR: ошибка ответа на отзыв #${orderId}`, e.message);
             }
         }
 
@@ -428,11 +428,11 @@ async function handleReview(msg, auth, settings) {
                 const delayMs = (Number.isFinite(delaySec) && delaySec >= 0 ? delaySec : 4) * 1000;
                 if (delayMs > 0) await new Promise(r => setTimeout(r, delayMs));
                 try { await sendReplyContent(msg.chatId, applyVariables(bonusText, vars), auth); }
-                catch (e) { console.error(`FP Tools AR: ошибка бонуса #${orderId}`, e.message); }
+                catch (e) { console.error(`FunPay Funcy AR: ошибка бонуса #${orderId}`, e.message); }
             }
         }
     } catch (e) {
-        console.error(`FP Tools AR: ошибка обработки отзыва #${orderId}`, e.message);
+        console.error(`FunPay Funcy AR: ошибка обработки отзыва #${orderId}`, e.message);
     }
 }
 
@@ -492,9 +492,9 @@ async function handleOrderPurchased(msg, auth, settings) {
                 s.repliedNewOrders = arr;
             });
         }
-        console.log(`FP Tools AR: ответ на новый заказ #${orderId} → чат ${msg.chatId}`);
+        console.log(`FunPay Funcy AR: ответ на новый заказ #${orderId} → чат ${msg.chatId}`);
     } catch (e) {
-        console.error('FP Tools AR: ошибка ответа на новый заказ', e.message);
+        console.error('FunPay Funcy AR: ошибка ответа на новый заказ', e.message);
     }
 }
 
@@ -522,9 +522,9 @@ async function handleOrderConfirmed(msg, auth, settings) {
                 s.repliedConfirmedOrders = arr;
             });
         }
-        console.log(`FP Tools AR: ответ на подтверждение заказа #${orderId}`);
+        console.log(`FunPay Funcy AR: ответ на подтверждение заказа #${orderId}`);
     } catch (e) {
-        console.error('FP Tools AR: ошибка ответа на подтверждение', e.message);
+        console.error('FunPay Funcy AR: ошибка ответа на подтверждение', e.message);
     }
 }
 
@@ -596,10 +596,10 @@ async function handleAutoDelivery(msg, auth, settings) {
             if (arr.length > 200) arr.splice(0, arr.length - 200);
             s.deliveredOrderIds = arr;
         });
-        console.log(`FP Tools AR: авто-выдача → заказ #${orderId}, чат ${chatId}`);
+        console.log(`FunPay Funcy AR: авто-выдача → заказ #${orderId}, чат ${chatId}`);
 
     } catch (e) {
-        console.error(`FP Tools AR: ошибка авто-выдачи #${orderId}`, e.message);
+        console.error(`FunPay Funcy AR: ошибка авто-выдачи #${orderId}`, e.message);
     }
 }
 
@@ -645,7 +645,7 @@ async function _runAutoResponderCycleInner() {
     if (!auth.golden_key || !auth.csrf_token || !auth.userId) return;
 
     try {
-        // FP Tools's approach: use a FRESH RANDOM tag every cycle. A single persisted tag
+        // FunPay Funcy's approach: use a FRESH RANDOM tag every cycle. A single persisted tag
         // (the old behaviour) goes stale and FunPay stops returning chat updates - the
         // classic "autoresponder stops working until reload". We also request
         // orders_counters alongside chat_bookmarks so order events surface immediately.
@@ -735,7 +735,7 @@ async function _runAutoResponderCycleInner() {
                     iAmSeller = await verifyIAmSeller(_oid, auth);
                 }
                 if (!iAmSeller) {
-                    console.log(`FP Tools AR: пропуск события по заказу #${_oid} - это моя покупка, не реагируем.`);
+                    console.log(`FunPay Funcy AR: пропуск события по заказу #${_oid} - это моя покупка, не реагируем.`);
                 } else if (msgType === 'ORDER_PURCHASED') {
                     await handleOrderPurchased(msg, auth, fresh);
                     await handleAutoDelivery(msg, auth, fresh);
@@ -781,7 +781,7 @@ async function _runAutoResponderCycleInner() {
         }
 
     } catch (e) {
-        console.error('FP Tools AR: ошибка цикла', e.message);
+        console.error('FunPay Funcy AR: ошибка цикла', e.message);
     }
 }
 

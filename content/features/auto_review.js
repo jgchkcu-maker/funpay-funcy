@@ -1,7 +1,7 @@
 // content/features/auto_review.js
 
 /**
- * Инициализирует UI для всех функций авто-ответов в настройках FP Tools
+ * Инициализирует UI для всех функций авто-ответов в настройках FunPay Funcy
  */
 async function initializeAutoReviewUI() {
     const page = document.querySelector('.fp-tools-page-content[data-page="auto_review"]');
@@ -106,7 +106,7 @@ async function initializeAutoReviewUI() {
                 orderConfirmReplyText:    getVal('orderConfirmReplyText'),
             };
             await chrome.storage.local.set({ fpToolsAutoReplies: newSettings });
-            console.log("FP Tools: Auto-reply settings saved.");
+            console.log("FunPay Funcy: Auto-reply settings saved.");
         }, 500);
     };
 

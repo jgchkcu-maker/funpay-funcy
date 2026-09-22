@@ -1,5 +1,5 @@
 /**
- * FunPay Tools — Finance Hub Controller (Sales, Purchases & Operations — T03A/T03B/T03C)
+ * FunPay Funcy — Finance Hub Controller (Sales, Purchases & Operations — T03A/T03B/T03C)
  *
  * Связующий контроллер Finance Hub для статистики продаж, покупок и операций:
  * - Управление периодом и состоянием подвкладок;

@@ -1,23 +1,23 @@
-// background/smart_bump.js - FunPay Tools 2.8
-// "Smart" auto-raise mode, ported from FP Tools's FP Tools.raise_lots().
+// background/smart_bump.js - FunPay Funcy 2.8
+// "Smart" auto-raise mode, ported from FunPay Funcy's FunPay Funcy.raise_lots().
 //
 // The old autobump just raised every category on a fixed interval (e.g. every 245 min) and
 // ate FunPay's "wait N minutes" errors. Smart mode instead:
 //   - reads FunPay's actual response after each raise attempt,
 //   - parses the exact remaining wait time per category (parseWaitTime, ported 1:1 from
-//     FP Tools's utils.parse_wait_time),
+//     FunPay Funcy's utils.parse_wait_time),
 //   - stores a per-category nextRaiseAt timestamp,
 //   - only raises categories that are actually due,
 //   - reschedules its heartbeat to fire right when the soonest category becomes due.
 //
 // Result: each category is raised as early as FunPay allows, with no wasted requests and no
-// rate-limit spam - exactly FP Tools's behaviour, adapted to MV3.
+// rate-limit spam - exactly FunPay Funcy's behaviour, adapted to MV3.
 
 export const SMART_BUMP_ALARM = 'fpToolsSmartBump';
 const STATE_KEY = 'fpToolsSmartBumpState'; // { [categoryUrl]: { nextRaiseAt, name } }
 const OFFSCREEN_PATH = 'offscreen/offscreen.html';
 
-// Ported 1:1 from FP Tools utils.parse_wait_time - returns seconds to wait.
+// Ported 1:1 from FunPay Funcy utils.parse_wait_time - returns seconds to wait.
 function parseWaitTime(msg) {
     const s = String(msg || '');
     const digits = (s.match(/\d/g) || []).join('');
@@ -108,7 +108,7 @@ async function raiseCategory(categoryUrl, auth) {
         }
     }
 
-    // FP Tools logic: success when no error and no url; url => 2h; "wait" msg => parse it.
+    // FunPay Funcy logic: success when no error and no url; url => 2h; "wait" msg => parse it.
     if (!json.error && !json.url) {
         return { ok: true, waitSec: 4 * 3600, name }; // default FunPay cooldown ~4h
     }
@@ -134,7 +134,7 @@ function logToTabs(message) {
     chrome.tabs.query({ url: 'https://funpay.com/*' }).then(tabs => {
         tabs.forEach(t => chrome.tabs.sendMessage(t.id, { action: 'logToAutoBumpConsole', message: line }).catch(() => {}));
     });
-    console.log('[FP Tools SmartBump]', line);
+    console.log('[FunPay Funcy SmartBump]', line);
 }
 
 // Run one smart-bump pass. Raises only due categories, updates per-category nextRaiseAt,

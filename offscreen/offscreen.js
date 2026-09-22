@@ -155,13 +155,13 @@ function parseFinancePage(html) {
                 const wallet = row.querySelector(".tc-payment-number")?.textContent.trim() || "";
                 txns.push({ id, type, status, title, amount: Math.abs(amount), signed, currency, date, dateText, wallet });
             } catch (e) {
-                console.error("FP Tools Offscreen: ошибка парсинга финоперации:", e);
+                console.error("FunPay Funcy Offscreen: ошибка парсинга финоперации:", e);
                 throw e;
             }
         });
         return { nextId, txns };
     } catch (e) {
-        console.error("FP Tools Offscreen: глобальная ошибка парсинга финансов:", e);
+        console.error("FunPay Funcy Offscreen: глобальная ошибка парсинга финансов:", e);
         return {
             nextId: null,
             txns: [],
@@ -210,13 +210,13 @@ function parseSalesPage(html) {
                 const orderDate = parseFunPayDate(orderDateText);
                 orders.push({ orderId, description, subcategoryName, price, currency, buyerUsername, buyerId, orderStatus, orderDate, orderDateText, paymentType });
             } catch (e) {
-                console.error("FP Tools Offscreen: Ошибка при парсинге одного заказа:", e, row);
+                console.error("FunPay Funcy Offscreen: Ошибка при парсинге одного заказа:", e, row);
                 throw e;
             }
         });
         return { nextOrderId, orders };
     } catch (e) {
-        console.error("FP Tools Offscreen: Глобальная ошибка парсинга страницы продаж:", e);
+        console.error("FunPay Funcy Offscreen: Глобальная ошибка парсинга страницы продаж:", e);
         return {
             nextOrderId: null,
             orders: [],
@@ -291,7 +291,7 @@ function parseLotEditPage(html) {
 
         return dataObject;
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parseLotEditPage", e);
+        console.error("FunPay Funcy Offscreen: Error in parseLotEditPage", e);
         return null;
     }
 }
@@ -464,7 +464,7 @@ function parsePublicLotForClone(html) {
             priceCurrencyHint
         };
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parsePublicLotForClone", e);
+        console.error("FunPay Funcy Offscreen: Error in parsePublicLotForClone", e);
         return null;
     }
 }
@@ -499,7 +499,7 @@ function parseOfferEditPrice(html) {
         if (!price && !nodeId) return null;
         return { price, currency, nodeId };
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parseOfferEditPrice", e);
+        console.error("FunPay Funcy Offscreen: Error in parseOfferEditPrice", e);
         return null;
     }
 }
@@ -538,7 +538,7 @@ function parseSellerLotPrice(html, offerId) {
         }
         return null;
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parseSellerLotPrice", e);
+        console.error("FunPay Funcy Offscreen: Error in parseSellerLotPrice", e);
         return null;
     }
 }
@@ -777,7 +777,7 @@ function solveCloneForm(html, attributes, attributePairs) {
 
         return data;
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in solveCloneForm", e);
+        console.error("FunPay Funcy Offscreen: Error in solveCloneForm", e);
         return null;
     }
 }
@@ -810,7 +810,7 @@ function parseChatList(html) {
             };
         });
     } catch (e) {
-        console.error("FP Tools Offscreen: Error parsing chat list.", e);
+        console.error("FunPay Funcy Offscreen: Error parsing chat list.", e);
         return [];
     }
 }
@@ -842,7 +842,7 @@ function parseUserLotsList(html) {
         
         return allLots;
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parseUserLotsList", e);
+        console.error("FunPay Funcy Offscreen: Error in parseUserLotsList", e);
         return [];
     }
 }
@@ -943,7 +943,7 @@ function parseUserCategories(html) {
         });
         return categories;
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parseUserCategories", e);
+        console.error("FunPay Funcy Offscreen: Error in parseUserCategories", e);
         return [];
     }
 }
@@ -994,7 +994,7 @@ function parseOrderPageForReview(html) {
 
         return { stars, lotName };
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parseOrderPageForReview", e);
+        console.error("FunPay Funcy Offscreen: Error in parseOrderPageForReview", e);
         return null;
     }
 }
@@ -1097,7 +1097,7 @@ function parseOrderParticipants(html) {
 
         return { myId, sellerId, buyerId, sellerName, buyerName, iAmSeller };
     } catch (e) {
-        console.error("FP Tools Offscreen: Error in parseOrderParticipants", e);
+        console.error("FunPay Funcy Offscreen: Error in parseOrderParticipants", e);
         return { iAmSeller: null };
     }
 }
@@ -1140,7 +1140,7 @@ function parseOrderPageForDelivery(html) {
 
         return { secrets, lotId, nodeId, buyerChatId, buyerUsername, lotName, category };
     } catch (e) {
-        console.error('FP Tools Offscreen: Error in parseOrderPageForDelivery', e);
+        console.error('FunPay Funcy Offscreen: Error in parseOrderPageForDelivery', e);
         return null;
     }
 }

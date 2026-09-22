@@ -1,6 +1,6 @@
 // background/telegram.js
 // =============================================================================
-// Управление FP Tools из Telegram + уведомления.
+// Управление FunPay Funcy из Telegram + уведомления.
 //
 // ВАЖНО (Chrome Web Store): мы используем ТОЛЬКО официальный Telegram Bot API по
 // HTTPS (api.telegram.org). Это передача данных, а не загрузка/исполнение
@@ -107,7 +107,7 @@ async function handleTelegramCommand(text, cfg) {
 
     if (cmd === '/start' || cmd === '/help') {
         await tgSendMessage(
-            '<b>FP Tools - управление</b>\n\n' +
+            '<b>FunPay Funcy - управление</b>\n\n' +
             '/status - статус и баланс\n' +
             '/chats - непрочитанные чаты\n' +
             '/sales - статистика продаж\n' +
@@ -119,7 +119,7 @@ async function handleTelegramCommand(text, cfg) {
     }
 
     if (!cfg.allowControl) {
-        if (cmd.startsWith('/')) await tgSendMessage('Управление через бота отключено в настройках FP Tools.');
+        if (cmd.startsWith('/')) await tgSendMessage('Управление через бота отключено в настройках FunPay Funcy.');
         return;
     }
 
@@ -128,7 +128,7 @@ async function handleTelegramCommand(text, cfg) {
             const info = _deps && _deps.getProfileInfo ? await _deps.getProfileInfo() : null;
             if (info) {
                 await tgSendMessage(
-                    `<b>FP Tools статус</b>\n` +
+                    `<b>FunPay Funcy статус</b>\n` +
                     `Пользователь: ${tgEscape(info.username || '-')}\n` +
                     `Баланс: ${tgEscape(info.balance || '-')}\n` +
                     `Активных продаж/заказов: ${tgEscape(String(info.activeOrders ?? '-'))}`
@@ -291,7 +291,7 @@ async function telegramPollOnce() {
         if (upd && upd.ok === false) {
             const code = upd.error_code;
             if (code === 401 || code === 404) {
-                console.warn('FP Tools: Telegram токен недействителен (', code, ') — опрос остановлен.');
+                console.warn('FunPay Funcy: Telegram токен недействителен (', code, ') — опрос остановлен.');
                 await tgSet({ enabled: false });
                 stopTelegramPolling();
                 return;
@@ -316,7 +316,7 @@ async function telegramPollOnce() {
         }
         await tgSet({ lastUpdateId: maxId });
     } catch (e) {
-        console.error('FP Tools: Telegram poll error:', e.message);
+        console.error('FunPay Funcy: Telegram poll error:', e.message);
     } finally {
         _polling = false;
     }

@@ -46,7 +46,7 @@ function getLegacyFinanceUiEnabled(settingKey) {
     });
 })();
 
-// FP Tools: конфиг источника статистики. По умолчанию — продажи.
+// FunPay Funcy: конфиг источника статистики. По умолчанию — продажи.
 // На странице покупок (/orders/) purchases.js переопределяет window.fptStatsCfg.
 function _fptCfg() {
     return window.fptStatsCfg || {
@@ -280,7 +280,7 @@ function formatRevenue(revenue) {
     return parts.length ? parts.join(' <span class="balances-delimiter">·</span> ') : "0 ₽ · 0 $ · 0 €";
 }
 
-// ===== FP Tools: красивый оверлей загрузки статистики =====
+// ===== FunPay Funcy: красивый оверлей загрузки статистики =====
 function _fptStatsHost() {
     // Контейнер, поверх которого показываем загрузку (блок карточек).
     return document.getElementById('fpTools-stats-cards');
@@ -526,7 +526,7 @@ if (typeof window !== 'undefined') {
     window.fptRefreshStatsCards = function () { try { displaySalesStats(); } catch (_) {} };
 }
 
-// Попап "Стойте, это не точные данные!" - честно объясняет, почему сумма в FP Tools
+// Попап "Стойте, это не точные данные!" - честно объясняет, почему сумма в FunPay Funcy
 // может отличаться от того, что пользователь видит/ожидает, и как это исправить.
 function _showStatsAccuracyPopup(lastUpd, ordersCount, updateBtn) {
     document.getElementById('fpt-stats-accuracy-overlay')?.remove();
@@ -684,7 +684,7 @@ async function initializeSalesStatistics() {
         // Флаг сбора переключился в false → процесс завершён: прячем оверлей,
         // рисуем карточки и возвращаем кнопку в исходное состояние.
         if (changes[_fptCfg().collectingKey] && changes[_fptCfg().collectingKey].newValue === false) {
-            console.log("FP Tools: Сбор завершён, показываем статистику.");
+            console.log("FunPay Funcy: Сбор завершён, показываем статистику.");
             hideStatsLoading();
             displaySalesStats();
             const updateBtn = document.getElementById("fpTools-stats-reset");

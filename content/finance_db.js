@@ -1,5 +1,5 @@
 /*
- * FP Tools — доступ к ФИНАНСАМ из CONTENT-скриптов.
+ * FunPay Funcy — доступ к ФИНАНСАМ из CONTENT-скриптов.
  * IndexedDB изолирован по origin, поэтому единственный владелец базы — background.
  * FPTFinanceDB здесь — тонкий клиент: шлёт запросы в background по сообщениям.
  */

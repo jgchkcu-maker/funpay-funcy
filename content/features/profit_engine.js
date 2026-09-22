@@ -1,5 +1,5 @@
 /**
- * FunPay Tools — Realised Profit Engine (T07B)
+ * FunPay Funcy — Realised Profit Engine (T07B)
  *
  * Чистый read-only модуль расчёта реализованной прибыли и покрытия:
  * - per-order расчёт прибыли для закрытых заказов (`closed`) со снимком себестоимости (`costBasisSnapshot`);

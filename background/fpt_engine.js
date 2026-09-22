@@ -1,4 +1,4 @@
-// background/fpt_engine.js - FunPay Tools 2.8
+// background/fpt_engine.js - FunPay Funcy 2.8
 // MV3-safe persistent polling engine with multiple redundancy layers.
 //
 // ROOT CAUSE THIS FIXES:
@@ -18,7 +18,7 @@
 //   6. Persistent state: tags + dedup sets live in chrome.storage.local, so nothing is lost
 //      across worker restarts.
 //
-// Polling design ported from FP Tools's Runner: fresh RANDOM tag per cycle for
+// Polling design ported from FunPay Funcy's Runner: fresh RANDOM tag per cycle for
 // chat_bookmarks AND orders_counters, per-message dedup.
 
 import { runAutoResponderCycle } from './autoresponder.js';
@@ -28,7 +28,7 @@ const OFFSCREEN_PATH = 'offscreen/offscreen.html';
 
 const POLL_INTERVAL_MS = 5000;        // active-loop cadence while worker is awake
 const MIN_CYCLE_GAP_MS = 2500;        // never hammer runner/ faster than this
-const ERROR_BACKOFF_MS = 5000;        // FP Tools sleeps 5s after a runner error
+const ERROR_BACKOFF_MS = 5000;        // FunPay Funcy sleeps 5s after a runner error
 const STALL_MS = 90000;               // if no successful cycle in 90s -> force restart
 
 let loopTimer = null;
@@ -37,7 +37,7 @@ let running = false;
 let lastCycleStart = 0;
 let lastCycleOk = 0;
 
-// FP Tools: utils.random_tag() -> 8 hex chars. Fresh tag per cycle keeps FunPay returning data.
+// FunPay Funcy: utils.random_tag() -> 8 hex chars. Fresh tag per cycle keeps FunPay returning data.
 export function randomTag() {
     return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
 }
@@ -80,7 +80,7 @@ async function ensureOffscreen() {
         }
     } catch (e) {
         if (!String(e && e.message || '').includes('Only a single offscreen')) {
-            console.warn('FP Tools engine: ensureOffscreen', e && e.message || e);
+            console.warn('FunPay Funcy engine: ensureOffscreen', e && e.message || e);
         }
     }
 }
@@ -102,7 +102,7 @@ async function tick() {
             loopTimer = null;
         }
     } catch (e) {
-        console.error('FP Tools engine: tick error', e && e.message || e);
+        console.error('FunPay Funcy engine: tick error', e && e.message || e);
         scheduleNext(ERROR_BACKOFF_MS);
     }
 }
@@ -120,7 +120,7 @@ function startWatchdog() {
         if (!running) return;
         if (!(await anyAutomationEnabled())) return;
         if (lastCycleOk && Date.now() - lastCycleOk > STALL_MS) {
-            console.warn('FP Tools engine: watchdog detected stall, restarting loop');
+            console.warn('FunPay Funcy engine: watchdog detected stall, restarting loop');
             lastCycleStart = 0;
             scheduleNext(0);
         }
@@ -139,7 +139,7 @@ export async function startEngine() {
     running = true;
     lastCycleOk = Date.now();
     scheduleNext(0);
-    console.log('FP Tools engine: started (loop ' + POLL_INTERVAL_MS + 'ms + offscreen keepalive + heartbeat + watchdog)');
+    console.log('FunPay Funcy engine: started (loop ' + POLL_INTERVAL_MS + 'ms + offscreen keepalive + heartbeat + watchdog)');
 }
 
 export function stopEngine() {
@@ -147,7 +147,7 @@ export function stopEngine() {
     if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
     if (watchdogTimer) { clearInterval(watchdogTimer); watchdogTimer = null; }
     chrome.alarms.clear(ENGINE_HEARTBEAT_ALARM);
-    console.log('FP Tools engine: stopped');
+    console.log('FunPay Funcy engine: stopped');
 }
 
 async function ensureHeartbeat() {
@@ -175,7 +175,7 @@ export async function onHeartbeat() {
                 lastCycleOk = Date.now();
             }
         } catch (e) {
-            console.error('FP Tools engine: heartbeat cycle error', e && e.message || e);
+            console.error('FunPay Funcy engine: heartbeat cycle error', e && e.message || e);
         }
     } else {
         running = false;

@@ -1,5 +1,5 @@
 // content/features/support_theme.js
-// Кастомная тема FP Tools для сайта поддержки (support.funpay.com).
+// Кастомная тема FunPay Funcy для сайта поддержки (support.funpay.com).
 // Сайт на Bootstrap 5 с переменными --bs-*. Вместо борьбы с классами
 // переопределяем переменные Bootstrap под цвета темы - это убирает
 // лишние обводки и делает всё консистентным.

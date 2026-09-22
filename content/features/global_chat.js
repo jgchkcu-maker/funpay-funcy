@@ -311,9 +311,9 @@ async function _fptGcStartLink() {
         if (gate) {
             gate.querySelector('.fpt-gc-gate-inner').innerHTML =
                 '<div class="fpt-gc-gate-title">Подтверди вход в Telegram</div>' +
-                '<div class="fpt-gc-gate-sub">Нажми кнопку и откроется наш бот и автоматические верифицирует вас. Вы можете скопировать код ниже и написать в @FPToolsBot, если не можете открыть ссылку.</div>' +
+                '<div class="fpt-gc-gate-sub">Нажми кнопку — откроется бот, который автоматически подтвердит вход. Если ссылка не открылась, можно скопировать код ниже и отправить его боту вручную.</div>' +
                 `<a href="${deeplink}" target="_blank" class="btn" id="fpt-gc-open-bot">Открыть бота и подтвердить</a>` +
-                `<div class="fpt-gc-code">Если у вас нет Telegram на компьютере, введите код с телефона в бота @FPToolsBot: <b>${_fptGcEscape(code)}</b></div>` +
+                `<div class="fpt-gc-code">Если у вас нет Telegram на компьютере, введите код с телефона в бота: <b>${_fptGcEscape(code)}</b></div>` +
                 '<div id="fpt-gc-gate-status" class="fpt-gc-gate-status">Ожидаю подтверждения…</div>';
         }
         _fptGcPollLink(code);

@@ -189,7 +189,7 @@ async function applyTemplateToInput(chatInput, templateContent, images, sendOrde
                 await sendImages();
             }
         } catch (e) {
-            console.error('FP Tools: ошибка отправки шаблона с картинкой', e);
+            console.error('FunPay Funcy: ошибка отправки шаблона с картинкой', e);
         }
         chatInput.value = '';
         return { handledInBackground: true };
@@ -649,7 +649,7 @@ function toggleTemplatePopover(trigger) {
     }, 0);
 }
 
-// Opens the FP Tools popup straight on the Templates page.
+// Opens the FunPay Funcy popup straight on the Templates page.
 async function openTemplateSettings() {
     try {
         if (typeof window.__fpEnsurePopup === 'function') await window.__fpEnsurePopup();

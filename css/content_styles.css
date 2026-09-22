@@ -514,7 +514,7 @@
     animation: popIn 0.25s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Прозрачное меню FunPay Tools (управляется из «Кастомизация»).
+/* Прозрачное меню FunPay Funcy (управляется из «Кастомизация»).
    Прозрачным делаем ВСЕ слои окна (рамка, шапка, навигация, контент), иначе
    непрозрачная шапка/панели перекрывают эффект. Размытие - на самом окне
    (backdrop-filter), как в блоке статистики, чтобы фон за меню был размыт
@@ -5580,7 +5580,7 @@ a.contact-item:hover {
     background: rgba(255, 107, 107, 0.4) !important;
 }
 
-/* --- Стили для редактора кнопки FP Tools в хедере --- */
+/* --- Стили для редактора кнопки FunPay Funcy в хедере --- */
 #fp-tools-button-styler {
     display: none;
     position: fixed;
@@ -6600,7 +6600,7 @@ a.contact-item:hover {
     color: var(--fpt-accent, #1b75bb);
 }
 /* ═══════════════════════════════════════════════════════════════
-   FunPay Tools 2.8 - UI additions & flat redesign overrides
+   FunPay Funcy 2.8 - UI additions & flat redesign overrides
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Header button: flat accent style ──────────────────────────── */
@@ -6941,7 +6941,7 @@ a.contact-item:hover {
     margin: 0;
 }
 
-/* ── FP Tools console ───────────────────────────────────────────── */
+/* ── FunPay Funcy console ───────────────────────────────────────────── */
 .fp-tools-console {
     background: var(--fptm-surface-2, #0a0b10);
     border: 1px solid var(--fpt-border, #1e2030);
@@ -8465,7 +8465,7 @@ textarea.fp-cw-input { line-height:1.4; }
 .fp-cw-thumbs { display:flex; flex-wrap:wrap; gap:8px; }
 .fp-cw-thumb { width:54px; height:54px; border-radius:8px; background-size:cover; background-position:center; border:1px solid var(--cw-border); }
 
-/* ── Общий чат FP Tools: аватары, PRO-бейдж, калитка входа ───────────────── */
+/* ── Общий чат FunPay Funcy: аватары, PRO-бейдж, калитка входа ───────────────── */
 .fpt-gc-msg{display:flex;gap:8px;align-items:flex-start;}
 .fpt-gc-avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--fpt-surface, #2a2d44);}
 .fpt-gc-avatar-empty{display:inline-block;}
@@ -8575,7 +8575,7 @@ textarea.fp-cw-input { line-height:1.4; }
 /* FIX 2.8.8 (№1): скрываем скроллбар у попапа точности статистики (Chrome/WebKit) */
 #fpt-stats-accuracy-box::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
-/* ===== FP Tools: оверлей загрузки статистики продаж ===== */
+/* ===== FunPay Funcy: оверлей загрузки статистики продаж ===== */
 .fp-stats-loading {
     position: relative;
     min-height: 180px;

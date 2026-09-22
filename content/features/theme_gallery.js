@@ -1,5 +1,5 @@
 // ============================================================================
-//  FP Tools — Каталог готовых тем (.fptheme) из GitHub
+//  FunPay Funcy — Каталог готовых тем (.fptheme) из GitHub
 // ----------------------------------------------------------------------------
 //  Зачем GitHub raw, а не Telegram/Vercel:
 //    • Telegram CDN заблокирован в РФ → ссылки на file_id не грузятся у россиян.
@@ -147,7 +147,7 @@
         } catch (e) {
             renderState('Не удалось загрузить каталог. Проверьте соединение и попробуйте снова.');
             setLoadButton(true, true); // показать кнопку повтора
-            console.error('FP Tools theme gallery: load error', e);
+            console.error('FunPay Funcy theme gallery: load error', e);
         } finally {
             _loading = false;
         }
@@ -279,7 +279,7 @@
             if (typeof showNotification === 'function') {
                 showNotification(`Не удалось применить тему: ${e.message}`, true);
             }
-            console.error('FP Tools theme gallery: apply error', e);
+            console.error('FunPay Funcy theme gallery: apply error', e);
         } finally {
             _applying = false;
             renderCard();
@@ -300,7 +300,7 @@
 
     function init() {
         if (tryMount()) return;
-        // Попап FP Tools монтируется не сразу — ждём появления .theme-actions-grid.
+        // Попап FunPay Funcy монтируется не сразу — ждём появления .theme-actions-grid.
         const obs = new MutationObserver(() => {
             if (tryMount()) obs.disconnect();
         });

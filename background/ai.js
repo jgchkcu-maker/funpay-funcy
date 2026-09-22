@@ -108,7 +108,7 @@ export async function fetchAIResponse(textForAI, context, myUsername, type = "re
         // textForAI = freeform user request ("что мне не нужно")
         // context   = JSON string array of { id, label, desc }
         finalPrompt = `
-Ты - помощник внутри браузерного расширения FunPay Tools. Пользователь описывает своими словами, какие функции/кнопки расширения ему НЕ нужны и он хочет их отключить.
+Ты - помощник внутри браузерного расширения FunPay Funcy. Пользователь описывает своими словами, какие функции/кнопки расширения ему НЕ нужны и он хочет их отключить.
 
 Вот полный список доступных функций (JSON, поля: id, label, desc):
 ${context}
