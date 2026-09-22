@@ -270,11 +270,11 @@ async function testFailureReachesUiAsFailure() {
     assert.equal(env.notifications.some(item => item.message === 'Данные о продажах обновлены'), false);
 }
 
-async function testProfitRefreshInvokesSalesRefresh() {
+async function testProfitRefreshInvokesEveryFinanceSource() {
     const env = createHubRefreshEnv();
     env.hub.onSubtabChange('profit');
     await env.hub.refresh();
-    assert.deepEqual(env.sentMessages.map(item => item.action), ['updateSales']);
+    assert.deepEqual(env.sentMessages.map(item => item.action).sort(), ['updateFinance', 'updatePurchases', 'updateSales']);
 }
 
 async function testOverviewRefreshInvokesAllSources() {
@@ -283,7 +283,7 @@ async function testOverviewRefreshInvokesAllSources() {
     });
     env.hub.onSubtabChange('overview');
     await env.hub.refresh();
-    assert.deepEqual(env.sentMessages.map(item => item.action).sort(), ['updateFinance', 'updateSales']);
+    assert.deepEqual(env.sentMessages.map(item => item.action).sort(), ['updateFinance', 'updatePurchases', 'updateSales']);
     assert.equal(env.inventoryCalls(), 1);
 }
 
@@ -294,7 +294,7 @@ async function main() {
     await testSuccessfulRefreshReplacesRowsAndAdvancesMetadata();
     await testDurableCommitFailureDoesNotAdvanceLastUpdate();
     await testFailureReachesUiAsFailure();
-    await testProfitRefreshInvokesSalesRefresh();
+    await testProfitRefreshInvokesEveryFinanceSource();
     await testOverviewRefreshInvokesAllSources();
     console.log('FINANCE_REFRESH_PASS');
 }

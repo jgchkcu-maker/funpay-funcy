@@ -172,10 +172,12 @@ function testKpiCssContract() {
     assert.ok(gridColumnRule, 'Finance grid columns need a shared sizing rule');
     assert.match(gridColumnRule[1], /min-width:\s*0\s*;/, 'Finance grid columns must allow content to shrink');
 
-    const directCardRule = [...cssSource.matchAll(/\.fpt-fin-col-3\s*>\s*\.fpt-fin-card\s*\{([\s\S]*?)\}/g)]
-        .map(match => match[1])
-        .find(body => /height:\s*100%\s*;/.test(body));
-    assert.ok(directCardRule, 'KPI grid columns need a direct card stretch rule');
+    const cardHeightSelector = '.fpt-fin-grid > .fpt-fin-col-3 > .fpt-fin-card:only-child';
+    const desktopCardStart = cssSource.indexOf(cardHeightSelector);
+    const desktopCardEnd = cssSource.indexOf('\n}', desktopCardStart);
+    const directCardRule = cssSource.slice(desktopCardStart, desktopCardEnd + 2);
+    assert.ok(desktopCardStart >= 0 && desktopCardEnd > desktopCardStart, 'KPI grid columns need a direct card stretch rule');
+    assert.match(directCardRule, /height:\s*100%\s*;/, 'Desktop KPI cards must stretch to their row');
 
     const subtitleRule = getRuleBody(cssSource, '.fpt-fin-kpi-card .fpt-fin-card-sub');
     assert.match(subtitleRule, /margin-top:\s*auto\s*;/, 'KPI footer should stay at the bottom of the card');
@@ -196,12 +198,14 @@ function testKpiCssContract() {
         .find(match => /min-height:\s*auto\s*;/.test(match.body));
     assert.ok(baseKpiRule && mobileKpiRule && mobileKpiRule.index > baseKpiRule.index, 'Mobile KPI reset must follow the base KPI rule in the cascade');
 
-    const baseCardRule = [...cssSource.matchAll(/\.fpt-fin-col-3\s*>\s*\.fpt-fin-card\s*\{([\s\S]*?)\}/g)]
-        .map(match => ({ index: match.index, body: match[1] }))
-        .find(match => /height:\s*100%\s*;/.test(match.body));
-    const mobileCardRule = [...cssSource.matchAll(/\.fpt-fin-col-3\s*>\s*\.fpt-fin-card\s*\{([\s\S]*?)\}/g)]
-        .map(match => ({ index: match.index, body: match[1] }))
-        .find(match => /height:\s*auto\s*;/.test(match.body));
+    const baseCardRule = { index: desktopCardStart, body: directCardRule };
+    const mobileContainerStart = cssSource.indexOf('@container (max-width: 480px)');
+    const mobileCardStart = cssSource.indexOf(cardHeightSelector, mobileContainerStart);
+    const mobileCardEnd = cssSource.indexOf('\n}', mobileCardStart);
+    const mobileCardRule = {
+        index: mobileCardStart,
+        body: cssSource.slice(mobileCardStart, mobileCardEnd + 2)
+    };
     assert.ok(baseCardRule && mobileCardRule && mobileCardRule.index > baseCardRule.index, 'Mobile card height reset must follow the base card rule in the cascade');
 }
 
@@ -216,10 +220,10 @@ function testT15T16ContractsRemainPresent() {
         /\.fp-tools-popup select\.fpt-fin-period-select,\s*\.fp-tools-popup \.fpt-fin-period-select\s*\{([\s\S]*?)\}/
     );
     assert.ok(financeSelectRule, 'T15 Finance select isolation rule must remain available');
-    assert.match(financeSelectRule[1], /width:\s*auto\s*!important/i, 'Finance selects must keep their T15 width isolation');
+    assert.match(financeSelectRule[1], /width:\s*100%\s*!important/i, 'Finance selects must fill their T15 filter-grid column');
     assert.match(financeSelectRule[1], /margin:\s*0\s*!important/i, 'Finance selects must keep their T15 margin isolation');
-    assert.match(financeSelectRule[1], /flex:\s*0\s+1\s+auto\s*!important/i, 'Finance selects must remain wrappable');
-    assert.doesNotMatch(financeSelectRule[1], /width:\s*100%/i, 'Finance selects must not regain legacy full width');
+    assert.match(financeSelectRule[1], /flex:\s*none\s*!important/i, 'Finance selects must remain sized by their filter-grid column');
+    assert.doesNotMatch(financeSelectRule[1], /width:\s*auto\s*!important/i, 'Finance selects must not override their filter-grid width');
 
     assert.match(
         financeHubSource,

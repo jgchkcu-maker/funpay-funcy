@@ -1928,35 +1928,40 @@ const FPT_MENU_THEME_CSS = `
     position:relative; padding:16px 12px; display:flex; flex-direction:column; overflow:hidden; min-height:0;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav ul{ list-style:none; margin:0; padding:0; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:3px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:2px 0 10px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:5px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{
-    width:100%; min-width:0; min-height:36px; display:flex; align-items:center; gap:8px;
-    padding:7px 8px; border:1px solid transparent; border-radius:9px;
+    width:100%; min-width:0; min-height:44px; display:flex; align-items:center; gap:8px;
+    padding:9px 10px; border:1px solid transparent; border-radius:10px;
     background:transparent !important; color:var(--fptm-muted) !important;
-    box-shadow:none !important; font:inherit; font-size:12px; font-weight:700; text-align:left; cursor:pointer;
-    transition:background .18s ease, color .18s ease, border-color .18s ease;
+    box-shadow:none !important; font:inherit; font-size:13px; font-weight:700; text-align:left; cursor:pointer;
+    transition:background-color .24s cubic-bezier(.22,1,.36,1), color .24s cubic-bezier(.22,1,.36,1), border-color .24s cubic-bezier(.22,1,.36,1);
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:hover,
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:hover{
     background:var(--fptm-hover) !important; color:var(--fptm-text) !important;
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{ color:var(--fptm-accent) !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{
+    background:transparent !important; border-color:transparent !important; color:var(--fptm-text) !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle:hover{
+    background:var(--fptm-hover) !important; color:var(--fptm-text) !important;
+}
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon,
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{ color:inherit !important; font-size:17px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
-    flex:0 0 auto; margin-left:auto; transition:transform .18s cubic-bezier(.22,1,.36,1);
+    flex:0 0 auto; margin-left:auto; transition:transform .24s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-chevron{ transform:rotate(90deg); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse{
-    display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .2s cubic-bezier(.22,1,.36,1);
+    display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .24s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; transition:padding .24s cubic-bezier(.22,1,.36,1); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{ padding:2px 0 6px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a{
-    display:flex; align-items:center; min-height:28px; padding:6px 8px 6px 30px;
-    gap:8px; color:var(--fptm-muted) !important; background:transparent !important; border-radius:8px !important;
+    display:flex; align-items:center; min-height:36px; padding:7px 10px 7px 32px;
+    gap:8px; color:var(--fptm-muted) !important; background:transparent !important; border-radius:10px !important;
     box-shadow:none !important; border:1px solid transparent !important; font-weight:600; transition:background .15s ease, color .15s ease;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a:hover{ background:var(--fptm-hover) !important; color:var(--fptm-text) !important; }
@@ -2638,6 +2643,8 @@ function _updateColorInputs(palette) {
 
 
 
+const FPT_MORE_ICON_CODEPOINT = '\ue5d3';
+
 const FPT_NAV_SECTIONS = Object.freeze([
     { id: 'core', label: 'Основное', icon: 'home', pages: Object.freeze(['general', 'accounts', 'needs']) },
     { id: 'store', label: 'Магазин', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit', 'blacklist']) },
@@ -2714,13 +2721,15 @@ function setupNavigationSections(toolsPopup) {
 
         const icon = document.createElement('span');
         icon.className = 'fpt-nav-group-icon material-symbols-rounded';
-        icon.textContent = section.icon;
+        icon.textContent = section.id === 'more' ? FPT_MORE_ICON_CODEPOINT : section.icon;
+        icon.setAttribute('aria-hidden', 'true');
         const title = document.createElement('span');
         title.className = 'fpt-nav-group-title';
         title.textContent = section.label;
         const chevron = document.createElement('span');
         chevron.className = 'fpt-nav-group-chevron material-symbols-rounded';
         chevron.textContent = 'chevron_right';
+        chevron.setAttribute('aria-hidden', 'true');
         toggle.append(icon, title, chevron);
 
         const collapse = document.createElement('div');
@@ -2765,6 +2774,7 @@ function setupNavigationSections(toolsPopup) {
             group.classList.toggle('is-active-section', sectionId === activeSection);
             toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
             collapse.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+            collapse.toggleAttribute('inert', !expanded);
         });
     }
 

@@ -18,18 +18,18 @@ const financeSelectRule = css.match(
 assert.ok(financeSelectRule, 'Finance-specific select rule exists');
 
 const financeSelectBody = financeSelectRule[1];
-assert.match(financeSelectBody, /width:\s*auto\s*!important/i, 'Finance selects opt out of legacy full width');
+assert.match(financeSelectBody, /width:\s*100%\s*!important/i, 'Finance selects fill their assigned filter-grid column');
 assert.match(financeSelectBody, /margin:\s*0\s*!important/i, 'Finance selects remove the legacy bottom margin');
-assert.match(financeSelectBody, /min-width:\s*[^;]+!important/i, 'Finance selects have a usable minimum width');
-assert.match(financeSelectBody, /max-width:\s*[^;]+!important/i, 'Finance selects have a bounded maximum width');
+assert.match(financeSelectBody, /min-width:\s*0\s*!important/i, 'Finance selects may shrink with their grid column');
+assert.match(financeSelectBody, /max-width:\s*none\s*!important/i, 'Finance selects must not impose a competing maximum width');
 assert.match(financeSelectBody, /box-sizing:\s*border-box\s*!important/i, 'Finance selects use border-box sizing');
-assert.match(financeSelectBody, /flex:\s*0\s+1\s+auto\s*!important/i, 'Finance selects can wrap and shrink within the filter row');
-assert.doesNotMatch(financeSelectBody, /width:\s*100%/i, 'Finance selects must not revert to width:100%');
+assert.match(financeSelectBody, /flex:\s*none\s*!important/i, 'Finance selects are sized by the filter grid rather than flex wrapping');
+assert.doesNotMatch(financeSelectBody, /width:\s*auto\s*!important/i, 'Finance selects must not override their grid-column width');
 
 const categorySelectRule = css.match(
     /\.fp-tools-popup #fptFinCategorySelect\s*\{([\s\S]*?)\}/
 );
-assert.ok(categorySelectRule, 'Finance category select has a dedicated width bound');
-assert.match(categorySelectRule[1], /max-width:\s*[^;]+!important/i, 'Category select can be slightly wider than other filters');
+assert.ok(categorySelectRule, 'Finance category select has a dedicated grid-compatible rule');
+assert.match(categorySelectRule[1], /max-width:\s*none\s*!important/i, 'Category select may fill its grid column');
 
 console.log('T15_FINANCE_FILTER_CSS_ISOLATION_PASS');

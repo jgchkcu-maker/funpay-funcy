@@ -36,13 +36,14 @@ function runStaticContractChecks() {
         'renderOverviewSubtab must not set overviewLastUpdate to Date.now()'
     );
 
-    // 4. В refresh overview branch запрещено присваивание state.overviewLastUpdate = Date.now()
-    const overviewRefreshIdx = financeHubSource.indexOf("currentSubtab === 'overview'");
-    assert.ok(overviewRefreshIdx > 0, 'overview refresh branch must exist');
-    const overviewRefreshBlock = financeHubSource.slice(overviewRefreshIdx, overviewRefreshIdx + 2500);
+    // 4. Единый refresh не должен подменять свежесть обзора текущим временем.
+    const refreshStart = financeHubSource.indexOf('async function refresh()');
+    const refreshEnd = financeHubSource.indexOf('function startInitialRender()', refreshStart);
+    assert.ok(refreshStart > 0 && refreshEnd > refreshStart, 'global refresh function must exist');
+    const refreshBlock = financeHubSource.slice(refreshStart, refreshEnd);
     assert.ok(
-        !overviewRefreshBlock.includes('state.overviewLastUpdate = Date.now()'),
-        'refresh overview branch must not set overviewLastUpdate to Date.now()'
+        !refreshBlock.includes('state.overviewLastUpdate = Date.now()'),
+        'global refresh must not set overviewLastUpdate to Date.now()'
     );
 
     // 5. Overview должен использовать Math.min, никогда Math.max
@@ -150,6 +151,12 @@ function createMockElement(id = '', classes = []) {
         classList: {
             add: (c) => classSet.add(c),
             remove: (c) => classSet.delete(c),
+            toggle: (c, force) => {
+                const shouldAdd = force === undefined ? !classSet.has(c) : Boolean(force);
+                if (shouldAdd) classSet.add(c);
+                else classSet.delete(c);
+                return shouldAdd;
+            },
             contains: (c) => classSet.has(c)
         },
         querySelectorAll: () => [],

@@ -49,6 +49,12 @@ function createMockElement(id = '', classes = []) {
         classList: {
             add: (c) => classSet.add(c),
             remove: (c) => classSet.delete(c),
+            toggle: (c, force) => {
+                const shouldAdd = force === undefined ? !classSet.has(c) : Boolean(force);
+                if (shouldAdd) classSet.add(c);
+                else classSet.delete(c);
+                return shouldAdd;
+            },
             contains: (c) => classSet.has(c)
         },
         querySelectorAll: () => [],

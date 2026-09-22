@@ -935,13 +935,7 @@
 
 .fp-tools-popup button:not(:disabled):hover,
 .fp-tools-popup .btn:not(:disabled):hover {
-    transform: translateY(-3px);
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
-}
-
-.fp-tools-popup button:active,
-.fp-tools-popup .btn:active {
-    transform: translateY(1px);
 }
 
 .fp-tools-popup .btn-default {
@@ -8850,6 +8844,8 @@ textarea.fp-cw-input { line-height:1.4; }
 
 .fpt-fin-filterbar {
     display: block;
+    position: relative;
+    z-index: 2;
     width: 100%;
     min-width: 0;
     margin-bottom: 18px;
@@ -8979,7 +8975,7 @@ textarea.fp-cw-input { line-height:1.4; }
         linear-gradient(180deg,
             color-mix(in srgb, var(--fptm-hover, var(--fptm-field, #ffffff)) 90%, white 10%),
             color-mix(in srgb, var(--fptm-hover, var(--fptm-field, #ffffff)) 96%, transparent 4%)) !important;
-    transform: translateY(-1px) !important;
+    transform: none !important;
 }
 
 .fp-tools-popup select.fpt-fin-period-select:focus,
@@ -9071,14 +9067,13 @@ textarea.fp-cw-input { line-height:1.4; }
     transition:
         border-color .16s ease,
         background .16s ease,
-        box-shadow .16s ease,
-        transform .16s ease !important;
+        box-shadow .16s ease !important;
 }
 
 .fp-tools-popup button.fpt-fin-select-trigger:hover,
 .fp-tools-popup .fpt-fin-select-trigger:hover {
     border-color: color-mix(in srgb, var(--fptm-accent, var(--fpt-accent, #1b75bb)) 30%, var(--fptm-border, rgba(255, 255, 255, .14))) !important;
-    transform: translateY(-1px) !important;
+    transform: none !important;
 }
 
 .fp-tools-popup button.fpt-fin-select-trigger:focus-visible,
@@ -9110,18 +9105,17 @@ textarea.fp-cw-input { line-height:1.4; }
     flex: 0 0 auto;
     width: 8px;
     height: 8px;
-    margin: -4px 1px 0 0;
+    margin: 0 1px 0 0;
     border-right: 2px solid var(--fptm-muted, #667085);
     border-bottom: 2px solid var(--fptm-muted, #667085);
-    transform: rotate(45deg);
+    transform: translateY(-4px) rotate(45deg);
     transform-origin: center;
     transition: transform .18s cubic-bezier(.22, 1, .36, 1), border-color .16s ease;
 }
 
 .fpt-fin-select-shell.is-open .fpt-fin-select-chevron {
-    margin-top: 4px;
     border-color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
-    transform: rotate(225deg);
+    transform: translateY(4px) rotate(225deg);
 }
 
 .fpt-fin-select-dropdown {
@@ -9235,17 +9229,19 @@ textarea.fp-cw-input { line-height:1.4; }
     cursor: grab;
     will-change: transform;
     touch-action: none;
-    transition: width .12s ease, left .12s ease, box-shadow .12s ease;
+    transition: box-shadow .12s ease;
 }
 
 .fpt-fin-select-scrollbar-thumb:hover,
 .fpt-fin-select-scrollbar-thumb.is-dragging {
-    left: 0;
-    width: 6px;
-    cursor: grabbing;
+    cursor: grab;
     box-shadow:
         0 0 0 1px rgba(255, 255, 255, .42),
         0 1px 7px color-mix(in srgb, var(--fptm-accent, var(--fpt-accent, #1b75bb)) 34%, transparent);
+}
+
+.fpt-fin-select-scrollbar-thumb.is-dragging {
+    cursor: grabbing;
 }
 
 .fp-tools-popup button.fpt-fin-select-option,
@@ -9272,8 +9268,13 @@ textarea.fp-cw-input { line-height:1.4; }
     cursor: pointer !important;
     transition:
         background-color .12s ease,
-        color .12s ease,
-        transform .12s ease !important;
+        color .12s ease !important;
+}
+
+/* The generic button ripple escapes these all:unset options and steals hits
+   from neighboring rows. The dropdown uses its own hover highlight. */
+.fp-tools-popup button.fpt-fin-select-option::before {
+    content: none !important;
 }
 
 .fp-tools-popup button.fpt-fin-select-option:last-child,
@@ -9300,11 +9301,6 @@ textarea.fp-cw-input { line-height:1.4; }
     color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
     background: var(--fptm-accent-soft, rgba(27, 117, 187, .12)) !important;
     font-weight: 650 !important;
-}
-
-.fp-tools-popup button.fpt-fin-select-option:active,
-.fp-tools-popup .fpt-fin-select-option:active {
-    transform: scale(.99) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -9546,8 +9542,7 @@ textarea.fp-cw-input { line-height:1.4; }
     user-select: none !important;
     transition:
         color 190ms ease,
-        opacity 190ms ease,
-        transform 240ms cubic-bezier(.2, .9, .2, 1) !important;
+        opacity 190ms ease !important;
 }
 
 .fp-tools-popup button.fpt-fin-subtab::before,
@@ -9562,12 +9557,6 @@ textarea.fp-cw-input { line-height:1.4; }
     background: color-mix(in srgb, var(--fptm-hover, rgba(255, 255, 255, .08)) 72%, transparent) !important;
     border: 0 !important;
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fptm-border, rgba(0, 0, 0, .10)) 60%, transparent) !important;
-    transform: translateY(-.5px) !important;
-}
-
-.fp-tools-popup button.fpt-fin-subtab:active,
-.fp-tools-popup .fpt-fin-subtab:active {
-    transform: scale(.975) !important;
 }
 
 .fp-tools-popup button.fpt-fin-subtab:focus-visible,
@@ -10317,13 +10306,12 @@ textarea.fp-cw-input { line-height:1.4; }
     border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.06));
     border-radius: 8px;
     cursor: pointer;
-    transition: all .15s ease;
+    transition: background .15s ease, border-color .15s ease;
 }
 
 .fpt-fin-seller-item:hover {
     background: var(--fptm-hover, rgba(255, 255, 255, 0.06));
     border-color: rgba(229, 115, 115, 0.4);
-    transform: translateY(-1px);
 }
 
 .fpt-fin-seller-rank {
@@ -10565,12 +10553,11 @@ textarea.fp-cw-input { line-height:1.4; }
     color: var(--fptm-faint, #6f748f);
     font-size: 18px !important;
     line-height: 1;
-    transition: color .14s ease, transform .14s ease;
+    transition: color .14s ease;
 }
 
 .fpt-fin-operation-type-row:hover .fpt-fin-operation-type-chevron {
     color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
-    transform: translateX(2px);
 }
 
 @container (max-width: 560px) {

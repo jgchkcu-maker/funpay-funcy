@@ -148,8 +148,7 @@
         .fpt-fin-block h3{font-size:11.5px;font-weight:700;margin:0 0 12px;color:var(--fpt-text-muted,#8b90a0);
             letter-spacing:.3px;text-transform:uppercase;}
         .fpt-fin-trow{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-            padding:8px 0;border-bottom:1px solid var(--fpt-border,#f0f1f5);font-size:13px;cursor:pointer;transition:padding-left .12s;}
-        .fpt-fin-trow:hover{padding-left:4px;}
+            padding:8px 0;border-bottom:1px solid var(--fpt-border,#f0f1f5);font-size:13px;cursor:pointer;}
         .fpt-fin-trow:last-child{border-bottom:none;}
         .fpt-fin-trow:hover .fpt-fin-tname{color:var(--fpt-accent,#ff6d15);text-decoration:underline;}
         .fpt-fin-tname{color:var(--fpt-text,inherit);}

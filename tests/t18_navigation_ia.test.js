@@ -117,6 +117,100 @@ function testAccordionStyles() {
     assert.doesNotMatch(css, /grid-template-columns:\s*1fr\s+1fr/, 'navigation CSS must not depend on a two-column grid');
 }
 
+function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
+    const staticToggleStart = css.indexOf('.fp-tools-nav .fpt-nav-group-toggle {');
+    const staticToggleEnd = css.indexOf('\n}', staticToggleStart);
+    const staticToggle = css.slice(staticToggleStart, staticToggleEnd + 2);
+    assert.match(staticToggle, /min-height:\s*44px/, 'section toggles must keep the reference\'s 44px hit area');
+    assert.match(staticToggle, /padding:\s*9px 10px/, 'section toggles must preserve the reference\'s horizontal rhythm');
+    assert.match(staticToggle, /font-size:\s*13px/, 'section labels must remain readable in the narrow popup');
+
+    const staticActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {');
+    const staticActiveEnd = css.indexOf('\n}', staticActiveStart);
+    const staticActive = css.slice(staticActiveStart, staticActiveEnd + 2);
+    assert.match(staticActive, /background:\s*transparent\s*!important/, 'the active category must not receive a selected background');
+    assert.match(staticActive, /border-color:\s*transparent/, 'the active category must not receive a selected border');
+
+    const staticChildActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-child.active a {');
+    const staticChildActiveEnd = css.indexOf('\n}', staticChildActiveStart);
+    const staticChildActive = css.slice(staticChildActiveStart, staticChildActiveEnd + 2);
+    assert.match(staticChildActive, /background:\s*var\(--fptm-accent-soft/, 'the selected page must keep its soft-blue background');
+
+    const staticChildStart = css.indexOf('.fp-tools-nav .fpt-nav-child a {');
+    const staticChildEnd = css.indexOf('\n}', staticChildStart);
+    const staticChild = css.slice(staticChildStart, staticChildEnd + 2);
+    assert.match(staticChild, /min-height:\s*36px/, 'nested pages must keep a comfortable narrow-popup hit area');
+    assert.match(staticChild, /padding:\s*7px 10px 7px 32px/, 'nested pages must stay aligned beneath their section icon');
+
+    const themeStart = source.indexOf('const FPT_MENU_THEME_CSS = `');
+    const themeEnd = source.indexOf('`;', themeStart);
+    const themeCss = source.slice(themeStart, themeEnd);
+    const themeToggleStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{');
+    const themeToggleEnd = themeCss.indexOf('\n}', themeToggleStart);
+    const themeToggle = themeCss.slice(themeToggleStart, themeToggleEnd + 2);
+    assert.match(themeToggle, /min-height:\s*44px/, 'runtime theme must not shrink the reference section hit area');
+    assert.match(themeToggle, /padding:\s*9px 10px/, 'runtime theme must preserve the reference section spacing');
+
+    const themeActiveStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{');
+    const themeActiveEnd = themeCss.indexOf('\n}', themeActiveStart);
+    const themeActive = themeCss.slice(themeActiveStart, themeActiveEnd + 2);
+    assert.match(themeActive, /background:transparent\s*!important/, 'runtime theme must keep the active category neutral');
+    assert.match(themeActive, /border-color:transparent\s*!important/, 'runtime theme must keep the active category borderless');
+
+    const themeChildStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav li a{');
+    const themeChildEnd = themeCss.indexOf('\n}', themeChildStart);
+    const themeChild = themeCss.slice(themeChildStart, themeChildEnd + 2);
+    assert.match(themeChild, /min-height:\s*36px/, 'runtime theme must keep nested-page hit areas spacious');
+    assert.match(themeChild, /padding:\s*7px 10px 7px 32px/, 'runtime theme must keep nested-page alignment stable');
+
+    const themeChildActiveStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav li.active a{');
+    const themeChildActiveEnd = themeCss.indexOf('\n}', themeChildActiveStart);
+    const themeChildActive = themeCss.slice(themeChildActiveStart, themeChildActiveEnd + 2);
+    assert.match(themeChildActive, /background:var\(--fptm-accent-soft\)/, 'runtime theme must preserve the selected page background');
+}
+
+function testNavigationRegressionGuards() {
+    const setupStart = source.indexOf('function setupNavigationSections(toolsPopup)');
+    const setupEnd = source.indexOf('function setupPopupNavigation()', setupStart);
+    const setupBlock = source.slice(setupStart, setupEnd);
+    assert.match(setupBlock, /icon\.textContent\s*=\s*section\.id\s*===\s*['"]more['"]\s*\?\s*FPT_MORE_ICON_CODEPOINT\s*:\s*section\.icon/, 'the overflow icon must use a bundled glyph codepoint instead of leaking the ligature name');
+    assert.match(setupBlock, /icon\.setAttribute\(['"]aria-hidden['"],\s*['"]true['"]\)/, 'decorative section icons must be hidden from assistive technology');
+    assert.match(setupBlock, /collapse\.toggleAttribute\(['"]inert['"],\s*!expanded\)/, 'collapsed sections must be removed from keyboard navigation');
+
+    assert.match(source, /const FPT_MORE_ICON_CODEPOINT\s*=\s*['"]\\ue5d3['"]/, 'the overflow icon must use the verified more-horizontal codepoint');
+
+    const staticItemsStart = css.indexOf('.fp-tools-nav .fpt-nav-group-items {');
+    const staticItemsEnd = css.indexOf('\n}', staticItemsStart);
+    const staticItems = css.slice(staticItemsStart, staticItemsEnd + 2);
+    assert.match(staticItems, /padding:\s*0\s*;/, 'closed group content must have no intrinsic padding');
+
+    const staticExpandedStart = css.indexOf('.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items {');
+    const staticExpandedEnd = css.indexOf('\n}', staticExpandedStart);
+    const staticExpanded = css.slice(staticExpandedStart, staticExpandedEnd + 2);
+    assert.match(staticExpanded, /padding:\s*2px 0 6px\s*;/, 'expanded group content must restore its visual breathing room');
+
+    const themeStart = source.indexOf('const FPT_MENU_THEME_CSS = `');
+    const themeEnd = source.indexOf('`;', themeStart);
+    const themeCss = source.slice(themeStart, themeEnd);
+    const themeItemsStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{');
+    const themeItemsEnd = themeCss.indexOf('\n}', themeItemsStart);
+    const themeItems = themeCss.slice(themeItemsStart, themeItemsEnd + 2);
+    assert.match(themeItems, /padding:0;/, 'runtime theme must not reintroduce closed-group padding');
+    const themeExpandedStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{');
+    const themeExpandedEnd = themeCss.indexOf('\n}', themeExpandedStart);
+    const themeExpanded = themeCss.slice(themeExpandedStart, themeExpandedEnd + 2);
+    assert.match(themeExpanded, /padding:2px 0 6px;/, 'runtime theme must restore expanded-group padding');
+
+    assert.match(css, /\.fp-tools-popup button:not\(\.fpt-nav-group-toggle\)/, 'generic button transitions must not override the accordion motion');
+    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-toggle\s*\{[\s\S]*?transition:[^;]*\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'section toggles must use the shared eased duration');
+    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-chevron\s*\{[\s\S]*?transition:\s*transform\s+\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'chevrons must use the shared eased duration');
+    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-collapse\s*\{[\s\S]*?transition:\s*grid-template-rows\s+\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'group collapse must use the shared eased duration');
+    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-items\s*\{[\s\S]*?transition:\s*padding\s+\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'group padding must ease with the collapse instead of jumping');
+    const reducedMotionStart = css.indexOf('@media (prefers-reduced-motion: reduce)');
+    const reducedMotion = css.slice(reducedMotionStart, reducedMotionStart + 500);
+    assert.match(reducedMotion, /\.fpt-nav-group-items/, 'reduced-motion mode must disable the padding animation too');
+}
+
 function runAll() {
     testEveryExistingPageBelongsToExactlyOneSection();
     testSixIndependentAccordionSections();
@@ -125,6 +219,8 @@ function runAll() {
     testSearchRestoresAccordionState();
     testGlobalChatAndShortcutContracts();
     testAccordionStyles();
+    testSelectedReferenceKeepsSpaciousActiveHierarchy();
+    testNavigationRegressionGuards();
     console.log('T18_NAVIGATION_IA_PASS');
 }
 

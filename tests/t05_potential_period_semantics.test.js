@@ -63,6 +63,12 @@ function createMockElement(id = '', classes = []) {
         classList: {
             add: (c) => classSet.add(c),
             remove: (c) => classSet.delete(c),
+            toggle: (c, force) => {
+                const shouldAdd = force === undefined ? !classSet.has(c) : Boolean(force);
+                if (shouldAdd) classSet.add(c);
+                else classSet.delete(c);
+                return shouldAdd;
+            },
             contains: (c) => classSet.has(c)
         },
         querySelectorAll: () => [],
@@ -144,6 +150,9 @@ function setupHubEnv(customHandlers = {}) {
 
     const periodWrap = createMockElement('', ['fpt-fin-period-wrap']);
     const periodSelect = createMockElement('fptFinPeriodSelect', ['fpt-fin-period-select']);
+    periodSelect.parentNode.insertBefore = (newNode) => {
+        if (newNode.id === 'fptFinPeriodSnapshotBadge') snapshotBadge = newNode;
+    };
     periodSelect.value = '7d';
     const statusSelect = createMockElement('fptFinStatusSelect', ['fpt-fin-period-select']);
     const curSelect = createMockElement('fptFinCurrencySelect', ['fpt-fin-period-select']);
@@ -187,14 +196,7 @@ function setupHubEnv(customHandlers = {}) {
             querySelector: (sel) => containerEl.querySelector(sel),
             querySelectorAll: (sel) => containerEl.querySelectorAll(sel),
             getElementById: (id) => containerEl.querySelector('#' + id),
-            createElement: (tag) => {
-                const el = createMockElement('', [tag]);
-                if (tag === 'div') {
-                    // capture snapshotBadge when created
-                    snapshotBadge = el;
-                }
-                return el;
-            },
+            createElement: (tag) => createMockElement('', [tag]),
             body: { appendChild: () => {} },
             head: { appendChild: () => {} },
             addEventListener: () => {},

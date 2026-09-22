@@ -15,10 +15,11 @@ assert.match(hub, /opens-up/, 'custom popup should avoid clipping near the botto
 assert.match(hub, /ArrowDown[\s\S]*ArrowUp[\s\S]*Home[\s\S]*End/, 'custom dropdown must support keyboard navigation');
 
 assert.match(css, /\.fpt-fin-select-dropdown\s*\{[\s\S]*?border-radius:\s*14px/, 'dropdown panel must be a rounded rectangle');
-assert.match(css, /\.fpt-fin-select-list::-webkit-scrollbar-thumb\s*\{[\s\S]*?border-radius:\s*999px/, 'scroll thumb must be oval');
-assert.match(css, /\.fpt-fin-select-list\s*\{[\s\S]*?max-height:\s*264px/, 'dropdown must scroll instead of growing indefinitely');
+assert.match(css, /\.fpt-fin-select-scrollbar-thumb\s*\{[\s\S]*?border-radius:\s*999px/, 'scroll thumb must be oval');
+assert.match(css, /\.fpt-fin-select-list\s*\{[\s\S]*?max-height:\s*240px/, 'dropdown must scroll instead of growing indefinitely');
 assert.match(css, /\.fpt-fin-select-shell > select\.fpt-fin-native-select/, 'native select stays hidden as the data source');
 assert.match(css, /\.fpt-fin-select-option\.is-selected/, 'selected option needs a dedicated state');
+assert.match(css, /\.fpt-fin-filterbar\s*\{[^}]*position:\s*relative;[^}]*z-index:\s*2;/, 'filterbar must sit above the transformed Finance pane so dropdown options receive clicks');
 
 new Function(hub);
 console.log('FINANCE_CUSTOM_SELECT_DROPDOWN_PASS');

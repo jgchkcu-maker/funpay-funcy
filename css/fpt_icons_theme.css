@@ -200,7 +200,7 @@ h3 .material-symbols-rounded {
 /* The original rules animated transform + box-shadow + background together, which causes
    visible jank on hover and tab switches. Restrict transitions to cheap GPU-friendly props
    (background-color, border-color, color, opacity) and drop transform/box-shadow animations. */
-.fp-tools-popup button,
+.fp-tools-popup button:not(.fpt-nav-group-toggle),
 .fp-tools-popup .btn,
 .fp-tools-nav li a,
 .fp-tools-nav li[data-page] a {
@@ -1429,13 +1429,14 @@ button.add-image-btn .material-symbols-rounded {
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    padding: 2px 0 10px;
     scrollbar-width: thin;
 }
 
 .fp-tools-nav .fpt-nav-groups {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 5px;
     min-width: 0;
 }
 
@@ -1446,32 +1447,38 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-nav .fpt-nav-group-toggle {
     width: 100%;
     min-width: 0;
-    min-height: 36px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 8px;
+    padding: 9px 10px;
     border: 1px solid transparent;
-    border-radius: 9px;
+    border-radius: 10px;
     background: transparent;
     color: var(--fptm-muted, #9ea3b5);
     box-shadow: none;
     font: inherit;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     text-align: left;
     cursor: pointer;
-    transition: background .18s ease, color .18s ease, border-color .18s ease;
+    transition: background-color .24s cubic-bezier(.22,1,.36,1), color .24s cubic-bezier(.22,1,.36,1), border-color .24s cubic-bezier(.22,1,.36,1);
 }
 
-.fp-tools-nav .fpt-nav-group-toggle:hover,
-.fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {
+.fp-tools-nav .fpt-nav-group-toggle:hover {
     background: var(--fptm-hover, rgba(255,255,255,.055));
     color: var(--fptm-text, #e9eaf0);
 }
 
 .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {
-    color: var(--fptm-accent, #1b75bb);
+    background: transparent !important;
+    border-color: transparent;
+    color: var(--fptm-text, #e9eaf0);
+}
+
+.fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle:hover {
+    background: var(--fptm-hover, rgba(255,255,255,.055)) !important;
+    color: var(--fptm-text, #e9eaf0);
 }
 
 .fp-tools-nav .fpt-nav-group-icon {
@@ -1492,7 +1499,7 @@ button.add-image-btn .material-symbols-rounded {
     margin-left: auto;
     font-size: 17px;
     color: inherit;
-    transition: transform .18s cubic-bezier(.22,1,.36,1);
+    transition: transform .24s cubic-bezier(.22,1,.36,1);
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-chevron {
@@ -1503,7 +1510,7 @@ button.add-image-btn .material-symbols-rounded {
     display: grid;
     grid-template-rows: 0fr;
     min-height: 0;
-    transition: grid-template-rows .2s cubic-bezier(.22,1,.36,1);
+    transition: grid-template-rows .24s cubic-bezier(.22,1,.36,1);
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse {
@@ -1514,7 +1521,12 @@ button.add-image-btn .material-symbols-rounded {
     min-height: 0;
     overflow: hidden;
     display: block;
-    padding: 0 0 2px;
+    padding: 0;
+    transition: padding .24s cubic-bezier(.22,1,.36,1);
+}
+
+.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items {
+    padding: 2px 0 6px;
 }
 
 .fp-tools-nav .fpt-nav-child {
@@ -1529,6 +1541,17 @@ button.add-image-btn .material-symbols-rounded {
     opacity: 0;
     pointer-events: none;
     overflow: hidden;
+}
+
+.fp-tools-nav .fpt-nav-child a {
+    min-height: 36px;
+    padding: 7px 10px 7px 32px;
+    border-radius: 10px !important;
+}
+
+.fp-tools-nav .fpt-nav-child.active a {
+    background: var(--fptm-accent-soft, rgba(27,117,187,.14)) !important;
+    border-color: var(--fptm-accent-border, rgba(27,117,187,.35)) !important;
 }
 
 .fp-tools-nav .fpt-nav-child a::before {
@@ -1551,6 +1574,7 @@ button.add-image-btn .material-symbols-rounded {
     .fp-tools-nav .fpt-nav-group-toggle,
     .fp-tools-nav .fpt-nav-group-chevron,
     .fp-tools-nav .fpt-nav-group-collapse,
+    .fp-tools-nav .fpt-nav-group-items,
     .fp-tools-nav .fpt-nav-child {
         transition-duration: .01ms !important;
     }

@@ -11,7 +11,7 @@ assert.match(popup, /id="fptFinProfitCostWarning"[\s\S]*?fpt-fin-profit-cost-war
 assert.match(hub, /function renderProfitMissingCostWarning\(pane, totals, currency\)/, 'missing-cost warning renderer must exist');
 assert.match(hub, /const shouldShow = eligible > 0 && known === 0;/, 'warning must appear only when there are eligible orders but zero usable cost bases');
 assert.match(hub, /Нет заказов с указанной себестоимостью/, 'warning must explain the missing cost basis');
-assert.match(hub, /Прибыль, маржинальность и ROI/, 'warning must explain which metrics cannot be calculated');
+assert.match(hub, /прибыль, маржинальность и ROI/i, 'warning must explain which metrics cannot be calculated');
 assert.match(hub, /currencyMismatchCount/, 'warning must distinguish currency mismatch from truly missing cost basis');
 
 const chartStart = hub.indexOf('function renderProfitChart');
