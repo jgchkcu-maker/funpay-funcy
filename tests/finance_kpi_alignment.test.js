@@ -7,7 +7,7 @@ const css = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8'
 const popup = fs.readFileSync(path.join(ROOT, 'content', 'ui', 'main_popup.js'), 'utf8').replace(/\r\n/g, '\n');
 const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
 
-const kpiCards = popup.match(/class="fpt-fin-card fpt-fin-kpi-card(?: fpt-fin-overview-kpi)?"/g) || [];
+const kpiCards = popup.match(/class="fpt-fin-card fpt-fin-kpi-card"/g) || [];
 assert.equal(kpiCards.length, 28, 'All six Finance metric groups must keep the shared KPI card contract');
 
 assert.match(

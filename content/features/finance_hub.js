@@ -4031,28 +4031,6 @@
         });
     }
 
-    function bindOverviewKpiActions(pane) {
-        if (!pane) return;
-
-        pane.querySelectorAll('.fpt-fin-overview-kpi[data-finance-overview-target]').forEach(card => {
-            if (card.dataset.fptKpiBound === 'true') return;
-            card.dataset.fptKpiBound = 'true';
-
-            const openTarget = () => {
-                const target = card.dataset.financeOverviewTarget;
-                if (!['sales', 'profit', 'potential'].includes(target) || target === state.activeSubtab) return;
-                onSubtabChange(target, state.activeSubtab);
-            };
-
-            card.addEventListener('click', openTarget);
-            card.addEventListener('keydown', event => {
-                if (event.key !== 'Enter' && event.key !== ' ') return;
-                event.preventDefault();
-                openTarget();
-            });
-        });
-    }
-
     async function renderOverviewSubtab(forceReload) {
         const pane = state.container && state.container.querySelector('.fpt-fin-tab-pane[data-subtab="overview"]');
         if (!pane) return;
@@ -4213,7 +4191,6 @@
         renderOverviewTopCategories(pane, data.sales, data.salesAgg, primaryCurrency);
         renderOverviewOperations(pane, data.operations, primaryCurrency);
         bindOverviewChartToggles(pane);
-        bindOverviewKpiActions(pane);
         await updateLastUpdatedText('overview');
     }
 
