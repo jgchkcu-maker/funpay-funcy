@@ -9674,6 +9674,92 @@ textarea.fp-cw-input { line-height:1.4; }
     min-width: 0;
 }
 
+/* Overview KPI cards are compact navigation points into the detailed Finance tabs. */
+.fpt-fin-overview-kpi {
+    position: relative;
+    cursor: pointer;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+
+.fpt-fin-overview-kpi:hover {
+    transform: translateY(-2px);
+    border-color: var(--fptm-accent-border, rgba(27, 117, 187, .35));
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .09);
+}
+
+.fpt-fin-overview-kpi:focus-visible {
+    outline: 2px solid var(--fptm-accent, var(--fpt-accent, #1b75bb));
+    outline-offset: 2px;
+}
+
+.fpt-fin-kpi-icon {
+    order: -1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 34px !important;
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 19px !important;
+}
+
+.fpt-fin-kpi-icon--revenue,
+.fpt-fin-kpi-icon--potential-revenue {
+    color: #159b6b !important;
+    background: rgba(74, 222, 128, .16);
+}
+
+.fpt-fin-kpi-icon--profit,
+.fpt-fin-kpi-icon--potential-profit {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+    background: color-mix(in srgb, var(--fptm-accent, var(--fpt-accent, #1b75bb)) 14%, transparent);
+}
+
+.fpt-fin-kpi-icon--orders {
+    color: #d89000 !important;
+    background: rgba(250, 204, 21, .18);
+}
+
+.fpt-fin-kpi-icon--average {
+    color: #796cf1 !important;
+    background: rgba(167, 139, 250, .16);
+}
+
+.fpt-fin-kpi-icon--cost {
+    color: #e05e62 !important;
+    background: rgba(248, 113, 113, .15);
+}
+
+.fpt-fin-kpi-icon--offers {
+    color: #258ed0 !important;
+    background: rgba(96, 165, 250, .15);
+}
+
+.fpt-fin-kpi-arrow {
+    margin-left: auto;
+    color: var(--fptm-faint, #6f748f) !important;
+    font-size: 18px !important;
+    transition: transform .18s ease, color .18s ease;
+}
+
+.fpt-fin-overview-kpi:hover .fpt-fin-kpi-arrow {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb)) !important;
+    transform: translateX(2px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fpt-fin-overview-kpi,
+    .fpt-fin-kpi-arrow {
+        transition-duration: .01ms !important;
+    }
+
+    .fpt-fin-overview-kpi:hover,
+    .fpt-fin-overview-kpi:hover .fpt-fin-kpi-arrow {
+        transform: none;
+    }
+}
+
 /*
  * KPI metric rows must share the same internal rhythm on desktop/tablet.
  * Titles are allowed to wrap, but a one-line title must not pull its value
