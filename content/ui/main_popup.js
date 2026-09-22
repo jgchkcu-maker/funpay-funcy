@@ -78,7 +78,14 @@ function createMainPopup() {
             <h2 class="fp-tools-title-wrap"><span class="fp-tools-site-link">FunPay Funcy</span><button type="button" id="fptAccentBtn" class="fpt-accent-btn" title="Цвет акцента" aria-label="Цвет акцента"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.36-.6-.36-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="15" cy="8" r="1.1" fill="currentColor"/><circle cx="16.8" cy="12" r="1.1" fill="currentColor"/></svg><input type="color" id="fptAccentInput" class="fpt-accent-input" value="#1b75bb" aria-hidden="true" tabindex="-1"></button></h2>
             <div class="fp-tools-social">
             </div>
-            <button class="close-btn" aria-label="Закрыть"></button>
+            <button type="button" class="close-btn" aria-label="Закрыть">
+                <span class="close-btn__surface" aria-hidden="true">
+                    <svg class="close-btn__icon" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.25 2.25L9.75 9.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                        <path d="M9.75 2.25L2.25 9.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                    </svg>
+                </span>
+            </button>
         </div>
         <div class="fp-tools-body">
             <nav class="fp-tools-nav">
@@ -1925,12 +1932,21 @@ const FPT_MENU_THEME_CSS = `
 }
 .fp-tools-popup.fptm-themed .fp-tools-social-btn:hover{ transform:translateY(-2px); background:var(--fptm-accent-soft); }
 .fp-tools-popup.fptm-themed .fp-tools-social-ico{ width:22px; height:22px; display:block; object-fit:contain; }
-.fp-tools-popup.fptm-themed .close-btn{
-    background:var(--fptm-surface) !important; color:var(--fptm-muted) !important;
-    border:1px solid var(--fptm-border) !important; box-shadow:none !important;
+.fp-tools-popup.fptm-themed > .fp-tools-header .close-btn{
+    background:transparent !important;
+    border:0 !important;
+    box-shadow:none !important;
+    color:var(--fpt-close-icon) !important;
 }
-.fp-tools-popup.fptm-themed .close-btn:hover{ background:var(--fptm-hover) !important; color:var(--fptm-text) !important; }
-.fp-tools-popup.fptm-themed .close-btn::after{ color:inherit !important; }
+.fp-tools-popup.fptm-themed > .fp-tools-header .close-btn:hover{
+    background:transparent !important;
+    box-shadow:none !important;
+    color:var(--fpt-close-icon-hover) !important;
+}
+.fp-tools-popup.fptm-themed > .fp-tools-header .close-btn:active{
+    background:transparent !important;
+    box-shadow:none !important;
+}
 
 /* ─── навигация ──────────────────────────────────────────────────────────── */
 .fp-tools-popup.fptm-themed .fp-tools-nav{
