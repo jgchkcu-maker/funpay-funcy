@@ -81,7 +81,7 @@
 
     function notify(text, isError) {
         if (typeof showNotification === 'function') { showNotification(text, !!isError); return; }
-        console[isError ? 'error' : 'log']('FP Tools: ' + text);
+        console[isError ? 'error' : 'log']('FunPay Funcy: ' + text);
     }
 
     // Берёт фон/текст у самой страницы, чтобы окно совпадало с темой FunPay
@@ -732,7 +732,7 @@
             }
             if (text) await sendImageReliable({ action: 'fptSendChatText', chatId, text });
         } catch (e) {
-            console.error('FP Tools: ошибка отправки', e);
+            console.error('FunPay Funcy: ошибка отправки', e);
             notify('Ошибка при отправке: ' + e.message, true);
         } finally {
             // FIX 2.8.1: временный пузырь снимаем ВСЕГДА (даже при исключении),

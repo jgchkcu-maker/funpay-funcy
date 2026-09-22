@@ -1,5 +1,5 @@
 /**
- * FunPay Tools — Cost Basis Store (T04)
+ * FunPay Funcy — Cost Basis Store (T04)
  *
  * Локальное CRUD-хранилище себестоимости:
  * - Постоянные записи: chrome.storage.local['fpToolsCostBasis']

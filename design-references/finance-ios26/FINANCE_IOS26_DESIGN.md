@@ -2,7 +2,7 @@
 
 ## Direction
 
-The Finance Hub is redesigned as a calm desktop analytics workspace inside FP Tools:
+The Finance Hub is redesigned as a calm desktop analytics workspace inside FunPay Funcy:
 
 - Liquid Glass is reserved for navigation, segmented controls, filters, and transient actions.
 - Charts, tables, and KPI data use standard high-contrast surfaces instead of glass-on-glass cards.
@@ -89,4 +89,4 @@ Keep the existing controller selectors and data contracts in `content/features/f
 
 ## Evidence note
 
-The current live extension could not be opened in the Codex in-app browser during this pass because no browser tab or loaded extension instance was available. The redesign is grounded in the inspected source markup, Finance Hub controller, CSS, existing UI/UX fix pack, and the existing FP Tools navigation reference.
+The current live extension could not be opened in the Codex in-app browser during this pass because no browser tab or loaded extension instance was available. The redesign is grounded in the inspected source markup, Finance Hub controller, CSS, existing UI/UX fix pack, and the existing FunPay Funcy navigation reference.

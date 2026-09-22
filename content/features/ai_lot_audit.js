@@ -51,7 +51,7 @@ function robustParseObject(text) {
     } catch (_) { return null; }
 }
 
-// content/features/ai_lot_audit.js - FunPay Tools 2.9 (full rewrite)
+// content/features/ai_lot_audit.js - FunPay Funcy 2.9 (full rewrite)
 // Survey-style audit: AI generates ~40 questions, user answers, AI gives recommendations.
 // Question types: yesno, choice, rating, text, number
 

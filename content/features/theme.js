@@ -104,7 +104,7 @@ const DEFAULT_THEME = {
     scrollbarThumbColor: '#555555',
     scrollbarTrackColor: '#222222',
     scrollbarWidth: 8,
-    // Прозрачное меню FunPay Tools
+    // Прозрачное меню FunPay Funcy
     menuTransparent: false,
     menuTintColor: '#2a1033',   // тёмно-пурпурный
     menuOpacity: 3,             // %
@@ -497,7 +497,7 @@ async function randomizeTheme() {
         await updateThemePreview();
         showNotification('Тема рандомизирована! ✨');
     } catch (error) {
-        console.error('FP Tools: Error randomizing theme:', error);
+        console.error('FunPay Funcy: Error randomizing theme:', error);
         showNotification('Ошибка при рандомизации темы.', true);
     }
 }
@@ -818,13 +818,13 @@ function setupThemeCustomizationHandlers() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// Прозрачное меню FunPay Tools
+// Прозрачное меню FunPay Funcy
 // ════════════════════════════════════════════════════════════════════════════
 
 // Применяет настройки прозрачности к окну .fp-tools-popup.
 // Может принять явные значения (из контролов) - иначе читает из storage.
 //
-// FP Tools: по просьбе пользователя меню больше НЕ делается прозрачным поверх
+// FunPay Funcy: по просьбе пользователя меню больше НЕ делается прозрачным поверх
 // темы (это давало нечитаемый результат и артефакты). Теперь меню всегда
 // сплошное и красится авто-темой (fptm-themed): светлая тема сайта → белое меню,
 // тёмная → тёмно-серое. Поэтому здесь мы принудительно снимаем режим прозрачности.
@@ -986,7 +986,7 @@ async function applyFptTextOutline(override) {
     const liveTranspEl = document.getElementById('fptMenuTransparentEnabled');
     const menuTransparent = liveTranspEl ? liveTranspEl.checked : !!s.menuTransparent;
 
-    // Контур работает ТОЛЬКО в меню FP Tools и ТОЛЬКО когда включено прозрачное меню.
+    // Контур работает ТОЛЬКО в меню FunPay Funcy и ТОЛЬКО когда включено прозрачное меню.
     if (!s.textOutlineEnabled || !menuTransparent) {
         if (styleEl) styleEl.remove();
         return;

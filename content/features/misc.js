@@ -385,7 +385,7 @@ function initializeToolsPopup() {
                 showNotification('Настройки сохранены!');
             }
         } catch (error) {
-            console.error('FP Tools: Ошибка при сохранении настроек:', error);
+            console.error('FunPay Funcy: Ошибка при сохранении настроек:', error);
             if (!silent) showNotification('Ошибка при сохранении настроек.', true);
         }
     };
@@ -527,7 +527,7 @@ function initializeToolsPopup() {
     if (typeof initializeNotes === 'function') initializeNotes();
 
     popup.dataset.initialized = 'true';
-    console.log('FP Tools Popup Initialized.');
+    console.log('FunPay Funcy Popup Initialized.');
 }
 
 function logToAutoBumpConsole(message) {
@@ -759,7 +759,7 @@ function initializeMarkAllAsRead() {
                     await fetch(chatUrl);
                     processedCount++;
                 } catch (error) {
-                    console.error(`FP Tools: Ошибка при "посещении" чата ${nodeId} для прочтения`, error);
+                    console.error(`FunPay Funcy: Ошибка при "посещении" чата ${nodeId} для прочтения`, error);
                     // We don't re-add the nodeId to the list to avoid getting stuck on a failing one.
                 }
 

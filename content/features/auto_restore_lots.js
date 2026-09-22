@@ -46,7 +46,7 @@ async function checkAndRestoreLots() {
                     deliveryConfig.autoDisableEnabled !== false) {
                     await toggleLotActive(lot.id, lot.nodeId, false, d['csrf-token']);
                     showNotification(`Лот "${lot.title}" деактивирован: товары закончились`, false);
-                    console.log(`FP Tools AutoDisable: деактивирован лот ${lot.id}`);
+                    console.log(`FunPay Funcy AutoDisable: деактивирован лот ${lot.id}`);
                 }
 
                 
@@ -54,16 +54,16 @@ async function checkAndRestoreLots() {
                     deliveryConfig.autoRestoreEnabled !== false) {
                     await toggleLotActive(lot.id, lot.nodeId, true, d['csrf-token']);
                     showNotification(`Лот "${lot.title}" восстановлен: товары пополнены`, false);
-                    console.log(`FP Tools AutoRestore: восстановлен лот ${lot.id}`);
+                    console.log(`FunPay Funcy AutoRestore: восстановлен лот ${lot.id}`);
                 }
             } else if (fpToolsAutoRestoreEnabled && !isActive) {
                 
                 await toggleLotActive(lot.id, lot.nodeId, true, d['csrf-token']);
-                console.log(`FP Tools AutoRestore: глобальное восстановление лота ${lot.id}`);
+                console.log(`FunPay Funcy AutoRestore: глобальное восстановление лота ${lot.id}`);
             }
         }
     } catch (e) {
-        console.error('FP Tools AutoRestore: ошибка', e.message);
+        console.error('FunPay Funcy AutoRestore: ошибка', e.message);
     }
 }
 

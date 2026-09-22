@@ -1,8 +1,8 @@
-// background/background.js - FunPay Tools 2.8
+// background/background.js - FunPay Funcy 2.8
 
-import './sales_db.js'; // FP Tools: IndexedDB-хранилище заказов (self.FPTSalesDB)
-import './purchases_db.js'; // FP Tools: IndexedDB-хранилище покупок (self.FPTPurchasesDB)
-import './finance_db.js'; // FP Tools: IndexedDB-хранилище финансов (self.FPTFinanceDB)
+import './sales_db.js'; // FunPay Funcy: IndexedDB-хранилище заказов (self.FPTSalesDB)
+import './purchases_db.js'; // FunPay Funcy: IndexedDB-хранилище покупок (self.FPTPurchasesDB)
+import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище финансов (self.FPTFinanceDB)
 import { fetchAIResponse, fetchAILotGeneration, fetchAITranslation, fetchAIImageGeneration } from './ai.js';
 import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump, runBumpCycle } from './autobump.js';
 import { runAutoResponderCycle, resetAutoResponderState } from './autoresponder.js';
@@ -89,7 +89,7 @@ async function runSalesUpdateCycle() {
         throw new Error("Обновление продаж уже выполняется.");
     }
     _salesCycleRunning = true;
-    console.log("FP Tools: Запуск полного цикла сбора статистики продаж...");
+    console.log("FunPay Funcy: Запуск полного цикла сбора статистики продаж...");
     try {
         await chrome.storage.local.set({ fpToolsSalesCollecting: true });
         // Однократно переносим старые данные из storage.local в IndexedDB
@@ -165,7 +165,7 @@ async function runSalesUpdateCycle() {
                     await FPTSalesDB.putOrders(newOrders);
                     firstOrderId = newOrders[0].orderId;
                     await commitCursorMeta(firstOrderId, undefined);
-                    console.log(`FP Tools: Добавлено ${newOrders.length} новых заказов сверху.`);
+                    console.log(`FunPay Funcy: Добавлено ${newOrders.length} новых заказов сверху.`);
                 } else {
                     newOrdersFoundInCycle = false;
                 }
@@ -189,7 +189,7 @@ async function runSalesUpdateCycle() {
                 firstOrderId = orders[0].orderId;
                 lastOrderId = orders[orders.length - 1].orderId;
                 await commitCursorMeta(firstOrderId, lastOrderId);
-                console.log(`FP Tools: Инициализация статистики с ${orders.length} заказами.`);
+                console.log(`FunPay Funcy: Инициализация статистики с ${orders.length} заказами.`);
                 continueToken = nextOrderId;
             } else {
                 continueToken = null;
@@ -203,7 +203,7 @@ async function runSalesUpdateCycle() {
         while (continueToken) {
             const { nextOrderId, orders } = await fetchAndParseSales(continueToken);
             if (!orders || orders.length === 0) {
-                console.log("FP Tools: Достигнут конец истории заказов.");
+                console.log("FunPay Funcy: Достигнут конец истории заказов.");
                 break;
             }
 
@@ -219,21 +219,21 @@ async function runSalesUpdateCycle() {
                 lastOrderId = orders[orders.length - 1].orderId;
                 await commitCursorMeta(undefined, lastOrderId);
                 const total = await FPTSalesDB.count();
-                console.log(`FP Tools: Добавлено ${newOrdersOnPageCount} старых заказов. Всего: ${total}.`);
+                console.log(`FunPay Funcy: Добавлено ${newOrdersOnPageCount} старых заказов. Всего: ${total}.`);
                 _emptyPages = 0;
             } else {
                 _emptyPages++;
                 lastOrderId = orders[orders.length - 1].orderId;
                 await commitCursorMeta(undefined, lastOrderId);
-                console.log(`FP Tools: Страница без новых заказов (${_emptyPages}/${MAX_EMPTY_PAGES}).`);
+                console.log(`FunPay Funcy: Страница без новых заказов (${_emptyPages}/${MAX_EMPTY_PAGES}).`);
                 if (_emptyPages >= MAX_EMPTY_PAGES) {
-                    console.log("FP Tools: Несколько страниц подряд без новых заказов - остановка.");
+                    console.log("FunPay Funcy: Несколько страниц подряд без новых заказов - остановка.");
                     break;
                 }
             }
 
             if (!nextOrderId || nextOrderId === continueToken || _seenTokens.has(nextOrderId)) {
-                console.log("FP Tools: continue-токен не меняется/повторяется - конец пагинации.");
+                console.log("FunPay Funcy: continue-токен не меняется/повторяется - конец пагинации.");
                 break;
             }
             _seenTokens.add(nextOrderId);
@@ -247,17 +247,17 @@ async function runSalesUpdateCycle() {
         await FPTSalesDB.setMeta('lastUpdate', updatedAt);
         await chrome.storage.local.set({ fpToolsSalesLastUpdate: updatedAt });
 
-        console.log(`FP Tools: Сбор статистики продаж завершен, заказов: ${count}.`);
+        console.log(`FunPay Funcy: Сбор статистики продаж завершен, заказов: ${count}.`);
         return { updatedAt, count };
     } catch (e) {
-        console.error(`FP Tools: Ошибка в цикле сбора статистики продаж: ${e.message}`);
+        console.error(`FunPay Funcy: Ошибка в цикле сбора статистики продаж: ${e.message}`);
         throw e;
     } finally {
         _salesCycleRunning = false;
         try {
             await chrome.storage.local.set({ fpToolsSalesCollecting: false });
         } catch (cleanupError) {
-            console.error(`FP Tools: Не удалось сбросить флаг сбора продаж: ${cleanupError.message}`);
+            console.error(`FunPay Funcy: Не удалось сбросить флаг сбора продаж: ${cleanupError.message}`);
         }
     }
 }
@@ -267,7 +267,7 @@ async function runFinanceUpdateCycle() {
         throw new Error("Обновление финансов уже выполняется.");
     }
     _financeCycleRunning = true;
-    console.log("FP Tools: Запуск сбора статистики финансов...");
+    console.log("FunPay Funcy: Запуск сбора статистики финансов...");
     try {
         await chrome.storage.local.set({ fpToolsFinanceCollecting: true });
         const auth = await getAuthDetailsForBackground();
@@ -322,7 +322,7 @@ async function runFinanceUpdateCycle() {
 
         for (let page = 0; page < MAX_PAGES; page++) {
             if (continueToken && seenTokens.has(String(continueToken))) {
-                console.warn('FP Tools: финансовая пагинация вернула ранее использованный continue-токен; считаем историю завершённой.');
+                console.warn('FunPay Funcy: финансовая пагинация вернула ранее использованный continue-токен; считаем историю завершённой.');
                 collectionComplete = true;
                 break;
             }
@@ -364,7 +364,7 @@ async function runFinanceUpdateCycle() {
             if (dts.length) {
                 const newest = new Date(Math.max(...dts)).toISOString().slice(0, 10);
                 const oldest = new Date(Math.min(...dts)).toISOString().slice(0, 10);
-                console.log(`FP Tools: финансы стр.${page + 1} — ${txns.length} операц. (новых ${newOnPage}), ${newest}…${oldest}, собрано уникальных ${collectedById.size}`);
+                console.log(`FunPay Funcy: финансы стр.${page + 1} — ${txns.length} операц. (новых ${newOnPage}), ${newest}…${oldest}, собрано уникальных ${collectedById.size}`);
             }
 
             // Пустой continue — штатный конец истории. FunPay может вернуть на
@@ -379,7 +379,7 @@ async function runFinanceUpdateCycle() {
             // перекрывающейся страницы. Данные уже собраны и дедуплицированы,
             // поэтому завершаем цикл без повторного запроса и сохраняем результат.
             if (String(nextId) === String(continueToken) || seenTokens.has(String(nextId))) {
-                console.warn('FP Tools: финансовая пагинация вернула повторный continue-токен; считаем историю завершённой.');
+                console.warn('FunPay Funcy: финансовая пагинация вернула повторный continue-токен; считаем историю завершённой.');
                 collectionComplete = true;
                 break;
             }
@@ -388,7 +388,7 @@ async function runFinanceUpdateCycle() {
             // новый continue-токен: продолжаем идти по курсору, а не объявляем
             // частичное обновление.
             if (page > 0 && newOnPage === 0) {
-                console.warn('FP Tools: финансы — страница содержит только уже известные операции; continue-токен изменился, продолжаем пагинацию.');
+                console.warn('FunPay Funcy: финансы — страница содержит только уже известные операции; continue-токен изменился, продолжаем пагинацию.');
             }
 
             // Одинаковый firstId сам по себе не означает цикл: страницы FunPay
@@ -414,17 +414,17 @@ async function runFinanceUpdateCycle() {
             fpToolsFinanceLastUpdate: now
         });
 
-        console.log(`FP Tools: Финансы собраны, операций: ${collected.length}.`);
+        console.log(`FunPay Funcy: Финансы собраны, операций: ${collected.length}.`);
         return { updatedAt: now, count: collected.length };
     } catch (e) {
-        console.error(`FP Tools: Ошибка в цикле сбора финансов: ${e.message}`);
+        console.error(`FunPay Funcy: Ошибка в цикле сбора финансов: ${e.message}`);
         throw e;
     } finally {
         _financeCycleRunning = false;
         try {
             await chrome.storage.local.set({ fpToolsFinanceCollecting: false });
         } catch (cleanupError) {
-            console.error(`FP Tools: Не удалось сбросить флаг сбора финансов: ${cleanupError.message}`);
+            console.error(`FunPay Funcy: Не удалось сбросить флаг сбора финансов: ${cleanupError.message}`);
         }
     }
 }
@@ -434,7 +434,7 @@ async function runPurchasesUpdateCycle() {
         throw new Error("Обновление покупок уже выполняется.");
     }
     _purchasesCycleRunning = true;
-    console.log("FP Tools: Запуск полного цикла сбора статистики покупок...");
+    console.log("FunPay Funcy: Запуск полного цикла сбора статистики покупок...");
     try {
         await chrome.storage.local.set({ fpToolsPurchasesCollecting: true });
         // Однократно переносим старые данные из storage.local в IndexedDB
@@ -508,7 +508,7 @@ async function runPurchasesUpdateCycle() {
                     await FPTPurchasesDB.putOrders(newOrders);
                     firstOrderId = newOrders[0].orderId;
                     await commitCursorMeta(firstOrderId, undefined);
-                    console.log(`FP Tools: Добавлено ${newOrders.length} новых покупок сверху.`);
+                    console.log(`FunPay Funcy: Добавлено ${newOrders.length} новых покупок сверху.`);
                 } else {
                     newOrdersFoundInCycle = false;
                 }
@@ -532,7 +532,7 @@ async function runPurchasesUpdateCycle() {
                 firstOrderId = orders[0].orderId;
                 lastOrderId = orders[orders.length - 1].orderId;
                 await commitCursorMeta(firstOrderId, lastOrderId);
-                console.log(`FP Tools: Инициализация статистики с ${orders.length} заказами.`);
+                console.log(`FunPay Funcy: Инициализация статистики с ${orders.length} заказами.`);
                 continueToken = nextOrderId;
             } else {
                 continueToken = null;
@@ -546,7 +546,7 @@ async function runPurchasesUpdateCycle() {
         while (continueToken) {
             const { nextOrderId, orders } = await fetchAndParseSales(continueToken);
             if (!orders || orders.length === 0) {
-                console.log("FP Tools: Достигнут конец истории заказов.");
+                console.log("FunPay Funcy: Достигнут конец истории заказов.");
                 break;
             }
 
@@ -562,21 +562,21 @@ async function runPurchasesUpdateCycle() {
                 lastOrderId = orders[orders.length - 1].orderId;
                 await commitCursorMeta(undefined, lastOrderId);
                 const total = await FPTPurchasesDB.count();
-                console.log(`FP Tools: Добавлено ${newOrdersOnPageCount} старых покупок. Всего: ${total}.`);
+                console.log(`FunPay Funcy: Добавлено ${newOrdersOnPageCount} старых покупок. Всего: ${total}.`);
                 _emptyPages = 0;
             } else {
                 _emptyPages++;
                 lastOrderId = orders[orders.length - 1].orderId;
                 await commitCursorMeta(undefined, lastOrderId);
-                console.log(`FP Tools: Страница без новых покупок (${_emptyPages}/${MAX_EMPTY_PAGES}).`);
+                console.log(`FunPay Funcy: Страница без новых покупок (${_emptyPages}/${MAX_EMPTY_PAGES}).`);
                 if (_emptyPages >= MAX_EMPTY_PAGES) {
-                    console.log("FP Tools: Несколько страниц подряд без новых покупок - остановка.");
+                    console.log("FunPay Funcy: Несколько страниц подряд без новых покупок - остановка.");
                     break;
                 }
             }
 
             if (!nextOrderId || nextOrderId === continueToken || _seenTokens.has(nextOrderId)) {
-                console.log("FP Tools: continue-токен не меняется/повторяется - конец пагинации.");
+                console.log("FunPay Funcy: continue-токен не меняется/повторяется - конец пагинации.");
                 break;
             }
             _seenTokens.add(nextOrderId);
@@ -590,17 +590,17 @@ async function runPurchasesUpdateCycle() {
         await FPTPurchasesDB.setMeta('lastUpdate', updatedAt);
         await chrome.storage.local.set({ fpToolsPurchasesLastUpdate: updatedAt });
 
-        console.log(`FP Tools: Сбор статистики покупок завершен, покупок: ${count}.`);
+        console.log(`FunPay Funcy: Сбор статистики покупок завершен, покупок: ${count}.`);
         return { updatedAt, count };
     } catch (e) {
-        console.error(`FP Tools: Ошибка в цикле сбора статистики покупок: ${e.message}`);
+        console.error(`FunPay Funcy: Ошибка в цикле сбора статистики покупок: ${e.message}`);
         throw e;
     } finally {
         _purchasesCycleRunning = false;
         try {
             await chrome.storage.local.set({ fpToolsPurchasesCollecting: false });
         } catch (cleanupError) {
-            console.error(`FP Tools: Не удалось сбросить флаг сбора покупок: ${cleanupError.message}`);
+            console.error(`FunPay Funcy: Не удалось сбросить флаг сбора покупок: ${cleanupError.message}`);
         }
     }
 }
@@ -611,7 +611,7 @@ async function runPurchasesUpdateCycle() {
 
 // --- НАДЁЖНАЯ ФУНКЦИЯ АУТЕНТИФИКАЦИИ ---
 // 3.0: Upload an image to FunPay and send it to a chat via the runner - all in background.
-// Ported from FP Tools (Account.upload_image + Account.send_image).
+// Ported from FunPay Funcy (Account.upload_image + Account.send_image).
 async function fetchFreshCsrf() {
     const response = await fetch('https://funpay.com/', { credentials: 'include' });
     if (!response.ok) throw new Error(`csrf fetch: HTTP ${response.status}`);
@@ -642,7 +642,7 @@ async function refreshGoldenSealOnce() {
         try {
             await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
         } catch (e) {
-            console.warn('FP Tools: не удалось обновить golden_seal фоновым запросом:', e && e.message);
+            console.warn('FunPay Funcy: не удалось обновить golden_seal фоновым запросом:', e && e.message);
         } finally {
             await new Promise(r => setTimeout(r, 150));
         }
@@ -754,7 +754,7 @@ async function sendChatImageInBackground(chatId, dataUrl, chatName) {
 
     let res = await attemptSafe(false);
     if (res && res.retry) {
-        console.warn(`FP Tools: повтор загрузки (причина: "${res.where}"${res.networkErr ? ' / ' + res.networkErr : ''}).`);
+        console.warn(`FunPay Funcy: повтор загрузки (причина: "${res.where}"${res.networkErr ? ' / ' + res.networkErr : ''}).`);
         await ensureOffscreenDocument();
         res = await attemptSafe(true);
         if (res && res.retry) {
@@ -769,7 +769,7 @@ async function sendChatImageInBackground(chatId, dataUrl, chatName) {
 async function getAuthDetailsForBackground(force) {
     const goldenKeyCookie = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
     if (!goldenKeyCookie || !goldenKeyCookie.value) {
-        console.error("FP Tools: golden_key не найден.");
+        console.error("FunPay Funcy: golden_key не найден.");
         return {};
     }
     const golden_key = goldenKeyCookie.value;
@@ -795,7 +795,7 @@ async function getAuthDetailsForBackground(force) {
                     }
                 }
             } catch (e) {
-                console.warn(`FP Tools: appData из вкладки ${tab.id} недоступна.`);
+                console.warn(`FunPay Funcy: appData из вкладки ${tab.id} недоступна.`);
             }
         }
     }
@@ -804,7 +804,7 @@ async function getAuthDetailsForBackground(force) {
         const fresh = await fetchFreshCsrf();
         return { golden_key, phpsessid, ...fresh };
     } catch (e) {
-        console.error("FP Tools: свежий csrf недоступен.", e.message);
+        console.error("FunPay Funcy: свежий csrf недоступен.", e.message);
         return { golden_key, phpsessid };
     }
 }
@@ -829,7 +829,7 @@ async function tgFetchOrders(limit) {
         const arr = Array.isArray(orders) ? orders : [];
         return (limit && limit > 0) ? arr.slice(0, limit) : arr;
     } catch (e) {
-        console.error('FP Tools: tgFetchOrders error:', e.message);
+        console.error('FunPay Funcy: tgFetchOrders error:', e.message);
         return [];
     }
 }
@@ -974,7 +974,7 @@ async function runTelegramCheckCycle() {
     if (!cfg.enabled || !cfg.token) return;
 
     // 1) команды из бота
-    try { await telegramPollOnce(); } catch (e) { console.error('FP Tools: TG poll:', e.message); }
+    try { await telegramPollOnce(); } catch (e) { console.error('FunPay Funcy: TG poll:', e.message); }
 
     // 2) уведомления о новых сообщениях (если Discord-цикл не активен, тянем сами)
     if (cfg.notifyMessages) {
@@ -986,7 +986,7 @@ async function runTelegramCheckCycle() {
                 const chats = await tgFetchChatList();
                 if (chats.length) await telegramNotifyNewMessages(chats);
             }
-        } catch (e) { console.error('FP Tools: TG msg notify:', e.message); }
+        } catch (e) { console.error('FunPay Funcy: TG msg notify:', e.message); }
     }
 
     // 3) уведомления о новых заказах
@@ -994,7 +994,7 @@ async function runTelegramCheckCycle() {
         try {
             const orders = await tgFetchOrders(0);
             if (orders.length) await telegramNotifyNewOrders(orders);
-        } catch (e) { console.error('FP Tools: TG order notify:', e.message); }
+        } catch (e) { console.error('FunPay Funcy: TG order notify:', e.message); }
     }
 }
 
@@ -1025,7 +1025,7 @@ async function ensureOffscreenDocument() {
         return true;
     } catch (e) {
         if (String(e && e.message || '').includes('Only a single offscreen')) return true;
-        console.warn('FP Tools: не удалось создать offscreen-документ:', e && e.message);
+        console.warn('FunPay Funcy: не удалось создать offscreen-документ:', e && e.message);
         return false;
     }
 }
@@ -1132,7 +1132,7 @@ async function sendDiscordNotification(chat, settings) {
             description: chat.messageText.substring(0, 2000),
             color: 5814783,
             footer: {
-                text: `FP Tools • ${new Date().toLocaleTimeString()}`
+                text: `FunPay Funcy • ${new Date().toLocaleTimeString()}`
             }
         }]
     };
@@ -1144,12 +1144,12 @@ async function sendDiscordNotification(chat, settings) {
             body: JSON.stringify(payload)
         });
         if (!response.ok) {
-            console.error('FP Tools: Не удалось отправить сообщение в Discord, статус:', response.status);
+            console.error('FunPay Funcy: Не удалось отправить сообщение в Discord, статус:', response.status);
         } else {
-            console.log(`FP Tools: Уведомление о сообщении от ${chat.chatName} отправлено в Discord.`);
+            console.log(`FunPay Funcy: Уведомление о сообщении от ${chat.chatName} отправлено в Discord.`);
         }
     } catch (error) {
-        console.error('FP Tools: Ошибка при отправке сообщения в Discord:', error);
+        console.error('FunPay Funcy: Ошибка при отправке сообщения в Discord:', error);
     }
 }
 
@@ -1218,7 +1218,7 @@ async function runDiscordCheckCycle() {
         const parsedChats = await parseHtmlViaOffscreen(chatObject.data.html, 'parseChatList');
 
         // Telegram: уведомления о новых сообщениях (тот же источник, что и Discord).
-        try { await telegramNotifyNewMessages(parsedChats); } catch (e) { console.error('FP Tools: TG notify msgs:', e.message); }
+        try { await telegramNotifyNewMessages(parsedChats); } catch (e) { console.error('FunPay Funcy: TG notify msgs:', e.message); }
 
         // 3.0: stop Discord spam. Two fixes:
         //  (1) First-run seeding - if we've never recorded ids, just record current unread ids
@@ -1252,7 +1252,7 @@ async function runDiscordCheckCycle() {
         }
 
     } catch (e) {
-        console.error(`FP Tools: Ошибка в цикле проверки Discord: ${e.message}`);
+        console.error(`FunPay Funcy: Ошибка в цикле проверки Discord: ${e.message}`);
     }
 }
 
@@ -1440,7 +1440,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // 3.0: Background image send (ported from FP Tools upload_image + send_image).
+    // 3.0: Background image send (ported from FunPay Funcy upload_image + send_image).
     // Uploads the image to FunPay, then sends it via the runner with image_id - entirely
     // in the background, so it never touches the visible chat input.
     //
@@ -1860,7 +1860,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // FP Tools: построить форму создания лота из данных страницы КУПЛЕННОГО заказа.
+    // FunPay Funcy: построить форму создания лота из данных страницы КУПЛЕННОГО заказа.
     // На странице заказа нет offerId исходного лота, но есть nodeId (категория) и
     // тексты/автовыдача. Строим ту же форму категории, что и обычное клонирование,
     // и возвращаем { source, fields, csrf } в формате визарда openCloneWizard.
@@ -2335,7 +2335,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (tabId != null) chrome.tabs.reload(tabId);
                 sendResponse({ success: true });
             } catch (e) {
-                console.error('FP Tools: setGoldenKey error:', e);
+                console.error('FunPay Funcy: setGoldenKey error:', e);
                 sendResponse({ success: false, error: e.message });
             }
         })();
@@ -2367,7 +2367,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'telegramTest') {
         (async () => {
             try {
-                const r = await tgSendMessage('✅ FP Tools подключён к этому чату. Уведомления и управление работают.');
+                const r = await tgSendMessage('✅ FunPay Funcy подключён к этому чату. Уведомления и управление работают.');
                 sendResponse({ ok: !!(r && r.ok), error: r && r.description });
             } catch (e) {
                 sendResponse({ ok: false, error: e.message });
@@ -2912,6 +2912,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
 });
 
 chrome.runtime.onUpdateAvailable.addListener(function(details) {
-    console.log("FP Tools: доступно обновление до версии " + details.version + ". применение...");
+    console.log("FunPay Funcy: доступно обновление до версии " + details.version + ". применение...");
     chrome.runtime.reload();
 });

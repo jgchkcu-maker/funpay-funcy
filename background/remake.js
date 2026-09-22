@@ -1,6 +1,6 @@
-// background/remake.js - FunPay Tools 2.8
+// background/remake.js - FunPay Funcy 2.8
 // FIXED: auto_delivery no longer placed into "message after payment".
-//        FP Tools `answer` → order_msg, `secrets` stays as auto-delivery goods.
+//        FunPay Funcy `answer` → order_msg, `secrets` stays as auto-delivery goods.
 
 const dropZone    = document.getElementById('drop-zone');
 const fileInput   = document.getElementById('file-input');
@@ -66,7 +66,7 @@ async function handleFiles(files) {
                 // Support: array, { lots: [] }, { data: [] }, single object
                 if (!Array.isArray(raw)) {
                     raw = raw?.lots || raw?.data || raw?.items || (raw?.offer_id !== undefined ? [raw] : null);
-                    if (!raw) throw new Error('Неизвестный формат. Ожидается массив лотов FP Tools.');
+                    if (!raw) throw new Error('Неизвестный формат. Ожидается массив лотов FunPay Funcy.');
                 }
                 if (!raw.length) { log(`"${file.name}": лотов не найдено.`, 'error'); resolve([]); return; }
                 const converted = convertFormat(raw);
@@ -101,11 +101,11 @@ function convertFormat(cardinalLots) {
         // Reset offer_id so FunPay creates a new lot
         if (data.offer_id !== undefined) data.offer_id = '0';
 
-        // ── FIX: FP Tools field mapping ──────────────────────────────────
+        // ── FIX: FunPay Funcy field mapping ───────────────────────────────
         // `secrets`  = array of goods for auto-delivery  → keep as `secrets`
         // `answer`   = message sent after order payment  → maps to `order_msg`
         //
-        // BUG WAS: `answer` was leaking into auto_delivery section in FP Tools
+        // BUG WAS: `answer` was leaking into auto_delivery section in FunPay Funcy
         // because both used the same storage path.
         const hasSecrets = Array.isArray(data.secrets) && data.secrets.length > 0;
         const hasAnswer  = typeof data.answer === 'string' && data.answer.trim() !== '';

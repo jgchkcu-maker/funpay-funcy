@@ -1,4 +1,4 @@
-// content/features/order_enhancements.js - FunPay Tools 2.9
+// content/features/order_enhancements.js - FunPay Funcy 2.9
 // Unconfirmed balance in stats • "Request review" button • Sales period filter • Order type labels
 
 // ── 1. Unconfirmed balance display ──────────────────────────────────────────
@@ -47,7 +47,7 @@ function initSalesFilter() {
     if (!window.location.pathname.includes('/orders/trade')) return;
     if (document.getElementById('fp-sales-filter')) return;
 
-    // Wait for the FP Tools stats block to appear
+    // Wait for the FunPay Funcy stats block to appear
     const statsBlock = document.getElementById('fp-tools-sales-block') ||
                        document.querySelector('.fp-tools-sales, [id*="sales"]');
     if (!statsBlock) return;

@@ -5,7 +5,7 @@ export const BUMP_ALARM_NAME = 'fpToolsAutoBump';
 async function logToConsole(message) {
     const timestamp = new Date().toLocaleTimeString();
     const logMessage = `[${timestamp}] ${message}`;
-    console.log(`[FP Tools AutoBump] ${logMessage}`);
+    console.log(`[FunPay Funcy AutoBump] ${logMessage}`);
     try {
         const tabs = await chrome.tabs.query({ url: "*://funpay.com/*" });
         if (tabs.length > 0) {
@@ -81,7 +81,7 @@ async function getAuthDetails() {
             return { cookies, userId: auth.userId, csrfToken: auth.csrfToken };
         }
     } catch (e) {
-        console.warn('FP Tools AutoBump: homepage auth fallback failed:', e.message);
+        console.warn('FunPay Funcy AutoBump: homepage auth fallback failed:', e.message);
     }
 
     throw new Error("Не удалось получить данные авторизации (userId/csrf). Откройте вкладку FunPay или войдите заново.");

@@ -1,5 +1,5 @@
 /*
- * FP Tools — доступ к ПОКУПКАМ из CONTENT-скриптов.
+ * FunPay Funcy — доступ к ПОКУПКАМ из CONTENT-скриптов.
  *
  * ВАЖНО про IndexedDB и origin:
  * IndexedDB изолирован по origin. Service worker расширения и страница funpay.com —

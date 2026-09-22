@@ -1,5 +1,5 @@
-// content/features/settings_io.js - FunPay Tools 2.9
-// Экспорт и импорт ВСЕХ настроек FunPay Tools в файл .fpconfig
+// content/features/settings_io.js - FunPay Funcy 2.9
+// Экспорт и импорт ВСЕХ настроек FunPay Funcy в файл .fpconfig
 // Принцип: выгружаем всё из chrome.storage.local, КРОМЕ списка исключений
 // (аккаунты, токены, кэши и временное рантайм-состояние). Так новые фичи
 // попадают в бэкап автоматически, без правки списка.
@@ -79,7 +79,7 @@ async function exportSettings() {
         const dateStr  = new Date().toISOString().slice(0, 10);
         const a        = document.createElement('a');
         a.href         = url;
-        a.download     = `FunPayTools_config_${dateStr}.fpconfig`;
+        a.download     = `FunPay-Funcy_config_${dateStr}.fpconfig`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -98,7 +98,7 @@ async function importSettings(file) {
         const obj  = JSON.parse(text);
 
         if (obj._magic !== FP_CONFIG_MAGIC) {
-            throw new Error('Неверный формат файла. Выберите файл .fpconfig от FunPay Tools.');
+            throw new Error('Неверный формат файла. Выберите файл .fpconfig от FunPay Funcy.');
         }
 
         if (!obj.settings || typeof obj.settings !== 'object') {

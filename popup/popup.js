@@ -58,13 +58,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
     });
 
-    // ─── Telegram ────────────────────────────────────────────────────
-    document.getElementById('telegramBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        chrome.tabs.create({ url: 'https://t.me/FPTools' });
-        window.close();
-    });
-
     // ─── Review ──────────────────────────────────────────────────────
     document.getElementById('reviewBtn')?.addEventListener('click', (e) => {
         e.preventDefault();

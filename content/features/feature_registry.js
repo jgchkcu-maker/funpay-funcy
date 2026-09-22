@@ -321,7 +321,7 @@ const FPT_FEATURE_REGISTRY = [
     {
         id: 'sales_stats_expand',
         label: 'Кнопка «Показать ещё» в статистике',
-        desc: 'Строка «Показать ещё ▾» в блоке статистики FP Tools на странице продаж - разворачивает дополнительную статистику.',
+        desc: 'Строка «Показать ещё ▾» в блоке статистики FunPay Funcy на странице продаж - разворачивает дополнительную статистику.',
         group: 'Список лотов и профиль',
         selector: '#fpTools-stats-extra, #fpTools-stats-expand-btn',
         preview: { kind: 'html', html: '<div class="fpt-pv-expandrow"><span>Показать ещё</span><span>▾</span></div>' }

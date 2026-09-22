@@ -1,5 +1,5 @@
 /*
- * FP Tools — хранилище заказов в IndexedDB.
+ * FunPay Funcy — хранилище заказов в IndexedDB.
  *
  * Зачем: раньше все заказы лежали одним объектом в chrome.storage.local,
  * который ограничен ~10 МБ. На ~18800 заказах квота кончалась
@@ -299,10 +299,10 @@
                 await chrome.storage.local.remove(['fpToolsSalesData', 'fpToolsFirstOrderId', 'fpToolsLastOrderId']);
             } catch (_) {}
 
-            console.log(`FP Tools: перенесено ${orders.length} заказов из storage.local в IndexedDB. Квота освобождена.`);
+            console.log(`FunPay Funcy: перенесено ${orders.length} заказов из storage.local в IndexedDB. Квота освобождена.`);
             return orders.length;
         } catch (e) {
-            console.warn('FP Tools: миграция заказов в IndexedDB не удалась:', e && e.message);
+            console.warn('FunPay Funcy: миграция заказов в IndexedDB не удалась:', e && e.message);
             return 0;
         }
     }

@@ -1,6 +1,6 @@
 // content/features/export_studio.js
 // =============================================================================
-// FP Tools — СТУДИЯ ЭКСПОРТА (Export Studio)
+// FunPay Funcy — СТУДИЯ ЭКСПОРТА (Export Studio)
 //
 // Расширенный экспорт ПРОДАЖ, ПОКУПОК и ФИНАНСОВ в форматах XLSX, DOCX, PDF,
 // CSV, JSON. Пользователь сам выбирает: формат, визуальный стиль (тему),
@@ -224,7 +224,7 @@
 })();
 
 // =============================================================================
-//  FP Tools — Export Studio :: ГЕНЕРАТОРЫ ФОРМАТОВ + ДАТАСЕТЫ
+//  FunPay Funcy — Export Studio :: ГЕНЕРАТОРЫ ФОРМАТОВ + ДАТАСЕТЫ
 // =============================================================================
 (function () {
     'use strict';
@@ -344,7 +344,7 @@
             meta: {
                 title: opt.title, subtitle: opt.subtitle, kind: opt.kind,
                 generated: new Date().toISOString(), period: opt.periodLabel, count: rows.length,
-                source: 'FunPay Tools — Export Studio'
+                source: 'FunPay Funcy — Export Studio'
             },
             columns: cols.map(c => ({ key: c.key, label: c.label })),
             rows: rows.map(r => {
@@ -556,7 +556,7 @@
             });
         }
         if (opt.watermark) {
-            body.push(wpPara(wpText('Сгенерировано в FunPay Tools · Export Studio · ' + fmtDateTime(Date.now()), { sz: 16, color: 'A0A0A0' }), { spacing: 0, align: 'c' }));
+            body.push(wpPara(wpText('Сгенерировано в FunPay Funcy · Export Studio · ' + fmtDateTime(Date.now()), { sz: 16, color: 'A0A0A0' }), { spacing: 0, align: 'c' }));
         }
 
         const sect = land
@@ -703,7 +703,7 @@
             if (!opt.watermark && !opt.pageNumbers) return;
             ctx.fillStyle = '#b8b8c0';
             ctx.font = `${9 * scale}px Inter, Arial, sans-serif`;
-            if (opt.watermark) { ctx.textAlign = 'left'; ctx.fillText('FunPay Tools · Export Studio', M, H - 18 * scale); }
+            if (opt.watermark) { ctx.textAlign = 'left'; ctx.fillText('FunPay Funcy · Export Studio', M, H - 18 * scale); }
             if (opt.pageNumbers) { ctx.textAlign = 'right'; ctx.fillText('стр. ' + (pages.length + 1), W - M, H - 18 * scale); }
         }
 
@@ -832,7 +832,7 @@
 })();
 
 // =============================================================================
-//  FP Tools — Export Studio :: UI (модалка, кнопки, сбор данных)
+//  FunPay Funcy — Export Studio :: UI (модалка, кнопки, сбор данных)
 // =============================================================================
 (function () {
     'use strict';
@@ -1154,7 +1154,7 @@
                     <div class="fpt-es-opts">
                         <div class="fpt-es-opt on" data-opt="zebra"><span class="fpt-es-check"></span>Чередование строк (зебра)</div>
                         <div class="fpt-es-opt on" data-opt="totals"><span class="fpt-es-check"></span>Блок итогов</div>
-                        <div class="fpt-es-opt on" data-opt="watermark"><span class="fpt-es-check"></span>Подпись FunPay Tools</div>
+                        <div class="fpt-es-opt on" data-opt="watermark"><span class="fpt-es-check"></span>Подпись FunPay Funcy</div>
                         <div class="fpt-es-opt on" data-opt="pageNumbers" id="es-opt-pagenum"><span class="fpt-es-check"></span>Номера страниц (PDF)</div>
                     </div>
                     <div style="margin-top:10px;" class="fpt-es-rowflt" id="es-orient-wrap">
@@ -1733,7 +1733,7 @@
             meta: Object.assign({
                 dataset,
                 exportedAt: new Date().toISOString(),
-                source: 'FunPay Tools Finance Hub'
+                source: 'FunPay Funcy Finance Hub'
             }, meta || {}),
             totals: totals || null,
             items: items

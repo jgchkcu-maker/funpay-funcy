@@ -1,5 +1,5 @@
 /**
- * FunPay Tools — Cost Basis Editor for Existing & New Offers (T05A + T05B)
+ * FunPay Funcy — Cost Basis Editor for Existing & New Offers (T05A + T05B)
  *
  * Поле себестоимости и предпросмотр прибыли продавца на странице
  * редактирования или создания лота (/lots/offerEdit).

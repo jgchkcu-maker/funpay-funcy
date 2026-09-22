@@ -21,8 +21,8 @@ function initializeNotes() {
         clearTimeout(notesDebounceTimer);
         notesDebounceTimer = setTimeout(() => {
             chrome.storage.local.set({ fpToolsUserNotes: notesArea.value })
-                .then(() => console.log("FP Tools: Notes saved."))
-                .catch(err => console.error("FP Tools: Error saving notes:", err));
+                .then(() => console.log("FunPay Funcy: Notes saved."))
+                .catch(err => console.error("FunPay Funcy: Error saving notes:", err));
         }, 500); // Сохраняем через 500 мс после прекращения ввода
     });
 

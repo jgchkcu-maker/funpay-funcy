@@ -92,7 +92,7 @@ function applyWizardTheme(rootId) {
     root.style.setProperty('--cw-field-bg', isLight ? '#fff' : 'rgba(255,255,255,0.04)');
 }
 
-// FP Tools: запуск ТОГО ЖЕ визарда создания лота, но из данных страницы
+// FunPay Funcy: запуск ТОГО ЖЕ визарда создания лота, но из данных страницы
 // купленного заказа (без offerId). Форму категории строит background по nodeId.
 async function openCloneWizardFromOrder(data) {
     const overlay = ensureCloneWizardModal();

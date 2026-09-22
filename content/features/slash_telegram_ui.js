@@ -1,5 +1,5 @@
 // content/features/slash_telegram_ui.js
-// Настройки страниц «Слэш-команды» и «Telegram» в попапе FP Tools.
+// Настройки страниц «Слэш-команды» и «Telegram» в попапе FunPay Funcy.
 // Сохранение в chrome.storage.local (fpToolsSlashCommands / fpToolsTelegram).
 
 // ─────────────────────────────────────────────────────────────────────────────

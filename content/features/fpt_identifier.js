@@ -54,7 +54,7 @@ function initializeFPTIdentifier() {
         if (userId && identifiedUsers.has(userId)) {
             const lbl = document.createElement('span');
             lbl.className = FPT_LABEL_CLASS;
-            lbl.textContent = '· FunPay Tools';
+            lbl.textContent = '· FunPay Funcy';
             statusEl.appendChild(lbl);
         }
     }

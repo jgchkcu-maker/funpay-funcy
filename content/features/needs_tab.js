@@ -143,7 +143,7 @@ async function fptApplyNeedsSelection() {
             }, 1400);
         }
     } catch (e) {
-        console.error('FP Tools: ошибка автосохранения needs', e);
+        console.error('FunPay Funcy: ошибка автосохранения needs', e);
         if (status) {
             status.textContent = 'Ошибка сохранения: ' + (e && e.message ? e.message : 'неизвестно');
             status.classList.remove('fpt-needs-status-ok');
@@ -194,7 +194,7 @@ async function fptNeedsAskAI() {
             throw new Error(resp ? resp.error : 'нет ответа');
         }
     } catch (e) {
-        console.error('FP Tools needs AI error:', e);
+        console.error('FunPay Funcy needs AI error:', e);
         resultBox.innerHTML = `<div class="fpt-needs-ai-error"><span class="material-symbols-rounded">error</span> Не удалось разобрать ответ ИИ. Переформулируйте запрос или отметьте элементы вручную ниже.</div>`;
         askBtn.disabled = false;
         askBtn.classList.remove('fpt-needs-loading');

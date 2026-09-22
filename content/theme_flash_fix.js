@@ -239,7 +239,7 @@
             document.documentElement.appendChild(themeStyle);
         }
     } catch (error) {
-        console.error('FP Tools Flash Fix Error:', error);
+        console.error('FunPay Funcy Flash Fix Error:', error);
     } finally {
         requestAnimationFrame(() => {
             const styleToRemove = document.getElementById(HIDE_STYLE_ID);
