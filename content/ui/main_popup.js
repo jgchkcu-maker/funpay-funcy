@@ -2043,7 +2043,8 @@ const FPT_MENU_THEME_CSS = `
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; border-radius:16px; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{ padding:8px 6px 10px; background:var(--fptm-nav-child-surface); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{ background:var(--fptm-nav-child-surface); }
+.fp-tools-popup.fptm-themed .fp-tools-nav ul.fpt-nav-group-list{ list-style:none; margin:0; padding:8px 6px 10px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a{
     display:flex; align-items:center; min-height:44px; padding:8px 12px 8px 14px;
     gap:10px; color:var(--fptm-text) !important; background:transparent !important; border-radius:14px !important;
@@ -2053,6 +2054,9 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav li.active a{
     background:var(--fptm-accent-soft) !important; color:var(--fptm-text) !important;
     border:1px solid transparent !important; font-weight:700;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav li[data-page] a > span:last-child{
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a .nav-icon{ color:inherit !important; opacity:.92; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ content:''; width:10px; height:10px; flex:0 0 10px; margin-left:2px; border-radius:50%; background:var(--fptm-nav-dot); opacity:1; }
@@ -2834,8 +2838,10 @@ function setupNavigationSections(toolsPopup) {
 
         const collapse = document.createElement('div');
         collapse.className = 'fpt-nav-group-collapse';
+        const itemsViewport = document.createElement('div');
+        itemsViewport.className = 'fpt-nav-group-items';
         const items = document.createElement('ul');
-        items.className = 'fpt-nav-group-items';
+        items.className = 'fpt-nav-group-list';
         const collapseId = 'fpt-nav-group-' + section.id + '-items';
         collapse.id = collapseId;
         toggle.setAttribute('aria-controls', collapseId);
@@ -2843,7 +2849,8 @@ function setupNavigationSections(toolsPopup) {
             const item = pageItems.find(entry => entry.dataset.page === pageId);
             if (item) items.appendChild(item);
         });
-        collapse.appendChild(items);
+        itemsViewport.appendChild(items);
+        collapse.appendChild(itemsViewport);
         group.append(toggle, collapse);
         groups.appendChild(group);
         groupRefs.set(section.id, { group, toggle, collapse, items, icon: navIcon });

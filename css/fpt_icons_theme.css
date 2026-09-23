@@ -95,7 +95,11 @@
 }
 
 .fp-tools-nav li[data-page] a > span:last-child {
-    font-size: 11.5px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
     line-height: 1.25;
     font-weight: 500;
 }
@@ -1604,8 +1608,13 @@ button.add-image-btn .material-symbols-rounded {
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items {
-    padding: 8px 6px 10px;
     background: var(--fptm-nav-child-surface, rgba(255, 255, 255, 0.82));
+}
+
+.fp-tools-nav .fpt-nav-group-list {
+    list-style: none;
+    margin: 0;
+    padding: 8px 6px 10px;
 }
 
 .fp-tools-nav .fpt-nav-child {

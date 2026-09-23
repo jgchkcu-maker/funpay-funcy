@@ -25,6 +25,15 @@ function extractSchema() {
     return { schema, sections, pages: sections.flatMap(section => section.pages) };
 }
 
+function extractStyleRule(stylesheet, selector) {
+    const start = stylesheet.indexOf(selector);
+    assert.ok(start >= 0, 'missing stylesheet rule: ' + selector);
+    const open = stylesheet.indexOf('{', start);
+    const close = stylesheet.indexOf('}', open);
+    assert.ok(open > start && close > open, 'invalid stylesheet rule: ' + selector);
+    return stylesheet.slice(open + 1, close);
+}
+
 function testEveryExistingPageBelongsToExactlyOneSection() {
     const navPages = extractNavPages();
     const { pages } = extractSchema();
@@ -50,6 +59,12 @@ function testAccordionRendererMovesExistingNodes() {
     assert.match(block, /fpt-nav-group-toggle/, 'renderer must create real group toggle buttons');
     assert.match(block, /fpt-nav-group-collapse/, 'renderer must create collapse wrappers');
     assert.match(block, /fpt-nav-group-items/, 'renderer must create group item lists');
+    assert.match(block, /const itemsViewport = document\.createElement\(['"]div['"]\)/, 'child-list padding must sit inside a clipped viewport');
+    assert.match(block, /itemsViewport\.className = ['"]fpt-nav-group-items['"]/, 'the unpadded viewport must remain the animated grid item');
+    assert.match(block, /const items = document\.createElement\(['"]ul['"]\)/, 'page links must remain in a semantic list');
+    assert.match(block, /items\.className = ['"]fpt-nav-group-list['"]/, 'the semantic child list must be nested inside the clipped viewport');
+    assert.match(block, /itemsViewport\.appendChild\(items\)/, 'the child list must be clipped by its unpadded viewport');
+    assert.match(block, /collapse\.appendChild\(itemsViewport\)/, 'the viewport must remain the grid reveal child');
     assert.match(block, /querySelectorAll\(['"]li\[data-page\]['"]\)/, 'renderer must discover existing page nodes');
     assert.match(block, /\.appendChild\(item\)/, 'renderer must move existing page nodes instead of cloning them');
     assert.match(block, /aria-expanded/, 'group toggles must expose expanded state');
@@ -179,23 +194,29 @@ function testNavigationRegressionGuards() {
     const staticItemsEnd = css.indexOf('\n}', staticItemsStart);
     const staticItems = css.slice(staticItemsStart, staticItemsEnd + 2);
     assert.match(staticItems, /padding:\s*0\s*;/, 'closed group content must have no intrinsic padding');
+    assert.match(staticItems, /overflow:\s*hidden/, 'the unpadded grid item must clip its inner list during reveal');
 
     const staticExpandedStart = css.indexOf('.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items {');
     const staticExpandedEnd = css.indexOf('\n}', staticExpandedStart);
     const staticExpanded = css.slice(staticExpandedStart, staticExpandedEnd + 2);
-    assert.match(staticExpanded, /padding:\s*8px 6px 10px\s*;/, 'expanded group content must restore its visual breathing room');
+    assert.doesNotMatch(staticExpanded, /padding\s*:/, 'expanded grid item must not change size through a padding jump');
+    assert.match(staticExpanded, /background:\s*var\(--fptm-nav-child-surface/, 'expanded viewport must preserve its child surface');
+
+    const staticListStart = css.indexOf('.fp-tools-nav .fpt-nav-group-list {');
+    const staticListEnd = css.indexOf('\n}', staticListStart);
+    const staticList = css.slice(staticListStart, staticListEnd + 2);
+    assert.match(staticList, /padding:\s*8px 6px 10px\s*;/, 'constant inner-list padding must retain child breathing room');
 
     const themeStart = source.indexOf('const FPT_MENU_THEME_CSS = `');
     const themeEnd = source.indexOf('`;', themeStart);
     const themeCss = source.slice(themeStart, themeEnd);
-    const themeItemsStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{');
-    const themeItemsEnd = themeCss.indexOf('\n}', themeItemsStart);
-    const themeItems = themeCss.slice(themeItemsStart, themeItemsEnd + 2);
+    const themeItems = extractStyleRule(themeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{');
     assert.match(themeItems, /padding:0;/, 'runtime theme must not reintroduce closed-group padding');
-    const themeExpandedStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{');
-    const themeExpandedEnd = themeCss.indexOf('\n}', themeExpandedStart);
-    const themeExpanded = themeCss.slice(themeExpandedStart, themeExpandedEnd + 2);
-    assert.match(themeExpanded, /padding:8px 6px 10px;/, 'runtime theme must restore expanded-group padding');
+    const themeExpanded = extractStyleRule(themeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{');
+    assert.doesNotMatch(themeExpanded, /padding\s*:/, 'runtime grid item must not jump when expanded');
+    assert.match(themeExpanded, /background:var\(--fptm-nav-child-surface\)/, 'runtime viewport must preserve its child surface');
+    const themeList = extractStyleRule(themeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav ul.fpt-nav-group-list{');
+    assert.match(themeList, /padding:8px 6px 10px;/, 'runtime inner-list padding must remain constant through expansion');
 
     assert.match(css, /\.fp-tools-popup button:not\(\.fpt-nav-group-toggle\)/, 'generic button transitions must not override the accordion motion');
     assert.match(css, /\.fp-tools-nav \.fpt-nav-group-toggle\s*\{[\s\S]*?transition:[^;]*\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'section toggles must use the shared eased duration');

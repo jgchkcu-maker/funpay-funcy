@@ -85,7 +85,8 @@ function testNavigationGeometryAndTypographyContract() {
             icon: '.fp-tools-nav .fpt-nav-group-icon {',
             title: '.fp-tools-nav .fpt-nav-group-title {',
             chevron: '.fp-tools-nav .fpt-nav-group-chevron {',
-            child: '.fp-tools-nav .fpt-nav-child a {'
+            child: '.fp-tools-nav .fpt-nav-child a {',
+            childLabel: '.fp-tools-nav li[data-page] a > span:last-child {'
         },
         {
             name: 'runtime theme',
@@ -97,7 +98,8 @@ function testNavigationGeometryAndTypographyContract() {
             icon: '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon{',
             title: '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{',
             chevron: '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{',
-            child: '.fp-tools-popup.fptm-themed .fp-tools-nav li a{'
+            child: '.fp-tools-popup.fptm-themed .fp-tools-nav li a{',
+            childLabel: '.fp-tools-popup.fptm-themed .fp-tools-nav li[data-page] a > span:last-child{'
         }
     ];
 
@@ -138,6 +140,11 @@ function testNavigationGeometryAndTypographyContract() {
         const child = extractRule(layer.css, layer.child);
         assert.match(child, /min-height:\s*44px/, layer.name + ' child hit areas must remain 44px');
         assert.match(child, /font-size:\s*15px/, layer.name + ' child labels must remain 15px');
+        const childLabel = extractRule(layer.css, layer.childLabel);
+        assert.match(childLabel, /font-size:\s*15px/, layer.name + ' visible child-label spans must remain 15px');
+        assert.match(childLabel, /min-width:\s*0/, layer.name + ' visible child labels must be allowed to shrink');
+        assert.match(childLabel, /text-overflow:\s*ellipsis/, layer.name + ' long child labels must truncate without overlapping controls');
+        assert.match(childLabel, /white-space:\s*nowrap/, layer.name + ' child labels must stay on one line');
     }
 }
 
@@ -193,13 +200,20 @@ function testExpandedSpriteStateAndStableCategorySurface() {
 }
 
 function testPopupEntranceDoesNotScale() {
-    const start = popupCss.indexOf('@keyframes popIn');
+    const popupActive = extractRule(popupCss, '.fp-tools-popup.active {');
+    assert.match(popupActive, /animation:\s*fptMenuPopIn/, 'the main popup must use its own entrance animation');
+    const start = popupCss.indexOf('@keyframes fptMenuPopIn');
     const end = popupCss.indexOf('\n}', start);
-    assert.ok(start >= 0 && end > start, 'popup entrance keyframes must exist');
+    assert.ok(start >= 0 && end > start, 'menu-specific popup entrance keyframes must exist');
     const keyframes = popupCss.slice(start, end + 2);
     assert.match(keyframes, /translate\(-50%,\s*-48%\)/, 'popup entrance may use a subtle vertical offset');
     assert.match(keyframes, /translate\(-50%,\s*-50%\)/, 'popup must finish centered');
     assert.doesNotMatch(keyframes, /scale\s*\(/, 'popup entrance must not shrink or enlarge the interface');
+
+    const sharedPopInStart = popupCss.indexOf('@keyframes popIn');
+    const sharedPopInEnd = popupCss.indexOf('\n}', sharedPopInStart);
+    const sharedPopIn = popupCss.slice(sharedPopInStart, sharedPopInEnd + 2);
+    assert.match(sharedPopIn, /scale\(0\.97\)/, 'unrelated dialogs must retain their shared legacy entrance');
 
     assert.match(popupCss, /\.fp-tools-popup \.fpt-nav-group-toggle::before\s*\{[^}]*content:\s*none\s*!important?\s*;/, 'category toggles must suppress the inherited radial hover flare');
     assert.match(popupCss, /\.fp-tools-popup button:not\(\.fpt-nav-group-toggle\):not\(:disabled\):hover/, 'generic hover shadow must exclude category toggles');
@@ -238,7 +252,12 @@ function testMenuHasIndependentReferenceSurface() {
     const itemsEnd = css.indexOf('\n}', itemsStart);
     const itemsBlock = css.slice(itemsStart, itemsEnd + 2);
     assert.match(itemsBlock, /border-radius:\s*16px/);
-    assert.match(css, /\.fp-tools-nav \.fpt-nav-group\.is-expanded \.fpt-nav-group-items\s*\{[\s\S]*?padding:\s*8px 6px 10px/);
+    assert.match(itemsBlock, /padding:\s*0\s*;/, 'the clipping viewport must stay unpadded');
+    assert.doesNotMatch(css, /\.fp-tools-nav \.fpt-nav-group\.is-expanded \.fpt-nav-group-items\s*\{[^}]*padding\s*:/, 'expansion must not change the grid item padding');
+    const listStart = css.indexOf('.fp-tools-nav .fpt-nav-group-list {');
+    const listEnd = css.indexOf('\n}', listStart);
+    const listBlock = css.slice(listStart, listEnd + 2);
+    assert.match(listBlock, /padding:\s*8px 6px 10px/, 'constant inner-list padding must preserve child spacing');
 }
 
 function runAll() {
