@@ -611,12 +611,12 @@
 @keyframes popIn {
     from {
         opacity: 0;
-        transform: translate(-50%, -48%) scale(0.97);
+        transform: translate(-50%, -48%);
     }
 
     to {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
+        transform: translate(-50%, -50%);
     }
 }
 
@@ -1036,7 +1036,12 @@
     transform: scale(1);
 }
 
-.fp-tools-popup button:not(:disabled):hover,
+.fp-tools-popup .fpt-nav-group-toggle::before {
+    content: none !important;
+    display: none !important;
+}
+
+.fp-tools-popup button:not(.fpt-nav-group-toggle):not(:disabled):hover,
 .fp-tools-popup .btn:not(:disabled):hover {
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
 }

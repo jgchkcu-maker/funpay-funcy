@@ -122,14 +122,13 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const staticToggleEnd = css.indexOf('\n}', staticToggleStart);
     const staticToggle = css.slice(staticToggleStart, staticToggleEnd + 2);
     assert.match(staticToggle, /min-height:\s*58px/, 'section toggles must keep the selected reference hit area');
-    assert.match(staticToggle, /padding:\s*12px 14px/, 'section toggles must preserve the selected reference rhythm');
+    assert.match(staticToggle, /padding:\s*12px 12px/, 'section toggles must be narrower without changing their vertical padding');
     assert.match(staticToggle, /font-size:\s*16px/, 'section labels must remain readable in the standalone menu');
 
     const staticActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {');
     const staticActiveEnd = css.indexOf('\n}', staticActiveStart);
     const staticActive = css.slice(staticActiveStart, staticActiveEnd + 2);
-    assert.match(staticActive, /background:\s*transparent\s*!important/, 'the active category must not receive a selected background');
-    assert.match(staticActive, /border-color:\s*transparent/, 'the active category must not receive a selected border');
+    assert.doesNotMatch(staticActive, /background:\s*transparent|border-color:\s*transparent/, 'the active category must retain its visible row surface');
 
     const staticChildActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-child.active a {');
     const staticChildActiveEnd = css.indexOf('\n}', staticChildActiveStart);
@@ -149,13 +148,12 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const themeToggleEnd = themeCss.indexOf('\n}', themeToggleStart);
     const themeToggle = themeCss.slice(themeToggleStart, themeToggleEnd + 2);
     assert.match(themeToggle, /min-height:\s*58px/, 'runtime theme must not shrink the selected section hit area');
-    assert.match(themeToggle, /padding:\s*12px 14px/, 'runtime theme must preserve the selected section spacing');
+    assert.match(themeToggle, /padding:\s*12px 12px/, 'runtime theme must narrow horizontal spacing without changing vertical padding');
 
     const themeActiveStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{');
     const themeActiveEnd = themeCss.indexOf('\n}', themeActiveStart);
     const themeActive = themeCss.slice(themeActiveStart, themeActiveEnd + 2);
-    assert.match(themeActive, /background:transparent\s*!important/, 'runtime theme must keep the active category neutral');
-    assert.match(themeActive, /border-color:transparent\s*!important/, 'runtime theme must keep the active category borderless');
+    assert.doesNotMatch(themeActive, /background:transparent|border-color:transparent/, 'runtime theme must retain the active category surface');
 
     const themeChildStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav li a{');
     const themeChildEnd = themeCss.indexOf('\n}', themeChildStart);
@@ -203,10 +201,19 @@ function testNavigationRegressionGuards() {
     assert.match(css, /\.fp-tools-nav \.fpt-nav-group-toggle\s*\{[\s\S]*?transition:[^;]*\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'section toggles must use the shared eased duration');
     assert.match(css, /\.fp-tools-nav \.fpt-nav-group-chevron\s*\{[\s\S]*?transition:\s*transform\s+\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'chevrons must use the shared eased duration');
     assert.match(css, /\.fp-tools-nav \.fpt-nav-group-collapse\s*\{[\s\S]*?transition:\s*grid-template-rows\s+\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'group collapse must use the shared eased duration');
-    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-items\s*\{[\s\S]*?transition:\s*padding\s+\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'group padding must ease with the collapse instead of jumping');
+    const staticAnimatedItemsStart = css.indexOf('.fp-tools-nav .fpt-nav-group-items {');
+    const staticAnimatedItemsEnd = css.indexOf('\n}', staticAnimatedItemsStart);
+    const staticAnimatedItems = css.slice(staticAnimatedItemsStart, staticAnimatedItemsEnd + 2);
+    assert.doesNotMatch(staticAnimatedItems, /transition:[^;]*padding/, 'child reveal must not animate a padding inset');
+
+    const themeAnimatedItemsStart = themeCss.indexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{');
+    const themeAnimatedItemsEnd = themeCss.indexOf('\n}', themeAnimatedItemsStart);
+    const themeAnimatedItems = themeCss.slice(themeAnimatedItemsStart, themeAnimatedItemsEnd + 2);
+    assert.doesNotMatch(themeAnimatedItems, /transition:[^;]*padding/, 'runtime child reveal must not animate a padding inset');
     const reducedMotionStart = css.indexOf('@media (prefers-reduced-motion: reduce)');
     const reducedMotion = css.slice(reducedMotionStart, reducedMotionStart + 500);
-    assert.match(reducedMotion, /\.fpt-nav-group-items/, 'reduced-motion mode must disable the padding animation too');
+    assert.match(reducedMotion, /\.fpt-nav-group-collapse/, 'reduced-motion mode must disable the child reveal animation');
+    assert.match(reducedMotion, /\.fpt-nav-group-chevron/, 'reduced-motion mode must disable the chevron rotation animation');
 }
 
 function runAll() {

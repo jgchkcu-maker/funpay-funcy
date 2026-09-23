@@ -24,7 +24,7 @@ const scrollbarBase = ruleBody(css, '.fpt-fin-select-scrollbar-thumb');
 const scrollbarHover = ruleBody(css, '.fpt-fin-select-scrollbar-thumb:hover,\n.fpt-fin-select-scrollbar-thumb.is-dragging');
 const optionActiveSelector = '.fp-tools-popup button.fpt-fin-select-option:active,\n.fp-tools-popup .fpt-fin-select-option:active';
 const optionActive = css.includes(optionActiveSelector) ? ruleBody(css, optionActiveSelector) : '';
-const genericButtonHover = ruleBody(css, '.fp-tools-popup button:not(:disabled):hover,\n.fp-tools-popup .btn:not(:disabled):hover');
+const genericButtonHover = ruleBody(css, '.fp-tools-popup button:not(.fpt-nav-group-toggle):not(:disabled):hover,\n.fp-tools-popup .btn:not(:disabled):hover');
 const subtabBase = ruleBody(css, '.fp-tools-popup button.fpt-fin-subtab,\n.fp-tools-popup .fpt-fin-subtab');
 const subtabHover = ruleBody(css, '.fp-tools-popup button.fpt-fin-subtab:hover,\n.fp-tools-popup .fpt-fin-subtab:hover');
 const sellerHover = ruleBody(css, '.fpt-fin-seller-item:hover');
@@ -44,6 +44,8 @@ assert.doesNotMatch(scrollbarHover, /(?:^|[;\s])(left|width)\s*:/, 'scrollbar th
 assert.doesNotMatch(optionActive, /transform\s*:/, 'select options must not jump on pointer press');
 
 assert.doesNotMatch(genericButtonHover, /transform\s*:/, 'generic popup button hover must not move controls under the pointer');
+assert.match(genericButtonHover, /box-shadow:/, 'generic popup buttons must retain their existing hover response');
+assert.match(css, /\.fp-tools-popup button:not\(\.fpt-nav-group-toggle\):not\(:disabled\):hover/, 'generic button hover must exclude category toggles');
 assert.doesNotMatch(subtabBase, /transform\s+\.?\d+ms/, 'Finance subtabs must not animate layout movement on hover');
 assert.doesNotMatch(subtabHover, /transform\s*:/, 'Finance subtab hover must not move the tab');
 assert.doesNotMatch(sellerHover, /transform\s*:/, 'Finance seller rows must not move on hover');

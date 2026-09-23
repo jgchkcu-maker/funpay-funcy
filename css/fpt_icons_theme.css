@@ -46,10 +46,10 @@
 
 /* ---------- 3. Vertical navigation base ---------- */
 .fp-tools-nav {
-    width: 292px;
-    flex: 0 0 292px;
+    width: 256px;
+    flex: 0 0 256px;
     margin: 16px 0 16px 16px;
-    padding: 18px 14px;
+    padding: 18px 12px;
     border: 1px solid var(--fptm-nav-border, var(--fptm-border, #dce8f7));
     border-radius: 20px;
     background: var(--fptm-nav-surface, var(--fptm-surface-2, #f7faff));
@@ -1506,7 +1506,7 @@ button.add-image-btn .material-symbols-rounded {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 14px;
+    padding: 12px 12px;
     border: 1px solid var(--fptm-nav-border, var(--fptm-border, #dce8f7));
     border-radius: 18px;
     background: var(--fptm-nav-row, #ffffff);
@@ -1526,19 +1526,19 @@ button.add-image-btn .material-symbols-rounded {
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded {
-    padding: 8px;
     background: var(--fptm-nav-expanded, rgba(226, 239, 255, 0.88));
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
+    background: var(--fptm-accent-soft, rgba(27, 117, 187, 0.14));
+    border-color: var(--fptm-accent-border, rgba(27, 117, 187, 0.35));
+}
+
+.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle:hover {
+    background: var(--fptm-nav-row-hover, var(--fptm-hover, rgba(255,255,255,.055)));
 }
 
 .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {
-    background: transparent !important;
-    border-color: transparent;
     color: var(--fptm-text, #e9eaf0);
 }
 
@@ -1601,7 +1601,6 @@ button.add-image-btn .material-symbols-rounded {
     display: block;
     padding: 0;
     border-radius: 16px;
-    transition: padding .24s cubic-bezier(.22,1,.36,1);
 }
 
 .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items {
