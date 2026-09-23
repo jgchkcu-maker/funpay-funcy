@@ -1,4 +1,6 @@
 
+import { updateAutoReplies } from './auto_reply_store.js';
+
 function randomTag() {
     return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
 }
@@ -269,9 +271,7 @@ function applyVariables(template, vars = {}) {
 }
 
 async function atomicUpdate(updater) {
-    const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-    updater(fpToolsAutoReplies);
-    await chrome.storage.local.set({ fpToolsAutoReplies });
+    return updateAutoReplies(updater);
 }
 
 async function isBlacklisted(username, feature) {
@@ -788,10 +788,9 @@ async function _runAutoResponderCycleInner() {
 export async function resetAutoResponderState() {
     await chrome.storage.local.remove(RUNNER_TAG_KEY);
     // also clear per-chat tracking so re-enabling re-seeds cleanly
-    await chrome.storage.local.get('fpToolsAutoReplies').then(({ fpToolsAutoReplies = {} }) => {
-        delete fpToolsAutoReplies.lastSeenMsgIds;
-        delete fpToolsAutoReplies.lastHandledText;
-        delete fpToolsAutoReplies.autoResponderSeeded;
-        return chrome.storage.local.set({ fpToolsAutoReplies });
+    await updateAutoReplies(settings => {
+        delete settings.lastSeenMsgIds;
+        delete settings.lastHandledText;
+        delete settings.autoResponderSeeded;
     });
 }

@@ -108,14 +108,27 @@ async function importSettings(file) {
         // На всякий случай НЕ применяем исключённые ключи, даже если они попали
         // в старый файл (например, аккаунты из бэкапа другой версии).
         const safe = {};
+        let autoRepliesToImport;
+        let hasAutoRepliesToImport = false;
         for (const [k, v] of Object.entries(obj.settings)) {
             if (EXCLUDE_KEYS.has(k)) continue;
+            if (k === 'fpToolsAutoReplies') {
+                autoRepliesToImport = v;
+                hasAutoRepliesToImport = true;
+                continue;
+            }
             safe[k] = v;
         }
 
         await chrome.storage.local.set(safe);
+        if (hasAutoRepliesToImport) {
+            if (typeof window.fptImportAutoReplies !== 'function') {
+                throw new Error('Хранилище автоответчика недоступно.');
+            }
+            await window.fptImportAutoReplies(autoRepliesToImport);
+        }
 
-        const cnt = Object.keys(safe).length;
+        const cnt = Object.keys(safe).length + (hasAutoRepliesToImport ? 1 : 0);
         const fromVer = obj._extVer ? ` из v${obj._extVer}` : '';
         showNotification(`Импортировано ${cnt} разделов${fromVer} — перезагрузите страницу ✓`);
 

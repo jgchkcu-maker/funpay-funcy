@@ -82,6 +82,7 @@
         "content/features/feature_registry.js",
         "content/features/feature_disabler.js",
         "content/features/cursor_fx.js",
+        "content/features/auto_reply_store.js",
         "content/ui/settings_loader.js",
         "content/features/font_tools.js",
         "content/features/accounts.js",

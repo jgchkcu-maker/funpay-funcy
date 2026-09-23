@@ -617,9 +617,7 @@
         const arBtn = document.getElementById('fp-reset-autoresponder-btn');
         arBtn?.addEventListener('click', async () => {
             await chrome.storage.local.remove(['fpToolsAutoResponderTag']);
-            const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-            fpToolsAutoReplies.processedMessageIds = [];
-            await chrome.storage.local.set({ fpToolsAutoReplies });
+            await window.fptPatchAutoReplies({ set: { processedMessageIds: [] } });
             _resetBtnFeedback(arBtn, 'Сброшено');
         });
 
@@ -631,9 +629,7 @@
 
         const greetBtn = document.getElementById('fp-reset-greeted-btn');
         greetBtn?.addEventListener('click', async () => {
-            const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-            fpToolsAutoReplies.greetedUsers = [];
-            await chrome.storage.local.set({ fpToolsAutoReplies });
+            await window.fptPatchAutoReplies({ set: { greetedUsers: [] } });
             _resetBtnFeedback(greetBtn, 'Сброшено');
         });
 

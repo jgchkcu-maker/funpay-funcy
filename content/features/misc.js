@@ -245,6 +245,90 @@ function initializeCalcSubtabs() {
 }
 
 
+function fptReadAutoReplyImages(id) {
+    const el = document.getElementById(id);
+    if (!el || !el.dataset.fptImages) return [];
+    try { return JSON.parse(el.dataset.fptImages) || []; } catch (_) { return []; }
+}
+
+function fptReadAutoReplySendOrder(id) {
+    const el = document.getElementById(id);
+    return el?.dataset.fptSendOrder === 'image_first' ? 'image_first' : 'text_first';
+}
+
+function fptBuildAutoReplyPatch(changedTargets = null) {
+    const all = changedTargets === null;
+    const changedIds = new Set((changedTargets || []).map(target => target?.id || target?.name).filter(Boolean));
+    const changed = id => all || changedIds.has(id);
+    const set = {};
+    const merge = {};
+    const unset = {};
+    const setFromControl = (id, key, read) => {
+        if (!changed(id)) return;
+        const el = document.getElementById(id);
+        set[key] = read ? read(el) : (el?.value ?? '');
+    };
+
+    setFromControl('autoReviewEnabled', 'autoReviewEnabled', el => !!el?.checked);
+    setFromControl('greetingEnabled', 'greetingEnabled', el => !!el?.checked);
+    if (changed('greetingText')) {
+        const el = document.getElementById('greetingText');
+        set.greetingText = el?.value || '';
+        set.greetingImages = fptReadAutoReplyImages('greetingText');
+        set.greetingSendOrder = fptReadAutoReplySendOrder('greetingText');
+    }
+    setFromControl('onlyNewChats', 'onlyNewChats', el => !!el?.checked);
+    setFromControl('ignoreSystemMessages', 'ignoreSystemMessages', el => !!el?.checked);
+    setFromControl('greetingCooldownDays', 'greetingCooldownDays', el => parseFloat(el?.value || '0'));
+    setFromControl('keywordsEnabled', 'keywordsEnabled', el => !!el?.checked);
+    setFromControl('bonusForReviewEnabled', 'bonusForReviewEnabled', el => !!el?.checked);
+    if (changed('bonusMode')) {
+        set.bonusMode = document.querySelector('input[name="bonusMode"]:checked')?.value || 'single';
+    }
+    setFromControl('singleBonusText', 'singleBonusText');
+    setFromControl('bonusForReviewDelaySec', 'bonusForReviewDelaySec', el =>
+        Math.max(0, Math.min(60, parseFloat(el?.value || '4') || 0)));
+    setFromControl('newOrderReplyEnabled', 'newOrderReplyEnabled', el => !!el?.checked);
+    if (changed('newOrderReplyText')) {
+        const el = document.getElementById('newOrderReplyText');
+        set.newOrderReplyText = el?.value || '';
+        set.newOrderReplyImages = fptReadAutoReplyImages('newOrderReplyText');
+        set.newOrderReplySendOrder = fptReadAutoReplySendOrder('newOrderReplyText');
+    }
+    setFromControl('orderConfirmReplyEnabled', 'orderConfirmReplyEnabled', el => !!el?.checked);
+    if (changed('orderConfirmReplyText')) {
+        const el = document.getElementById('orderConfirmReplyText');
+        set.orderConfirmReplyText = el?.value || '';
+        set.orderConfirmReplyImages = fptReadAutoReplyImages('orderConfirmReplyText');
+        set.orderConfirmReplySendOrder = fptReadAutoReplySendOrder('orderConfirmReplyText');
+    }
+    setFromControl('typingDelay', 'typingDelay', el => !!el?.checked);
+
+    for (let rating = 1; rating <= 5; rating++) {
+        const id = `fpt-review-${rating}`;
+        if (!changed(id)) continue;
+        merge.reviewTemplates ||= {};
+        merge.reviewTemplates[String(rating)] = document.getElementById(id)?.value || '';
+        const images = fptReadAutoReplyImages(id);
+        if (images.length) {
+            merge.reviewTemplateImages ||= {};
+            merge.reviewTemplateImages[String(rating)] = images;
+        } else {
+            unset.reviewTemplateImages ||= [];
+            unset.reviewTemplateImages.push(String(rating));
+        }
+    }
+
+    if (changed('reviewRequestTemplate') || changed('fp-review-request-template')) {
+        const reviewRequest = document.getElementById('fp-review-request-template') ||
+            document.getElementById('reviewRequestTemplate');
+        set.reviewRequestTemplate = reviewRequest?.value?.trim() || '';
+    }
+
+    if (!Object.keys(set).length && !Object.keys(merge).length && !Object.keys(unset).length) return null;
+    return { set, merge, unset };
+}
+
 function initializeToolsPopup() {
     const popup = document.querySelector('.fp-tools-popup');
     if (!popup || popup.dataset.initialized === 'true') {
@@ -256,34 +340,13 @@ function initializeToolsPopup() {
             popup.classList.remove('active');
         });
     }
-    const saveAllPopupSettings = async (silent = false) => {
+    const saveAllPopupSettings = async (silent = false, changedAutoReplyTargets = null) => {
         try {
+            if (window.__fptAutoReplySettingsReady !== true) {
+                if (!silent) showNotification('Дождитесь загрузки настроек автоответчика.', true);
+                return;
+            }
             const selectedSound = document.querySelector('input[name="notificationSound"]:checked');
-            
-            // --- ИСПРАВЛЕНО: Добавлено считывание настроек авто-ответов ---
-            const reviewTemplates = {
-                '5': document.getElementById('fpt-review-5').value,
-                '4': document.getElementById('fpt-review-4').value,
-                '3': document.getElementById('fpt-review-3').value,
-                '2': document.getElementById('fpt-review-2').value,
-                '1': document.getElementById('fpt-review-1').value
-            };
-
-            // helper: read attached images from a textarea (stored on dataset by the chip UI)
-            const readImgs = (id) => {
-                const el = document.getElementById(id);
-                if (!el || !el.dataset.fptImages) return [];
-                try { return JSON.parse(el.dataset.fptImages) || []; } catch (_) { return []; }
-            };
-            // helper: read the per-field send order (text→image vs image→text)
-            const readOrder = (id) => {
-                const el = document.getElementById(id);
-                return (el && el.dataset.fptSendOrder === 'image_first') ? 'image_first' : 'text_first';
-            };
-            const reviewTemplateImages = {
-                '5': readImgs('fpt-review-5'), '4': readImgs('fpt-review-4'),
-                '3': readImgs('fpt-review-3'), '2': readImgs('fpt-review-2'), '1': readImgs('fpt-review-1')
-            };
 
             const settingsToSave = {
                 // Общие настройки
@@ -299,17 +362,6 @@ function initializeToolsPopup() {
                 fpToolsSelectiveBumpEnabled: document.getElementById('selectiveBumpEnabled').checked,
                 fpToolsBumpOnlyAutoDelivery: document.getElementById('bumpOnlyAutoDelivery').checked,
 
-                // Авто-ответы (добавленный блок)
-                autoReviewEnabled: document.getElementById('autoReviewEnabled').checked,
-                reviewTemplates: reviewTemplates,
-                reviewTemplateImages: reviewTemplateImages,
-                greetingEnabled: document.getElementById('greetingEnabled').checked,
-                greetingText: document.getElementById('greetingText').value,
-                greetingImages: readImgs('greetingText'),
-                greetingSendOrder: readOrder('greetingText'),
-                keywordsEnabled: document.getElementById('keywordsEnabled').checked,
-                // 'keywords' сохраняются отдельно при добавлении/удалении и здесь не нужны
-
                 // 2.8: Identifier toggle
                 fpToolsIdentifierEnabled: document.getElementById('fptIdentifierEnabled')?.checked !== false,
 
@@ -322,24 +374,8 @@ function initializeToolsPopup() {
                 fptShowRealPrices:       document.getElementById('fptShowRealPricesCheckbox')?.checked === true
             };
 
-            // 3.0: Extended autoresponder settings
-            const existingAR = (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {};
-            const arExtras = {
-                ...existingAR,
-                newOrderReplyEnabled:    document.getElementById('newOrderReplyEnabled')?.checked ?? false,
-                newOrderReplyText:       document.getElementById('newOrderReplyText')?.value || '',
-                newOrderReplyImages:     readImgs('newOrderReplyText'),
-                newOrderReplySendOrder:  readOrder('newOrderReplyText'),
-                orderConfirmReplyEnabled: document.getElementById('orderConfirmReplyEnabled')?.checked ?? false,
-                orderConfirmReplyText:   document.getElementById('orderConfirmReplyText')?.value || '',
-                orderConfirmReplyImages: readImgs('orderConfirmReplyText'),
-                orderConfirmReplySendOrder: readOrder('orderConfirmReplyText'),
-                typingDelay:             document.getElementById('typingDelay')?.checked ?? false,
-                onlyNewChats:            document.getElementById('onlyNewChats')?.checked ?? false,
-                ignoreSystemMessages:    document.getElementById('ignoreSystemMessages')?.checked ?? false,
-                greetingCooldownDays:    parseFloat(document.getElementById('greetingCooldownDays')?.value || '0'),
-            };
-            chrome.storage.local.set({ fpToolsAutoReplies: arExtras });
+            const autoReplyPatch = fptBuildAutoReplyPatch(changedAutoReplyTargets);
+            if (autoReplyPatch) await window.fptPatchAutoReplies(autoReplyPatch);
 
             // 3.0: Auto-restore/disable, review request template
             const reviewTpl = document.getElementById('reviewRequestTemplate')?.value || '';
@@ -348,14 +384,6 @@ function initializeToolsPopup() {
                 fpToolsAutoDisableEnabled: document.getElementById('fpAutoDisableEnabled')?.checked ?? false,
                 fpToolsReviewRequestTemplate: reviewTpl
             });
-
-            // Save review request template separately (it's in auto_review section)
-            const rrTemplate = document.getElementById('fp-review-request-template')?.value?.trim();
-            if (rrTemplate !== undefined) {
-                const { fpToolsAutoReplies: curAR = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-                curAR.reviewRequestTemplate = rrTemplate;
-                await chrome.storage.local.set({ fpToolsAutoReplies: curAR });
-            }
 
             settingsToSave.fpToolsDiscord = {
                 enabled: document.getElementById('discordLogEnabled').checked,
@@ -402,10 +430,18 @@ function initializeToolsPopup() {
     if (popupRoot && !popupRoot.dataset.fptAutosave) {
         popupRoot.dataset.fptAutosave = '1';
         let autosaveTimer = null;
-        const queueAutosave = () => {
+        const pendingTargets = new Map();
+        const queueAutosave = (event) => {
+            if (window.__fptAutoReplySettingsReady !== true) return;
+            const target = event?.target;
+            if (target) pendingTargets.set(target.id || target.name || target, target);
             if (!fptExtAlive || fptExtAlive()) {
                 if (autosaveTimer) clearTimeout(autosaveTimer);
-                autosaveTimer = setTimeout(() => { saveAllPopupSettings(true); }, 500);
+                autosaveTimer = setTimeout(() => {
+                    const changedTargets = Array.from(pendingTargets.values());
+                    pendingTargets.clear();
+                    saveAllPopupSettings(true, changedTargets);
+                }, 500);
             }
         };
         // 'change' covers checkboxes/radios/selects/color inputs; 'input' covers text/textarea/range.

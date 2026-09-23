@@ -459,6 +459,7 @@ window.ensurePopupInsideViewport = ensurePopupInsideViewport;
 
 
 async function loadSavedSettings() {
+    window.__fptAutoReplySettingsReady = false;
     const settings = await chrome.storage.local.get([
         'fpToolsTemplateSettings', 'enableCustomTheme', 'fpToolsTheme', 'aiModeActive',
         'autoBumpEnabled', 'fpToolsCursorFx', 'fpToolsCustomCursor',
@@ -474,7 +475,8 @@ async function loadSavedSettings() {
         'fpToolsShowUnconfirmed',
         'fpToolsAutoRestoreEnabled',
         'fpToolsAutoDisableEnabled',
-        'fpToolsReviewRequestTemplate'
+        'fpToolsReviewRequestTemplate',
+        'fpToolsAutoReplies'
     ]);
     
     fpToolsAccounts = settings.fpToolsAccounts || [];
@@ -528,7 +530,7 @@ async function loadSavedSettings() {
     }
     
     if (typeof initializeAutoReviewUI === 'function') {
-        initializeAutoReviewUI(settings);
+        await initializeAutoReviewUI(settings.fpToolsAutoReplies || {});
     }
 
     await setupTemplateSettingsHandlers();
@@ -642,8 +644,9 @@ async function loadSavedSettings() {
     const reviewTplEl = document.getElementById('reviewRequestTemplate');
     if (reviewTplEl) reviewTplEl.value = settings.fpToolsReviewRequestTemplate || '';
 
-    // 3.0: Extended autoresponder
-    chrome.storage.local.get('fpToolsAutoReplies', ({ fpToolsAutoReplies: ar = {} }) => {
+    // 3.0: Extended autoresponder fields come from the same initial settings snapshot.
+    {
+        const ar = settings.fpToolsAutoReplies || {};
         const setCheck = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
         const setVal   = (id, val) => { const el = document.getElementById(id); if (el) el.value  = val || ''; };
         setCheck('newOrderReplyEnabled',     ar.newOrderReplyEnabled);
@@ -676,7 +679,7 @@ async function loadSavedSettings() {
             restoreImgs('fpt-review-2', ar.reviewTemplateImages['2']);
             restoreImgs('fpt-review-1', ar.reviewTemplateImages['1']);
         }
-    });
+    }
 
     // Review request template
     const rrTemplateEl = document.getElementById('fp-review-request-template');
@@ -716,4 +719,6 @@ async function loadSavedSettings() {
             }
         });
     }
+
+    window.__fptAutoReplySettingsReady = true;
 }

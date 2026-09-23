@@ -6,6 +6,7 @@ import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище фина
 import { fetchAIResponse, fetchAILotGeneration, fetchAITranslation, fetchAIImageGeneration } from './ai.js';
 import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump, runBumpCycle } from './autobump.js';
 import { runAutoResponderCycle, resetAutoResponderState } from './autoresponder.js';
+import { patchAutoReplies, importAutoReplies } from './auto_reply_store.js';
 import { startEngine, stopEngine, onHeartbeat, onKeepalivePing, ENGINE_HEARTBEAT_ALARM } from './fpt_engine.js';
 import {
     TELEGRAM_ALARM, telegramInit, telegramSyncAlarm, telegramPollOnce,
@@ -1419,6 +1420,27 @@ function fptSnapshotForKey(key) {
 
 // --- Главный обработчик сообщений ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request?.action === 'fptPatchAutoReplies') {
+        patchAutoReplies(request.patch)
+            .then(autoReplies => sendResponse({ ok: true, autoReplies }))
+            .catch(error => sendResponse({
+                ok: false,
+                error: error?.message || 'Auto-reply settings could not be saved.',
+                code: error?.code
+            }));
+        return true;
+    }
+    if (request?.action === 'fptImportAutoReplies') {
+        importAutoReplies(request.settings)
+            .then(autoReplies => sendResponse({ ok: true, autoReplies }))
+            .catch(error => sendResponse({
+                ok: false,
+                error: error?.message || 'Auto-reply settings could not be imported.',
+                code: error?.code
+            }));
+        return true;
+    }
+
     // Поднять все лоты по кнопке с профиля
     if (request && request.action === 'fptRaiseAllNow') {
         runBumpCycle()

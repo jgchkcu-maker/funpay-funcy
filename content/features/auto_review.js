@@ -3,24 +3,48 @@
 /**
  * Инициализирует UI для всех функций авто-ответов в настройках FunPay Funcy
  */
-async function initializeAutoReviewUI() {
-    const page = document.querySelector('.fp-tools-page-content[data-page="auto_review"]');
-    if (!page || page.dataset.initialized) return;
+let autoReviewInitializationPromise = null;
 
-    const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-    
+function initializeAutoReviewUI(savedAutoReplies = {}) {
+    const page = document.querySelector('.fp-tools-page-content[data-page="auto_review"]');
+    if (!page || page.dataset.initialized === 'true') return Promise.resolve();
+    if (autoReviewInitializationPromise) return autoReviewInitializationPromise;
+
+    const initialization = Promise.resolve().then(() => setupAutoReviewUI(page, savedAutoReplies));
+    autoReviewInitializationPromise = initialization.finally(() => {
+        autoReviewInitializationPromise = null;
+    });
+    return autoReviewInitializationPromise;
+}
+
+function setupAutoReviewUI(page, savedAutoReplies) {
+    const fpToolsAutoReplies = savedAutoReplies && typeof savedAutoReplies === 'object' ? savedAutoReplies : {};
     const settings = {
-        autoReviewEnabled: fpToolsAutoReplies.autoReviewEnabled || false,
-        reviewTemplates: fpToolsAutoReplies.reviewTemplates || {},
-        greetingEnabled: fpToolsAutoReplies.greetingEnabled || false,
-        greetingText: fpToolsAutoReplies.greetingText || 'Здравствуйте! Чем могу помочь?',
-        keywordsEnabled: fpToolsAutoReplies.keywordsEnabled || false,
-        keywords: fpToolsAutoReplies.keywords || [],
-        bonusForReviewEnabled: fpToolsAutoReplies.bonusForReviewEnabled || false,
-        bonusMode: fpToolsAutoReplies.bonusMode || 'single',
-        singleBonusText: fpToolsAutoReplies.singleBonusText || '',
-        randomBonuses: fpToolsAutoReplies.randomBonuses || [],
-        bonusForReviewDelaySec: (fpToolsAutoReplies.bonusForReviewDelaySec ?? 4)
+        ...{
+            autoReviewEnabled: false,
+            reviewTemplates: {},
+            greetingEnabled: false,
+            greetingText: 'Здравствуйте! Чем могу помочь?',
+            onlyNewChats: false,
+            ignoreSystemMessages: false,
+            greetingCooldownDays: 0,
+            keywordsEnabled: false,
+            keywords: [],
+            bonusForReviewEnabled: false,
+            bonusMode: 'single',
+            singleBonusText: '',
+            randomBonuses: [],
+            bonusForReviewDelaySec: 4,
+            newOrderReplyEnabled: false,
+            newOrderReplyText: '',
+            orderConfirmReplyEnabled: false,
+            orderConfirmReplyText: '',
+            typingDelay: false
+        },
+        ...fpToolsAutoReplies,
+        reviewTemplates: { ...(fpToolsAutoReplies.reviewTemplates || {}) },
+        keywords: Array.isArray(fpToolsAutoReplies.keywords) ? fpToolsAutoReplies.keywords : [],
+        randomBonuses: Array.isArray(fpToolsAutoReplies.randomBonuses) ? fpToolsAutoReplies.randomBonuses : []
     };
 
     document.getElementById('bonusForReviewEnabled').checked = settings.bonusForReviewEnabled;
@@ -65,56 +89,6 @@ async function initializeAutoReviewUI() {
     
     renderKeywordsList(settings.keywords);
 
-    let saveTimeout;
-    const saveOnChange = async () => {
-        clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(async () => {
-            const storedData = await chrome.storage.local.get('fpToolsAutoReplies');
-            const currentSettings = storedData.fpToolsAutoReplies || {};
-            
-            const getChecked = id => document.getElementById(id)?.checked ?? false;
-            const getVal = id => document.getElementById(id)?.value || '';
-
-            const newSettings = {
-                ...currentSettings,
-                // Review replies
-                autoReviewEnabled: getChecked('autoReviewEnabled'),
-                reviewTemplates: {
-                    '5': getVal('fpt-review-5'),
-                    '4': getVal('fpt-review-4'),
-                    '3': getVal('fpt-review-3'),
-                    '2': getVal('fpt-review-2'),
-                    '1': getVal('fpt-review-1')
-                },
-                // Greeting
-                greetingEnabled:       getChecked('greetingEnabled'),
-                greetingText:          getVal('greetingText'),
-                onlyNewChats:          getChecked('onlyNewChats'),
-                ignoreSystemMessages:  getChecked('ignoreSystemMessages'),
-                greetingCooldownDays:  parseFloat(getVal('greetingCooldownDays') || '0'),
-                // Keywords
-                keywordsEnabled: getChecked('keywordsEnabled'),
-                // Bonus
-                bonusForReviewEnabled: getChecked('bonusForReviewEnabled'),
-                bonusMode:             document.querySelector('input[name="bonusMode"]:checked')?.value || 'single',
-                singleBonusText:       getVal('singleBonusText'),
-                bonusForReviewDelaySec: Math.max(0, Math.min(60, parseFloat(getVal('bonusForReviewDelaySec') || '4') || 0)),
-                // 3.0: New order / confirm replies
-                newOrderReplyEnabled:     getChecked('newOrderReplyEnabled'),
-                newOrderReplyText:        getVal('newOrderReplyText'),
-                orderConfirmReplyEnabled: getChecked('orderConfirmReplyEnabled'),
-                orderConfirmReplyText:    getVal('orderConfirmReplyText'),
-            };
-            await chrome.storage.local.set({ fpToolsAutoReplies: newSettings });
-            console.log("FunPay Funcy: Auto-reply settings saved.");
-        }, 500);
-    };
-
-    page.querySelectorAll('input[type="checkbox"], textarea, input[name="bonusMode"]').forEach(el => {
-        el.addEventListener('change', saveOnChange);
-        el.addEventListener('input', saveOnChange);
-    });
-
     // === НОВАЯ ЛОГИКА ДЛЯ КНОПОК ИЗОБРАЖЕНИЙ ===
     page.addEventListener('click', (e) => {
         if (e.target.classList.contains('add-image-btn')) {
@@ -128,12 +102,14 @@ async function initializeAutoReviewUI() {
 
     // Edit state: which existing rule (if any) the add-form is currently editing.
     let editingKeywordIndex = -1;
+    let editingKeywordOriginal = null;
     const addKeywordBtn = document.getElementById('addKeywordBtn');
     const kwInput = document.getElementById('newKeyword');
     const kwResponse = document.getElementById('newKeywordResponse');
 
     const resetKeywordForm = () => {
         editingKeywordIndex = -1;
+        editingKeywordOriginal = null;
         kwInput.value = '';
         kwResponse.value = '';
         const exactRadio = document.querySelector('input[name="newKeywordMatchMode"][value="exact"]');
@@ -145,6 +121,36 @@ async function initializeAutoReviewUI() {
         delete kwResponse.dataset.fptImages;
         delete kwResponse.dataset.fptSendOrder;
         if (typeof fptRenderAttachments === 'function') fptRenderAttachments(kwResponse);
+    };
+
+    const refreshListFromStorage = async (field, renderer) => {
+        const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+        const value = fpToolsAutoReplies[field];
+        renderer(Array.isArray(value) ? value : []);
+        return value;
+    };
+
+    const saveListChange = async (patch, field, renderer) => {
+        try {
+            const saved = await window.fptPatchAutoReplies(patch);
+            const value = Array.isArray(saved[field]) ? saved[field] : [];
+            renderer(value);
+            return value;
+        } catch (error) {
+            if (error.code === 'STALE_AUTO_REPLY_EDIT') {
+                await refreshListFromStorage(field, renderer);
+                if (field === 'keywords' && editingKeywordIndex >= 0) {
+                    editingKeywordIndex = -1;
+                    editingKeywordOriginal = null;
+                    addKeywordBtn.textContent = 'Добавить правило';
+                    addKeywordBtn.classList.remove('fpt-editing-rule');
+                }
+                showNotification('Список изменился. Актуальные данные загружены, повторите действие.', true);
+            } else {
+                showNotification(`Ошибка сохранения: ${error.message}`, true);
+            }
+            return null;
+        }
     };
 
     addKeywordBtn.addEventListener('click', async () => {
@@ -163,22 +169,17 @@ async function initializeAutoReviewUI() {
             return;
         }
 
-        const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-        const keywords = fpToolsAutoReplies.keywords || [];
         const rule = { keyword, response, matchMode };
         if (images.length) rule.images = images;
         if (images.length) rule.sendOrder = sendOrder;
 
-        if (editingKeywordIndex >= 0 && editingKeywordIndex < keywords.length) {
-            keywords[editingKeywordIndex] = rule;   // overwrite existing rule
-            showNotification('Правило обновлено!');
-        } else {
-            keywords.push(rule);                     // add new rule
-        }
-        fpToolsAutoReplies.keywords = keywords;
-
-        await chrome.storage.local.set({ fpToolsAutoReplies });
-        renderKeywordsList(keywords);
+        const editing = editingKeywordIndex >= 0;
+        const operation = editing
+            ? { op: 'upsert', index: editingKeywordIndex, expected: editingKeywordOriginal, value: rule }
+            : { op: 'append', value: rule };
+        const keywords = await saveListChange({ arrayOps: { keywords: [operation] } }, 'keywords', renderKeywordsList);
+        if (!keywords) return;
+        if (editing) showNotification('Правило обновлено!');
         resetKeywordForm();
     });
     
@@ -189,26 +190,19 @@ async function initializeAutoReviewUI() {
             return;
         }
         
-        const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-        const bonuses = fpToolsAutoReplies.randomBonuses || [];
-        bonuses.push(bonusText);
-        fpToolsAutoReplies.randomBonuses = bonuses;
-
-        await chrome.storage.local.set({ fpToolsAutoReplies });
-        renderBonusesList(bonuses);
-        document.getElementById('newBonusText').value = '';
+        const bonuses = await saveListChange({
+            arrayOps: { randomBonuses: [{ op: 'append', value: bonusText }] }
+        }, 'randomBonuses', renderBonusesList);
+        if (bonuses) document.getElementById('newBonusText').value = '';
     });
 
     document.getElementById('bonus-list-container').addEventListener('click', async (e) => {
         if (e.target.classList.contains('delete-bonus-btn')) {
             const index = parseInt(e.target.dataset.index, 10);
-            const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-            const bonuses = fpToolsAutoReplies.randomBonuses || [];
-            bonuses.splice(index, 1);
-            fpToolsAutoReplies.randomBonuses = bonuses;
-            
-            await chrome.storage.local.set({ fpToolsAutoReplies });
-            renderBonusesList(bonuses);
+            const expected = e.target.dataset.value;
+            await saveListChange({
+                arrayOps: { randomBonuses: [{ op: 'remove', index, expected }] }
+            }, 'randomBonuses', renderBonusesList);
         }
     });
 
@@ -216,13 +210,14 @@ async function initializeAutoReviewUI() {
         const editBtn = e.target.closest('.fpt-edit-keyword-btn');
         if (editBtn) {
             const index = parseInt(editBtn.dataset.index, 10);
-            const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-            const keywords = fpToolsAutoReplies.keywords || [];
-            const rule = keywords[index];
-            if (!rule) return;
+            let rule;
+            try { rule = JSON.parse(editBtn.closest('.keyword-item')?.dataset.rule || 'null'); }
+            catch (_) { return; }
+            if (!rule || typeof rule !== 'object') return;
 
             // load the rule into the add-form for editing
             editingKeywordIndex = index;
+            editingKeywordOriginal = JSON.parse(JSON.stringify(rule));
             kwInput.value = rule.keyword || '';
             kwResponse.value = rule.response || '';
             const modeRadio = document.querySelector(`input[name="newKeywordMatchMode"][value="${rule.matchMode || 'exact'}"]`);
@@ -253,15 +248,17 @@ async function initializeAutoReviewUI() {
         const delBtn = e.target.closest('.delete-keyword-btn');
         if (delBtn) {
             const index = parseInt(delBtn.dataset.index, 10);
-            const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-            const keywords = fpToolsAutoReplies.keywords || [];
-            keywords.splice(index, 1);
-            fpToolsAutoReplies.keywords = keywords;
-            
-            await chrome.storage.local.set({ fpToolsAutoReplies });
-            renderKeywordsList(keywords);
-            // if we were editing the deleted (or a shifted) rule, reset the form
+            let expected;
+            try { expected = JSON.parse(delBtn.closest('.keyword-item')?.dataset.rule || 'null'); }
+            catch (_) { return; }
+            if (!expected || typeof expected !== 'object') return;
+
+            const keywords = await saveListChange({
+                arrayOps: { keywords: [{ op: 'remove', index, expected }] }
+            }, 'keywords', renderKeywordsList);
+            if (!keywords) return;
             if (editingKeywordIndex === index) resetKeywordForm();
+            else if (editingKeywordIndex > index) editingKeywordIndex--;
         }
     });
 
@@ -278,7 +275,8 @@ function renderKeywordsList(keywords) {
     }
 
     const esc = (s) => String(s == null ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
     listContainer.innerHTML = keywords.map((item, index) => {
         const modeBadge = item.matchMode === 'contains'
@@ -289,7 +287,7 @@ function renderKeywordsList(keywords) {
             ? '<span class="material-symbols-rounded fpt-kw-img-marker" title="К правилу прикреплено изображение">image</span>'
             : '';
         return `
-        <div class="keyword-item" data-index="${index}">
+        <div class="keyword-item" data-index="${index}" data-rule="${esc(JSON.stringify(item))}">
             <div class="keyword-pair">
                 <span class="keyword-key">${esc(item.keyword)}</span>${modeBadge}
                 <span class="keyword-arrow">→</span>
@@ -312,10 +310,13 @@ function renderBonusesList(bonuses) {
         return;
     }
 
+    const esc = (s) => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     listContainer.innerHTML = bonuses.map((text, index) => `
         <div class="bonus-item">
-            <span class="bonus-text">${text}</span>
-            <button class="btn btn-default delete-bonus-btn" data-index="${index}">Удалить</button>
+            <span class="bonus-text">${esc(text)}</span>
+            <button class="btn btn-default delete-bonus-btn" data-index="${index}" data-value="${esc(text)}">Удалить</button>
         </div>
     `).join('');
 }
