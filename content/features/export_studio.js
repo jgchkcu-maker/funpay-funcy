@@ -1308,6 +1308,11 @@
             // чекбоксы (zebra/totals/watermark/pageNumbers) уже в state через свои тогглы
         }
         refreshCount();
+        if (ctx.kind === 'sales' && typeof chrome !== 'undefined' && chrome.runtime?.id) {
+            chrome.runtime.sendMessage({ action: 'updateSales' }, () => {
+                refreshCount();
+            });
+        }
 
         // close
         const close = () => ov.remove();
@@ -1391,41 +1396,92 @@
         return b;
     }
 
+    function findNativeExportButton() {
+        const candidates = Array.from(document.querySelectorAll('a, button, input[type="submit"], input[type="button"], .btn'));
+        return candidates.find(el => {
+            const t = (el.textContent || el.value || '').trim();
+            const href = el.getAttribute('href') || '';
+            return t.includes('Выгрузить') || el.classList.contains('orders-export') || (href && href.includes('export'));
+        });
+    }
+
+    function hookNativeExportButton(ctx) {
+        const nativeBtn = findNativeExportButton();
+        if (!nativeBtn) return false;
+        if (nativeBtn.dataset.fptEsHooked) return true;
+        nativeBtn.dataset.fptEsHooked = '1';
+        nativeBtn.title = 'Студия экспорта FunPay Funcy (XLSX, CSV, PDF, DOCX) — чистая выгрузка';
+        nativeBtn.classList.add('fpt-es-trigger');
+
+        nativeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openStudio(ctx);
+        }, true);
+        return true;
+    }
+
     function tryMount(ctx) {
-        if (document.getElementById('fpt-es-open')) return true;
+        let mounted = false;
         if (ctx.kind === 'finance') {
+            if (document.getElementById('fpt-es-open')) return true;
             const head = document.querySelector('.fpt-fin-head');
             const refresh = document.getElementById('fpt-fin-refresh');
-            if (!head) return false;
-            const btn = makeBtnFinance();
-            btn.onclick = () => openStudio(ctx);
-            if (refresh && refresh.parentElement === head) head.insertBefore(btn, refresh.nextSibling);
-            else head.appendChild(btn);
-            return true;
+            if (head) {
+                const btn = makeBtnFinance();
+                btn.onclick = () => openStudio(ctx);
+                if (refresh && refresh.parentElement === head) head.insertBefore(btn, refresh.nextSibling);
+                else head.appendChild(btn);
+                mounted = true;
+            }
         } else {
-            const controls = document.querySelector('.fp-stats-controls');
-            if (!controls) return false;
-            const btn = makeBtnSales();
-            btn.onclick = () => openStudio(ctx);
-            // ставим первым, чтобы был заметен
-            controls.insertBefore(btn, controls.firstChild);
-            return true;
+            // 1. Перехватываем и заменяем родную серверную кнопку «Выгрузить» FunPay
+            if (hookNativeExportButton(ctx)) mounted = true;
+
+            // 2. Если есть блок статистики .fp-stats-controls, добавляем кнопку и туда
+            if (!document.getElementById('fpt-es-open')) {
+                const controls = document.querySelector('.fp-stats-controls');
+                if (controls) {
+                    const btn = makeBtnSales();
+                    btn.onclick = () => openStudio(ctx);
+                    controls.insertBefore(btn, controls.firstChild);
+                    mounted = true;
+                }
+            }
         }
+        return mounted;
     }
 
     function init() {
         const ctx = detectContext();
         if (!ctx) return;
-        // для покупок/продаж тумблер показа статистики не блокирует экспорт-кнопку,
-        // но панель появляется только если статистика смонтирована — ждём её.
         if (tryMount(ctx)) return;
+
         let tries = 0;
+        let iv = null;
         const obs = new MutationObserver(() => {
-            if (tryMount(ctx) || ++tries > 240) obs.disconnect();
+            if (tryMount(ctx)) {
+                obs.disconnect();
+                if (iv !== null) clearInterval(iv);
+                return;
+            }
+            if (++tries > 240) {
+                obs.disconnect();
+                if (iv !== null) clearInterval(iv);
+            }
         });
         obs.observe(document.body, { childList: true, subtree: true });
-        // подстраховка по таймеру (вдруг панель уже была до запуска наблюдателя)
-        const iv = setInterval(() => { if (tryMount(ctx) || ++tries > 240) clearInterval(iv); }, 500);
+        iv = setInterval(() => {
+            if (tryMount(ctx)) {
+                obs.disconnect();
+                clearInterval(iv);
+                return;
+            }
+            if (++tries > 240) {
+                obs.disconnect();
+                clearInterval(iv);
+            }
+        }, 500);
     }
 
     if (document.readyState === 'loading') {

@@ -1,5 +1,30 @@
 /* css/live_styler.css */
 
+:root {
+    --ms-bg: rgba(30, 30, 30, 0.92);
+    --ms-card-bg: #2a2a2a;
+    --ms-border: #444;
+    --ms-text: #eee;
+    --ms-text-muted: #888;
+    --ms-input-bg: #2a2a2a;
+    --ms-input-border: #555;
+    --ms-input-color: #fff;
+    --ms-shadow: rgba(0, 0, 0, 0.4);
+}
+
+html.fpt-theme-light,
+html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) {
+    --ms-bg: rgba(255, 255, 255, 0.95);
+    --ms-card-bg: #f5f7fa;
+    --ms-border: rgba(0, 0, 0, 0.12);
+    --ms-text: #16181d;
+    --ms-text-muted: #64748b;
+    --ms-input-bg: #ffffff;
+    --ms-input-border: rgba(0, 0, 0, 0.18);
+    --ms-input-color: #16181d;
+    --ms-shadow: rgba(0, 0, 0, 0.15);
+}
+
 /* --- Режим Редактора --- */
 body.fp-tools-magic-stick-active * {
     cursor: crosshair !important;
@@ -37,13 +62,14 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     cursor: pointer;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px var(--ms-shadow);
     transition: all 0.3s ease;
     animation: ms-sway 5s ease-in-out infinite alternate;
 }
 #ms-exit-btn:hover {
     transform: scale(1.1);
     background: #e53935;
+    color: #fff;
     animation-play-state: paused;
 }
 @keyframes ms-sway {
@@ -67,7 +93,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
     border-radius: 12px;
     padding: 10px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.4);
+    box-shadow: 0 5px 25px var(--ms-shadow);
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
@@ -87,7 +113,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 .ms-target-info {
     font-family: monospace;
     font-size: 13px;
-    color: #888;
+    color: var(--ms-text-muted);
     max-width: 250px;
     white-space: nowrap;
     overflow: hidden;
@@ -140,7 +166,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     width: 80px;
 }
 .ms-reset-btn {
-    background: none; border: none; color: #777; cursor: pointer; padding: 0;
+    background: none; border: none; color: var(--ms-text-muted); cursor: pointer; padding: 0;
     position: relative;
     height: 16px;
 }
@@ -180,6 +206,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 .ms-toggle-btn.active {
     background: #1b75bb;
     border-color: #1b75bb;
+    color: #fff;
 }
 
 /* --- Кнопки действий --- */
@@ -210,6 +237,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     background-color: #16a085;
     border-color: #1abc9c;
     box-shadow: 0 0 10px #1abc9c;
+    color: #fff;
 }
 
 /* --- Модальные окна --- */
@@ -218,7 +246,8 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     position: fixed;
     z-index: 100000;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
     justify-content: center;
     align-items: center;
 }
@@ -233,6 +262,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     max-height: 80vh;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 10px 30px var(--ms-shadow);
 }
 .ms-modal-header { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid var(--fpt-border, rgba(22,24,29,0.12)); }
 .ms-modal-header h3 { margin: 0; font-size: 18px; }

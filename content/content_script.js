@@ -117,7 +117,7 @@
             }
             const popup = document.querySelector('.fp-tools-popup');
             if (popup) {
-                await loadLastActivePage();
+                await resetPopupStartState();
                 popup.classList.add('active');
                 if (typeof applyFptMenuTransparency === 'function') applyFptMenuTransparency();
                 if (typeof syncFptMenuControls === 'function') syncFptMenuControls();

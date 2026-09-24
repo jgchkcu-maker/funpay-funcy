@@ -48,8 +48,11 @@ function initSalesFilter() {
     if (document.getElementById('fp-sales-filter')) return;
 
     // Wait for the FunPay Funcy stats block to appear
-    const statsBlock = document.getElementById('fp-tools-sales-block') ||
-                       document.querySelector('.fp-tools-sales, [id*="sales"]');
+    const statsBlock = [
+        document.querySelector('.sales-statistics'),
+        document.getElementById('fp-tools-sales-block'),
+        document.querySelector('.fp-tools-sales')
+    ].find(candidate => candidate && !candidate.closest('.fp-tools-popup'));
     if (!statsBlock) return;
 
     const bar = document.createElement('div');

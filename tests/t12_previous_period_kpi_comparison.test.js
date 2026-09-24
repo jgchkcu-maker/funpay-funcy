@@ -2,10 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeDataSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_data.js'), 'utf8').replace(/\r\n/g, '\n');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubOverviewSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'overview.js'), 'utf8').replace(/\r\n/g, '\n');
 const cssSource = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 
 function createFinanceData(customSales = []) {
@@ -83,7 +85,7 @@ function createFinanceHub() {
     sandbox.window = sandbox;
     sandbox.globalThis = sandbox;
     const ctx = vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, ctx, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, ctx);
     return {
         hub: ctx.FPTFinanceHub || ctx.fptFinanceHub,
         getStored: key => stored.get(key)
@@ -304,7 +306,7 @@ function testFinanceHubIntegration() {
     assert.match(cssSource, /\.fpt-fin-diff-label/, 'CSS defines .fpt-fin-diff-label');
 
     // Check that finance_hub.js has row 1 and subtab badges wired
-    assert.match(financeHubSource, /fpt-fin-kpi-diff|diffs\.revenue|diffHtml/, 'Finance Hub markup includes KPI diff badges');
+    assert.match(financeHubOverviewSource, /fpt-fin-kpi-diff|diffs\.revenue|diffHtml/, 'Finance Hub markup includes KPI diff badges');
 }
 
 // 6. Zero-baseline fixtures (R13 in RISK_REGISTER.md)

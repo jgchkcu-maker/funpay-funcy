@@ -39,10 +39,26 @@
     color-scheme: var(--fpt-color-scheme, light);
     border: 1px solid var(--cw-border);
     border-radius: 14px;
-    box-shadow: 0 12px 48px rgba(0,0,0,0.45);
+    box-shadow: 0 12px 48px var(--fpt-shadow, rgba(0,0,0,0.45));
     width: 90vw;
     max-width: 550px;
     animation: ai-modal-slide-up 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+html.fpt-theme-light .fp-tools-ai-gen-modal-content,
+html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) .fp-tools-ai-gen-modal-content {
+    --cw-bg: #ffffff;
+    --cw-color: #16181d;
+    --cw-border: rgba(0,0,0,0.12);
+    --cw-subtle: rgba(0,0,0,0.04);
+    --cw-muted: #6b7280;
+    --cw-field-bg: #f5f7fa;
+}
+
+html.fpt-theme-light .fp-tools-ai-gen-options .custom-checkbox,
+html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) .fp-tools-ai-gen-options .custom-checkbox {
+    background-color: #f0f2f5;
+    border-color: #d1d5db;
 }
 
 @keyframes ai-modal-slide-up {

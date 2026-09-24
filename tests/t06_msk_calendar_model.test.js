@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeDataSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_data.js'), 'utf8').replace(/\r\n/g, '\n');
@@ -71,7 +72,7 @@ function setupModules() {
 
     const ctx = vm.createContext(sandbox);
     vm.runInContext(financeDataSource, ctx, { filename: 'finance_data.js' });
-    vm.runInContext(financeHubSource, ctx, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, ctx);
 
     return {
         finData: ctx.FPTFinanceData,

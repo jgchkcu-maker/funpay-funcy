@@ -2,9 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubFiltersSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'filters.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubExportsSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'exports.js'), 'utf8').replace(/\r\n/g, '\n');
 const cssSource = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,16 +19,16 @@ function runStaticContractChecks() {
     assert.match(cssSource, /\.fpt-fin-snapshot-badge/, 'CSS must style .fpt-fin-snapshot-badge');
 
     // 2. Snapshot badge creation in setupHeaderFilters
-    assert.match(financeHubSource, /fptFinPeriodSnapshotBadge/, 'setupHeaderFilters must handle fptFinPeriodSnapshotBadge');
-    assert.match(financeHubSource, /Текущий снимок/, 'setupHeaderFilters must define neutral snapshot label');
+    assert.match(financeHubFiltersSource, /fptFinPeriodSnapshotBadge/, 'setupHeaderFilters must handle fptFinPeriodSnapshotBadge');
+    assert.match(financeHubFiltersSource, /Текущий снимок/, 'setupHeaderFilters must define neutral snapshot label');
 
     // 3. Visibility toggling in updateHeaderFiltersVisibility
-    assert.match(financeHubSource, /setFinanceControlVisible\(periodSelect,\s*!isPotential\)/, 'potential subtab must hide period selector through the shared visibility contract');
-    assert.match(financeHubSource, /setFinanceControlVisible\(snapshotBadge,\s*isPotential,\s*['"]inline-flex['"]\)/, 'potential subtab must show snapshot badge through the shared visibility contract');
-    assert.match(financeHubSource, /periodSelect\.value\s*=\s*state\.period/, 'returning from potential must restore user period selection');
+    assert.match(financeHubFiltersSource, /setFinanceControlVisible\(periodControl,\s*!isPotential\)/, 'potential subtab must hide the complete period wrapper through the shared visibility contract');
+    assert.match(financeHubFiltersSource, /setFinanceControlVisible\(snapshotBadge,\s*isPotential,\s*['"]inline-flex['"]\)/, 'potential subtab must show snapshot badge through the shared visibility contract');
+    assert.match(financeHubFiltersSource, /periodSelect\.value\s*=\s*state\.period/, 'returning from potential must restore user period selection');
 
     // 4. Export metadata snapshot semantics
-    assert.match(financeHubSource, /period:\s*dataset\s*===\s*['"]potential['"]\s*\?\s*['"]snapshot['"]\s*:\s*state\.period/, 'export meta must mark potential as snapshot period');
+    assert.match(financeHubExportsSource, /period:\s*dataset\s*===\s*['"]potential['"]\s*\?\s*['"]snapshot['"]\s*:\s*state\.period/, 'export meta must mark potential as snapshot period');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -225,7 +228,7 @@ function setupHubEnv(customHandlers = {}) {
     };
 
     const ctx = vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, ctx, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, ctx);
     const hub = ctx.root.fptFinanceHub || ctx.root.FPTFinanceHub;
     assert.ok(hub, 'FPTFinanceHub must be registered');
 

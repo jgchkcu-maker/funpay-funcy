@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'filters.js'), 'utf8').replace(/\r\n/g, '\n');
 const css = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 
 assert.match(hub, /function syncFinanceCustomSelectScrollbar\(select\)/, 'custom dropdown must manage its own scrollbar thumb');

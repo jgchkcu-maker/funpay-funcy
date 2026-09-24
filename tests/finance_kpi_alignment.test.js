@@ -5,7 +5,7 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const css = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 const popup = fs.readFileSync(path.join(ROOT, 'content', 'ui', 'main_popup.js'), 'utf8').replace(/\r\n/g, '\n');
-const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'shared_ui.js'), 'utf8').replace(/\r\n/g, '\n');
 
 const kpiCards = popup.match(/class="[^\"]*\bfpt-fin-kpi-card\b[^\"]*"/g) || [];
 assert.equal(kpiCards.length, 28, 'All six Finance metric groups must keep the shared KPI card contract');

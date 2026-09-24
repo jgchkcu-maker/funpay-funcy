@@ -51,10 +51,8 @@
         menu.id = MENU_ID;
         menu.style.cssText = `position:fixed;left:${x}px;top:${y}px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:100000;min-width:210px;padding:4px 0;font-family:Inter,'Segoe UI',sans-serif;font-size:13px;color:var(--fpt-text, #16181d);`;
 
-        const hasNote = lot.__hasNote;
         const items = [
             { icon: isPinned ? '📌' : '📍', label: isPinned ? 'Открепить из таблицы' : 'Закрепить в таблице', action: 'pin', enabled: !!lot.offerId },
-            { icon: '📝', label: hasNote ? 'Заметка (изменить)' : 'Добавить заметку', action: 'note', enabled: !!lot.offerId },
             { icon: '✉️', label: lot.sellerName ? `Написать ${lot.sellerName}` : 'Написать', action: 'msg', enabled: !!lot.sellerId },
             { icon: '🔗', label: 'Скопировать ссылку', action: 'copy', enabled: true },
             { sep: true },
@@ -112,10 +110,6 @@
             });
         }
         if (action === 'msg') showInlineChat(lot);
-        if (action === 'note') {
-            if (window.FPTNotes) window.FPTNotes.openEditor(lot.offerId, lot.title);
-            else showNotification('Модуль заметок не загрузился', true);
-        }
         if (action === 'toggle_ctx') {
             _ctxInverted = !_ctxInverted;
             chrome.storage.local.set({ fpToolsCtxInverted: _ctxInverted });
@@ -315,13 +309,7 @@
         const lot = parseLot(lotEl);
         if (!lot) return;
         const x = e.clientX, y = e.clientY;
-        // Узнаём, есть ли заметка у этого лота (для подписи пункта меню), затем показываем.
-        if (lot.offerId && window.FPTNotes) {
-            window.FPTNotes.get(lot.offerId).then(n => { lot.__hasNote = !!n; showMenu(x, y, lot); })
-                .catch(() => showMenu(x, y, lot));
-        } else {
-            showMenu(x, y, lot);
-        }
+        showMenu(x, y, lot);
     }, true);
 
     document.addEventListener('click', (e) => { if (!e.target.closest(`#${MENU_ID}`)) removeMenu(); });

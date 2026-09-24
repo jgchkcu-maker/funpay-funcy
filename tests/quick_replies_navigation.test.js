@@ -55,9 +55,8 @@ class FakeElement {
 function createHarness(storageSeed = {}) {
     const storage = { ...storageSeed };
     const templates = new FakeElement({ page: 'templates' });
-    const notes = new FakeElement({ page: 'notes' });
     const lotIo = new FakeElement({ page: 'lot_io' });
-    const pages = [templates, notes, lotIo];
+    const pages = [templates, lotIo];
     const tabs = ['templates', 'commands'].map(mode => {
         const tab = new FakeElement({ quickRepliesMode: mode });
         tab.setAttribute('id', `fptQuickReplies${mode === 'templates' ? 'Templates' : 'Commands'}Tab`);
@@ -70,7 +69,7 @@ function createHarness(storageSeed = {}) {
     });
     templates.tabs = tabs;
     templates.panes = panes;
-    const navItems = [templates, notes, lotIo].map(page => new FakeElement({ page: page.dataset.page }));
+    const navItems = [templates, lotIo].map(page => new FakeElement({ page: page.dataset.page }));
     const popup = new FakeElement();
     popup.classList.add('fp-tools-popup');
     popup.dataset = {};
@@ -155,7 +154,7 @@ async function run() {
     assert.equal(slashInitCount, 1, 'switching modes does not bind command controls again');
     await h.window.fptOpenPopupPage('slash_commands');
 
-    await h.window.fptOpenPopupPage('notes');
+    await h.window.fptOpenPopupPage('lot_io');
     await h.window.fptOpenPopupPage('templates');
     assert.equal(h.tabs[1].getAttribute('aria-selected'), 'true', 'the command mode returns after visiting another page');
     assert.equal(h.panes[1].hidden, false);

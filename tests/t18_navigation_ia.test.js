@@ -49,11 +49,11 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
     assert.equal(new Set(pages).size, pages.length, 'navigation schema must not duplicate page ids');
     const quickActions = extractQuickActionIds();
     assert.equal(pages.length, 22, 'accordion groups must own exactly 22 pages');
-    assert.equal(quickActions.length, 2, 'the footer must own exactly two quick routes');
+    assert.equal(quickActions.length, 1, 'the footer must own exactly one quick route');
     assert.equal(new Set(quickActions).size, quickActions.length, 'footer routes must not duplicate each other');
     assert.deepEqual([...pages, ...quickActions].sort(), [...navPages].sort(),
-        'six groups and footer actions must cover all 24 canonical nav routes exactly once');
-    assert.deepEqual(quickActions, ['notes', 'support'], 'notes and support must remain the footer routes');
+        'six groups and the footer action must cover all 23 canonical nav routes exactly once');
+    assert.deepEqual(quickActions, ['support'], 'support must remain the footer route');
 }
 
 function testSixIndependentAccordionSections() {
@@ -94,7 +94,7 @@ function testAccordionRendererMovesExistingNodes() {
     assert.match(source, /fpToolsNavExpandedSectionsV2/, 'expanded state must use the versioned section key');
     assert.doesNotMatch(source, /fpToolsNavExpandedSections(?!V2)/, 'legacy ambiguous section IDs must not be read');
     assert.match(block, /FPT_NAV_QUICK_ACTIONS[\s\S]*?appendChild\(item\)/,
-        'notes and support must move into the footer without cloning route nodes');
+        'support must move into the footer without cloning route nodes');
 }
 
 function testInitialPageAndExpandedStateFallback() {
@@ -145,7 +145,7 @@ function testFinalLabelsAndRatingRoute() {
         ['theme', 'Темы'], ['effects', 'Эффекты'], ['epic_nicks', 'Оформление ника'], ['needs', 'Элементы интерфейса'],
         ['accounts', 'Аккаунты'], ['general', 'Отображение FunPay'], ['telegram', 'Уведомления и интеграции'], ['settings_io', 'Перенос настроек'],
         ['overview', 'Справочник функций'], ['tickets', 'Поддержка FunPay'], ['global_chat', 'Чат сообщества'],
-        ['notes', 'Заметки'], ['support', 'Оценить расширение']
+        ['support', 'Оценить расширение']
     ];
     for (const [id, label] of pageLabels) {
         assert.match(labels, new RegExp(`${id}:\\s*['"]${label}['"]`), id + ' must use its approved visible label');

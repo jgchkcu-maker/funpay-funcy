@@ -3,13 +3,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const hub = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'profit.js'), 'utf8').replace(/\r\n/g, '\n');
 const popup = fs.readFileSync(path.join(ROOT, 'content', 'ui', 'main_popup.js'), 'utf8').replace(/\r\n/g, '\n');
 const css = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 
 assert.match(popup, /id="fptFinProfitCostWarning"[\s\S]*?fpt-fin-profit-cost-warning/, 'profit pane must include the missing-cost warning slot');
-assert.match(hub, /function renderProfitMissingCostWarning\(pane, totals, currency\)/, 'missing-cost warning renderer must exist');
-assert.match(hub, /const shouldShow = eligible > 0 && known === 0;/, 'warning must appear only when there are eligible orders but zero usable cost bases');
+assert.match(hub, /function renderProfitMissingCostWarning\(pane, totals, currency, isLoading = false, isError = false\)/, 'missing-cost state renderer must exist');
+assert.match(hub, /function getProfitCostCoverageNotice\(totals, isLoading, isError\)/, 'loading, error, empty, missing, partial, and complete cost states must be distinct');
+assert.match(hub, /type: 'missing'[\s\S]*?type: 'partial'[\s\S]*?type: 'complete'/, 'loaded cost coverage must distinguish missing, partial, and full states');
 assert.match(hub, /Нет заказов с указанной себестоимостью/, 'warning must explain the missing cost basis');
 assert.match(hub, /прибыль, маржинальность и ROI/i, 'warning must explain which metrics cannot be calculated');
 assert.match(hub, /currencyMismatchCount/, 'warning must distinguish currency mismatch from truly missing cost basis');

@@ -548,6 +548,24 @@ function fptApplyThemeVars() {
         r.setProperty('--fpt-shadow',     p.shadow);
         r.setProperty('--fpt-color-scheme', p.dark ? 'dark' : 'light');
         r.setProperty('color-scheme', p.dark ? 'dark' : 'light');
+
+        // Также задаем глобальные переменные --fptm-* на :root,
+        // чтобы модальные окна и порталы в document.body наследовали светлую/темную тему
+        r.setProperty('--fptm-color-scheme', p.dark ? 'dark' : 'light');
+        r.setProperty('--fptm-bg',         p.bg);
+        r.setProperty('--fptm-surface',    p.surface);
+        r.setProperty('--fptm-surface-2',  p.surface2);
+        r.setProperty('--fptm-border',     p.border);
+        r.setProperty('--fptm-hover',      p.hover);
+        r.setProperty('--fptm-text',       p.text);
+        r.setProperty('--fptm-muted',      p.textMuted);
+        r.setProperty('--fptm-faint',      p.textMuted);
+        r.setProperty('--fptm-field',      p.dark ? p.surface : p.bg);
+        r.setProperty('--fptm-accent',     p.accent);
+        r.setProperty('--fptm-accent-soft',p.accentSoft);
+        r.setProperty('--fptm-shadow',     p.shadow);
+        r.setProperty('--fptm-on-accent',  '#ffffff');
+
         document.documentElement.classList.toggle('fpt-theme-dark', p.dark);
         document.documentElement.classList.toggle('fpt-theme-light', !p.dark);
     } catch (e) { /* noop */ }

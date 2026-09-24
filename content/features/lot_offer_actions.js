@@ -32,26 +32,6 @@
         editLink.style.flex = '1 1 auto';
         editLink.style.marginBottom = '0';
 
-        // Маленькая БЕЛАЯ кнопка заметки (та же форма, что и удаление) — иконка бумажки.
-        const noteBtn = document.createElement('button');
-        noteBtn.type = 'button';
-        noteBtn.className = 'btn btn-default fpt-lot-note-btn';
-        noteBtn.title = 'Заметка к лоту';
-        noteBtn.style.cssText = 'flex:0 0 auto;padding:0 14px;display:inline-flex;align-items:center;justify-content:center;';
-        noteBtn.innerHTML = '<i class="far fa-sticky-note"></i>';
-        noteBtn.addEventListener('click', () => {
-            if (!offerId) { showNotification?.('Не удалось определить ID лота.', true); return; }
-            if (window.FPTNotes) {
-                let title = '';
-                document.querySelectorAll('.param-item').forEach(it => {
-                    const h = it.querySelector('h5')?.textContent.trim().toLowerCase();
-                    if (h === 'краткое описание' || h === 'short description') title = it.querySelector('div')?.textContent.trim() || title;
-                });
-                window.FPTNotes.openEditor(offerId, title);
-            } else showNotification?.('Модуль заметок не загрузился', true);
-        });
-        wrap.appendChild(noteBtn);
-
         // Красная кнопка удаления
         const del = document.createElement('button');
         del.type = 'button';

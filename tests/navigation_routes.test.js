@@ -124,7 +124,7 @@ function createNodeListLike(items) {
 function createHarness(storageSeed = {}, financeSubtab = null) {
     const storage = { ...storageSeed };
     const storageWrites = [];
-    const navIds = ['general', 'notes', 'support', 'lot_io', 'finance_hub', 'templates', 'global_chat'];
+    const navIds = ['general', 'support', 'lot_io', 'finance_hub', 'templates', 'global_chat'];
     const navItems = navIds.map(id => {
         const li = new FakeElement({ pageId: id, label: new FakeElement({ text: id === 'global_chat' ? 'Общий чат' : id }) });
         li.classList.add('fp-nav-child');
@@ -276,10 +276,9 @@ function assertRouterApi(harness) {
 async function testRoutesAndModePersistence() {
     const h = createHarness({}, 'sales');
     assertRouterApi(h);
-    const initCounts = { notes: 0, support: 0, lot_io: 0 };
+    const initCounts = { support: 0, lot_io: 0 };
     assert.equal(typeof h.financeSubtabNodes.map, 'undefined', 'querySelectorAll must behave like a NodeList without Array.map');
     assert.equal(typeof h.financeSubtabNodes.some, 'undefined', 'querySelectorAll must behave like a NodeList without Array.some');
-    h.context.initializeNotes = () => { initCounts.notes += 1; };
     h.context.initializeLotIO = () => { initCounts.lot_io += 1; };
     h.context.setupFinanceHubUI(h.popup);
     h.window.fptRegisterPopupPageModeHandler('templates', {
@@ -288,21 +287,16 @@ async function testRoutesAndModePersistence() {
         select(mode) { h.context.selectedTemplatesMode = mode; return true; }
     });
     h.window.fptRegisterPopupRouteAlias('legacy_commands', { pageId: 'templates', mode: 'commands' });
-    assert.equal(await h.window.fptOpenPopupPage('notes'), true);
-    assert.equal(h.pages.find(page => page.dataset.page === 'notes').classList.contains('active'), true);
-    assert.equal(h.navItems.find(item => item.dataset.page === 'notes').classList.contains('active'), true);
-    assert.equal(h.storage.fpToolsLastPage, 'notes');
+    assert.equal(await h.window.fptOpenPopupPage('general'), true);
+    assert.equal(h.pages.find(page => page.dataset.page === 'general').classList.contains('active'), true);
+    assert.equal(h.navItems.find(item => item.dataset.page === 'general').classList.contains('active'), true);
+    assert.equal(h.storage.fpToolsLastPage, 'general');
     assert.equal(h.storage.fpToolsLastPageMode, null, 'single-pane pages store a null current mode');
-    assert.equal(h.storage.fpToolsPageModes.notes, null);
-    assert.equal(initCounts.notes, 1);
-
-    await h.window.fptOpenPopupPage('notes');
-    assert.equal(initCounts.notes, 1, 'reopening the active page does not rerun its entry initializer');
+    assert.equal(h.storage.fpToolsPageModes.general, null);
     await h.window.fptOpenPopupPage('support');
     assert.equal(h.storage.fpToolsLastPage, 'support');
     assert.equal(initCounts.support || 0, 0);
-    await h.window.fptOpenPopupPage('notes');
-    assert.equal(initCounts.notes, 2, 'returning after leaving is a new page entry');
+    await h.window.fptOpenPopupPage('general');
 
     await h.window.fptOpenPopupPage('finance_hub');
     const activeFinanceMode = () => h.financeSubtabs.find(button => button.classList.contains('active'))?.dataset.subtab;
@@ -331,7 +325,7 @@ async function testRoutesAndModePersistence() {
     await h.window.fptOpenPopupPage('legacy_commands');
     assert.equal(h.storage.fpToolsLastPage, 'templates', 'registered aliases persist the canonical page ID');
     assert.equal(h.storage.fpToolsPageModes.templates, 'commands');
-    await h.window.fptOpenPopupPage('notes');
+    await h.window.fptOpenPopupPage('general');
     await h.window.fptOpenPopupPage('templates');
     assert.equal(h.context.selectedTemplatesMode, 'commands', 'each page restores its own saved mode');
 

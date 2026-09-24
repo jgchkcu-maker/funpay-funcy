@@ -551,7 +551,6 @@ function initializeToolsPopup() {
     if (typeof setupTemplateSettingsHandlers === 'function') setupTemplateSettingsHandlers();
     if (typeof setupPopupNavigation === 'function') setupPopupNavigation();
     if (typeof initializeCalculatorLogic === 'function') initializeCalculatorLogic();
-    if (typeof initializeNotes === 'function') initializeNotes();
 
     popup.dataset.initialized = 'true';
     console.log('FunPay Funcy Popup Initialized.');

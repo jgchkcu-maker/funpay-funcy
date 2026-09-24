@@ -2,9 +2,16 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubFiltersSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'filters.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubExportsSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'exports.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubOverviewSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'overview.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubRendererSource = ['sales', 'purchases', 'operations', 'potential', 'profit']
+    .map(name => fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', `${name}.js`), 'utf8').replace(/\r\n/g, '\n'))
+    .join('\n');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. СТАТИЧЕСКИЕ ПРОВЕРКИ КОНТРАКТА В ИСХОДНОМ КОДЕ (T04)
@@ -17,29 +24,28 @@ function runStaticContractChecks() {
     assert.match(financeHubSource, /status:\s*['"]all['"]/, 'state must keep status for backward compatibility');
 
     // 2. updateStatusSelectOptions presence and logic
-    assert.match(financeHubSource, /function updateStatusSelectOptions\(subtab\)/, 'updateStatusSelectOptions must exist');
-    assert.match(financeHubSource, /setFinanceControlVisible\(statusSelect,\s*!isPotential\)/, 'potential tab must hide status select through the shared visibility contract');
-    assert.match(financeHubSource, /value=["']complete["']/, 'operations options must include complete');
-    assert.match(financeHubSource, /value=["']cancel["']/, 'operations options must include cancel');
-    assert.match(financeHubSource, /value=["']waiting["']/, 'operations options must include waiting');
-    assert.match(financeHubSource, /value=["']closed["']/, 'order options must include closed');
-    assert.match(financeHubSource, /value=["']paid["']/, 'order options must include paid');
-    assert.match(financeHubSource, /value=["']refunded["']/, 'order options must include refunded');
+    assert.match(financeHubFiltersSource, /function updateStatusSelectOptions\(subtab\)/, 'updateStatusSelectOptions must exist');
+    assert.match(financeHubFiltersSource, /setFinanceControlVisible\(statusControl,\s*!isPotential\)/, 'potential tab must hide the complete status wrapper through the shared visibility contract');
+    assert.match(financeHubFiltersSource, /value=["']complete["']/, 'operations options must include complete');
+    assert.match(financeHubFiltersSource, /value=["']cancel["']/, 'operations options must include cancel');
+    assert.match(financeHubFiltersSource, /value=["']waiting["']/, 'operations options must include waiting');
+    assert.match(financeHubFiltersSource, /value=["']closed["']/, 'order options must include closed');
+    assert.match(financeHubFiltersSource, /value=["']paid["']/, 'order options must include paid');
+    assert.match(financeHubFiltersSource, /value=["']refunded["']/, 'order options must include refunded');
 
     // 3. Subtab rendering logic
-    assert.match(financeHubSource, /filterOpts\.statuses\s*=\s*state\.orderStatus/, 'sales/purchases/profit must use state.orderStatus');
-    assert.match(financeHubSource, /filterOpts\.statuses\s*=\s*state\.operationStatus/, 'operations must use state.operationStatus');
+    assert.match(financeHubRendererSource, /filterOpts\.statuses\s*=\s*state\.orderStatus/, 'sales/purchases/profit must use state.orderStatus');
+    assert.match(financeHubRendererSource, /filterOpts\.statuses\s*=\s*state\.operationStatus/, 'operations must use state.operationStatus');
 
     // 4. Overview domain isolation
-    const overviewFnMatch = financeHubSource.match(/async\s+function\s+renderOverviewSubtab[\s\S]*?function\s+cleanupOverview/);
-    assert.ok(overviewFnMatch, 'renderOverviewSubtab function found');
-    const overviewCode = overviewFnMatch[0];
+    assert.match(financeHubOverviewSource, /async\s+function\s+renderOverviewSubtab\(/, 'renderOverviewSubtab function found');
+    const overviewCode = financeHubOverviewSource;
     assert.ok(!overviewCode.includes('opsFilter.statuses = state.orderStatus'), 'overview must NOT pass orderStatus to operations filter');
     assert.ok(!overviewCode.includes('opsFilter.statuses = state.status'), 'overview must NOT pass status to operations filter');
 
     // 5. Export domain isolation
-    assert.match(financeHubSource, /orderStatus:\s*state\.orderStatus/, 'export meta must include orderStatus');
-    assert.match(financeHubSource, /operationStatus:\s*state\.operationStatus/, 'export meta must include operationStatus');
+    assert.match(financeHubExportsSource, /orderStatus:\s*state\.orderStatus/, 'export meta must include orderStatus');
+    assert.match(financeHubExportsSource, /operationStatus:\s*state\.operationStatus/, 'export meta must include operationStatus');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -219,7 +225,7 @@ function setupHubEnv(customHandlers = {}) {
     };
 
     const ctx = vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, ctx, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, ctx);
     const hub = ctx.root.fptFinanceHub || ctx.root.FPTFinanceHub;
     assert.ok(hub, 'FPTFinanceHub must be registered');
 

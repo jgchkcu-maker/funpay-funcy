@@ -2,9 +2,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubExportSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'exports.js'), 'utf8').replace(/\r\n/g, '\n');
 const exportStudioSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'export_studio.js'), 'utf8').replace(/\r\n/g, '\n');
 const financeEngineSource = exportStudioSource.slice(exportStudioSource.indexOf('//  FP Tools — Finance Hub Verified Export Engine'));
 
@@ -55,7 +57,7 @@ function createHubEnv(sharedStudio) {
     };
     sandbox.window = sandbox;
     vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, sandbox, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, sandbox);
     const hub = sandbox.FPTFinanceHub || sandbox.fptFinanceHub;
     assert.ok(hub, 'FPTFinanceHub must be registered');
     return { hub, calls, sales, purchases, operations, profitOrders, lots };
@@ -100,7 +102,7 @@ function testFinanceHubHasNoCompetingSerializer() {
     assert.doesNotMatch(financeHubSource, /function\s+buildCSV\s*\(/, 'Finance Hub must not define buildCSV');
     assert.doesNotMatch(financeHubSource, /function\s+buildJSON\s*\(/, 'Finance Hub must not define buildJSON');
     assert.doesNotMatch(financeHubSource, /JSON\.stringify\s*\(/, 'Finance Hub must not serialize JSON');
-    assert.match(financeHubSource, /FPTExportStudio[\s\S]*?financeExport/, 'Finance Hub must reference Export Studio finance facade');
+    assert.match(financeHubExportSource, /FPTExportStudio[\s\S]*?financeExport/, 'Finance Hub export module must reference Export Studio finance facade');
 }
 
 function testUnknownCostAndProfitRemainNull() {

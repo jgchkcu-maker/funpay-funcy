@@ -11,13 +11,6 @@ function initBulkLotEditor() {
     if (!btn) return;
 
     btn.addEventListener('click', openBulkEditor);
-
-    // Кнопка «Открыть все заметки»
-    const notesBtn = document.getElementById('fp-open-notes-btn');
-    if (notesBtn) notesBtn.addEventListener('click', () => {
-        if (window.FPTNotes) window.FPTNotes.openViewer();
-        else showNotification('Модуль заметок не загрузился', true);
-    });
 }
 
 async function openBulkEditor() {

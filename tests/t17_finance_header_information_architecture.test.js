@@ -12,7 +12,7 @@ const cssSource = fs.readFileSync(
     'utf8'
 ).replace(/\r\n/g, '\n');
 const financeHubSource = fs.readFileSync(
-    path.join(ROOT, 'content', 'features', 'finance_hub.js'),
+    path.join(ROOT, 'content', 'features', 'finance_hub', 'filters.js'),
     'utf8'
 ).replace(/\r\n/g, '\n');
 
@@ -116,8 +116,15 @@ function testFinanceInformationArchitecture() {
     assert.ok(findDescendant(filterbar, node => node.attributes.id === 'fptFinPeriodSelect'), 'Period select must belong to the filterbar');
     assert.ok(findDescendant(filterbar, node => node.attributes.id === 'fptFinCustomRange'), 'Custom range must stay with the filter controls');
     assert.equal(findDescendant(header, node => node.attributes.id === 'fptFinPeriodSelect'), null, 'Period select must not remain in the header');
-    for (const variableName of ['curSelect', 'statusSelect', 'catSelect']) {
-        assert.match(financeHubSource, new RegExp(`periodWrap\\.appendChild\\(${variableName}\\)`), `${variableName} must be appended to the shared filter wrapper`);
+    for (const [control, id] of [
+        ['period', 'fptFinPeriodSelect'],
+        ['currency', 'fptFinCurrencySelect'],
+        ['status', 'fptFinStatusSelect'],
+        ['category', 'fptFinCategorySelect']
+    ]) {
+        const wrapper = findDescendant(filterbar, node => node.attributes['data-fin-control'] === control);
+        assert.ok(wrapper, `${control} filter wrapper must be statically mounted`);
+        assert.ok(findDescendant(wrapper, node => node.attributes.id === id), `${id} must live in its static wrapper`);
     }
 
     for (const id of [
@@ -228,7 +235,7 @@ function testT15T16ContractsRemainPresent() {
     assert.match(
         financeHubSource,
         /function\s+setFinanceControlVisible\s*\(/,
-        'T16 contextual visibility helper must remain in the controller'
+        'T16 contextual visibility helper must remain in the Finance Hub filters module'
     );
 }
 

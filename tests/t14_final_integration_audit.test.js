@@ -9,6 +9,9 @@ const expectMatch = (source, pattern, message) => assert.match(source, pattern, 
 const background = read('background/background.js');
 const financeData = read('content/features/finance_data.js');
 const financeHub = read('content/features/finance_hub.js');
+const financeHubUi = ['shared_ui', 'filters', 'exports', 'overview', 'sales', 'purchases', 'operations', 'potential', 'profit']
+    .map(name => read(`content/features/finance_hub/${name}.js`))
+    .join('\n');
 const profitEngine = read('content/features/profit_engine.js');
 const potential = read('content/features/finance_potential.js');
 const popup = read('content/ui/main_popup.js');
@@ -37,12 +40,12 @@ expectMatch(financeHub, /runBackgroundUpdate\('updateFinance'\)/, 'Hub refreshes
 expectMatch(financeHub, /getInventory\(\{ enrichPotential: true, forceRefresh: true \}\)/, 'Hub refreshes Inventory');
 expectMatch(financeHub, /Promise\.allSettled\(\[/, 'Overview handles independent partial refreshes');
 expectMatch(financeHub, /Обновлено частично/, 'Overview reports partial refresh failure');
-expectMatch(financeHub, /FPTExportStudio\.financeExport|studio\.financeExport/, 'Hub delegates export to Export Studio');
-expectMatch(financeHub, /fptFinCustomRange/, 'Hub wires custom periods');
-expectMatch(financeHub, /function openDrilldown\(/, 'Hub wires drill-down');
+expectMatch(financeHubUi, /FPTExportStudio\.financeExport|studio\.financeExport/, 'Hub UI modules delegate export to Export Studio');
+expectMatch(financeHubUi, /fptFinCustomRange/, 'Hub UI modules wire custom periods');
+expectMatch(financeHubUi, /function openDrilldown\(/, 'Hub UI modules wire drill-down');
 expectMatch(financeHub, /function onOpen\(\)/, 'Hub owns reopen behavior');
-expectMatch(financeHub, /fpt-fin-skeleton/, 'Hub renders loading states');
-expectMatch(financeHub, /fpt-fin-empty-state/, 'Hub renders empty and error states');
+expectMatch(financeHubUi, /fpt-fin-skeleton/, 'Hub UI modules render loading states');
+expectMatch(financeHubUi, /fpt-fin-empty-state/, 'Hub UI modules render empty and error states');
 
 expectMatch(popup, /window\.fptFinanceHub\.init\(finPage\)/, 'Popup mounts the Hub');
 expectMatch(popup, /window\.fptFinanceHub\.onOpen\(\)/, 'Popup reopens the Hub');
