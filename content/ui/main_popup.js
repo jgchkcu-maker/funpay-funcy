@@ -215,14 +215,14 @@ function createMainPopup() {
                 <!-- НАЧАЛО ВКЛАДКИ "ЭПИЧЕСКИЕ НИКИ" -->
                 <div class="fp-tools-page-content" data-page="epic_nicks">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3>Оформление ника <span class="material-symbols-rounded" style="vertical-align:-3px;color:#4a9fd4;">diamond</span></h3>
+                    <h3>Оформление ника <span class="material-symbols-rounded" style="vertical-align:-3px;color:var(--fptm-accent, #4a9fd4);">diamond</span></h3>
                     </div>
                     <p class="template-info" style="font-size: 14px; line-height: 1.5;">
                         Выделитесь среди конкурентов! Ваш никнейм будет светиться, переливаться и излучать частицы <b>у всех пользователей расширения FunPay Funcy</b> (более 15 000 человек).
                     </p>
 
-                    <div style="background: rgba(27,117,187,0.1); border: 1px solid rgba(27,117,187,0.3); border-radius: 12px; padding: 18px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
-                        <div style="font-size: 15px; margin-bottom: 12px; color: #fff;">Приобрести уникальный стиль можно навсегда по очень низкой цене.</div>
+                    <div style="background: var(--fptm-accent-soft, rgba(27,117,187,0.1)); border: 1px solid var(--fptm-accent-border, rgba(27,117,187,0.3)); border-radius: 12px; padding: 18px; margin-bottom: 25px; box-shadow: 0 4px 15px var(--fptm-shadow, rgba(0,0,0,0.2));">
+                        <div style="font-size: 15px; margin-bottom: 12px; color: var(--fptm-text, #16181d);">Приобрести уникальный стиль можно навсегда по очень низкой цене.</div>
                         <div style="font-size: 13px; color: var(--fptm-muted, #a0a0a0); margin-bottom: 15px;">Сервис оформления уникального ника будет доступен после публикации нового официального адреса FunPay Funcy.</div>
                     </div>
 
@@ -2653,6 +2653,7 @@ function fptApplyMenuTheme(root) {
         const onAccent = accentLuma > 150 ? '#14161c' : '#ffffff';
 
         const st = root.style;
+        st.setProperty('--fptm-color-scheme', isLight ? 'light' : 'dark');
         st.setProperty('--fptm-bg', vars.bg);
         st.setProperty('--fptm-head', vars.head);
         st.setProperty('--fptm-nav', vars.nav);

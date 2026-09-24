@@ -518,7 +518,7 @@
         .fpt-custom-theme-on .fp-sm-back{
             background:rgba(255,255,255,0.06) !important;
             border:1px solid rgba(255,255,255,0.12) !important;}
-        .fpt-custom-theme-on .fp-stats-sort-select option{background:#15161c !important;color:#e8eaf2 !important;}
+        .fpt-custom-theme-on .fp-stats-sort-select option{background:var(--fpt-bg, #fff) !important;color:var(--fpt-text, #16181d) !important;}
         .fpt-custom-theme-on .fp-stats-mode-btn.active{
             background:var(--fpt-accent-soft,rgba(37,99,235,0.25)) !important;
             border-color:var(--fpt-accent,#2563eb) !important;}
@@ -527,7 +527,8 @@
         .fpt-custom-theme-on .fp-sm-sr-row{
             background:rgba(255,255,255,0.05) !important;border:1px solid rgba(255,255,255,0.1) !important;}
         .fpt-custom-theme-on #fp-sm-tooltip{
-            background:rgba(20,20,20,0.85) !important;border:1px solid rgba(255,255,255,0.15) !important;
+            background:var(--fpt-surface, #f5f7fa) !important;border:1px solid var(--fpt-border, rgba(22,24,29,0.12)) !important;
+            color:var(--fpt-text, #16181d) !important;
             backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
 
         /* === Кастомная тема ВЫКЛЮЧЕНА → ФИКСИРОВАННЫЕ светлые значения.

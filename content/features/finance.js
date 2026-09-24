@@ -351,7 +351,8 @@
             tip = document.createElement('div');
             tip.id = 'fpt-fin-tip';
             tip.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;display:none;' +
-                'background:#11131a;color:#fff;font-size:12px;padding:5px 8px;border-radius:6px;' +
+                'background:var(--fpt-surface, #f5f7fa);color:var(--fpt-text, #16181d);font-size:12px;padding:5px 8px;border-radius:6px;' +
+                'border:1px solid var(--fpt-border, rgba(22,24,29,0.12));' +
                 'box-shadow:0 4px 14px rgba(0,0,0,.4);white-space:nowrap;';
             document.body.appendChild(tip);
         }

@@ -72,7 +72,7 @@
     font-size: 10px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #5a5a66;
+    color: var(--fptm-muted, #5a5a66);
     padding: 10px 4px 2px;
     margin: 0;
     border: none;
@@ -111,14 +111,14 @@
     width: auto;
     font-size: 16px;
     opacity: 1;
-    color:\1var(--fptm-text, #cfcfdb);
+    color:var(--fptm-text, #cfcfdb);
     transition: color 0.18s ease, transform 0.18s ease;
 }
 
 .fp-tools-nav li[data-page] a:hover {
     background: var(--fptm-hover, #111118);
     border-color: transparent;
-    color:\1var(--fptm-text, #ececf4);
+    color:var(--fptm-text, #ececf4);
     transform: none;
 }
 .fp-tools-nav li[data-page] a:hover .nav-icon {
@@ -170,17 +170,17 @@
     background: var(--fptm-nav-field-focus, #ffffff);
 }
 
-/* ---------- 3. Full-black theme, minimal heavy effects ---------- */
+/* ---------- 3. Theme-aware popup surfaces ---------- */
 .fp-tools-popup {
-    background: var(--fptm-surface-2, #050506);                 /* full black */
-    border: 1px solid #15151b;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75); /* single soft shadow, nothing heavy */
-    color: #d6d6e0;
+    background: var(--fptm-surface-2, #050506);
+    border: 1px solid var(--fptm-border, #15151b);
+    box-shadow: 0 20px 60px var(--fptm-shadow, rgba(0, 0, 0, 0.55));
+    color: var(--fptm-text, #d6d6e0);
 }
 
 .fp-tools-header {
     background: var(--fptm-surface-2, #050506);
-    border-bottom: 1px solid #15151b;
+    border-bottom: 1px solid var(--fptm-border, #15151b);
     position: relative;
 }
 /* a single hairline of pink→purple under the header - the only "always on" accent */
@@ -205,7 +205,7 @@
 /* Header tabs (if used) - match the dark cards, no transforms */
 .fp-tools-header-tab .nav-icon {
     font-size: 20px;
-    color:\1var(--fptm-text, #cfcfdb);
+    color:var(--fptm-text, #cfcfdb);
 }
 
 /* Scrollbars - keep them black/subtle */
@@ -227,7 +227,7 @@ h3 .material-symbols-rounded {
     font-size: 20px;
     vertical-align: -3px;
     margin-right: 6px;
-    color:\1var(--fptm-text, #cfcfdb);
+    color:var(--fptm-text, #cfcfdb);
 }
 
 /* ---------- 4. Blue accent → 80% transparent fill ---------- */
@@ -238,7 +238,7 @@ h3 .material-symbols-rounded {
 .fp-tools-popup .btn {
     background: rgba(27,117,187,0.20);
     border: 1px solid rgba(27,117,187,0.45);
-    color:\1var(--fptm-text, #e9e7ff);
+    color:var(--fptm-text, #e9e7ff);
 }
 .fp-tools-popup button:hover,
 .fp-tools-popup .btn:hover {
@@ -247,12 +247,12 @@ h3 .material-symbols-rounded {
 }
 /* keep the "default/secondary" buttons dark, not blue */
 .fp-tools-popup .btn.btn-default {
-    background: rgba(255, 255, 255, 0.04);
+    background: var(--fptm-surface, rgba(255, 255, 255, 0.04));
     border: 1px solid var(--fptm-border, #20202a);
-    color:\1var(--fptm-text, #cfcfdb);
+    color:var(--fptm-text, #cfcfdb);
 }
 .fp-tools-popup .btn.btn-default:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--fptm-hover, rgba(255, 255, 255, 0.07));
     border-color: var(--fptm-border, #2c2c38);
 }
 
@@ -533,7 +533,7 @@ button.add-image-btn .material-symbols-rounded {
 }
 #previewNotificationBtn .material-symbols-rounded {
     font-size: 18px;
-    color:\1var(--fptm-text, #e9e7ff);
+    color:var(--fptm-text, #e9e7ff);
 }
 
 /* ---------- 15. Clean template editor rows ---------- */
@@ -556,20 +556,20 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup .template-item-header .template-label {
     flex: 1;
     font-weight: 600;
-    color:\1var(--fptm-text, #ececf4);
+    color:var(--fptm-text, #ececf4);
     outline: none;
     padding: 2px 4px;
     border-radius: 4px;
     min-height: 20px;
 }
 .fp-tools-popup .template-item-header .template-label:focus {
-    background: rgba(255,255,255,0.05);
+    background: var(--fptm-hover, rgba(255,255,255,0.05));
 }
 .fp-tools-popup .template-color-picker {
     width: 26px;
     height: 26px;
     padding: 0;
-    border: 1px solid #2a2a36;
+    border: 1px solid var(--fptm-border, #2a2a36);
     border-radius: 6px;
     background: none;
     cursor: pointer;
@@ -836,7 +836,7 @@ button.add-image-btn .material-symbols-rounded {
     font-size: 14px !important;
     font-weight: 600 !important;
     line-height: 28px !important;
-    color:\1var(--fptm-text, #ececf4) !important;
+    color:var(--fptm-text, #ececf4) !important;
     padding: 0 6px !important;
     margin: 0 !important;
     border-radius: 6px !important;
@@ -844,10 +844,10 @@ button.add-image-btn .material-symbols-rounded {
     transition: background-color 0.15s ease !important;
 }
 .fp-tools-popup .template-item-header .template-label:hover {
-    background: rgba(255,255,255,0.05) !important;
+    background: var(--fptm-hover, rgba(255,255,255,0.05)) !important;
 }
 .fp-tools-popup .template-item-header .template-label:focus {
-    background: rgba(255,255,255,0.07) !important;
+    background: var(--fptm-hover, rgba(255,255,255,0.07)) !important;
     outline: none !important;
     box-shadow: 0 0 0 2px rgba(27,117,187,0.4) !important;
 }
@@ -898,10 +898,10 @@ button.add-image-btn .material-symbols-rounded {
 /* ---------- FIX E: variable chips - 85% transparent, easy on the eyes -------
    "у переменных белый фон ... сделать его 85% прозрачным"                     */
 .fp-tools-popup .variable-code {
-    background: rgba(255, 255, 255, 0.15) !important;   /* 85% transparent */
-    background-color: rgba(255, 255, 255, 0.15) !important;
-    color: #ffd9a0 !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: var(--fptm-surface-2, #eef1f6) !important;
+    background-color: var(--fptm-surface-2, #eef1f6) !important;
+    color: var(--fptm-accent, #1b75bb) !important;
+    border: 1px solid var(--fptm-border, rgba(22,24,29,0.12)) !important;
     border-radius: 5px !important;
     padding: 1px 6px !important;
     font-family: 'Fira Code', 'Consolas', monospace !important;
@@ -909,9 +909,9 @@ button.add-image-btn .material-symbols-rounded {
 }
 .fp-tools-popup .variables-list code,
 .fp-tools-popup .template-info code {
-    background: rgba(255,255,255,0.15) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
-    color: #ffd9a0 !important;
+    background: var(--fptm-surface-2, #eef1f6) !important;
+    border: 1px solid var(--fptm-border, rgba(22,24,29,0.12)) !important;
+    color: var(--fptm-accent, #1b75bb) !important;
     border-radius: 5px !important;
     padding: 1px 5px !important;
 }
@@ -1077,7 +1077,7 @@ button.add-image-btn .material-symbols-rounded {
     padding: 1px 6px;
     border-radius: 6px;
     background: var(--fptm-surface-2, rgba(0,0,0,0.30));
-    border: 1px solid rgba(255,255,255,0.06);
+    border: 1px solid var(--fptm-border, rgba(255,255,255,0.06));
 }
 .fp-tools-popup .fpt-order-mini .material-symbols-rounded { font-size: 14px; }
 .fp-tools-popup .fpt-order-mini .fpt-order-arrow { font-size: 11px; color:#6a6a7a; }
@@ -1146,7 +1146,7 @@ button.add-image-btn .material-symbols-rounded {
     background: var(--fptm-surface-2, #08080b) !important;
     border: 1px solid var(--fptm-border, #1c1c24) !important;
     border-radius: 9px !important;
-    color:\1var(--fptm-text, #ececf4) !important;
+    color:var(--fptm-text, #ececf4) !important;
     padding: 10px 12px !important;
     font-size: 13px !important;
     resize: vertical;
@@ -1188,7 +1188,7 @@ button.add-image-btn .material-symbols-rounded {
     background: var(--fptm-surface-2, #0c0c11); border: 1px solid var(--fptm-border, #1c1c24); border-radius: 10px; padding: 10px 12px;
 }
 .fp-tools-popup .fpt-needs-ai-card-main { display: flex; align-items: flex-start; gap: 10px; flex: 1 1 auto; cursor: pointer; margin: 0; }
-.fp-tools-popup .fpt-needs-ai-card-label { display: block; font-size: 13px; font-weight: 600; color:\1var(--fptm-text, #ececf4); }
+.fp-tools-popup .fpt-needs-ai-card-label { display: block; font-size: 13px; font-weight: 600; color:var(--fptm-text, #ececf4); }
 .fp-tools-popup .fpt-needs-ai-card-reason { display: block; font-size: 11.5px; color: var(--fptm-muted, #8a8a96); margin-top: 2px; line-height: 1.35; }
 .fp-tools-popup .fpt-needs-ai-conf {
     flex: 0 0 auto; font-size: 11px; font-weight: 700; color: var(--fptm-accent, #4a9fd4);
@@ -1203,7 +1203,7 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup .fpt-needs-filter {
     flex: 0 0 220px; max-width: 50%;
     background: var(--fptm-surface-2, #08080b) !important; border: 1px solid var(--fptm-border, #1c1c24) !important;
-    border-radius: 8px !important; color:\1var(--fptm-text, #ececf4) !important; padding: 6px 10px !important; font-size: 12px !important;
+    border-radius: 8px !important; color:var(--fptm-text, #ececf4) !important; padding: 6px 10px !important; font-size: 12px !important;
 }
 .fp-tools-popup .fpt-needs-filter:focus { outline: none !important; border-color: rgba(27,117,187,0.5) !important; }
 
@@ -1211,7 +1211,7 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup .fpt-needs-group { margin-bottom: 16px; }
 .fp-tools-popup .fpt-needs-group-title {
     font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-    color: #6a6a7a; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--fptm-border, #16161c);
+    color: var(--fptm-muted, #6a6a7a); margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--fptm-border, #16161c);
 }
 .fp-tools-popup .fpt-needs-item {
     display: flex; align-items: center; gap: 10px;
@@ -1221,7 +1221,7 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup .fpt-needs-item:hover { border-color: var(--fptm-border, #2a2a38); }
 .fp-tools-popup .fpt-needs-check { display: flex; align-items: flex-start; gap: 10px; flex: 1 1 auto; cursor: pointer; margin: 0; }
 .fp-tools-popup .fpt-needs-item-text { display: flex; flex-direction: column; }
-.fp-tools-popup .fpt-needs-item-label { font-size: 13px; font-weight: 600; color:\1var(--fptm-text, #ececf4); }
+.fp-tools-popup .fpt-needs-item-label { font-size: 13px; font-weight: 600; color:var(--fptm-text, #ececf4); }
 .fp-tools-popup .fpt-needs-item-desc { font-size: 11.5px; color: var(--fptm-muted, #8a8a96); margin-top: 2px; line-height: 1.35; }
 .fp-tools-popup .fpt-needs-preview-btn {
     flex: 0 0 auto; background: none !important; border: 1px solid #2a2a36 !important;
@@ -1410,7 +1410,7 @@ button.add-image-btn .material-symbols-rounded {
 
 /* pinned lots block header */
 .fp-tools-popup .fpt-pv-pinned { display: flex; align-items: center; gap: 10px; }
-.fp-tools-popup .fpt-pv-pinned-title { color:\1var(--fptm-text, #ececf4); font-size: 14px; font-weight: 700; }
+.fp-tools-popup .fpt-pv-pinned-title { color:var(--fptm-text, #ececf4); font-size: 14px; font-weight: 700; }
 
 /* "show more" expand row */
 .fp-tools-popup .fpt-pv-expandrow {

@@ -4987,7 +4987,7 @@
             snapshotBadge.className = 'fpt-fin-snapshot-badge';
             snapshotBadge.setAttribute('role', 'status');
             snapshotBadge.setAttribute('aria-label', 'Текущий снимок инвентаря');
-            snapshotBadge.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;color:#94a3b8;vertical-align:middle;margin-right:4px;">inventory_2</span><span>Текущий снимок</span>';
+        snapshotBadge.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;color:var(--fpt-text-muted,#676a73);vertical-align:middle;margin-right:4px;">inventory_2</span><span>Текущий снимок</span>';
             setFinanceControlVisible(snapshotBadge, false);
             const periodSelect = container.querySelector('#fptFinPeriodSelect');
             if (periodSelect && periodSelect.parentNode) {
@@ -5152,13 +5152,14 @@
                 font-family: inherit;
             }
             .fpt-fin-export-dialog {
-                background: #1a1c23;
-                border: 1px solid #2e3342;
+                background: var(--fpt-bg, #fff);
+                border: 1px solid var(--fpt-border, rgba(22,24,29,.12));
                 border-radius: 12px;
                 width: 100%;
                 max-width: 580px;
                 box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55);
-                color: #e2e8f0;
+                color: var(--fpt-text, #16181d);
+                color-scheme: var(--fpt-color-scheme, light);
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
@@ -5168,8 +5169,8 @@
                 align-items: center;
                 justify-content: space-between;
                 padding: 14px 18px;
-                background: #21242d;
-                border-bottom: 1px solid #2e3342;
+                background: var(--fpt-surface, #f5f7fa);
+                border-bottom: 1px solid var(--fpt-border, rgba(22,24,29,.12));
             }
             .fpt-fin-export-title-row {
                 display: flex;
@@ -5180,19 +5181,19 @@
                 margin: 0;
                 font-size: 15px;
                 font-weight: 600;
-                color: #f1f5f9;
+                color: var(--fpt-text, #16181d);
             }
             .fpt-fin-export-close {
                 background: transparent;
                 border: none;
-                color: #94a3b8;
+                color: var(--fpt-text-muted, #676a73);
                 font-size: 22px;
                 cursor: pointer;
                 line-height: 1;
                 padding: 0 4px;
             }
             .fpt-fin-export-close:hover {
-                color: #fff;
+                color: var(--fpt-text, #16181d);
             }
             .fpt-fin-export-body {
                 padding: 16px 18px;
@@ -5205,14 +5206,14 @@
                 flex-wrap: wrap;
                 gap: 6px 12px;
                 font-size: 12px;
-                color: #94a3b8;
-                background: #14161d;
+                color: var(--fpt-text-muted, #676a73);
+                background: var(--fpt-surface-2, #eef1f6);
                 padding: 8px 12px;
                 border-radius: 6px;
-                border: 1px solid #282c37;
+                border: 1px solid var(--fpt-border, rgba(22,24,29,.12));
             }
             .fpt-fin-export-filters-bar strong {
-                color: #cbd5e1;
+                color: var(--fpt-text, #16181d);
             }
             .fpt-fin-export-tabs {
                 display: flex;
@@ -5220,9 +5221,9 @@
                 flex-wrap: wrap;
             }
             .fpt-fin-export-tab {
-                background: #242834;
-                border: 1px solid #33394a;
-                color: #cbd5e1;
+                background: var(--fpt-surface, #f5f7fa);
+                border: 1px solid var(--fpt-border, rgba(22,24,29,.12));
+                color: var(--fpt-text, #16181d);
                 padding: 6px 12px;
                 border-radius: 6px;
                 font-size: 12px;
@@ -5231,17 +5232,17 @@
                 transition: all 0.15s ease;
             }
             .fpt-fin-export-tab:hover {
-                background: #2d3342;
-                color: #fff;
+                background: var(--fpt-hover, rgba(22,24,29,.08));
+                color: var(--fpt-text, #16181d);
             }
             .fpt-fin-export-tab.active {
                 background: #2563eb;
-                border-color: #3b82f6;
+                border-color: var(--fpt-accent, #1b75bb);
                 color: #fff;
             }
             .fpt-fin-export-card {
-                background: #14161d;
-                border: 1px solid #282c37;
+                background: var(--fpt-surface, #f5f7fa);
+                border: 1px solid var(--fpt-border, rgba(22,24,29,.12));
                 border-radius: 8px;
                 padding: 12px 14px;
                 font-size: 12px;
@@ -5253,10 +5254,10 @@
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
-                color: #cbd5e1;
+                color: var(--fpt-text, #16181d);
             }
             .fpt-fin-export-card-row strong {
-                color: #fff;
+                color: var(--fpt-text, #16181d);
                 font-weight: 600;
             }
             .fpt-fin-export-actions {
@@ -5291,7 +5292,7 @@
             }
             .fpt-fin-export-hint {
                 font-size: 11px;
-                color: #64748b;
+                color: var(--fpt-text-muted, #676a73);
                 line-height: 1.4;
             }
         `;
@@ -5518,7 +5519,7 @@
                     </div>
 
                     <div>
-                        <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:#94a3b8;">Выберите набор данных:</div>
+                        <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--fpt-text-muted,#676a73);">Выберите набор данных:</div>
                         <div class="fpt-fin-export-tabs" id="fptFinExportTabs">
                             <button type="button" class="fpt-fin-export-tab ${currentDataset === 'sales' ? 'active' : ''}" data-ds="sales">Продажи</button>
                             <button type="button" class="fpt-fin-export-tab ${currentDataset === 'purchases' ? 'active' : ''}" data-ds="purchases">Покупки</button>
@@ -5529,7 +5530,7 @@
                     </div>
 
                     <div class="fpt-fin-export-card" id="fptFinExportCard">
-                        <div style="color:#94a3b8;font-size:12px;">Загрузка данных...</div>
+                        <div style="color:var(--fpt-text-muted,#676a73);font-size:12px;">Загрузка данных...</div>
                     </div>
 
                     <div class="fpt-fin-export-actions">
@@ -5561,7 +5562,7 @@
 
         async function updateCard() {
             if (!cardEl) return;
-            cardEl.innerHTML = '<div style="color:#94a3b8;font-size:12px;">Подготовка набора данных...</div>';
+            cardEl.innerHTML = '<div style="color:var(--fpt-text-muted,#676a73);font-size:12px;">Подготовка набора данных...</div>';
             if (csvBtn) csvBtn.disabled = true;
             if (jsonBtn) jsonBtn.disabled = true;
 

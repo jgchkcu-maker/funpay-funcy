@@ -282,7 +282,7 @@ function auditRenderQuestion(index) {
     container.innerHTML = '';
 
     const qText = document.createElement('div');
-    qText.style.cssText = 'font-size:14px;color:#eceef6;margin-bottom:16px;line-height:1.5;font-weight:500;';
+    qText.style.cssText = 'font-size:14px;color:var(--fpt-text, #16181d);margin-bottom:16px;line-height:1.5;font-weight:500;';
     qText.textContent = q.q;
     container.appendChild(qText);
 
@@ -299,9 +299,9 @@ function auditRenderQuestion(index) {
             btn.style.cssText = `flex:1;padding:12px;border:2px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:8px;background:var(--fpt-bg, #ffffff);color:var(--fpt-text, #16181d);cursor:pointer;font-size:14px;font-family:inherit;transition:all .15s;`;
             btn.addEventListener('click', () => {
                 wrap.querySelectorAll('.fp-audit-opt').forEach(b => {
-                    b.style.borderColor = '#22253a'; b.style.background = '#1a1c2e'; b.style.color = '#d8dae8';
+                    b.style.borderColor = 'var(--fpt-border, rgba(22,24,29,0.12))'; b.style.background = 'var(--fpt-bg, #fff)'; b.style.color = 'var(--fpt-text, #16181d)';
                 });
-                btn.style.borderColor = '#1b75bb'; btn.style.background = 'rgba(27,117,187,0.16)'; btn.style.color = '#4a9fd4';
+                btn.style.borderColor = 'var(--fpt-accent, #1b75bb)'; btn.style.background = 'var(--fpt-accent-soft, rgba(27,117,187,0.12))'; btn.style.color = 'var(--fpt-accent, #1b75bb)';
                 btn.dataset.selected = '1';
             });
             wrap.appendChild(btn);
@@ -324,9 +324,9 @@ function auditRenderQuestion(index) {
             btn.style.cssText = `padding:10px 14px;border:2px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:8px;background:var(--fpt-bg, #ffffff);color:var(--fpt-text, #16181d);cursor:pointer;font-size:13px;text-align:left;font-family:inherit;transition:all .15s;`;
             btn.addEventListener('click', () => {
                 wrap.querySelectorAll('.fp-audit-opt').forEach(b => {
-                    b.style.borderColor = '#22253a'; b.style.background = '#1a1c2e'; b.style.color = '#d8dae8';
+                    b.style.borderColor = 'var(--fpt-border, rgba(22,24,29,0.12))'; b.style.background = 'var(--fpt-bg, #fff)'; b.style.color = 'var(--fpt-text, #16181d)';
                 });
-                btn.style.borderColor = '#1b75bb'; btn.style.background = 'rgba(27,117,187,0.16)'; btn.style.color = '#4a9fd4';
+                btn.style.borderColor = 'var(--fpt-accent, #1b75bb)'; btn.style.background = 'var(--fpt-accent-soft, rgba(27,117,187,0.12))'; btn.style.color = 'var(--fpt-accent, #1b75bb)';
                 btn.dataset.selected = '1';
             });
             wrap.appendChild(btn);
@@ -347,11 +347,11 @@ function auditRenderQuestion(index) {
             star.textContent = '★';
             star.dataset.val = String(i);
             star.title = labels[i];
-            star.style.cssText = `background:none;border:none;font-size:28px;cursor:pointer;color:#2a2d44;transition:color .1s;padding:0 2px;`;
+            star.style.cssText = `background:none;border:none;font-size:28px;cursor:pointer;color:var(--fpt-text-muted, #676a73);transition:color .1s;padding:0 2px;`;
             star.addEventListener('click', () => {
                 selectedRating = i;
                 wrap.querySelectorAll('button').forEach((s, idx) => {
-                    s.style.color = idx < i ? '#FFD700' : '#2a2d44';
+                    s.style.color = idx < i ? '#FFD700' : 'var(--fpt-text-muted, #676a73)';
                 });
             });
             star.addEventListener('mouseenter', () => {

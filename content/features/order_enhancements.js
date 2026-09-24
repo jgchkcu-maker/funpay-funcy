@@ -135,7 +135,7 @@ function initReviewRequestButtons() {
             `;
             btn.textContent = '⭐ Попросить отзыв';
             btn.title = 'Отправить покупателю сообщение с просьбой оставить отзыв';
-            btn.addEventListener('mouseenter', () => btn.style.background = '#1e2030');
+            btn.addEventListener('mouseenter', () => btn.style.background = 'var(--fpt-hover, rgba(22,24,29,0.08))');
             btn.addEventListener('mouseleave', () => btn.style.background = '');
 
             btn.addEventListener('click', async (e) => {

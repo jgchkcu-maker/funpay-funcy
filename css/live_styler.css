@@ -27,13 +27,13 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     top: 20px;
     right: 20px;
     z-index: 99999;
-    background: rgba(30, 30, 30, 0.8);
+    background: var(--fpt-surface, #f5f7fa);
     backdrop-filter: blur(5px);
-    color: #fff;
+    color: var(--fpt-text, #16181d);
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    border: 1px solid #444;
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
     cursor: pointer;
     justify-content: center;
     align-items: center;
@@ -60,9 +60,11 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     width: auto;
     max-width: 95%;
     z-index: 99999;
-    background: rgba(30, 30, 30, 0.9);
+    background: var(--fpt-bg, #fff);
+    color: var(--fpt-text, #16181d);
+    color-scheme: var(--fpt-color-scheme, light);
     backdrop-filter: blur(10px);
-    border: 1px solid #444;
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
     border-radius: 12px;
     padding: 10px;
     box-shadow: 0 5px 25px rgba(0,0,0,0.4);
@@ -79,7 +81,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     padding: 0 10px;
 }
 .ms-panel-section:not(:last-child) {
-    border-right: 1px solid #444;
+    border-right: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
 }
 
 .ms-target-info {
@@ -90,7 +92,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: rgba(0,0,0,0.2);
+    background: var(--fpt-surface-2, #eef1f6);
     padding: 5px 8px;
     border-radius: 4px;
 }
@@ -115,19 +117,19 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     gap: 8px;
     padding: 5px;
     border-radius: 6px;
-    background: rgba(0,0,0,0.15);
+    background: var(--fpt-surface-2, #eef1f6);
 }
 .ms-control-group .ms-control {
     flex-direction: row;
 }
 
-.ms-control .material-icons { color: #aaa; font-size: 20px; }
+.ms-control .material-icons { color: var(--fpt-text-muted, #676a73); font-size: 20px; }
 .ms-control input {
     width: 60px;
     text-align: center;
-    background: #2a2a2a;
-    border: 1px solid #555;
-    color: #fff;
+    background: var(--fpt-surface, #f5f7fa);
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
+    color: var(--fpt-text, #16181d);
     border-radius: 4px;
     padding: 4px;
 }
@@ -153,7 +155,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 }
 .ms-section-title {
     font-size: 11px;
-    color: #888;
+    color: var(--fpt-text-muted, #676a73);
     font-weight: bold;
     text-transform: uppercase;
     margin-bottom: 5px;
@@ -169,8 +171,8 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 .ms-toggle-btn {
     width: 30px;
     height: 30px;
-    border: 1px solid #555;
-    background: #2a2a2a;
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
+    background: var(--fpt-surface, #f5f7fa);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -186,9 +188,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     justify-content: center;
 }
 .ms-actions button {
-    background: #444;
-    color: #eee;
-    border: 1px solid #666;
+    background: var(--fpt-surface-2, #eef1f6);
+    color: var(--fpt-text, #16181d);
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
     border-radius: 6px;
     width: 40px;
     height: 40px;
@@ -200,9 +202,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     position: relative;
 }
 .ms-actions button:hover {
-    background: #555;
-    color: #fff;
-    border-color: #888;
+    background: var(--fpt-hover, rgba(22,24,29,0.08));
+    color: var(--fpt-text, #16181d);
+    border-color: var(--fpt-border, rgba(22,24,29,0.12));
 }
 .ms-actions button#ms-continue-click-btn.active {
     background-color: #16a085;
@@ -221,8 +223,10 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     align-items: center;
 }
 .ms-modal-content {
-    background: #1e1e1e;
-    border: 1px solid #444;
+    background: var(--fpt-bg, #fff);
+    color: var(--fpt-text, #16181d);
+    color-scheme: var(--fpt-color-scheme, light);
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
     border-radius: 12px;
     width: 90%;
     max-width: 700px;
@@ -230,16 +234,16 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     display: flex;
     flex-direction: column;
 }
-.ms-modal-header { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #444; }
+.ms-modal-header { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid var(--fpt-border, rgba(22,24,29,0.12)); }
 .ms-modal-header h3 { margin: 0; font-size: 18px; }
-.ms-modal-close { background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer; }
+.ms-modal-close { background: none; border: none; color: var(--fpt-text-muted, #676a73); font-size: 24px; cursor: pointer; }
 
 .ms-styles-list { padding: 20px; overflow-y: auto; }
-.ms-styles-empty { text-align: center; color: #888; }
+.ms-styles-empty { text-align: center; color: var(--fpt-text-muted, #676a73); }
 .ms-style-item {
     display: flex;
     align-items: center;
-    background: #2a2a2a;
+    background: var(--fpt-surface, #f5f7fa);
     padding: 10px 15px;
     border-radius: 6px;
     margin-bottom: 10px;
@@ -253,9 +257,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 .ms-style-props {
     flex-grow: 1;
     font-size: 13px;
-    color: #ccc;
+    color: var(--fpt-text-muted, #676a73);
     padding-left: 15px;
-    border-left: 1px solid #444;
+    border-left: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
     margin-left: 15px;
 }
 .ms-style-props code { color: #f4d03f; }
@@ -272,9 +276,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 }
 .ms-selector-option {
     width: 100%;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #ccc;
+    background: var(--fpt-surface, #f5f7fa);
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
+    color: var(--fpt-text, #16181d);
     padding: 12px 15px;
     border-radius: 6px;
     font-family: monospace;
@@ -284,9 +288,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     transition: all 0.2s ease;
 }
 .ms-selector-option:hover {
-    background: #3c3c3c;
-    border-color: #1b75bb;
-    color: #fff;
+    background: var(--fpt-hover, rgba(22,24,29,0.08));
+    border-color: var(--fpt-accent, #1b75bb);
+    color: var(--fpt-text, #16181d);
 }
 
 /* Моментальные кастомные тултипы */
@@ -299,8 +303,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     bottom: 115%;
     left: 50%;
     transform: translateX(-50%);
-    background-color: #111;
-    color: #fff;
+    background-color: var(--fpt-surface, #f5f7fa);
+    color: var(--fpt-text, #16181d);
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 12px;

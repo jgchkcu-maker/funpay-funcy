@@ -31,10 +31,12 @@
 }
 
 .fp-tools-ai-gen-modal-content {
-    --cw-bg: #1e1e1e; --cw-color: #e0e0e0; --cw-accent: #1b75bb;
-    --cw-border: rgba(255,255,255,0.12); --cw-subtle: rgba(255,255,255,0.05);
-    --cw-muted: rgba(255,255,255,0.55); --cw-field-bg: rgba(255,255,255,0.05);
+    --cw-bg: var(--fpt-bg, #fff); --cw-color: var(--fpt-text, #16181d); --cw-accent: var(--fpt-accent, #1b75bb);
+    --cw-border: var(--fpt-border, rgba(22,24,29,0.12)); --cw-subtle: var(--fpt-hover, rgba(22,24,29,0.05));
+    --cw-muted: var(--fpt-text-muted, rgba(22,24,29,0.62)); --cw-field-bg: var(--fpt-surface, #f5f7fa);
     background: var(--cw-bg);
+    color: var(--cw-color);
+    color-scheme: var(--fpt-color-scheme, light);
     border: 1px solid var(--cw-border);
     border-radius: 14px;
     box-shadow: 0 12px 48px rgba(0,0,0,0.45);
@@ -93,7 +95,7 @@
 .fp-tools-ai-gen-modal-body textarea:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--cw-accent, #1b75bb);
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--fpt-surface-2, #eef1f6);
 }
 
 .fp-tools-ai-gen-options { margin-top: 15px; }
@@ -113,8 +115,8 @@
 .fp-tools-ai-gen-options .custom-checkbox {
     width: 20px;
     height: 20px;
-    background-color: rgba(255,255,255,0.1);
-    border: 2px solid rgba(255,255,255,0.2);
+    background-color: var(--fpt-surface-2, #eef1f6);
+    border: 2px solid var(--fpt-border, rgba(22,24,29,0.12));
     border-radius: 5px;
     margin-right: 12px;
     position: relative;
@@ -196,9 +198,9 @@
 }
 
 #fp-tools-translate-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #ccc;
+    background: var(--fpt-surface-2, #eef1f6);
+    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
+    color: var(--fpt-text-muted, #676a73);
     font-size: 11px;
     padding: 2px 8px;
     border-radius: 10px;
@@ -209,9 +211,9 @@
 }
 
 #fp-tools-translate-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-    border-color: #1b75bb;
+    background: var(--fpt-hover, rgba(22,24,29,0.08));
+    color: var(--fpt-text, #16181d);
+    border-color: var(--fpt-accent, #1b75bb);
 }
 
 #fp-tools-translate-btn:disabled {

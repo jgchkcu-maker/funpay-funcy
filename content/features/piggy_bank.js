@@ -127,7 +127,7 @@ function renderPiggyBankSettings() {
             <div class="piggy-bank-progress-bar">
                 <div class="piggy-bank-progress-fill" style="width: ${clampedPercentage}%;"></div>
             </div>
-            <div class="piggy-bank-percentage" style="text-align: right; font-size: 13px; color: #aaa;">
+            <div class="piggy-bank-percentage" style="text-align: right; font-size: 13px; color: var(--fpt-text-muted, #676a73);">
                 Осталось: ${remaining.toLocaleString('ru-RU')} ₽ (${percentage.toFixed(1)}%)
             </div>
         `;

@@ -551,7 +551,7 @@ function _renderBubble(c, myUsername) {
     if (isMe) {
         bubble.style.cssText = `background:linear-gradient(135deg,#5a56e8,#7b77ff);border-radius:16px 16px 4px 16px;padding:8px 12px;font-size:13px;color:#fff;line-height:1.55;word-break:break-word;`;
     } else {
-        bubble.style.cssText = `background:#12131f;border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:16px 16px 16px 4px;padding:8px 12px;font-size:13px;color:var(--fpt-text, #16181d);line-height:1.55;word-break:break-word;`;
+        bubble.style.cssText = `background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(22,24,29,0.12));border-radius:16px 16px 16px 4px;padding:8px 12px;font-size:13px;color:var(--fpt-text, #16181d);line-height:1.55;word-break:break-word;`;
     }
 
     // Parse text: images inline, links clickable

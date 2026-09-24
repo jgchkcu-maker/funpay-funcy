@@ -546,6 +546,8 @@ function fptApplyThemeVars() {
         r.setProperty('--fpt-accent',     p.accent);
         r.setProperty('--fpt-accent-soft',p.accentSoft);
         r.setProperty('--fpt-shadow',     p.shadow);
+        r.setProperty('--fpt-color-scheme', p.dark ? 'dark' : 'light');
+        r.setProperty('color-scheme', p.dark ? 'dark' : 'light');
         document.documentElement.classList.toggle('fpt-theme-dark', p.dark);
         document.documentElement.classList.toggle('fpt-theme-light', !p.dark);
     } catch (e) { /* noop */ }
