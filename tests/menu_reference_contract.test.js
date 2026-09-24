@@ -8,12 +8,21 @@ const css = fs.readFileSync(path.join(ROOT, 'css', 'fpt_icons_theme.css'), 'utf8
 const popupCss = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 
 function extractRule(stylesheet, selector) {
-    const selectorStart = stylesheet.indexOf(selector);
-    assert.ok(selectorStart >= 0, 'missing CSS rule: ' + selector);
-    const openBrace = stylesheet.indexOf('{', selectorStart);
-    const closeBrace = stylesheet.indexOf('}', openBrace);
-    assert.ok(openBrace > selectorStart && closeBrace > openBrace, 'invalid CSS rule: ' + selector);
-    return stylesheet.slice(openBrace + 1, closeBrace);
+    const expected = selector.trim().replace(/\s*\{$/, '').trim();
+    let searchFrom = stylesheet.length;
+    while (searchFrom > 0) {
+        const selectorStart = stylesheet.lastIndexOf(expected, searchFrom);
+        if (selectorStart < 0) break;
+        const ruleStart = Math.max(stylesheet.lastIndexOf('{', selectorStart), stylesheet.lastIndexOf('}', selectorStart)) + 1;
+        const openBrace = stylesheet.indexOf('{', selectorStart + expected.length);
+        if (stylesheet.slice(ruleStart, selectorStart).replace(/\/\*[\s\S]*?\*\//g, '').trim() === '' && openBrace >= 0 && stylesheet.slice(selectorStart, openBrace).trim() === expected) {
+            const closeBrace = stylesheet.indexOf('}', openBrace);
+            assert.ok(closeBrace > openBrace, 'invalid CSS rule: ' + selector);
+            return stylesheet.slice(openBrace + 1, closeBrace);
+        }
+        searchFrom = selectorStart - 1;
+    }
+    assert.fail('missing exact CSS rule: ' + selector);
 }
 
 function getRuntimeThemeCss() {
@@ -37,25 +46,39 @@ function testReferenceAssetsExist() {
         'nav-settings-collapsed.png',
         'nav-settings-expanded.png',
         'nav-apps-collapsed.png',
-        'nav-apps-expanded.png'
+        'nav-apps-expanded.png',
+        'nav-help-collapsed.png',
+        'nav-help-expanded.png'
     ];
     for (const filename of expected) {
         assert.ok(fs.existsSync(path.join(ROOT, 'icons', filename)), 'missing menu asset: ' + filename);
     }
+
+    const reference = fs.readFileSync(path.join(ROOT, 'icons', 'nav-home-expanded.png'));
+    const referenceSize = [reference.readUInt32BE(16), reference.readUInt32BE(20)];
+    for (const filename of ['nav-help-collapsed.png', 'nav-help-expanded.png']) {
+        const icon = fs.readFileSync(path.join(ROOT, 'icons', filename));
+        assert.deepEqual([icon.readUInt32BE(16), icon.readUInt32BE(20)], referenceSize,
+            filename + ' must match the existing navigation sprite dimensions');
+    }
 }
 
 function testHeaderAndSearchMatchReference() {
+    const navStart = source.indexOf('<nav class="fp-tools-nav">');
+    const navEnd = source.indexOf('</nav>', navStart);
+    const navMarkup = source.slice(navStart, navEnd);
+    assert.match(navMarkup, /<div class="fpt-nav-brand">[\s\S]*?<img class="fp-tools-brand-logo"[^>]+data-icon="funcy-logo"[\s\S]*?<span class="fpt-nav-brand-title">FunPay Funcy<\/span>[\s\S]*?<button[^>]+id="fptNavCollapse"/, 'brand, title, and collapse control must live in the reference sidebar header');
+    assert.match(navMarkup, /<div class="fpt-nav-footer">[\s\S]*?<ul class="fpt-nav-quick-actions"[^>]*>[\s\S]*?<button[^>]+id="fptAccentBtn"[\s\S]*?id="fptAccentInput"/, 'footer routes and the existing accent picker must live in the sidebar footer');
+    assert.match(source, /const FPT_NAV_QUICK_ACTIONS = Object\.freeze\(\['notes',\s*'support'\]\)/,
+        'notes and support must be the only footer route actions');
+    assert.match(source, /class="close-btn" aria-label="Закрыть"/, 'the existing popup close control must remain available');
     assert.match(
         source,
-        /<img class="fp-tools-brand-logo"[^>]+data-icon="funcy-logo"/,
-        'menu header must use the supplied FunPay Funcy logo'
-    );
-    assert.match(
-        source,
-        /<span class="fpt-nav-search-ico"[^>]*><svg[\s\S]*?<circle[\s\S]*?<line[\s\S]*?<\/svg><\/span>/,
-        'menu search must expose a real vector search icon'
+        /<button[^>]+id="fptNavSearchToggle"[^>]*class="fpt-nav-search-ico"[^>]*>[\s\S]*?<svg[\s\S]*?<circle[\s\S]*?<line[\s\S]*?<\/svg>[\s\S]*?<\/button>/,
+        'menu search must expose an accessible vector button in the compact rail'
     );
     assert.match(source, /placeholder="Поиск функций…"/, 'reference search copy must remain exact');
+    assert.doesNotMatch(navMarkup, /РАСКРЫТО|СВЁРНУТО|Помощь|Выйти/, 'reference board labels and extra items must not be added to the app');
 }
 
 function testNavigationUsesSpriteImages() {
@@ -64,8 +87,24 @@ function testNavigationUsesSpriteImages() {
     const navBlock = source.slice(navStart, navEnd);
 
     assert.match(source, /const FPT_NAV_ICON_ASSETS\s*=\s*Object\.freeze\(/);
-    for (const key of ['core', 'store', 'messages', 'finance', 'settings', 'more']) {
+    for (const key of ['sales', 'customers', 'finance', 'interface', 'settings', 'help']) {
         assert.match(source, new RegExp(`${key}:\\s*Object\\.freeze\\(\\{`), 'missing sprite mapping for ' + key);
+    }
+    const mappings = {
+        sales: 'store',
+        customers: 'chat',
+        finance: 'analytics',
+        interface: 'apps',
+        settings: 'settings',
+        help: 'help'
+    };
+    const mapStart = source.indexOf('const FPT_NAV_ICON_ASSETS = Object.freeze(');
+    const mapEnd = source.indexOf('\n});', mapStart);
+    const map = source.slice(mapStart, mapEnd);
+    for (const [section, sprite] of Object.entries(mappings)) {
+        assert.match(map,
+            new RegExp(`${section}:\\s*Object\\.freeze\\(\\{\\s*collapsed:\\s*['"]nav-${sprite}-collapsed\\.png['"],\\s*expanded:\\s*['"]nav-${sprite}-expanded\\.png['"]\\s*\\}\\)`),
+            section + ' must use the approved collapsed/expanded sprite pair');
     }
     assert.match(navBlock, /createElement\(['"]img['"]\)/, 'section icons must use real image assets');
     assert.match(navBlock, /navIcon\.dataset\.icon\s*=\s*section\.id/);
@@ -112,19 +151,20 @@ function testNavigationGeometryAndTypographyContract() {
         assert.match(nav, /border-radius:\s*20px/, layer.name + ' must retain the navigation panel radius');
 
         const groups = extractRule(layer.css, layer.groups);
-        assert.match(groups, /gap:\s*10px/, layer.name + ' must retain vertical category spacing');
+        assert.match(groups, /gap:\s*6px/, layer.name + ' must keep reference category spacing');
 
         const search = extractRule(layer.css, layer.search);
-        assert.match(search, /min-height:\s*56px/, layer.name + ' must retain the search hit area');
-        assert.match(search, /padding:\s*12px\s+[^;]+\s+12px\s+[^;]+/, layer.name + ' must retain search vertical padding');
+        assert.match(search, /min-height:\s*44px/, layer.name + ' must use the compact search hit area');
+        assert.match(search, /padding:\s*8px\s+[^;]+/, layer.name + ' must use the compact search field padding');
         assert.match(search, /font-size:\s*15px/, layer.name + ' search text must remain 15px');
 
         const toggle = extractRule(layer.css, layer.toggle);
-        assert.match(toggle, /min-height:\s*58px/, layer.name + ' must retain category hit areas');
-        assert.match(toggle, /padding:\s*12px\s+12px/, layer.name + ' must use 12px horizontal category padding');
-        assert.match(toggle, /border-radius:\s*18px/, layer.name + ' must retain top-level row radius');
+        assert.match(toggle, /min-height:\s*54px/, layer.name + ' must use compact category hit areas');
+        assert.match(toggle, /padding:\s*0\s+12px/, layer.name + ' must use 12px horizontal category padding');
+        assert.match(toggle, /border-radius:\s*22px/, layer.name + ' must use the rounded reference row radius');
         assert.match(toggle, /font-size:\s*16px/, layer.name + ' category labels must remain 16px');
-        assert.match(toggle, /font-weight:\s*700/, layer.name + ' category labels must remain bold');
+        assert.match(toggle, /font-weight:\s*500/, layer.name + ' category labels must use medium weight');
+        assert.match(toggle, /border:\s*1px solid transparent/, layer.name + ' inactive sections must not look like separate cards');
         assert.doesNotMatch(toggle, /transform\s*:/, layer.name + ' category row must not transform');
 
         const icon = extractRule(layer.css, layer.icon);
@@ -150,12 +190,12 @@ function testNavigationGeometryAndTypographyContract() {
 
 function testExpandedSpriteStateAndStableCategorySurface() {
     const mappings = {
-        core: 'home',
-        store: 'store',
-        messages: 'chat',
+        sales: 'store',
+        customers: 'chat',
         finance: 'analytics',
+        interface: 'apps',
         settings: 'settings',
-        more: 'apps'
+        help: 'help'
     };
     const mapStart = source.indexOf('const FPT_NAV_ICON_ASSETS = Object.freeze(');
     const mapEnd = source.indexOf('\n});', mapStart);
@@ -173,30 +213,53 @@ function testExpandedSpriteStateAndStableCategorySurface() {
     const rendererStart = source.indexOf('function renderExpandedSections()');
     const rendererEnd = source.indexOf('function setExpandedSections(', rendererStart);
     const renderer = source.slice(rendererStart, rendererEnd);
-    assert.match(renderer, /const state = expanded \? ['"]expanded['"] : ['"]collapsed['"]/, 'expanded state must select the blue sprite variant');
-    assert.match(renderer, /assetSet\[state\]/, 'the selected state must drive the rendered icon source');
+    assert.doesNotMatch(renderer, /icon\.src\s*=/, 'expansion must not swap silhouettes with different internal bounds');
 
     const runtimeCss = getRuntimeThemeCss();
-    const expandedRules = [
-        [css, '.fp-tools-nav .fpt-nav-group.is-expanded {', '.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle {', '.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle:hover {'],
-        [runtimeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded{', '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle{', '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle:hover{']
+    const activeRules = [
+        [css, '.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle {'],
+        [runtimeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle{']
     ];
-    for (const [stylesheet, groupSelector, toggleSelector, hoverSelector] of expandedRules) {
-        const group = extractRule(stylesheet, groupSelector);
-        assert.doesNotMatch(group, /\bpadding\s*:/, 'expanded category must not inset or contract its row');
-        assert.doesNotMatch(group, /transform\s*:/, 'expanded category container must not scale');
-        const toggle = extractRule(stylesheet, toggleSelector);
-        assert.match(toggle, /background:\s*var\(--fptm-accent-soft/, 'expanded category must keep a blue-tinted row surface');
-        assert.doesNotMatch(toggle, /background:\s*transparent|border-color:\s*transparent|box-shadow:\s*none/, 'expanded category must retain its visible row border and surface');
-        assert.doesNotMatch(toggle, /transform\s*:/, 'expanded category row must not scale');
-        const hover = extractRule(stylesheet, hoverSelector);
-        assert.match(hover, /background:\s*var\(--fptm-nav-row-hover/, 'expanded category must retain a simple hover response');
-        assert.doesNotMatch(hover, /transform\s*:/, 'expanded category hover must not transform the row');
+    for (const [stylesheet, selector] of activeRules) {
+        const active = extractRule(stylesheet, selector);
+        assert.match(active, /background:\s*#7663f6/i, 'expanded category must use the reference violet pill');
+        assert.match(active, /color:\s*#fff/i, 'expanded category label and icon must be white');
+        assert.match(active, /border-color:\s*transparent/i, 'the expanded pill must not add a second border');
+        assert.doesNotMatch(active, /transform\s*:/, 'expanded category row must not scale');
     }
 
-    const staticActive = extractRule(css, '.fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle {');
-    const runtimeActive = extractRule(runtimeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{');
-    assert.doesNotMatch(staticActive + runtimeActive, /background:\s*transparent|border-color:\s*transparent/, 'active category must not erase the expanded row surface');
+    const collapsedRules = [
+        [css, '.fp-tools-nav.is-nav-collapsed {'],
+        [runtimeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed{']
+    ];
+    for (const [stylesheet, selector] of collapsedRules) {
+        const collapsed = extractRule(stylesheet, selector);
+        assert.match(collapsed, /width:\s*104px/, 'compact rail must fit the logo and collapse control on one row');
+        assert.match(collapsed, /flex:\s*0\s+0\s+104px/, 'compact rail flex basis must match its width');
+    }
+}
+
+function testCollapseSearchAndMotionContract() {
+    assert.match(source, /const FPT_NAV_COLLAPSED_STORAGE_KEY\s*=\s*['"]fpToolsNavCollapsed['"]/, 'collapsed preference must have its own storage key');
+    assert.match(source, /function setNavCollapsed\(collapsed, persist = true\)/, 'sidebar state must have one persistent setter');
+    assert.match(source, /if \(typeof collapsed !== ['"]boolean['"]\) return/, 'missing saved preference must leave the existing expanded default');
+    assert.match(source, /typeof collapsed === ['\"]boolean['\"] && !collapsedUserChanged/, 'late storage restore must honor the toggle-change guard');
+    assert.match(source, /if \(isNavCollapsed\(\)\)[\s\S]*?setNavCollapsed\(false, true\)[\s\S]*?setExpandedSections\(\[sectionId\], true\)/, 'a compact section click must expand the menu and show only that section');
+    assert.match(source, /searchToggle\.addEventListener\(['"]click['"][\s\S]*?setNavCollapsed\(false, false\)[\s\S]*?input\.focus\(\)/, 'compact search must expand the sidebar and focus its field');
+    assert.match(source, /searchNavStateSnapshot[\s\S]*?restoreNavStateSnapshot/, 'clearing search must restore collapsed and accordion state');
+    assert.match(source, /aria-expanded/, 'collapse and group controls must expose their current state');
+
+    const runtimeCss = getRuntimeThemeCss();
+    for (const [name, stylesheet, selector] of [
+        ['static stylesheet', css, '.fp-tools-nav {'],
+        ['runtime theme', runtimeCss, '.fp-tools-popup.fptm-themed .fp-tools-nav{']
+    ]) {
+        const nav = extractRule(stylesheet, selector);
+        assert.match(nav, /transition:[^;]*width\s+\.32s/, name + ' sidebar width must animate for about 320ms');
+        assert.match(nav, /cubic-bezier\([^)]*1\.[0-9]+/, name + ' sidebar must finish with a subtle spring');
+    }
+    assert.match(css, /prefers-reduced-motion/, 'sidebar motion must respect reduced motion');
+    assert.match(runtimeCss, /prefers-reduced-motion/, 'runtime theme must also respect reduced motion');
 }
 
 function testPopupEntranceDoesNotScale() {
@@ -235,29 +298,39 @@ function testMenuHasIndependentReferenceSurface() {
     assert.match(navBlock, /background:\s*var\(--fptm-nav-surface/);
     assert.match(navBlock, /border-radius:\s*20px/);
 
-    const toggleStart = css.indexOf('.fp-tools-nav .fpt-nav-group-toggle {');
-    const toggleEnd = css.indexOf('\n}', toggleStart);
-    const toggleBlock = css.slice(toggleStart, toggleEnd + 2);
-    assert.match(toggleBlock, /min-height:\s*58px/);
-    assert.match(toggleBlock, /border-radius:\s*18px/);
+    const toggleBlock = extractRule(css, '.fp-tools-nav .fpt-nav-group-toggle {');
+    assert.match(toggleBlock, /min-height:\s*54px/);
+    assert.match(toggleBlock, /border-radius:\s*22px/);
 
-    const iconStart = css.indexOf('.fp-tools-nav .fpt-nav-group-icon {');
-    const iconEnd = css.indexOf('\n}', iconStart);
-    const iconBlock = css.slice(iconStart, iconEnd + 2);
+    const iconBlock = extractRule(css, '.fp-tools-nav .fpt-nav-group-icon {');
     assert.match(iconBlock, /width:\s*34px/);
     assert.match(iconBlock, /height:\s*34px/);
     assert.match(iconBlock, /object-fit:\s*contain/);
 
-    const itemsStart = css.indexOf('.fp-tools-nav .fpt-nav-group-items {');
-    const itemsEnd = css.indexOf('\n}', itemsStart);
-    const itemsBlock = css.slice(itemsStart, itemsEnd + 2);
-    assert.match(itemsBlock, /border-radius:\s*16px/);
+    const itemsBlock = extractRule(css, '.fp-tools-nav .fpt-nav-group-items {');
+    assert.match(itemsBlock, /border-radius:\s*0/);
     assert.match(itemsBlock, /padding:\s*0\s*;/, 'the clipping viewport must stay unpadded');
     assert.doesNotMatch(css, /\.fp-tools-nav \.fpt-nav-group\.is-expanded \.fpt-nav-group-items\s*\{[^}]*padding\s*:/, 'expansion must not change the grid item padding');
-    const listStart = css.indexOf('.fp-tools-nav .fpt-nav-group-list {');
-    const listEnd = css.indexOf('\n}', listStart);
-    const listBlock = css.slice(listStart, listEnd + 2);
-    assert.match(listBlock, /padding:\s*8px 6px 10px/, 'constant inner-list padding must preserve child spacing');
+    const listBlock = extractRule(css, '.fp-tools-nav .fpt-nav-group-list {');
+    assert.match(listBlock, /padding:\s*6px 0 8px 0/, 'the child list must use the full section width');
+}
+
+function testFooterActionsMatchExpandedAndCompactNavigation() {
+    const runtimeCss = getRuntimeThemeCss();
+    for (const [name, stylesheet, selectors] of [
+        ['static stylesheet', css, ['.fp-tools-nav .fpt-nav-quick-actions', '.fp-tools-nav li.fpt-nav-quick-action']],
+        ['runtime theme', runtimeCss, ['.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-actions', '.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action']],
+        ['scoped popup stylesheet', popupCss, ['.fp-tools-popup .fp-tools-nav .fpt-nav-quick-actions', '.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action']]
+    ]) {
+        for (const selector of selectors) {
+            assert.ok(stylesheet.includes(selector), name + ' must style footer route action selector ' + selector);
+        }
+        assert.match(stylesheet, /fpt-nav-quick-actions[\s\S]*fpt-nav-quick-action/,
+            name + ' must provide footer action styling in both sidebar states');
+    }
+    assert.match(css, /prefers-reduced-motion/);
+    assert.match(runtimeCss, /prefers-reduced-motion/);
+    assert.match(popupCss, /prefers-reduced-motion/);
 }
 
 function runAll() {
@@ -266,8 +339,10 @@ function runAll() {
     testNavigationUsesSpriteImages();
     testNavigationGeometryAndTypographyContract();
     testExpandedSpriteStateAndStableCategorySurface();
+    testCollapseSearchAndMotionContract();
     testPopupEntranceDoesNotScale();
     testMenuHasIndependentReferenceSurface();
+    testFooterActionsMatchExpandedAndCompactNavigation();
     console.log('MENU_REFERENCE_CONTRACT_PASS');
 }
 

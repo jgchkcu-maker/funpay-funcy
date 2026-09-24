@@ -193,3 +193,52 @@ test('renamed font controls retain their prior searchable labels locally', () =>
     assert.deepEqual(keyboardButton.legacyLabels, ['Кнопка «Клавиатура» спецсимволов']);
     assert.equal(registry.filter((entry) => Object.hasOwn(entry, 'legacyLabels')).length, 2);
 });
+
+test('stored disabled IDs still hide the exact original live selectors across all six groups', async () => {
+    const disabledIds = [
+        'rmthub_seller_search',
+        'lot_notes_chat_btn',
+        'lot_font_controls',
+        'lot_keyboard_btn',
+        'lot_clone_btn',
+        'market_analytics_btn',
+        'notes_add_status_btn'
+    ];
+    const styleElements = new Map();
+    const document = {
+        readyState: 'loading',
+        getElementById(id) { return styleElements.get(id) || null; },
+        createElement(tagName) { return { tagName, id: '', textContent: '' }; },
+        head: { appendChild(style) { styleElements.set(style.id, style); } },
+        addEventListener() {}
+    };
+    const context = vm.createContext({
+        document,
+        chrome: { storage: { local: { async get() { return { fpToolsDisabledFeatures: [...disabledIds] }; } } } },
+        window: {},
+        console
+    });
+    vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_registry.js'), 'utf8'), context);
+    vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_disabler.js'), 'utf8'), context);
+
+    await vm.runInContext('window.fptApplyDisabledFeatures()', context);
+
+    const rule = styleElements.get('fp-tools-disabled-features')?.textContent || '';
+    const actualSelectors = rule
+        .replace(/\s*\{\s*display:\s*none !important;\s*\}\s*$/, '')
+        .split(',')
+        .map((selector) => selector.trim())
+        .sort();
+    const expectedSelectors = [
+        '#fp-rmthub-form',
+        '.fpt-chat-note-btn',
+        '.fp-tools-font-controls',
+        '.fp-tools-symbols-panel',
+        '#fpToolsKeyboardToggleBtn',
+        '.fp-tools-clone-btn',
+        '#fpTools-market-analytics-btn-wrapper',
+        '#fp-tools-add-status-btn'
+    ].sort();
+
+    assert.deepEqual(actualSelectors, expectedSelectors);
+});

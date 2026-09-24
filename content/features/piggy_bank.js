@@ -81,10 +81,15 @@ function renderNavbarIcon() {
 
     financeLink.parentElement.insertAdjacentElement('afterend', piggyBankLi);
 
-    document.getElementById('manage-piggy-banks-link').addEventListener('click', (e) => {
+    document.getElementById('manage-piggy-banks-link').addEventListener('click', async (e) => {
         e.preventDefault();
-        document.querySelector('.fp-tools-nav li[data-page="piggy_banks"] a')?.click();
-        document.querySelector('.fp-tools-popup')?.classList.add('active');
+        try {
+            if (typeof window.__fpEnsurePopup === 'function') await window.__fpEnsurePopup();
+        } catch (_) {}
+        const popup = document.querySelector('.fp-tools-popup');
+        if (!popup || typeof window.fptOpenPopupPage !== 'function') return;
+        await window.fptOpenPopupPage('piggy_banks');
+        popup.classList.add('active');
     });
 }
 

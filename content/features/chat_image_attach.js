@@ -254,7 +254,7 @@
             const cell = document.createElement('div');
             cell.className = 'fpt-tg-cell';
             cell.innerHTML = `
-                <img src="${item.dataUrl}" alt="">
+                <img src="${item.dataUrl}" alt="" draggable="false">
                 <button type="button" class="fpt-tg-cell-x" title="Удалить">
                     <span class="material-symbols-rounded">close</span>
                 </button>
@@ -310,7 +310,7 @@
     function openViewer(dataUrl) {
         const v = document.createElement('div');
         v.className = 'fpt-tg-viewer';
-        v.innerHTML = `<img src="${dataUrl}" alt="">`;
+        v.innerHTML = `<img src="${dataUrl}" alt="" draggable="false">`;
         v.addEventListener('click', () => { v.classList.remove('open'); setTimeout(() => v.remove(), 150); });
         document.body.appendChild(v);
         requestAnimationFrame(() => v.classList.add('open'));
@@ -753,7 +753,7 @@
 
         const tiles = dataUrls.map((u, idx) => `
             <span class="fpt-pending-tile" data-i="${idx}">
-                <img src="${u}" alt="">
+                <img src="${u}" alt="" draggable="false">
                 <span class="fpt-pending-spinner"><span class="fpt-spin"></span></span>
             </span>`).join('');
 
@@ -852,26 +852,60 @@
         }, true); // capture - раньше обработчиков FunPay
 
         // Drag&Drop картинок в область чата
-        const chatArea = document.querySelector('.chat') || document.body;
         const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+
+        function isImageDragPayload(dt) {
+            if (!dt) return false;
+            const types = Array.from(dt.types || []).map(type => String(type).toLowerCase());
+            if (types.some(type => type.startsWith('image/'))) return true;
+            if (Array.from(dt.files || []).some(file => file.type && file.type.startsWith('image/'))) return true;
+
+            let html = '', uriList = '';
+            try { html = dt.getData('text/html') || ''; } catch (_) {}
+            if (/<img\b/i.test(html)) return true;
+            try { uriList = dt.getData('text/uri-list') || ''; } catch (_) {}
+            return uriList.split(/\r?\n/).some(value => {
+                const uri = value.trim();
+                if (!uri || uri.startsWith('#')) return false;
+                if (/^data:image\//i.test(uri)) return true;
+                try {
+                    return /\.(?:avif|bmp|gif|jpe?g|png|svg|webp)$/i.test(new URL(uri, location.href).pathname);
+                } catch (_) { return false; }
+            });
+        }
+
+        // Блокируем нативный drag для изображений, которые создала сама функция.
+        document.addEventListener('dragstart', (e) => {
+            const target = e.target;
+            if (target && typeof target.closest === 'function' && target.closest(
+                '.fp-tools-popup img, .fpt-tg-cell img, .fpt-tg-viewer img, .fpt-pending-tile img'
+            )) e.preventDefault();
+        }, true);
+
         ['dragenter', 'dragover'].forEach(ev => document.addEventListener(ev, (e) => {
             if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes('Files')) return;
-            if (!document.querySelector('.chat-form-input')) return;
+            const hasChat = !!document.querySelector('.chat-form-input');
             stop(e);
-            document.body.classList.add('fpt-dnd-active');
+            if (hasChat) document.body.classList.add('fpt-dnd-active');
         }, true));
         document.addEventListener('dragleave', (e) => {
             if (e.relatedTarget === null) document.body.classList.remove('fpt-dnd-active');
         }, true);
         document.addEventListener('drop', (e) => {
-            if (!document.querySelector('.chat-form-input')) return;
             const dt = e.dataTransfer;
-            if (!dt || !dt.files || !dt.files.length) return;
-            const imgs = Array.from(dt.files).filter(f => f.type.startsWith('image/'));
-            if (!imgs.length) return;
-            stop(e);
+            if (!dt) return;
+            const hasChat = !!document.querySelector('.chat-form-input');
+            const imgs = Array.from(dt.files || []).filter(f => f.type && f.type.startsWith('image/'));
+            if (imgs.length) {
+                stop(e);
+                document.body.classList.remove('fpt-dnd-active');
+                if (hasChat) addFiles(imgs);
+                return;
+            }
+            // Перетаскивание изображения со страницы не должно открывать его URL
+            // вместо интерфейса, даже если источник не является локальным файлом.
+            if (isImageDragPayload(dt)) stop(e);
             document.body.classList.remove('fpt-dnd-active');
-            addFiles(imgs);
         }, true);
     }
 

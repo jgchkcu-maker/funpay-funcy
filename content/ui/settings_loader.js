@@ -3,8 +3,14 @@
 let fpToolsAccounts = [];
 let aiModeActive = false;
 
-async function renderTemplateSettings() {
-    const container = document.getElementById('template-settings-container');
+function getTemplateSettingsPanel() {
+    const page = document.querySelector('.fp-tools-page-content[data-page="templates"]');
+    return page?.querySelector('[data-quick-replies-pane="templates"]') || page;
+}
+
+async function renderTemplateSettings(targetPanel = getTemplateSettingsPanel()) {
+    const container = targetPanel?.querySelector('#template-settings-container')
+        || document.getElementById('template-settings-container');
     if (!container) return;
     container.innerHTML = '';
 
@@ -58,23 +64,25 @@ async function renderTemplateSettings() {
 
 async function setupTemplateSettingsHandlers() {
     await loadTemplateSettings();
-    await renderTemplateSettings();
-
-    const container = document.getElementById('template-settings-container');
     const templatesPage = document.querySelector('.fp-tools-page-content[data-page="templates"]');
-    if (!container || !templatesPage) return;
+    const templatesPanel = getTemplateSettingsPanel();
+    await renderTemplateSettings(templatesPanel);
+
+    const getTemplateControl = id => templatesPanel?.querySelector(`#${id}`) || document.getElementById(id);
+    const container = getTemplateControl('template-settings-container');
+    if (!container || !templatesPage || !templatesPanel) return;
     
-    const posRadio = templatesPage.querySelector(`input[name="templatePos"][value="${templateSettings.buttonPosition}"]`);
+    const posRadio = templatesPanel.querySelector(`input[name="templatePos"][value="${templateSettings.buttonPosition}"]`);
     if(posRadio) posRadio.checked = true;
 
     // Popover hint visible only when the «popover» layout is selected.
-    const popoverHint = document.getElementById('fpt-popover-hint');
+    const popoverHint = getTemplateControl('fpt-popover-hint');
     const isSidebarPos = () => templateSettings.buttonPosition === 'sidebar_top' || templateSettings.buttonPosition === 'sidebar_bottom';
     const syncPopoverHint = () => {
         if (popoverHint) popoverHint.style.display = (templateSettings.buttonPosition === 'popover') ? 'block' : 'none';
     };
     // Sidebar-only settings block appears (not just dims) when a sidebar position is chosen.
-    const sidebarExtra = document.getElementById('fpt-sidebar-extra');
+    const sidebarExtra = getTemplateControl('fpt-sidebar-extra');
     const syncSidebarExtra = () => {
         if (sidebarExtra) sidebarExtra.style.display = isSidebarPos() ? '' : 'none';
     };
@@ -82,8 +90,8 @@ async function setupTemplateSettingsHandlers() {
     syncSidebarExtra();
 
     // Master enable toggle - hides the whole config block when off.
-    const enabledChk = document.getElementById('templatesEnabled');
-    const configBlock = document.getElementById('fpt-templates-config');
+    const enabledChk = getTemplateControl('templatesEnabled');
+    const configBlock = getTemplateControl('fpt-templates-config');
     const syncEnabled = () => {
         if (configBlock) configBlock.style.display = (templateSettings.enabled === false) ? 'none' : '';
     };
@@ -98,7 +106,7 @@ async function setupTemplateSettingsHandlers() {
     }
     syncEnabled();
 
-    document.getElementById('sendTemplatesImmediately').checked = templateSettings.sendTemplatesImmediately;
+    getTemplateControl('sendTemplatesImmediately').checked = templateSettings.sendTemplatesImmediately;
 
     // 3.0: debounce to stop per-keystroke lag. Previously every character typed triggered a
     // full settings save AND a full rebuild of all chat template buttons in the DOM, which made
@@ -188,7 +196,7 @@ async function setupTemplateSettingsHandlers() {
         });
     } // end attach-once guard
 
-    document.getElementById('addCustomTemplateBtn').onclick = async () => {
+    getTemplateControl('addCustomTemplateBtn').onclick = async () => {
         templateSettings.custom.push({
             id: Date.now().toString(),
             label: 'Новый шаблон',
@@ -200,7 +208,7 @@ async function setupTemplateSettingsHandlers() {
         await renderTemplateSettings(); // Re-render to add the new item (delegation handles events)
     };
 
-    templatesPage.querySelectorAll('input[name="templatePos"]').forEach(radio => {
+    templatesPanel.querySelectorAll('input[name="templatePos"]').forEach(radio => {
         radio.onchange = async (e) => {
             templateSettings.buttonPosition = e.target.value;
             syncPopoverHint();
@@ -210,17 +218,17 @@ async function setupTemplateSettingsHandlers() {
         };
     });
 
-    document.getElementById('sendTemplatesImmediately').onchange = async (e) => {
+    getTemplateControl('sendTemplatesImmediately').onchange = async (e) => {
         templateSettings.sendTemplatesImmediately = e.target.checked;
         await saveTemplateSettings();
     };
 
     // ── Button appearance ─────────────────────────────────────────────────────
-    const appx = templatesPage.querySelector('.fpt-appx');
+    const appx = templatesPanel.querySelector('.fpt-appx');
     const dispRef = () => (templateSettings.display = templateSettings.display || { ...DEFAULT_TEMPLATE_DISPLAY });
 
     const writePreviewAttrs = () => {
-        const preview = document.getElementById('fpt-appearance-preview');
+        const preview = getTemplateControl('fpt-appearance-preview');
         if (!preview) return;
         const disp = dispRef();
         preview.setAttribute('data-fpt-shape', disp.shape);
@@ -244,7 +252,7 @@ async function setupTemplateSettingsHandlers() {
             chip.classList.toggle('active', !!disp[chip.dataset.fptToggle]));
         // Alignment only matters when buttons span the full width - otherwise they're
         // content-sized and alignment is invisible. Hide the control unless fullWidth.
-        const alignBlock = document.getElementById('fpt-align-block');
+        const alignBlock = getTemplateControl('fpt-align-block');
         if (alignBlock) alignBlock.classList.toggle('fpt-disabled', !disp.fullWidth);
         writePreviewAttrs();
     };
@@ -529,6 +537,9 @@ async function loadSavedSettings() {
         toggleDiscordControls();
     }
     
+    if (typeof initializeAutoReplyUI === 'function') {
+        await initializeAutoReplyUI(settings.fpToolsAutoReplies || {});
+    }
     if (typeof initializeAutoReviewUI === 'function') {
         await initializeAutoReviewUI(settings.fpToolsAutoReplies || {});
     }

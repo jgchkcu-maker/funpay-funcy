@@ -173,7 +173,7 @@
     width: 14px;
     height: 14px;
     opacity: 0.5;
-    pointer-events: none;
+    pointer-events: auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -185,7 +185,7 @@
     width: 100%;
     box-sizing: border-box;
     padding: 8px 32px 8px 14px;
-    border-radius: 9px;
+    border-radius: 24px;
     border: 1px solid var(--fptm-border, rgba(255, 255, 255, 0.12));
     background: var(--fptm-field, rgba(255, 255, 255, 0.06));
     color: var(--fptm-text, inherit);
@@ -506,6 +506,16 @@
     min-height: min(560px, 90vh);
     resize: both;
     overflow: hidden;
+}
+
+/* Keep wheel and trackpad overscroll inside the extension window. */
+.fp-tools-popup,
+.fp-tools-popup .fp-tools-body,
+.fp-tools-popup .fp-tools-nav,
+.fp-tools-popup .fp-tools-content,
+.fp-tools-popup .fpt-nav-scroll,
+.fp-tools-popup .fpt-nav-search-results {
+    overscroll-behavior-y: contain;
 }
 
 .fp-tools-popup.active {
@@ -1051,6 +1061,73 @@
 .fp-tools-popup .fpt-nav-group-toggle::before {
     content: none !important;
     display: none !important;
+}
+
+/* Footer route actions (notes and rating) stay visible beside the accent picker. */
+.fp-tools-popup .fp-tools-nav .fpt-nav-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+.fp-tools-popup .fp-tools-nav .fpt-nav-quick-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action { min-width: 0; max-width: 100%; }
+.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 12px !important;
+    background: transparent !important;
+    text-decoration: none;
+}
+.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a:hover,
+.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a:focus-visible {
+    background: var(--fptm-nav-field, #f4f3ff) !important;
+}
+.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a > span:last-child {
+    min-width: 0;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.fp-tools-popup .fp-tools-nav.is-nav-collapsed .fpt-nav-footer { align-items: center; }
+.fp-tools-popup .fp-tools-nav.is-nav-collapsed .fpt-nav-quick-actions { width: 44px; align-items: center; gap: 4px; }
+.fp-tools-popup .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action { width: 44px; max-width: 44px; }
+.fp-tools-popup .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action > a {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+    justify-content: center;
+    gap: 0;
+    padding: 0;
+}
+.fp-tools-popup .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action > a > span:last-child {
+    width: 0;
+    max-width: 0;
+    opacity: 0;
+    visibility: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup .fp-tools-nav .fpt-nav-quick-actions,
+    .fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a,
+    .fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a > span:last-child {
+        transition-duration: .01ms !important;
+    }
 }
 
 .fp-tools-popup button:not(.fpt-nav-group-toggle):not(:disabled):hover,
@@ -11560,4 +11637,69 @@ textarea.fp-cw-input { line-height:1.4; }
 
 .fpt-fin-top-row:hover {
     background: var(--fptm-hover, rgba(255, 255, 255, 0.06));
+}
+/* Interface element taxonomy in the needs page */
+.fp-tools-popup .fpt-needs-group > .fpt-needs-group-title {
+    display: block;
+    margin: 0 0 8px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--fptm-muted, #8a8a96);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--fptm-border, #282832);
+}
+
+.fp-tools-popup .fpt-needs-subgroup {
+    margin: 0 0 12px;
+}
+
+.fp-tools-popup .fpt-needs-subgroup-title {
+    margin: 0 0 6px 8px;
+    color: var(--fptm-muted, #8a8a96);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.fp-tools-popup .fpt-needs-item.fpt-needs-context {
+    opacity: 0.62;
+    cursor: default;
+}
+
+.fp-tools-popup .fpt-needs-context .fpt-needs-check {
+    cursor: default;
+}
+
+.fp-tools-popup .fpt-needs-context .fpt-needs-preview-btn {
+    cursor: default;
+    pointer-events: none;
+}
+
+.fp-tools-popup .fpt-needs-item.fpt-needs-dependent-disabled {
+    opacity: 0.58;
+    border-style: dashed;
+}
+
+.fp-tools-popup .fpt-needs-dependent-note {
+    display: block;
+    margin-top: 4px;
+    color: var(--fptm-muted, #8a8a96);
+    font-size: 11px;
+    line-height: 1.35;
+}
+
+.fp-tools-popup .fpt-needs-dependent-note[hidden] {
+    display: none !important;
+}
+
+.fp-tools-popup .fpt-needs-entry-branch {
+    margin-bottom: 8px;
+}
+
+.fp-tools-popup .fpt-needs-child-items {
+    margin: 2px 0 8px 18px;
+    padding-left: 10px;
+    border-left: 1px solid var(--fptm-border, rgba(127, 127, 127, 0.35));
 }

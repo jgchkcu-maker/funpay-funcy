@@ -177,21 +177,12 @@ function initializeCalculatorLogic() {
     initializeCalcSubtabs();
 }
 
-// 3.0: подвкладки калькулятора (Обычный / Временной) + «временной» режим.
+// 3.0: логика режима «Время» калькулятора. Переключение режимов привязано к маршрутам попапа.
 // Подаётся как калькулятор: никаких упоминаний ИИ в интерфейсе.
 function initializeCalcSubtabs() {
     const page = document.querySelector('.fp-tools-page-content[data-page="calculator"]');
     if (!page || page.dataset.subtabsInit) return;
-
-    const tabs = page.querySelectorAll('.calc-subtab');
-    const panes = page.querySelectorAll('.calc-pane');
-    tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            const mode = tab.dataset.calcMode;
-            tabs.forEach(t => t.classList.toggle('is-active', t === tab));
-            panes.forEach(p => { p.hidden = p.dataset.calcPane !== mode; });
-        });
-    });
+    if (typeof setupCalculatorUI === 'function') setupCalculatorUI();
 
     const input = page.querySelector('#calcTimeInput');
     const btn = page.querySelector('#calcTimeBtn');

@@ -8,6 +8,7 @@
 const FPT_SLASH_KEY = 'fpToolsSlashCommands';
 const FPT_SLASH_DEFAULTS = { enabled: true, expandKey: 'both', autocomplete: true, commands: [] };
 let _fptSlashCfg = null;
+let _fptSlashPanel = null;
 
 async function fptSlashLoad() {
     const r = await chrome.storage.local.get(FPT_SLASH_KEY);
@@ -20,7 +21,7 @@ async function fptSlashSave() {
 }
 
 function fptSlashRenderList() {
-    const list = document.getElementById('fptSlashList');
+    const list = _fptSlashPanel?.querySelector('#fptSlashList') || document.getElementById('fptSlashList');
     if (!list) return;
     if (!_fptSlashCfg.commands.length) {
         list.innerHTML = '<p class="template-info">Пока нет команд. Нажмите «+ Добавить команду».</p>';
@@ -53,13 +54,15 @@ function fptSlashNormalizeTrigger(t) {
 
 let _fptSlashUiBound = false;
 async function initializeSlashCommandsUI() {
-    const page = document.querySelector('.fp-tools-page-content[data-page="slash_commands"]');
+    const templatesPage = document.querySelector('.fp-tools-page-content[data-page="templates"]');
+    const page = templatesPage?.querySelector('[data-quick-replies-pane="commands"]');
     if (!page) return;
+    _fptSlashPanel = page;
     await fptSlashLoad();
 
-    const enabledEl = document.getElementById('fptSlashEnabled');
-    const autoEl = document.getElementById('fptSlashAutocomplete');
-    const configEl = document.getElementById('fptSlashConfig');
+    const enabledEl = page.querySelector('#fptSlashEnabled');
+    const autoEl = page.querySelector('#fptSlashAutocomplete');
+    const configEl = page.querySelector('#fptSlashConfig');
     const keyRadios = page.querySelectorAll('input[name="fptSlashKey"]');
 
     if (enabledEl) enabledEl.checked = _fptSlashCfg.enabled !== false;
@@ -85,14 +88,14 @@ async function initializeSlashCommandsUI() {
         if (r.checked) { _fptSlashCfg.expandKey = r.value; await fptSlashSave(); }
     }));
 
-    const addBtn = document.getElementById('fptSlashAddBtn');
+    const addBtn = page.querySelector('#fptSlashAddBtn');
     addBtn && addBtn.addEventListener('click', async () => {
         _fptSlashCfg.commands.push({ id: Date.now().toString(), trigger: '/', response: '' });
         await fptSlashSave();
         fptSlashRenderList();
     });
 
-    const list = document.getElementById('fptSlashList');
+    const list = page.querySelector('#fptSlashList');
     if (list && !list.dataset.bound) {
         list.dataset.bound = '1';
         let saveT = null;

@@ -266,8 +266,9 @@ test('content helper waits for the service-worker write and reports storage erro
     });
 });
 
-test('review UI initializes once from the complete saved object before autosave handlers can race', async () => {
-    const page = { dataset: {}, listeners: {}, addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); } };
+test('split auto-reply pages initialize once from the complete saved object before autosave handlers can race', async () => {
+    const reviewPage = { dataset: { page: 'auto_review' }, listeners: {}, addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); } };
+    const replyPage = { dataset: { page: 'auto_reply' }, listeners: {}, addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); } };
     const elements = new Map();
     const getElement = id => {
         if (!elements.has(id)) {
@@ -291,7 +292,8 @@ test('review UI initializes once from the complete saved object before autosave 
     const document = {
         getElementById: getElement,
         querySelector(selector) {
-            if (selector === '.fp-tools-page-content[data-page="auto_review"]') return page;
+            if (selector === '.fp-tools-page-content[data-page="auto_review"]') return reviewPage;
+            if (selector === '.fp-tools-page-content[data-page="auto_reply"]') return replyPage;
             if (selector === 'input[name="bonusMode"]:checked') return radios.find(radio => radio.checked) || null;
             if (selector.startsWith('input[name="bonusMode"][value="')) {
                 const value = selector.includes('[value="random"]') ? 'random' : 'single';
@@ -340,13 +342,18 @@ test('review UI initializes once from the complete saved object before autosave 
         typingDelay: true
     };
 
-    const first = context.initializeAutoReviewUI(saved);
-    const concurrent = context.initializeAutoReviewUI({ greetingText: 'should not replace saved value' });
-    assert.equal(first, concurrent, 'a second call before initialization completes should share the same promise');
-    await first;
-    await context.initializeAutoReviewUI({ greetingText: 'should not replace saved value' });
+    const replyInit = context.initializeAutoReplyUI(saved);
+    const concurrentReplyInit = context.initializeAutoReplyUI({ greetingText: 'should not replace saved value' });
+    const reviewInit = context.initializeAutoReviewUI(saved);
+    const concurrentReviewInit = context.initializeAutoReviewUI({ reviewTemplates: { '5': 'should not replace saved value' } });
+    assert.equal(replyInit, concurrentReplyInit, 'auto_reply calls before initialization completes share one promise');
+    assert.equal(reviewInit, concurrentReviewInit, 'auto_review calls before initialization completes share one promise');
+    await Promise.all([replyInit, reviewInit]);
+    await context.initializeAutoReplyUI({ greetingText: 'should not replace saved value' });
+    await context.initializeAutoReviewUI({ reviewTemplates: { '5': 'should not replace saved value' } });
 
-    assert.equal(page.dataset.initialized, 'true');
+    assert.equal(replyPage.dataset.initialized, 'true');
+    assert.equal(reviewPage.dataset.initialized, 'true');
     assert.equal(getElement('fpt-review-1').value, 'one');
     assert.equal(getElement('fpt-review-5').value, 'five');
     assert.equal(getElement('greetingText').value, 'saved greeting');
@@ -358,7 +365,8 @@ test('review UI initializes once from the complete saved object before autosave 
     assert.equal(getElement('bonusForReviewDelaySec').value, 13);
     assert.equal(getElement('bonus-list-container').innerHTML.includes('second gift'), true);
     assert.equal(getElement('keywords-list-container').innerHTML.includes('term'), true);
-    assert.equal((page.listeners.click || []).length, 1, 'page event handlers should be bound once');
+    assert.equal((replyPage.listeners.click || []).length, 1, 'auto_reply page event handlers should be bound once');
+    assert.equal((reviewPage.listeners.click || []).length, 1, 'auto_review page event handlers should be bound once');
 });
 
 test('autosave builder patches the changed rating and unsets only its cleared image key', () => {

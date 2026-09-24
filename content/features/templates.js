@@ -656,7 +656,7 @@ async function openTemplateSettings() {
     } catch (_) {}
     const popup = document.querySelector('.fp-tools-popup');
     if (!popup) return;
+    if (typeof window.fptOpenPopupPage !== 'function') return;
+    await window.fptOpenPopupPage('templates', { mode: 'templates' });
     popup.classList.add('active');
-    const navItem = popup.querySelector('.fp-tools-nav li[data-page="templates"]');
-    if (navItem) navItem.click();
 }

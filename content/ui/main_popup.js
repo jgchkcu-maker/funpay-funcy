@@ -56,12 +56,12 @@ const FPT_MENU_ASSET_PATHS = Object.freeze({
 });
 
 const FPT_NAV_ICON_ASSETS = Object.freeze({
-    core: Object.freeze({ collapsed: 'nav-home-collapsed.png', expanded: 'nav-home-expanded.png' }),
-    store: Object.freeze({ collapsed: 'nav-store-collapsed.png', expanded: 'nav-store-expanded.png' }),
-    messages: Object.freeze({ collapsed: 'nav-chat-collapsed.png', expanded: 'nav-chat-expanded.png' }),
+    sales: Object.freeze({ collapsed: 'nav-store-collapsed.png', expanded: 'nav-store-expanded.png' }),
+    customers: Object.freeze({ collapsed: 'nav-chat-collapsed.png', expanded: 'nav-chat-expanded.png' }),
     finance: Object.freeze({ collapsed: 'nav-analytics-collapsed.png', expanded: 'nav-analytics-expanded.png' }),
+    interface: Object.freeze({ collapsed: 'nav-apps-collapsed.png', expanded: 'nav-apps-expanded.png' }),
     settings: Object.freeze({ collapsed: 'nav-settings-collapsed.png', expanded: 'nav-settings-expanded.png' }),
-    more: Object.freeze({ collapsed: 'nav-apps-collapsed.png', expanded: 'nav-apps-expanded.png' })
+    help: Object.freeze({ collapsed: 'nav-help-collapsed.png', expanded: 'nav-help-expanded.png' })
 });
 
 function fptGetMenuAssetUrl(assetPath) {
@@ -92,6 +92,8 @@ function createMainPopup() {
             .fp-nav-divider:first-child{margin-top:0!important;}
             .fp-nav-divider:hover{background:none!important;}
             .fp-dark-preset-btn{width:100%;margin-bottom:12px;background:rgba(0,0,0,.3)!important;border-color:rgba(255,255,255,.1)!important;display:flex;align-items:center;justify-content:center;gap:8px;}
+            .fpt-quick-replies-tabs{display:flex;gap:8px;margin:12px 0 16px;}
+            .fpt-quick-replies-tabs [role="tab"]{flex:1;}
         `;
         document.head.appendChild(s);
     }
@@ -99,11 +101,7 @@ function createMainPopup() {
     const toolsPopup = document.createElement('div');
     toolsPopup.className = 'fp-tools-popup fpt-menu-shell';
     toolsPopup.innerHTML = `
-        <div class="fp-tools-header">
-            <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="">
-            <h2 class="fp-tools-title-wrap"><span class="fp-tools-site-link">FunPay Funcy</span><button type="button" id="fptAccentBtn" class="fpt-accent-btn" title="Цвет акцента" aria-label="Цвет акцента"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.36-.6-.36-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="15" cy="8" r="1.1" fill="currentColor"/><circle cx="16.8" cy="12" r="1.1" fill="currentColor"/></svg><input type="color" id="fptAccentInput" class="fpt-accent-input" value="#1b75bb" aria-hidden="true" tabindex="-1"></button></h2>
-            <div class="fp-tools-social">
-            </div>
+        <div class="fp-tools-header" aria-label="Управление окном">
             <button type="button" class="close-btn" aria-label="Закрыть">
                 <span class="close-btn__surface" aria-hidden="true">
                     <svg class="close-btn__icon" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -115,60 +113,61 @@ function createMainPopup() {
         </div>
         <div class="fp-tools-body">
             <nav class="fp-tools-nav">
+                <div class="fpt-nav-brand">
+                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">
+                    <span class="fpt-nav-brand-title">FunPay Funcy</span>
+                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </div>
                 <div class="fpt-nav-search">
-                    <span class="fpt-nav-search-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
                     <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">
                     <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>
                     <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>
                 </div>
                 <ul>
                     <li class="fp-nav-divider">Основное</li>
-                    <li data-page="general" class="active"><a><span class="nav-icon material-symbols-rounded">settings</span><span>Общие</span></a></li>
+                    <li data-page="general"><a><span class="nav-icon material-symbols-rounded">settings</span><span>Отображение FunPay</span></a></li>
                     <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>
-                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Что тебе нужно</span></a></li>
-                    <li data-page="slash_commands"><a><span class="nav-icon material-symbols-rounded">terminal</span><span>Слэш-команды</span></a></li>
-                    <li data-page="telegram"><a><span class="nav-icon material-symbols-rounded">send</span><span>Telegram</span></a></li>
+                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>
+                    <li data-page="telegram"><a><span class="nav-icon material-symbols-rounded">send</span><span>Уведомления и интеграции</span></a></li>
                     <li class="fp-nav-divider">Эксклюзив</li>
-                    <li data-page="epic_nicks"><a><span class="nav-icon material-symbols-rounded">diamond</span><span>Это увидят все</span></a></li>
+                    <li data-page="epic_nicks"><a><span class="nav-icon material-symbols-rounded">diamond</span><span>Оформление ника</span></a></li>
                     <li class="fp-nav-divider">Интерфейс</li>
-                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Кастомизация</span></a></li>
+                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>
                     <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>
                     <li class="fp-nav-divider">Чат и продажи</li>
-                    <li data-page="global_chat"><a><span class="nav-icon material-symbols-rounded">forum</span><span>Общий чат</span></a></li>
-                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Шаблоны</span></a></li>
-                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">smart_toy</span><span>Авто-ответы</span></a></li>
-                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Авто-выдача</span></a></li>
+                    <li data-page="global_chat"><a><span class="nav-icon material-symbols-rounded">forum</span><span>Чат сообщества</span></a></li>
+                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>
+                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>
+                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>
+                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>
                     <li class="fp-nav-divider">Торговля</li>
-                    <li data-page="lot_io"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Лоты</span></a></li>
-                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Авто-поднятие</span></a></li>
-                    <li data-page="ai_audit"><a><span class="nav-icon material-symbols-rounded">search_insights</span><span>ИИ-аудит</span></a></li>
+                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>
+                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>
+                    <li data-page="ai_audit"><a><span class="nav-icon material-symbols-rounded">search_insights</span><span>Аудит магазина</span></a></li>
                     <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>
                     <li class="fp-nav-divider">Финансы</li>
-                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Финансы</span></a></li>
+                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>
                     <li data-page="piggy_banks"><a><span class="nav-icon material-symbols-rounded">savings</span><span>Копилки</span></a></li>
-                    <li data-page="calculator"><a><span class="nav-icon material-symbols-rounded">calculate</span><span>Калькулятор</span></a></li>
-                    <li data-page="currency_calc"><a><span class="nav-icon material-symbols-rounded">currency_exchange</span><span>Валюты</span></a></li>
+                    <li data-page="calculator"><a><span class="nav-icon material-symbols-rounded">calculate</span><span>Калькуляторы</span></a></li>
                     <li class="fp-nav-divider">Прочее</li>
                     <li data-page="notes"><a><span class="nav-icon material-symbols-rounded">edit_note</span><span>Заметки</span></a></li>
-                    <li data-page="overview"><a><span class="nav-icon material-symbols-rounded">movie</span><span>Обзор</span></a></li>
-                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Настройки</span></a></li>
-                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Тикеты</span></a></li>
-                    <li data-page="support"><a><span class="nav-icon material-symbols-rounded">favorite</span><span>Поддержка</span></a></li>
+                    <li data-page="overview"><a><span class="nav-icon material-symbols-rounded">movie</span><span>Справочник функций</span></a></li>
+                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>
+                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>
+                    <li data-page="support"><a><span class="nav-icon material-symbols-rounded">favorite</span><span>Оценить расширение</span></a></li>
                 </ul>
                 <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>
+                <div class="fpt-nav-footer">
+                    <ul class="fpt-nav-quick-actions" aria-label="Быстрые действия"></ul>
+                    <button type="button" id="fptAccentBtn" class="fpt-accent-btn" title="Цвет акцента" aria-label="Цвет акцента"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.36-.6-.36-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="15" cy="8" r="1.1" fill="currentColor"/><circle cx="16.8" cy="12" r="1.1" fill="currentColor"/></svg><input type="color" id="fptAccentInput" class="fpt-accent-input" value="#1b75bb" aria-hidden="true" tabindex="-1"></button>
+                </div>
             </nav>
             <main class="fp-tools-content">
-                <div class="fp-tools-page-content active" data-page="general">
-                    <h3>Общие настройки</h3>
-                    <p class="template-info" style="margin:0 0 10px;">Finance Hub — основной раздел аналитики. Legacy-отчёты ниже оставлены как временный расширенный режим.</p>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="showSalesStatsCheckbox">
-                        <label for="showSalesStatsCheckbox" style="margin-bottom:0;"><span>Legacy: статистика покупок и продаж на вкладках</span></label>
-                    </div>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="showFinanceStatsCheckbox">
-                        <label for="showFinanceStatsCheckbox" style="margin-bottom:0;"><span>Legacy: статистика финансов на странице «Финансы»</span></label>
-                    </div>
+                <div class="fp-tools-page-content" data-page="general">
+                    <h3>Отображение FunPay</h3>
                     <div class="checkbox-label-inline">
                         <input type="checkbox" id="hideBalanceCheckbox">
                         <label for="hideBalanceCheckbox" style="margin-bottom:0;"><span>Скрыть баланс</span></label>
@@ -185,78 +184,9 @@ function createMainPopup() {
                         <input type="checkbox" id="fptShowRealPricesCheckbox">
                         <label for="fptShowRealPricesCheckbox" style="margin-bottom:0;"><span>Показывать реальные цены лотов</span></label>
                     </div>
-                    
-                    <h3>Звук уведомления</h3>
-                    <div class="fp-tools-radio-group" id="notificationSoundGroup">
-                        <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="default" checked><span>Стандартный</span></label>
-                        <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="vk"><span>VK</span></label>
-                        <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="tg"><span>Telegram</span></label>
-                        <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="iphone"><span>iPhone</span></label>
-                        <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="discord"><span>Discord</span></label>
-                        <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="whatsapp"><span>WhatsApp</span></label>
-                        <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="custom"><span>Своя мелодия</span></label>
-                    </div>
-
-                    <!-- Загрузка своей мелодии + обрезка до 5 секунд -->
-                    <div id="fptCustomSoundBlock" style="margin-top:12px;background:var(--fptm-surface-2, #0e0f16);border:1px solid var(--fptm-border, #1e2030);border-radius:10px;padding:14px;display:none;">
-                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-                            <button id="fptCustomSoundUploadBtn" class="btn btn-default" style="padding:6px 12px;font-size:13px;">
-                                <span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;margin-right:5px;">upload_file</span>Выбрать аудио
-                            </button>
-                            <input type="file" id="fptCustomSoundInput" accept="audio/*" style="display:none;">
-                            <span id="fptCustomSoundFileName" style="font-size:12px;color:var(--fptm-muted, #9099b8);">Файл не выбран</span>
-                        </div>
-                        <p class="template-info" style="margin-top:10px;">Можно выбрать любые <span class="fpt-sec-spin"><input type="text" id="fptClipSeconds" value="5" inputmode="numeric" maxlength="1"><span class="fpt-sec-spin-btns"><button type="button" id="fptClipSecUp" tabindex="-1">▲</button><button type="button" id="fptClipSecDown" tabindex="-1">▼</button></span></span> сек. из вашего трека: перетащите выделение по дорожке, прослушайте и сохраните. Уведомление будет проигрывать именно этот отрезок.</p>
-
-                        <div id="fptCustomSoundEditor" style="display:none;margin-top:8px;">
-                            <div id="fptWaveWrap" style="position:relative;height:64px;background:var(--fptm-surface-2, #070810);border:1px solid var(--fptm-border, #22253a);border-radius:8px;overflow:hidden;user-select:none;cursor:pointer;">
-                                <canvas id="fptWaveCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-                                <div id="fptWaveSel" style="position:absolute;top:0;bottom:0;background:rgba(27,117,187,0.22);border-left:2px solid #1b75bb;border-right:2px solid #1b75bb;box-sizing:border-box;"></div>
-                                <div id="fptWavePlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#ffd24a;display:none;"></div>
-                                <div id="fptWaveSelHandleL" style="position:absolute;top:0;bottom:0;width:8px;margin-left:-4px;cursor:ew-resize;"></div>
-                                <div id="fptWaveSelHandleR" style="position:absolute;top:0;bottom:0;width:8px;margin-left:-4px;cursor:ew-resize;"></div>
-                            </div>
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:10px;flex-wrap:wrap;">
-                                <span id="fptCustomSoundRange" style="font-size:11px;color:var(--fptm-faint, #5a5f7a);">0:00 - 0:05</span>
-                                <div style="display:flex;gap:8px;align-items:center;">
-                                    <button id="fptCustomSoundPreviewBtn" class="fpt-icon-play-btn" title="Прослушать отрезок">
-                                        <span class="material-symbols-rounded">play_arrow</span>
-                                    </button>
-                                    <button id="fptCustomSoundSaveBtn" class="btn" style="padding:5px 14px;font-size:12px;">Сохранить мелодию</button>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="fptCustomSoundSaved" style="display:none;margin-top:10px;font-size:12px;color:#4caf82;">
-                            <span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px;">check_circle</span>
-                            Сохранена своя мелодия (<span id="fptCustomSoundSavedLen">5.0</span> сек).
-                        </div>
-                    </div>
-                    <div class="template-container" style="margin-top:14px;">
-                        <div class="range-label" style="display:flex;align-items:center;justify-content:space-between;">
-                            <label for="notificationVolume" style="margin:0;">Громкость уведомлений:</label>
-                            <span id="notificationVolumeValue">100%</span>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
-                            <input type="range" id="notificationVolume" min="0" max="100" step="1" value="100" style="flex:1;">
-                            <button id="previewNotificationBtn" class="fpt-icon-play-btn" title="Прослушать"><span class="material-symbols-rounded">play_arrow</span></button>
-                        </div>
-                    </div>
-
-                    <h3 style="margin-top: 40px;">Уведомления в Discord</h3>
-                     <div class="checkbox-label-inline">
-                        <input type="checkbox" id="discordLogEnabled">
-                        <label for="discordLogEnabled" style="margin-bottom:0;"><span>Включить уведомления о новых сообщениях</span></label>
-                    </div>
-                    <div id="discordSettingsContainer">
-                        <label for="discordWebhookUrl" style="margin-top: 10px;">Webhook URL:</label>
-                        <input type="text" id="discordWebhookUrl" class="template-input" placeholder="Вставьте ссылку на вебхук вашего Discord канала">
-                        <div class="checkbox-label-inline" style="margin-top:10px;"><input type="checkbox" id="discordPingEveryone"><label for="discordPingEveryone" style="margin-bottom:0;"><span>Пинговать @everyone</span></label></div>
-                        <div class="checkbox-label-inline"><input type="checkbox" id="discordPingHere"><label for="discordPingHere" style="margin-bottom:0;"><span>Пинговать @here</span></label></div>
-                    </div>
-
                     <div class="support-promo">
                         <span class="nav-icon material-symbols-rounded">favorite</span>
-                        <span>Понравился FunPay Funcy? <a href="#" data-nav-to="support">Поддержите труд разработчика</a> во вкладке "Поддержка"!</span>
+                        <span>Понравился FunPay Funcy? <a href="#" data-nav-to="support">Оценить расширение</a> в быстрых действиях меню.</span>
                     </div>
                     
                     <h3 style="margin-top: 30px;">Заказы и статистика</h3>
@@ -285,7 +215,7 @@ function createMainPopup() {
                 <!-- НАЧАЛО ВКЛАДКИ "ЭПИЧЕСКИЕ НИКИ" -->
                 <div class="fp-tools-page-content" data-page="epic_nicks">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3>Эпический никнейм <span class="material-symbols-rounded" style="vertical-align:-3px;color:#4a9fd4;">diamond</span></h3>
+                        <h3>Оформление ника <span class="material-symbols-rounded" style="vertical-align:-3px;color:#4a9fd4;">diamond</span></h3>
                     </div>
                     <p class="template-info" style="font-size: 14px; line-height: 1.5;">
                         Выделитесь среди конкурентов! Ваш никнейм будет светиться, переливаться и излучать частицы <b>у всех пользователей расширения FunPay Funcy</b> (более 15 000 человек).
@@ -320,8 +250,8 @@ function createMainPopup() {
                     <div id="fpToolsAccountsList"></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="needs">
-                    <h3>Что тебе нужно</h3>
-                    <p class="template-info">Здесь убираются кнопки и элементы, которые расширение само добавляет на страницы FunPay (например, кнопка ИИ-переписывателя в чате или кнопка «Прочитать все») и которые иначе никак не отключить. Опишите своими словами, что мешает - ИИ поймёт и спросит подтверждение. Либо отметьте вручную. Применяется сразу, без перезагрузки. Функции со своим переключателем (тема, авто-поднятие, эффекты курсора, метка рядом с ником и т.п.) отключаются в их собственных вкладках.</p>
+                    <h3>Элементы интерфейса</h3>
+                    <p class="template-info">Здесь можно отключить отдельные кнопки и блоки, которые расширение добавляет на страницы FunPay. Найдите элемент по месту или задаче, посмотрите предпросмотр и снимите галочку. ИИ поможет подобрать элементы по описанию и покажет список для подтверждения. Изменения применяются сразу. Функции со своими переключателями (темы, авто-поднятие, эффекты курсора, метка рядом с ником и другие настройки) отключаются в своих разделах.</p>
 
                     <div class="fpt-needs-ai-box">
                         <textarea id="fptNeedsInput" placeholder="Например: «убери ИИ-кнопку и счётчик символов в чате, не нужна кнопка Прочитать все и пункт Добавить в ЧС»" rows="3"></textarea>
@@ -332,8 +262,8 @@ function createMainPopup() {
 
                     <div class="fpt-needs-manual">
                         <div class="fpt-needs-manual-head">
-                            <h4 style="margin:0;">Все добавленные элементы</h4>
-                            <input type="text" id="fptNeedsFilter" class="fpt-needs-filter" placeholder="Поиск по названию…">
+                            <h4 style="margin:0;">Элементы, которые можно отключить</h4>
+                            <input type="text" id="fptNeedsFilter" class="fpt-needs-filter" placeholder="Поиск по элементу, месту или задаче…">
                         </div>
                         <p class="template-info" style="margin-top:6px;">Галочка = элемент показывается. Снимите галочку, чтобы убрать его со страниц - сохраняется и применяется сразу, без перезагрузки и без кнопки «применить». Нажмите <span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px;color:#4a9fd4;">visibility</span>, чтобы увидеть, как элемент выглядит.</p>
                         <div id="fptNeedsList" class="fpt-needs-list"></div>
@@ -344,46 +274,75 @@ function createMainPopup() {
                     </div>
                 </div>
 
-                <!-- НАЧАЛО ВКЛАДКИ "СЛЭШ-КОМАНДЫ" -->
-                <div class="fp-tools-page-content" data-page="slash_commands">
-                    <h3>Слэш-команды</h3>
-                    <p class="template-info">Свои быстрые ответы для поля чата. Вы задаёте команду (например <code>/привет</code>) и её ответ (например «Привет, я тут. Какие вопросы?»). В чате начинаете печатать команду - <code>/при</code> - появляется подсказка; нажимаете Tab или Enter, и команда сразу превращается в полный текст ответа. Удобно для приветствий, реквизитов, частых фраз.</p>
-
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="fptSlashEnabled" checked>
-                        <label for="fptSlashEnabled" style="margin-bottom:0;"><span><b>Включить слэш-команды</b></span></label>
-                    </div>
-
-                    <div id="fptSlashConfig">
-                        <div class="checkbox-label-inline" style="margin-top:8px;">
-                            <input type="checkbox" id="fptSlashAutocomplete" checked>
-                            <label for="fptSlashAutocomplete" style="margin-bottom:0;"><span>Показывать выпадающую подсказку при вводе</span></label>
-                        </div>
-
-                        <label style="display:block;margin-top:14px;margin-bottom:6px;font-size:13px;">Чем разворачивать команду:</label>
-                        <div class="fp-tools-radio-group" id="fptSlashKeyGroup">
-                            <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="both" checked><span>Tab или Enter</span></label>
-                            <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="tab"><span>Только Tab</span></label>
-                            <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="enter"><span>Только Enter</span></label>
-                        </div>
-
-                        <div class="support-promo" style="background:rgba(27,117,187,0.07);border-color:rgba(27,117,187,0.2);margin:16px 0;">
-                            <span class="material-symbols-rounded" style="font-size:16px;color:#f4c84a;vertical-align:-3px;">lightbulb</span>
-                            <span>Переменные в ответе: <code>{buyername}</code> - имя собеседника, <code>{date}</code>, <code>{time}</code>.</span>
-                        </div>
-
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                            <h4 style="margin:0;">Мои команды</h4>
-                            <button id="fptSlashAddBtn" class="btn btn-default" style="padding:5px 12px;font-size:13px;">+ Добавить команду</button>
-                        </div>
-                        <div id="fptSlashList"></div>
-                    </div>
-                </div>
-                <!-- КОНЕЦ ВКЛАДКИ "СЛЭШ-КОМАНДЫ" -->
-
                 <!-- НАЧАЛО ВКЛАДКИ "TELEGRAM" -->
                 <div class="fp-tools-page-content" data-page="telegram">
-                    <h3>Управление через Telegram</h3>
+                    <h3>Уведомления и интеграции</h3>
+                    <p class="template-info">Настройте звуковые уведомления в браузере, Telegram-бота и уведомления Discord.</p>
+                    <div class="fpt-notification-tabs" role="tablist" aria-label="Каналы уведомлений" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+                        <button type="button" id="fptNotificationBrowserTab" class="btn btn-default" role="tab" aria-selected="false" aria-controls="fptNotificationBrowserPane" tabindex="-1" data-notification-mode="browser">В браузере</button>
+                        <button type="button" id="fptNotificationTelegramTab" class="btn btn-default active" role="tab" aria-selected="true" aria-controls="fptNotificationTelegramPane" tabindex="0" data-notification-mode="telegram">Telegram</button>
+                        <button type="button" id="fptNotificationDiscordTab" class="btn btn-default" role="tab" aria-selected="false" aria-controls="fptNotificationDiscordPane" tabindex="-1" data-notification-mode="discord">Discord</button>
+                    </div>
+                    <section id="fptNotificationBrowserPane" data-notification-pane="browser" role="tabpanel" aria-labelledby="fptNotificationBrowserTab" aria-hidden="true" hidden>
+                        <h3>Звук уведомления в браузере</h3>
+                        <div class="fp-tools-radio-group" id="notificationSoundGroup">
+                            <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="default" checked><span>Стандартный</span></label>
+                            <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="vk"><span>VK</span></label>
+                            <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="tg"><span>Telegram</span></label>
+                            <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="iphone"><span>iPhone</span></label>
+                            <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="discord"><span>Discord</span></label>
+                            <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="whatsapp"><span>WhatsApp</span></label>
+                            <label class="fp-tools-radio-option"><input type="radio" name="notificationSound" value="custom"><span>Своя мелодия</span></label>
+                        </div>
+
+                        <!-- Загрузка своей мелодии + обрезка до 5 секунд -->
+                        <div id="fptCustomSoundBlock" style="margin-top:12px;background:var(--fptm-surface-2, #0e0f16);border:1px solid var(--fptm-border, #1e2030);border-radius:10px;padding:14px;display:none;">
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                                <button id="fptCustomSoundUploadBtn" class="btn btn-default" style="padding:6px 12px;font-size:13px;">
+                                    <span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;margin-right:5px;">upload_file</span>Выбрать аудио
+                                </button>
+                                <input type="file" id="fptCustomSoundInput" accept="audio/*" style="display:none;">
+                                <span id="fptCustomSoundFileName" style="font-size:12px;color:var(--fptm-muted, #9099b8);">Файл не выбран</span>
+                            </div>
+                            <p class="template-info" style="margin-top:10px;">Можно выбрать любые <span class="fpt-sec-spin"><input type="text" id="fptClipSeconds" value="5" inputmode="numeric" maxlength="1"><span class="fpt-sec-spin-btns"><button type="button" id="fptClipSecUp" tabindex="-1">▲</button><button type="button" id="fptClipSecDown" tabindex="-1">▼</button></span></span> сек. из вашего трека: перетащите выделение по дорожке, прослушайте и сохраните. Уведомление будет проигрывать именно этот отрезок.</p>
+
+                            <div id="fptCustomSoundEditor" style="display:none;margin-top:8px;">
+                                <div id="fptWaveWrap" style="position:relative;height:64px;background:var(--fptm-surface-2, #070810);border:1px solid var(--fptm-border, #22253a);border-radius:8px;overflow:hidden;user-select:none;cursor:pointer;">
+                                    <canvas id="fptWaveCanvas" style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
+                                    <div id="fptWaveSel" style="position:absolute;top:0;bottom:0;background:rgba(27,117,187,0.22);border-left:2px solid #1b75bb;border-right:2px solid #1b75bb;box-sizing:border-box;"></div>
+                                    <div id="fptWavePlayhead" style="position:absolute;top:0;bottom:0;width:2px;background:#ffd24a;display:none;"></div>
+                                    <div id="fptWaveSelHandleL" style="position:absolute;top:0;bottom:0;width:8px;margin-left:-4px;cursor:ew-resize;"></div>
+                                    <div id="fptWaveSelHandleR" style="position:absolute;top:0;bottom:0;width:8px;margin-left:-4px;cursor:ew-resize;"></div>
+                                </div>
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;gap:10px;flex-wrap:wrap;">
+                                    <span id="fptCustomSoundRange" style="font-size:11px;color:var(--fptm-faint, #5a5f7a);">0:00 - 0:05</span>
+                                    <div style="display:flex;gap:8px;align-items:center;">
+                                        <button id="fptCustomSoundPreviewBtn" class="fpt-icon-play-btn" title="Прослушать отрезок">
+                                            <span class="material-symbols-rounded">play_arrow</span>
+                                        </button>
+                                        <button id="fptCustomSoundSaveBtn" class="btn" style="padding:5px 14px;font-size:12px;">Сохранить мелодию</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="fptCustomSoundSaved" style="display:none;margin-top:10px;font-size:12px;color:#4caf82;">
+                                <span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px;">check_circle</span>
+                                Сохранена своя мелодия (<span id="fptCustomSoundSavedLen">5.0</span> сек).
+                            </div>
+                        </div>
+                        <div class="template-container" style="margin-top:14px;">
+                            <div class="range-label" style="display:flex;align-items:center;justify-content:space-between;">
+                                <label for="notificationVolume" style="margin:0;">Громкость уведомлений:</label>
+                                <span id="notificationVolumeValue">100%</span>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:10px;margin-top:6px;">
+                                <input type="range" id="notificationVolume" min="0" max="100" step="1" value="100" style="flex:1;">
+                                <button id="previewNotificationBtn" class="fpt-icon-play-btn" title="Прослушать"><span class="material-symbols-rounded">play_arrow</span></button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="fptNotificationTelegramPane" data-notification-pane="telegram" role="tabpanel" aria-labelledby="fptNotificationTelegramTab" aria-hidden="false">
+                    <h3>Уведомления и интеграции</h3>
                     <p class="template-info">Управляйте FunPay Funcy и получайте уведомления (новые заказы и сообщения) прямо в Telegram-боте. Создайте бота, вставьте токен — и всё работает.</p>
 
                     <div class="support-promo" style="background:rgba(27,117,187,0.08);border-color:rgba(27,117,187,0.25);margin-bottom:16px;">
@@ -438,9 +397,30 @@ function createMainPopup() {
                             <li><code>/help</code><span>список команд</span></li>
                         </ul>
                     </div>
+                    </section>
+
+                    <section id="fptNotificationDiscordPane" data-notification-pane="discord" role="tabpanel" aria-labelledby="fptNotificationDiscordTab" aria-hidden="true" hidden>
+                        <h3>Уведомления в Discord</h3>
+                        <div class="checkbox-label-inline">
+                            <input type="checkbox" id="discordLogEnabled">
+                            <label for="discordLogEnabled" style="margin-bottom:0;"><span>Включить уведомления о новых сообщениях</span></label>
+                        </div>
+                        <div id="discordSettingsContainer">
+                            <label for="discordWebhookUrl" style="margin-top: 10px;">Webhook URL:</label>
+                            <input type="text" id="discordWebhookUrl" class="template-input" placeholder="Вставьте ссылку на вебхук вашего Discord канала">
+                            <div class="checkbox-label-inline" style="margin-top:10px;"><input type="checkbox" id="discordPingEveryone"><label for="discordPingEveryone" style="margin-bottom:0;"><span>Пинговать @everyone</span></label></div>
+                            <div class="checkbox-label-inline"><input type="checkbox" id="discordPingHere"><label for="discordPingHere" style="margin-bottom:0;"><span>Пинговать @here</span></label></div>
+                        </div>
+                    </section>
                 </div>
                 <!-- КОНЕЦ ВКЛАДКИ "TELEGRAM" -->
                 <div class="fp-tools-page-content" data-page="templates">
+                    <h3>Быстрые ответы</h3>
+                    <div class="fpt-quick-replies-tabs" role="tablist" aria-label="Режимы быстрых ответов">
+                        <button type="button" id="fptQuickRepliesTemplatesTab" class="btn btn-default" role="tab" aria-selected="true" aria-controls="fptQuickRepliesTemplatesPane" tabindex="0" data-quick-replies-mode="templates">Шаблоны</button>
+                        <button type="button" id="fptQuickRepliesCommandsTab" class="btn btn-default" role="tab" aria-selected="false" aria-controls="fptQuickRepliesCommandsPane" tabindex="-1" data-quick-replies-mode="commands">Команды</button>
+                    </div>
+                    <div id="fptQuickRepliesTemplatesPane" data-quick-replies-pane="templates" role="tabpanel" aria-labelledby="fptQuickRepliesTemplatesTab">
                     <h3>Настройки шаблонов</h3>
                     <div class="checkbox-label-inline"><input type="checkbox" id="templatesEnabled" checked><label for="templatesEnabled" style="margin-bottom:0;"><span><b>Включить шаблоны</b></span></label></div>
                     <div class="checkbox-label-inline" style="margin-top:8px;"><input type="checkbox" id="sendTemplatesImmediately"><label for="sendTemplatesImmediately" style="margin-bottom:0;"><span>Отправлять шаблоны сразу по клику</span></label></div>
@@ -559,6 +539,41 @@ function createMainPopup() {
 
                     <div id="template-settings-container" class="template-settings-list"></div>
                     <button id="addCustomTemplateBtn" class="btn" style="margin-top: 10px;">+ Добавить свой шаблон</button>
+                    </div>
+                    <div id="fptQuickRepliesCommandsPane" data-quick-replies-pane="commands" role="tabpanel" aria-labelledby="fptQuickRepliesCommandsTab" hidden>
+                        <h3>Команды</h3>
+                        <p class="template-info">Свои быстрые ответы для поля чата. Вы задаёте команду (например <code>/привет</code>) и её ответ (например «Привет, я тут. Какие вопросы?»). В чате начинаете печатать команду - <code>/при</code> - появляется подсказка; нажимаете Tab или Enter, и команда сразу превращается в полный текст ответа. Удобно для приветствий, реквизитов, частых фраз.</p>
+
+                        <div class="checkbox-label-inline">
+                            <input type="checkbox" id="fptSlashEnabled" checked>
+                            <label for="fptSlashEnabled" style="margin-bottom:0;"><span><b>Включить слэш-команды</b></span></label>
+                        </div>
+
+                        <div id="fptSlashConfig">
+                            <div class="checkbox-label-inline" style="margin-top:8px;">
+                                <input type="checkbox" id="fptSlashAutocomplete" checked>
+                                <label for="fptSlashAutocomplete" style="margin-bottom:0;"><span>Показывать выпадающую подсказку при вводе</span></label>
+                            </div>
+
+                            <label style="display:block;margin-top:14px;margin-bottom:6px;font-size:13px;">Чем разворачивать команду:</label>
+                            <div class="fp-tools-radio-group" id="fptSlashKeyGroup">
+                                <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="both" checked><span>Tab или Enter</span></label>
+                                <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="tab"><span>Только Tab</span></label>
+                                <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="enter"><span>Только Enter</span></label>
+                            </div>
+
+                            <div class="support-promo" style="background:rgba(27,117,187,0.07);border-color:rgba(27,117,187,0.2);margin:16px 0;">
+                                <span class="material-symbols-rounded" style="font-size:16px;color:#f4c84a;vertical-align:-3px;">lightbulb</span>
+                                <span>Переменные в ответе: <code>{buyername}</code> - имя собеседника, <code>{date}</code>, <code>{time}</code>.</span>
+                            </div>
+
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                                <h4 style="margin:0;">Мои команды</h4>
+                                <button id="fptSlashAddBtn" class="btn btn-default" style="padding:5px 12px;font-size:13px;">+ Добавить команду</button>
+                            </div>
+                            <div id="fptSlashList"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="fp-tools-page-content" data-page="auto_review">
@@ -628,7 +643,10 @@ function createMainPopup() {
                         <p class="template-info">Пауза между ответом на отзыв и сообщением с бонусом. Без паузы ответ на отзыв в некоторых случаях может не отправиться. Рекомендуется 3-5 секунд.</p>
                     </div>
 
-                    <h3>Автоответчик в чате</h3>
+                </div>
+
+                <div class="fp-tools-page-content" data-page="auto_reply">
+                    <h3>Автоответчик</h3>
                      <div class="template-container">
                         <div class="checkbox-label-inline">
                             <input type="checkbox" id="greetingEnabled">
@@ -684,7 +702,7 @@ function createMainPopup() {
                     </div>
                 </div>
 
-                <div class="fp-tools-page-content" data-page="lot_io">
+                <div class="fp-tools-page-content active" data-page="lot_io">
                     <h3>Управление лотами</h3>
                     <div class="template-info" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
                         <p style="margin-top:0;">Здесь собраны инструменты для массовой работы с вашими лотами.</p>
@@ -692,7 +710,7 @@ function createMainPopup() {
                             <li><strong>Экспорт/Импорт:</strong> Сохраняйте все свои лоты в файл и восстанавливайте их на любом аккаунте.</li>
                             <li><strong>Массовое управление:</strong> На странице вашего профиля (<code>funpay.com/users/ID</code>) или в категории с вашими лотами появится кнопка "Выбрать" для массового удаления, дублирования или изменения цен.</li>
                             <li><strong>Продвинутое клонирование:</strong> На странице редактирования лота кнопка "Копировать" позволяет создавать копии в разных категориях (например, на разных серверах).</li>
-                            <li><strong>Авто-поднятие:</strong> Настройте автоматическое поднятие лотов по таймеру. <a href="#" onclick="document.querySelector('.fp-tools-nav li[data-page=autobump] a').click(); return false;">Перейти к настройке</a>.</li>
+                            <li><strong>Автоподнятие:</strong> Настройте автоматическое поднятие лотов по таймеру. <a href="#" onclick="document.querySelector('.fp-tools-nav li[data-page=autobump] a').click(); return false;">Перейти к настройке</a>.</li>
                         </ul>
                     </div>
                     
@@ -722,7 +740,7 @@ function createMainPopup() {
                     <div class="fpt-fin-header">
                         <div class="fpt-fin-header-left">
                             <div class="fpt-fin-title-row">
-                                <h3 class="fpt-fin-title">Финансы</h3>
+                                <h3 class="fpt-fin-title">Обзор и аналитика</h3>
                                 <span class="fpt-fin-badge">Hub</span>
                             </div>
                             <div class="fpt-fin-last-updated" id="fptFinLastUpdated">
@@ -1480,6 +1498,18 @@ function createMainPopup() {
                             </div>
                         </div>
                     </div>
+                    <section class="fpt-fin-additional-settings" aria-labelledby="fptFinAdditionalSettingsHeading">
+                        <h4 id="fptFinAdditionalSettingsHeading">Дополнительные настройки финансов</h4>
+                        <p class="template-info">Управление прежними отчётами в старом интерфейсе FunPay.</p>
+                        <div class="checkbox-label-inline">
+                            <input type="checkbox" id="showSalesStatsCheckbox">
+                            <label for="showSalesStatsCheckbox" style="margin-bottom:0;"><span>Статистика покупок и продаж на вкладках</span></label>
+                        </div>
+                        <div class="checkbox-label-inline">
+                            <input type="checkbox" id="showFinanceStatsCheckbox">
+                            <label for="showFinanceStatsCheckbox" style="margin-bottom:0;"><span>Статистика финансов на странице «Финансы»</span></label>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="fp-tools-page-content" data-page="piggy_banks">
@@ -1489,7 +1519,7 @@ function createMainPopup() {
                     <div id="piggy-banks-list-container" class="piggy-banks-list-container"></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="theme">
-                    <h3>Кастомизация темы</h3>
+                    <h3>Темы FunPay</h3>
                     <div class="checkbox-label-inline" style="margin-bottom:15px;"><input type="checkbox" id="enableCustomThemeCheckbox"><label for="enableCustomThemeCheckbox" style="margin-bottom:0;"><span>Включить кастомную тему</span></label></div>
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                         <span style="font-size:12px;color:var(--fptm-faint, #5a5f7a);flex:1;">Готовые темы:</span>
@@ -1541,7 +1571,7 @@ function createMainPopup() {
                     <div class="theme-actions-grid"><button id="enableMagicStickBtn" class="btn" style="grid-column: 1 / -1;"><span class="material-icons">auto_fix_normal</span><span>Включить режим редактора</span></button><button id="generatePaletteBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">auto_fix_high</span>цвета фона</button><button id="randomizeThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">casino</span>рандом</button><button id="shareThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">share</span>Поделиться темой</button><button id="exportThemeBtn" class="btn btn-default" title="Сохранить текущие настройки темы в файл (.fptheme)">Экспорт</button><button id="importThemeBtn" class="btn btn-default" title="Загрузить настройки темы из файла (.fptheme)">Импорт</button><input type="file" id="importThemeInput" accept=".fptheme" style="display: none;"><button id="resetThemeBtn" class="btn btn-default">СБРОСИТЬ ТЕМУ</button></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="autobump">
-                    <h3>Авто-поднятие лотов</h3>
+                    <h3>Автоподнятие лотов</h3>
                     <div class="checkbox-label-inline"><input type="checkbox" id="autoBumpEnabled"><label for="autoBumpEnabled" style="margin-bottom:0;"><span>Включить автоподнятие</span></label></div>
                     <small style="font-size:12px;opacity:0.75;display:block;margin-top:-10px;margin-left:30px;margin-bottom:8px;">Стабильно поднимает все лоты через FunPay API</small>
 
@@ -1560,7 +1590,7 @@ function createMainPopup() {
                     <textarea id="fpToolsNotesArea" class="template-input" style="height: 80%; resize: none; min-height: 400px;" placeholder="Запишите сюда что-нибудь важное: список дел, временные данные для покупателя, идеи для новых лотов..."></textarea>
                 </div>
                 <div class="fp-tools-page-content" data-page="global_chat">
-                    <h3>Общий чат</h3>
+                    <h3>Чат сообщества</h3>
                     <p class="template-info">Чат для пользователей расширения</p>
                     
                     <!-- ЗАМЕТКА С ПРАВИЛАМИ И ПРЕДУПРЕЖДЕНИЕМ -->
@@ -1585,25 +1615,26 @@ function createMainPopup() {
                     <div id="fpt-gc-status" class="fpt-gc-status"></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="calculator">
-                    <h3>Калькулятор</h3>
-                    <div class="calc-subtabs">
-                        <button class="calc-subtab is-active" data-calc-mode="math"><span class="material-symbols-rounded">calculate</span><span>Обычный</span></button>
-                        <button class="calc-subtab" data-calc-mode="time"><span class="material-symbols-rounded">schedule</span><span>Временной</span></button>
+                    <h3>Калькуляторы</h3>
+                    <div class="calc-subtabs" role="tablist" aria-label="Режимы калькулятора">
+                        <button type="button" id="fptCalculatorMathTab" class="calc-subtab is-active" role="tab" aria-selected="true" aria-controls="fptCalculatorMathPane" tabindex="0" data-calc-mode="math"><span class="material-symbols-rounded">calculate</span><span>Обычный</span></button>
+                        <button type="button" id="fptCalculatorTimeTab" class="calc-subtab" role="tab" aria-selected="false" aria-controls="fptCalculatorTimePane" tabindex="-1" data-calc-mode="time"><span class="material-symbols-rounded">schedule</span><span>Время</span></button>
+                        <button type="button" id="fptCalculatorCurrencyTab" class="calc-subtab" role="tab" aria-selected="false" aria-controls="fptCalculatorCurrencyPane" tabindex="-1" data-calc-mode="currency"><span class="material-symbols-rounded">currency_exchange</span><span>Валюты</span></button>
                     </div>
-                    <div class="calc-pane" data-calc-pane="math">
+                    <div id="fptCalculatorMathPane" class="calc-pane active" data-calc-pane="math" role="tabpanel" aria-labelledby="fptCalculatorMathTab" aria-hidden="false">
                     <div class="calculator-container"><div class="calculator-display"><span id="calcDisplay">0</span></div><div class="calculator-buttons"><button class="calc-btn calc-btn-light" data-action="clear">AC</button><button class="calc-btn calc-btn-light" data-action="toggle-sign">+/-</button><button class="calc-btn calc-btn-light" data-action="percentage">%</button><button class="calc-btn calc-btn-operator" data-action="divide">÷</button><button class="calc-btn" data-key="7">7</button><button class="calc-btn" data-key="8">8</button><button class="calc-btn" data-key="9">9</button><button class="calc-btn calc-btn-operator" data-action="multiply">×</button><button class="calc-btn" data-key="4">4</button><button class="calc-btn" data-key="5">5</button><button class="calc-btn" data-key="6">6</button><button class="calc-btn calc-btn-operator" data-action="subtract">−</button><button class="calc-btn" data-key="1">1</button><button class="calc-btn" data-key="2">2</button><button class="calc-btn" data-key="3">3</button><button class="calc-btn calc-btn-operator" data-action="add">+</button><button class="calc-btn calc-btn-zero" data-key="0">0</button><button class="calc-btn" data-action="decimal">.</button><button class="calc-btn calc-btn-operator" data-action="calculate">=</button></div></div>
                     </div>
-                    <div class="calc-pane" data-calc-pane="time" hidden>
+                    <div id="fptCalculatorTimePane" class="calc-pane" data-calc-pane="time" role="tabpanel" aria-labelledby="fptCalculatorTimeTab" aria-hidden="true" hidden>
                         <p class="template-info" style="margin-top:0;">Опишите ситуацию обычными словами - калькулятор посчитает время.</p>
                         <textarea id="calcTimeInput" class="template-input" rows="4" placeholder="Напр.: через 60 минут заказ, но на 5 минут отойду через 25 минут, а когда приду - 10-20 минут на дизайн. Сколько останется на подготовку?"></textarea>
                         <button id="calcTimeBtn" class="btn btn-default" style="margin-top:10px;width:100%;"><span class="material-symbols-rounded" style="vertical-align:middle;font-size:18px;">bolt</span> Посчитать</button>
                         <div id="calcTimeResult" class="calc-time-result" hidden></div>
                     </div>
-                </div>
-                <div class="fp-tools-page-content" data-page="currency_calc">
-                    <h3>Калькулятор валют</h3>
-                    <p class="template-info">Курсы обновляются раз в день. Используется открытый API.</p>
-                    <div class="currency-converter-container"><div class="currency-input-group"><input type="number" id="currencyAmountFrom" class="template-input currency-input" value="100"><select id="currencySelectFrom" class="template-input currency-select"></select></div><div class="currency-swap-container"><button id="currencySwapBtn" class="currency-swap-btn">⇅</button><div id="currencyRateDisplay" class="currency-rate-display"></div></div><div class="currency-input-group"><input type="text" id="currencyAmountTo" class="template-input currency-input" readonly><select id="currencySelectTo" class="template-input currency-select"></select></div></div><div id="currency-error-display" class="currency-error"></div>
+                    <div id="fptCalculatorCurrencyPane" class="calc-pane" data-calc-pane="currency" role="tabpanel" aria-labelledby="fptCalculatorCurrencyTab" aria-hidden="true" hidden>
+                        <h3>Калькулятор валют</h3>
+                        <p class="template-info">Курсы обновляются раз в день. Используется открытый API.</p>
+                        <div class="currency-converter-container"><div class="currency-input-group"><input type="number" id="currencyAmountFrom" class="template-input currency-input" value="100"><select id="currencySelectFrom" class="template-input currency-select"></select></div><div class="currency-swap-container"><button id="currencySwapBtn" class="currency-swap-btn">⇅</button><div id="currencyRateDisplay" class="currency-rate-display"></div></div><div class="currency-input-group"><input type="text" id="currencyAmountTo" class="template-input currency-input" readonly><select id="currencySelectTo" class="template-input currency-select"></select></div></div><div id="currency-error-display" class="currency-error"></div>
+                    </div>
                 </div>
                 <div class="fp-tools-page-content" data-page="effects">
                     <h3>Эффекты частиц</h3>
@@ -1619,11 +1650,12 @@ function createMainPopup() {
                     <div id="customCursorControls" style="display: none;"><div class="template-container"><label>Изображение курсора:</label><div id="cursor-image-preview" style="width:64px; height:64px; background-color:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:10px; background-size:contain; background-position:center; background-repeat: no-repeat; display:flex; align-items:center; justify-content:center; color: var(--fptm-muted, #888); font-size:12px;">Нет</div><button id="uploadCursorImageBtn" class="btn">Загрузить</button><button id="removeCursorImageBtn" class="btn btn-default" style="margin-left: 10px;">Удалить</button><input type="file" id="cursorImageInput" accept="image/*" style="display: none;"></div><div class="checkbox-label-inline"><input type="checkbox" id="hideSystemCursor" checked><label for="hideSystemCursor" style="margin-bottom:0;"><span>Скрыть системный курсор</span></label></div><div class="template-container"><div class="range-label"><label for="customCursorSize">Размер:</label><span id="customCursorSizeValue">32px</span></div><input type="range" id="customCursorSize" min="16" max="128" step="1" value="32"></div><div class="template-container"><div class="range-label"><label for="customCursorOpacity">Прозрачность:</label><span id="customCursorOpacityValue">100%</span></div><input type="range" id="customCursorOpacity" min="0" max="100" step="1" value="100"></div></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="overview">
+                    <h3>Справочник функций</h3>
                     <div class="overview-container"><h3 style="border:none">Видео-обзор функций</h3><p class="template-info">Посмотрите короткий кинематографический ролик, демонстрирующий все возможности FunPay Funcy в действии. Откройте для себя инструменты, о которых вы могли не знать!</p><div class="overview-promo-art"></div><button id="start-overview-tour-btn" class="btn">▶️ Начать обзор</button></div>
-                    <div class="feature-list-container"><h3>Справочник по функциям</h3><div class="feature-item"><div class="feature-title"><span class="material-icons">smart_toy</span>ИИ-Ассистент в чате</div><div class="feature-location"><strong>Где найти:</strong> В любом чате, кнопка "AI" рядом с полем ввода.</div><div class="feature-desc">Улучшает ваш текст, делая его вежливым и профессиональным. Активируйте режим и нажмите Enter для обработки. Также предупреждает о грубости.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_high</span>AI-Генератор лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота.</div><div class="feature-desc">Создает название и описание для лота на основе ваших идей, анализируя и копируя стиль ваших существующих предложений.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">add_photo_alternate</span>AI-Генератор изображений</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота, в разделе "Изображения".</div><div class="feature-desc">Создавайте уникальные и стильные превью для ваших предложений с помощью встроенного генератора, в том числе по текстовому запросу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">palette</span>Полная кастомизация</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Кастомизация".</div><div class="feature-desc">Измените внешний вид FunPay: установите анимированный фон, настройте цвета, шрифты, прозрачность блоков и даже расположение верхней панели.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_normal</span>"Кастомизатор (режим редактора)</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Кастомизация".</div><div class="feature-desc">Редактируйте любой элемент сайта в реальном времени. Меняйте цвета, размеры или скрывайте ненужное, сохраняя стили навсегда.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">description</span>Шаблоны и AI-переменные</div><div class="feature-location"><strong>Где найти:</strong> Под полем ввода в чате. Настраиваются во вкладке "Шаблоны".</div><div class="feature-desc">Быстрая вставка готовых сообщений. Поддерживают переменные {buyername}, {date} и даже генерацию текста через {ai:ваш запрос}.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">checklist</span>Управление лотами и ценами</div><div class="feature-location"><strong>Где найти:</strong> На странице вашего профиля (funpay.com/users/...).</div><div class="feature-desc">Кнопка "Выбрать" позволяет выделить несколько лотов для массового удаления, дублирования, отключения или редактирования цен.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">control_point_duplicate</span>Клонирование лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования любого вашего лота.</div><div class="feature-desc">Кнопка "Копировать" позволяет создать точную копию лота или массово размножить его по разным категориям (например, по разным серверам).</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">content_copy</span>Копировать лот со страницы заказа</div><div class="feature-location"><strong>Где найти:</strong> На странице купленного заказа (funpay.com/orders/...), кнопка под блоком "Оплаченный товар".</div><div class="feature-desc">Создаёт копию купленного лота через тот же мастер, что и обычное клонирование: подтягивает описание, автоматически переводит его на английский и, если у лота была автовыдача, сразу вставляет выданный товар в поле автовыдачи.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">public</span>Глобальный импорт лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования лота, кнопка "Импорт".</div><div class="feature-desc">Импортируйте название и описание любого лота с FunPay, чтобы анализировать конкурентов или использовать как основу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">sort_by_alpha</span>Сортировка по отзывам</div><div class="feature-location"><strong>Где найти:</strong> На любой странице со списком лотов.</div><div class="feature-desc">Кликните на заголовок "Продавец" в таблице, чтобы отсортировать все предложения по количеству отзывов у продавцов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">label</span>Пометки для пользователей</div><div class="feature-location"><strong>Где найти:</strong> В выпадающем меню в заголовке чата с человеком.</div><div class="feature-desc">Устанавливайте настраиваемые цветные метки для пользователей, которые будут видны в вашем списке контактов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">rocket_launch</span>Авто-поднятие лотов</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Авто-поднятие".</div><div class="feature-desc">Настройте автоматическое поднятие лотов по таймеру. Можно выбрать для поднятия только определенные категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">monitoring</span>Статистика</div><div class="feature-location"><strong>Где найти:</strong> Страница "Продажи" - статистика продаж, кнопка "Аналитика рынка" на странице игры.</div><div class="feature-desc">Получайте детальную статистику по своим продажам и анализируйте рыночную ситуацию в любой категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">savings</span>Финансовые копилки</div><div class="feature-location"><strong>Где найти:</strong> Вкладка "Копилки" и иконка в шапке сайта.</div><div class="feature-desc">Устанавливайте финансовые цели и отслеживайте их достижение. Копилка синхронизируется с балансом FunPay.</div></div></div>
+                    <div class="feature-list-container"><h3>Справочник по функциям</h3><div class="feature-item"><div class="feature-title"><span class="material-icons">smart_toy</span>ИИ-Ассистент в чате</div><div class="feature-location"><strong>Где найти:</strong> В любом чате, кнопка "AI" рядом с полем ввода.</div><div class="feature-desc">Улучшает ваш текст, делая его вежливым и профессиональным. Активируйте режим и нажмите Enter для обработки. Также предупреждает о грубости.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_high</span>AI-Генератор лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота.</div><div class="feature-desc">Создает название и описание для лота на основе ваших идей, анализируя и копируя стиль ваших существующих предложений.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">add_photo_alternate</span>AI-Генератор изображений</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота, в разделе "Изображения".</div><div class="feature-desc">Создавайте уникальные и стильные превью для ваших предложений с помощью встроенного генератора, в том числе по текстовому запросу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">palette</span>Полная кастомизация</div><div class="feature-location"><strong>Где найти:</strong> Страница «Темы».</div><div class="feature-desc">Измените внешний вид FunPay: установите анимированный фон, настройте цвета, шрифты, прозрачность блоков и даже расположение верхней панели.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_normal</span>"Кастомизатор (режим редактора)</div><div class="feature-location"><strong>Где найти:</strong> Страница «Темы».</div><div class="feature-desc">Редактируйте любой элемент сайта в реальном времени. Меняйте цвета, размеры или скрывайте ненужное, сохраняя стили навсегда.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">description</span>Шаблоны и AI-переменные</div><div class="feature-location"><strong>Где найти:</strong> Под полем ввода в чате. Настраиваются на странице «Быстрые ответы», во вкладке «Шаблоны».</div><div class="feature-desc">Быстрая вставка готовых сообщений. Поддерживают переменные {buyername}, {date} и даже генерацию текста через {ai:ваш запрос}.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">checklist</span>Управление лотами и ценами</div><div class="feature-location"><strong>Где найти:</strong> На странице вашего профиля (funpay.com/users/...).</div><div class="feature-desc">Кнопка "Выбрать" позволяет выделить несколько лотов для массового удаления, дублирования, отключения или редактирования цен.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">control_point_duplicate</span>Клонирование лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования любого вашего лота.</div><div class="feature-desc">Кнопка "Копировать" позволяет создать точную копию лота или массово размножить его по разным категориям (например, по разным серверам).</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">content_copy</span>Копировать лот со страницы заказа</div><div class="feature-location"><strong>Где найти:</strong> На странице купленного заказа (funpay.com/orders/...), кнопка под блоком "Оплаченный товар".</div><div class="feature-desc">Создаёт копию купленного лота через тот же мастер, что и обычное клонирование: подтягивает описание, автоматически переводит его на английский и, если у лота была автовыдача, сразу вставляет выданный товар в поле автовыдачи.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">public</span>Глобальный импорт лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования лота, кнопка "Импорт".</div><div class="feature-desc">Импортируйте название и описание любого лота с FunPay, чтобы анализировать конкурентов или использовать как основу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">sort_by_alpha</span>Сортировка по отзывам</div><div class="feature-location"><strong>Где найти:</strong> На любой странице со списком лотов.</div><div class="feature-desc">Кликните на заголовок "Продавец" в таблице, чтобы отсортировать все предложения по количеству отзывов у продавцов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">label</span>Пометки для пользователей</div><div class="feature-location"><strong>Где найти:</strong> В выпадающем меню в заголовке чата с человеком.</div><div class="feature-desc">Устанавливайте настраиваемые цветные метки для пользователей, которые будут видны в вашем списке контактов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">rocket_launch</span>Автоподнятие лотов</div><div class="feature-location"><strong>Где найти:</strong> Страница «Автоподнятие».</div><div class="feature-desc">Настройте автоматическое поднятие лотов по таймеру. Можно выбрать для поднятия только определенные категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">monitoring</span>Статистика</div><div class="feature-location"><strong>Где найти:</strong> В FunPay: страница «Продажи» для статистики и кнопка «Аналитика рынка» на странице игры.</div><div class="feature-desc">Получайте детальную статистику по своим продажам и анализируйте рыночную ситуацию в любой категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">savings</span>Финансовые копилки</div><div class="feature-location"><strong>Где найти:</strong> Страница «Копилки» и иконка в шапке сайта.</div><div class="feature-desc">Устанавливайте финансовые цели и отслеживайте их достижение. Копилка синхронизируется с балансом FunPay.</div></div></div>
                 </div>
                 <div class="fp-tools-page-content" data-page="ai_audit">
-                    <h3>ИИ-аудит лотов</h3>
+                    <h3>Аудит магазина</h3>
 
                     <!-- START STATE -->
                     <div id="fp-audit-start-wrap">
@@ -1665,7 +1697,7 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content" data-page="settings_io">
-                    <h3>Импорт и экспорт настроек</h3>
+                    <h3>Перенос настроек</h3>
                     <p class="template-info">Сохраните все настройки FunPay Funcy в файл и восстановите на другом устройстве или аккаунте.</p>
                     <div style="display:flex;gap:12px;margin-bottom:20px;">
                         <button id="fp-settings-export-btn" class="btn" style="flex:1;"><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;margin-right:5px;">upload</span>Экспортировать настройки</button>
@@ -1699,7 +1731,7 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content" data-page="auto_delivery">
-                    <h3>Авто-выдача товаров</h3>
+                    <h3>Автовыдача товаров</h3>
                     <p class="template-info">При новом заказе расширение автоматически отправит покупателю товар. Укажите что именно отправлять для каждого лота, или используйте поле «Секреты» лота как источник.</p>
                     <div class="support-promo" style="background:rgba(27,117,187,0.07);border-color:rgba(27,117,187,0.2);margin-bottom:16px;">
                         <span class="material-symbols-rounded" style="font-size:16px;color:#f4c84a;vertical-align:-3px;">lightbulb</span>
@@ -1744,7 +1776,7 @@ function createMainPopup() {
 
                     <!-- Header -->
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                        <h3 style="margin:0;font-size:15px;">Техподдержка FunPay</h3>
+                        <h3 style="margin:0;font-size:15px;">Поддержка FunPay</h3>
                         <button id="fp-ticket-refresh-btn" title="Обновить" style="background:none;border:none;color:var(--fptm-faint, #5a5f7a);cursor:pointer;font-size:16px;padding:2px 6px;transition:color .15s;" onmouseover="this.style.color='#d8dae8'" onmouseout="this.style.color='#5a5f7a'">↻</button>
                     </div>
 
@@ -1864,7 +1896,7 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content" data-page="support">
-                    <h3>Оставьте отзыв! <span class="material-symbols-rounded" style="color:#f4c84a;vertical-align:-3px;">star</span></h3>
+                    <h3>Оценить расширение <span class="material-symbols-rounded" style="color:#f4c84a;vertical-align:-3px;">star</span></h3>
                     <div class="support-container">
                         <p>Это <strong>самый важный</strong> вклад, который вы можете сделать. Ваш положительный отзыв - это топливо для новых обновлений и лучшая мотивация для разработчика.</p>
                         <p>Хорошие оценки помогают другим пользователям найти FunPay Funcy. Пожалуйста, уделите всего минуту, чтобы поделиться своим мнением. Это действительно имеет огромное значение!</p>
@@ -1880,6 +1912,15 @@ function createMainPopup() {
             <button id="saveSettings" class="btn">Сохранить</button>
         </div>
     `;
+
+    // Картинки внутри панели — элементы интерфейса, а не переносимые файлы.
+    toolsPopup.querySelectorAll('img').forEach(img => { img.draggable = false; });
+    toolsPopup.addEventListener('dragstart', (event) => {
+        const target = event.target;
+        if (target && typeof target.closest === 'function' && target.closest('img')) {
+            event.preventDefault();
+        }
+    }, true);
 
     // Подставляем локальные иконки бренда и интеграций из папки icons.
     try {
@@ -1943,12 +1984,13 @@ const FPT_MENU_THEME_CSS = `
 
 /* ─── шапка ──────────────────────────────────────────────────────────────── */
 .fp-tools-popup.fptm-themed .fp-tools-header{
-    background:var(--fptm-head) !important; border-bottom:1px solid var(--fptm-border) !important;
-    border-radius:16px 16px 0 0; padding:4px 8px 4px 4px;
+    position:absolute; z-index:20; top:4px; right:4px; width:44px; height:44px; min-height:0;
+    display:flex; align-items:center; justify-content:center; padding:4px; background:transparent !important;
+    border:0 !important; border-radius:0;
 }
 .fp-tools-popup.fptm-themed .fp-tools-header h2{ color:var(--fptm-text) !important; font-weight:800 !important; }
 .fp-tools-popup.fptm-themed .fp-tools-brand-logo{
-    width:44px; height:44px; flex:0 0 44px; object-fit:contain; border-radius:12px; display:block; margin-left:14px;
+    width:44px; height:44px; flex:0 0 44px; object-fit:contain; border-radius:12px; display:block; margin:0;
 }
 .fp-tools-popup.fptm-themed .fp-tools-site-link,
 .fp-tools-popup.fptm-themed .fp-tools-site-link:hover{
@@ -1992,7 +2034,7 @@ const FPT_MENU_THEME_CSS = `
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico svg{ width:22px; height:22px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-input{
-    min-height:56px; padding:12px 42px 12px 52px; border-radius:18px;
+    min-height:56px; padding:12px 42px 12px 52px; border-radius:24px;
     border-color:var(--fptm-nav-border) !important; background:var(--fptm-nav-field) !important;
     color:var(--fptm-text) !important; font-size:15px;
 }
@@ -2000,33 +2042,28 @@ const FPT_MENU_THEME_CSS = `
     border-color:var(--fptm-accent-border) !important; background:var(--fptm-nav-field-focus) !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav ul{ list-style:none; margin:0; padding:0; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding:2px 0 10px; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:10px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; margin:-10px -12px 0; padding:12px 12px 20px; scrollbar-width:none; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll::-webkit-scrollbar{ display:none; width:0; height:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:6px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group{ min-width:0; border-radius:22px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{
-    width:100%; min-width:0; min-height:58px; display:flex; align-items:center; gap:12px;
-    padding:12px 12px; border:1px solid var(--fptm-nav-border) !important; border-radius:18px;
+    width:100%; min-width:0; height:54px; min-height:54px; display:flex; align-items:center; gap:12px;
+    padding:0 12px; border:1px solid var(--fptm-nav-border) !important; border-radius:22px;
     background:var(--fptm-nav-row) !important; color:var(--fptm-text) !important;
-    box-shadow:0 8px 20px var(--fptm-nav-row-shadow) !important; font:inherit; font-size:16px; font-weight:700; text-align:left; cursor:pointer;
+    box-shadow:0 8px 20px var(--fptm-nav-row-shadow) !important; font:inherit; font-size:16px; font-weight:500; text-align:left; cursor:pointer;
     transition:background-color .24s cubic-bezier(.22,1,.36,1), color .24s cubic-bezier(.22,1,.36,1), border-color .24s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:hover{
     background:var(--fptm-nav-row-hover, var(--fptm-hover)) !important; color:var(--fptm-text) !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded{
-    background:var(--fptm-nav-expanded) !important;
+    background:transparent !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle{
-    background:var(--fptm-accent-soft) !important; border-color:var(--fptm-accent-border) !important;
+    background:#7663f6 !important; border-color:transparent !important; color:#fff !important; box-shadow:0 8px 10px rgba(118,99,246,.22) !important;
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle:hover{
-    background:var(--fptm-nav-row-hover, var(--fptm-hover)) !important;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle{
-    color:var(--fptm-text) !important;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-active-section .fpt-nav-group-toggle:hover{
-    background:var(--fptm-hover) !important; color:var(--fptm-text) !important;
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle:hover:not(:active){
+    background:#7663f6 !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon{ width:34px; height:34px; flex:0 0 34px; object-fit:contain; display:block; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
@@ -2035,11 +2072,11 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron svg{ width:20px; height:20px; display:block; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
-    flex:0 0 auto; margin-left:auto; transition:transform .24s cubic-bezier(.22,1,.36,1);
+    flex:0 0 auto; margin-left:auto; transition:transform .32s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-chevron{ transform:rotate(90deg); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse{
-    display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .24s cubic-bezier(.22,1,.36,1);
+    display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .32s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; border-radius:16px; }
@@ -2048,22 +2085,241 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav li a{
     display:flex; align-items:center; min-height:44px; padding:8px 12px 8px 14px;
     gap:10px; color:var(--fptm-text) !important; background:transparent !important; border-radius:14px !important;
-    box-shadow:none !important; border:1px solid transparent !important; font-size:15px; font-weight:600; transition:background .15s ease, color .15s ease;
+    box-shadow:none !important; border:1px solid transparent !important; font-size:15px; font-weight:500; transition:background .15s ease, color .15s ease;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a:hover{ background:var(--fptm-hover) !important; color:var(--fptm-text) !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li.active a{
     background:var(--fptm-accent-soft) !important; color:var(--fptm-text) !important;
-    border:1px solid transparent !important; font-weight:700;
+    border:1px solid transparent !important; font-weight:500;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child.active a{
+    background:transparent !important; color:var(--fptm-text) !important;
+    border-color:transparent !important; font-weight:500 !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li[data-page] a > span:last-child{
     min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a .nav-icon{ color:inherit !important; opacity:.92; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ content:''; width:10px; height:10px; flex:0 0 10px; margin-left:2px; border-radius:50%; background:var(--fptm-nav-dot); opacity:1; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child.active a::before{ background:var(--fptm-accent); }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a .nav-icon{ display:none; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a{
+    font-weight:500; padding-left:14px !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ display:none !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a .nav-icon{
+    display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; flex:0 0 24px;
+    font-size:22px; line-height:1; color:var(--fptm-muted) !important; opacity:.92;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child.active a::before{ display:none !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav::-webkit-scrollbar-thumb{ background:var(--fptm-border) !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav-cloud{ display:none !important; }
+
+/* ─── reference menu and compact rail ────────────────────────────────────── */
+.fp-tools-popup.fptm-themed .fp-tools-header{
+    position:absolute; z-index:20; top:4px; right:4px; width:44px; height:44px; min-height:0;
+    display:flex; align-items:center; justify-content:center; padding:4px; background:transparent !important;
+    border:0 !important; border-radius:0;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav{
+    box-sizing:border-box; width:256px; flex:0 0 256px; margin:16px 0 16px 16px; padding:18px 12px;
+    border-radius:20px; background:var(--fptm-nav-surface) !important; border:1px solid var(--fptm-nav-border) !important;
+    box-shadow:0 14px 34px var(--fptm-nav-row-shadow) !important; position:relative; display:flex; flex-direction:column;
+    overflow:hidden; min-height:0; transition:width .32s cubic-bezier(.34,1.16,.64,1), flex-basis .32s cubic-bezier(.34,1.16,.64,1), padding-left .32s cubic-bezier(.34,1.16,.64,1), padding-right .32s cubic-bezier(.34,1.16,.64,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-brand{
+    position:relative; display:flex; align-items:center; gap:12px; min-width:0; min-height:44px; margin:0 0 22px; transition:gap .38s cubic-bezier(.4,0,.2,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fp-tools-brand-logo{ margin:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-brand-title{
+    min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--fptm-text) !important;
+    font-size:18px; line-height:1.2; font-weight:650; letter-spacing:-.02em; max-width:160px; opacity:1;
+    transition:max-width .38s cubic-bezier(.4,0,.2,1), opacity .26s ease .06s;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse{
+    width:36px; height:36px; flex:0 0 36px; display:inline-flex; align-items:center; justify-content:center;
+    margin-left:auto; padding:0; border:1px solid var(--fptm-nav-border) !important; border-radius:50%;
+    background:transparent !important; color:var(--fptm-text) !important; box-shadow:none !important; cursor:pointer;
+    transition:width .38s cubic-bezier(.4,0,.2,1), height .38s cubic-bezier(.4,0,.2,1), flex-basis .38s cubic-bezier(.4,0,.2,1), background-color .16s ease, color .16s ease, border-color .16s ease;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse svg{ width:18px; height:18px; display:block; transition:transform .38s cubic-bezier(.4,0,.2,1); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse:hover{ background:var(--fptm-nav-field) !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse:focus-visible,
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico:focus-visible,
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn:focus-visible{ outline:2px solid #7663f6; outline-offset:2px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search{
+    position:relative; width:100%; height:44px; flex:0 0 auto; margin:0 0 18px; padding:0;
+    transition:width .38s cubic-bezier(.4,0,.2,1), height .38s cubic-bezier(.4,0,.2,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico{
+    position:absolute; z-index:1; top:50%; left:2px; width:44px; height:44px; display:inline-flex;
+    align-items:center; justify-content:center; margin:0 !important; padding:0 !important; border:1px solid transparent !important; border-radius:50% !important;
+    min-width:44px; min-height:44px; overflow:visible !important; pointer-events:auto; appearance:none; -webkit-appearance:none;
+    background:transparent !important; color:var(--fptm-muted) !important; box-shadow:none !important;
+    font-size:0; line-height:0; letter-spacing:0; text-transform:none; cursor:pointer; transform:translateY(-50%);
+    transition:left .38s cubic-bezier(.4,0,.2,1), top .38s cubic-bezier(.4,0,.2,1),
+        width .38s cubic-bezier(.4,0,.2,1), height .38s cubic-bezier(.4,0,.2,1),
+        transform .38s cubic-bezier(.4,0,.2,1), background-color .24s ease, border-color .24s ease;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico svg{ width:22px; height:22px; display:block; transform:translate(-.5px,-.5px); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-input{
+    box-sizing:border-box; width:100%; height:44px; min-height:44px; margin:0 !important; padding:8px 42px 8px 48px; border-radius:999px !important;
+    border-color:var(--fptm-nav-border) !important; background:var(--fptm-nav-field) !important;
+    color:var(--fptm-text) !important; font-family:inherit; font-size:15px;
+    opacity:1; visibility:visible; transition:opacity .16s ease, visibility .16s linear;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-input:focus{
+    border-color:var(--fptm-nav-border) !important; background:var(--fptm-nav-field-focus) !important;
+    outline:none !important; box-shadow:none !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; align-items:stretch; gap:6px; min-width:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group{ width:100%; min-width:0; border-radius:22px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{
+    box-sizing:border-box; width:100%; min-width:0; height:54px; min-height:54px; display:flex; align-items:center; gap:12px; margin-inline:auto; padding:0 12px;
+    border:1px solid transparent !important; border-radius:22px; background:transparent !important;
+    color:var(--fptm-text) !important; box-shadow:none !important; font:inherit; font-size:16px; font-weight:500;
+    text-align:left; cursor:pointer; transition:padding-left .38s cubic-bezier(.4,0,.2,1), gap .38s cubic-bezier(.4,0,.2,1), transform .38s cubic-bezier(.34,1.16,.64,1), background-color .24s cubic-bezier(.22,1,.36,1), color .24s cubic-bezier(.22,1,.36,1), border-color .24s cubic-bezier(.22,1,.36,1), box-shadow .24s cubic-bezier(.22,1,.36,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:hover:not(:active){ background:transparent !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav:not(.is-nav-collapsed):not(.is-nav-opening) .fpt-nav-group-toggle:hover:not(:active){ transform:translateY(-1px) scale(1.012); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded{ background:transparent !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle{
+    background:#7663f6 !important; border-color:transparent !important; color:#fff !important; box-shadow:0 8px 10px rgba(118,99,246,.22) !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-toggle{
+    background:transparent !important; border-color:transparent !important; color:var(--fptm-text) !important; box-shadow:none !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-toggle:hover:not(:active){ background:transparent !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:active{
+    background:#7663f6 !important; border-color:transparent !important; color:#fff !important; box-shadow:0 8px 10px rgba(118,99,246,.22) !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:active:hover{ background:#6d59ed !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon{ width:34px; height:34px; flex:0 0 34px; object-fit:contain; display:block; filter:brightness(0) invert(0) opacity(.82); transition:filter .24s ease; }
+.fp-tools-popup.fptm-themed.fptm-dark .fp-tools-nav .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(.85); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-icon,
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:active .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(1); }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-icon{ filter:brightness(0) invert(0) opacity(.82); }
+.fp-tools-popup.fptm-themed.fptm-dark .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(.85); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{
+    min-width:0; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:inherit !important; opacity:1;
+    transition:max-width .38s cubic-bezier(.4,0,.2,1), opacity .26s ease .06s;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
+    flex:0 0 20px; margin-left:auto; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; opacity:1;
+    transition:width .38s cubic-bezier(.4,0,.2,1), flex-basis .38s cubic-bezier(.4,0,.2,1), opacity .26s ease .06s, transform .32s cubic-bezier(.22,1,.36,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse{ display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .32s cubic-bezier(.22,1,.36,1); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; border-radius:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{ background:transparent; }
+.fp-tools-popup.fptm-themed .fp-tools-nav ul.fpt-nav-group-list{ list-style:none; margin:0; padding:6px 0 8px 0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav li a{
+    display:flex; align-items:center; min-height:44px; padding:8px 10px 8px 0; gap:10px; color:var(--fptm-text) !important;
+    background:transparent !important; border-radius:10px !important; box-shadow:none !important; border:1px solid transparent !important;
+    font-size:15px; font-weight:500; transition:background .15s ease, color .15s ease;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav li a:hover{ background:var(--fptm-nav-row-hover, rgba(118,99,246,.08)) !important; color:var(--fptm-text) !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav li.active a,
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child.active a{
+    background:transparent !important; color:var(--fptm-text) !important; border-color:transparent !important; font-weight:500 !important;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav li[data-page] a > span:last-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav li a .nav-icon{ color:inherit !important; opacity:.92; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ display:none !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a .nav-icon{
+    display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; flex:0 0 24px;
+    font-size:22px; line-height:1; color:var(--fptm-muted) !important; opacity:.92;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child{
+    max-height:80px; opacity:0; transform:translateY(4px);
+    transition:max-height .18s ease, opacity .32s cubic-bezier(.22,1,.36,1), transform .32s cubic-bezier(.22,1,.36,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-child:not(.fpt-nav-hidden):not(.fpt-nav-section-hidden){
+    opacity:1; transform:translateY(0);
+    transition-delay:0s, var(--fpt-nav-child-delay, 0ms), var(--fpt-nav-child-delay, 0ms);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-footer{
+    flex:0 0 auto; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; gap:6px; min-height:62px; margin-top:auto;
+    padding-top:14px; padding-left:0; border-top:1px solid var(--fptm-nav-border); transition:padding-left .38s cubic-bezier(.4,0,.2,1);
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-actions{
+    flex:0 0 auto; display:flex; flex-direction:column; align-items:stretch; gap:2px; min-width:0; margin:0; padding:0; list-style:none;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action{ flex:0 1 auto; min-width:0; max-width:100%; }
+.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a{
+    box-sizing:border-box; width:100%; min-width:0; min-height:40px; display:flex; align-items:center; gap:8px;
+    margin:0; padding:7px 10px; border:1px solid transparent !important; border-radius:12px !important;
+    background:transparent !important; color:var(--fptm-text); font-size:13px; font-weight:500; text-decoration:none;
+    transition:background-color .18s ease, color .18s ease;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a:hover,
+.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a:focus-visible{
+    background:var(--fptm-nav-field) !important; color:var(--fptm-text); outline:none;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a .nav-icon{
+    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; flex:0 0 22px;
+    color:var(--fptm-muted); font-size:20px; line-height:1;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a > span:last-child{
+    min-width:0; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-action.active a{ color:var(--fptm-text) !important; font-weight:600; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn{
+    position:relative; width:48px !important; height:48px !important; min-width:48px !important; display:inline-flex !important;
+    align-items:center !important; justify-content:center !important; margin:0 !important; padding:0 !important;
+    border:0 !important; border-radius:16px !important; background:#7663f6 !important; color:#fff !important;
+    box-shadow:0 5px 14px rgba(118,99,246,.20) !important; cursor:pointer;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn svg{ width:20px; height:20px; display:block; pointer-events:none; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn:hover{ background:#6d59ed !important; box-shadow:0 5px 14px rgba(118,99,246,.22) !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn::before,
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn::after{ content:none !important; display:none !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed{ width:104px; flex:0 0 104px; padding-right:10px; padding-left:10px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-brand{ gap:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-brand-title,
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-title{ max-width:0; opacity:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-chevron{ width:0; flex-basis:0; margin-left:0; opacity:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-collapse{ width:28px; height:28px; flex-basis:28px; border-radius:50%; background:var(--fptm-nav-field) !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-collapse svg{ transform:rotate(180deg); }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-search{ width:44px; height:44px; align-self:center; margin-bottom:18px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-search-ico{
+    top:0; left:0; width:44px; height:44px; border-color:var(--fptm-nav-border) !important;
+    background:var(--fptm-nav-field) !important; transform:none;
+}
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-search-input{ opacity:0; visibility:hidden; pointer-events:none; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-search-clear{ display:none !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-groups{ gap:6px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle{ width:100%; height:54px; min-height:54px; justify-content:flex-start; gap:0; padding:0 0 0 23px; border-radius:22px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active,
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active:hover{ background:transparent !important; color:var(--fptm-text) !important; box-shadow:none !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active .fpt-nav-group-icon{ filter:brightness(0) invert(0) opacity(.82); }
+.fp-tools-popup.fptm-themed.fptm-dark .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(.85); }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-icon{ width:34px; height:34px; flex-basis:34px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-footer{ align-items:center; padding-left:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-quick-actions{ width:44px; align-items:center; gap:4px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action{ width:44px; max-width:44px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action a{ width:44px; height:44px; min-height:44px; justify-content:center; gap:0; padding:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action a > span:last-child{ width:0; max-width:0; opacity:0; visibility:hidden; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:hover:not(:active){ background:transparent !important; }
+@media (prefers-reduced-motion: reduce){
+    .fp-tools-popup.fptm-themed .fp-tools-nav,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-brand,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-input,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-brand-title,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse svg,
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-footer{ transition-duration:.01ms !important; }
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-actions,
+    .fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a,
+    .fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a > span:last-child{ transition-duration:.01ms !important; }
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child{ transition-delay:0ms !important; }
+}
 
 /* ─── контент ────────────────────────────────────────────────────────────── */
 .fp-tools-popup.fptm-themed .fp-tools-content{ background:var(--fptm-bg) !important; color:var(--fptm-text) !important; }
@@ -2361,9 +2617,9 @@ function fptApplyMenuTheme(root) {
                 muted:'rgba(22,24,29,0.74)', faint:'rgba(22,24,29,0.56)', border:'rgba(22,24,29,0.10)',
                 surface:'#f5f7fa', surface2:'#eef1f6', hover:'rgba(22,24,29,0.05)', field:'#ffffff',
                 shadow:'rgba(22,24,29,0.16)', navFade:'rgba(22,24,29,0.12)',
-                navSurface:'#fafdff', navRow:'#ffffff', navExpanded:'#e9f3ff', navChildSurface:'rgba(255,255,255,0.82)',
-                navField:'#f4f8ff', navFieldFocus:'#ffffff', navBorder:'rgba(105,146,199,0.20)',
-                navRowShadow:'rgba(84,133,199,0.08)', navDot:'#b4c8e8'
+                navSurface:'#fbfaff', navRow:'transparent', navExpanded:'transparent', navChildSurface:'transparent',
+                navField:'#f4f3ff', navFieldFocus:'#ffffff', navBorder:'rgba(119,99,246,0.16)',
+                navRowShadow:'rgba(94,84,170,0.10)', navDot:'#b4c8e8'
             };
         } else {
             vars = {
@@ -2748,23 +3004,44 @@ function _updateColorInputs(palette) {
 
 
 const FPT_NAV_SECTIONS = Object.freeze([
-    { id: 'core', label: 'Основное', icon: 'home', pages: Object.freeze(['general', 'accounts', 'needs']) },
-    { id: 'store', label: 'Магазин', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit', 'blacklist']) },
-    { id: 'messages', label: 'Сообщения', icon: 'chat', pages: Object.freeze(['templates', 'slash_commands', 'auto_review', 'global_chat']) },
-    { id: 'finance', label: 'Финансы', icon: 'payments', pages: Object.freeze(['finance_hub', 'piggy_banks', 'calculator', 'currency_calc']) },
-    { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['theme', 'effects', 'epic_nicks', 'telegram', 'settings_io']) },
-    { id: 'more', label: 'Ещё', icon: 'more_horiz', pages: Object.freeze(['notes', 'overview', 'tickets', 'support']) }
+    { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit']) },
+    { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist']) },
+    { id: 'finance', label: 'Финансы', icon: 'analytics', pages: Object.freeze(['finance_hub', 'piggy_banks', 'calculator']) },
+    { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'epic_nicks', 'needs']) },
+    { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['accounts', 'general', 'telegram', 'settings_io']) },
+    { id: 'help', label: 'Справка', icon: 'help', pages: Object.freeze(['overview', 'tickets', 'global_chat']) }
 ]);
 
 const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
-    needs: 'Функции',
-    auto_review: 'Отзывы',
-    epic_nicks: 'Эпический ник',
-    overview: 'Видео-обзор',
-    settings_io: 'Импорт / экспорт'
+    lot_io: 'Управление лотами',
+    auto_delivery: 'Автовыдача',
+    autobump: 'Автоподнятие',
+    ai_audit: 'Аудит магазина',
+    auto_reply: 'Автоответчик',
+    auto_review: 'Отзывы и бонусы',
+    templates: 'Быстрые ответы',
+    blacklist: 'Чёрный список',
+    finance_hub: 'Обзор и аналитика',
+    piggy_banks: 'Копилки',
+    calculator: 'Калькуляторы',
+    theme: 'Темы',
+    effects: 'Эффекты',
+    epic_nicks: 'Оформление ника',
+    needs: 'Элементы интерфейса',
+    accounts: 'Аккаунты',
+    general: 'Отображение FunPay',
+    telegram: 'Уведомления и интеграции',
+    settings_io: 'Перенос настроек',
+    overview: 'Справочник функций',
+    tickets: 'Поддержка FunPay',
+    global_chat: 'Чат сообщества',
+    notes: 'Заметки',
+    support: 'Оценить расширение'
 });
 
-const FPT_NAV_EXPANDED_STORAGE_KEY = 'fpToolsNavExpandedSections';
+const FPT_NAV_QUICK_ACTIONS = Object.freeze(['notes', 'support']);
+const FPT_NAV_EXPANDED_STORAGE_KEY = 'fpToolsNavExpandedSectionsV2';
+const FPT_NAV_COLLAPSED_STORAGE_KEY = 'fpToolsNavCollapsed';
 
 function setupNavigationSections(toolsPopup) {
     if (!toolsPopup) return null;
@@ -2773,25 +3050,46 @@ function setupNavigationSections(toolsPopup) {
     const nav = toolsPopup.querySelector('.fp-tools-nav');
     const legacyList = nav && nav.querySelector('ul');
     if (!nav || !legacyList) return null;
+    const collapseButton = nav.querySelector('#fptNavCollapse');
 
     const sectionById = new Map(FPT_NAV_SECTIONS.map(section => [section.id, section]));
     const pageToSection = new Map();
+    const quickActionIds = new Set(FPT_NAV_QUICK_ACTIONS);
     FPT_NAV_SECTIONS.forEach(section => {
         section.pages.forEach(pageId => pageToSection.set(pageId, section.id));
     });
 
     const pageItems = Array.from(legacyList.querySelectorAll('li[data-page]'));
+    const quickActionList = nav.querySelector('.fpt-nav-quick-actions');
     pageItems.forEach(item => {
         const pageId = item.dataset.page;
-        const sectionId = pageToSection.get(pageId) || 'more';
-        item.dataset.navSection = sectionId;
-        item.classList.add('fpt-nav-child');
+        const sectionId = pageToSection.get(pageId);
+        if (sectionId) {
+            item.dataset.navSection = sectionId;
+            item.classList.add('fpt-nav-child');
+        } else if (quickActionIds.has(pageId)) {
+            delete item.dataset.navSection;
+            item.classList.add('fpt-nav-quick-action');
+        } else {
+            item.hidden = true;
+            item.setAttribute('aria-hidden', 'true');
+            return;
+        }
         item.classList.remove('fpt-nav-hidden', 'fpt-nav-section-hidden');
         item.setAttribute('aria-hidden', 'false');
 
         const override = FPT_NAV_LABEL_OVERRIDES[pageId];
         const label = item.querySelector('a > span:last-child');
         if (override && label) label.textContent = override;
+        if (quickActionIds.has(pageId)) {
+            const accessibleLabel = override || label?.textContent?.trim() || pageId;
+            const anchor = item.querySelector('a');
+            item.title = accessibleLabel;
+            if (anchor) {
+                anchor.title = accessibleLabel;
+                anchor.setAttribute('aria-label', accessibleLabel);
+            }
+        }
     });
 
     const scroll = document.createElement('div');
@@ -2820,10 +3118,13 @@ function setupNavigationSections(toolsPopup) {
         toggle.className = 'fpt-nav-group-toggle';
         toggle.dataset.section = section.id;
         toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-label', section.label);
+        toggle.title = section.label;
 
         const navIcon = document.createElement('img');
         navIcon.className = 'fpt-nav-group-icon';
         navIcon.dataset.icon = section.id;
+        navIcon.src = fptGetMenuAssetUrl(`icons/${FPT_NAV_ICON_ASSETS[section.id].expanded}`);
         navIcon.alt = '';
         navIcon.decoding = 'async';
         navIcon.setAttribute('aria-hidden', 'true');
@@ -2845,9 +3146,13 @@ function setupNavigationSections(toolsPopup) {
         const collapseId = 'fpt-nav-group-' + section.id + '-items';
         collapse.id = collapseId;
         toggle.setAttribute('aria-controls', collapseId);
+        let childIndex = 0;
         section.pages.forEach(pageId => {
             const item = pageItems.find(entry => entry.dataset.page === pageId);
-            if (item) items.appendChild(item);
+            if (item) {
+                item.style.setProperty('--fpt-nav-child-delay', `${Math.min(childIndex++, 9) * 14}ms`);
+                items.appendChild(item);
+            }
         });
         itemsViewport.appendChild(items);
         collapse.appendChild(itemsViewport);
@@ -2856,9 +3161,22 @@ function setupNavigationSections(toolsPopup) {
         groupRefs.set(section.id, { group, toggle, collapse, items, icon: navIcon });
     });
 
+    if (quickActionList) {
+        FPT_NAV_QUICK_ACTIONS.forEach(pageId => {
+            const item = pageItems.find(entry => entry.dataset.page === pageId);
+            if (item) quickActionList.appendChild(item);
+        });
+    }
+
     const activePage = pageItems.find(item => item.classList.contains('active'));
-    let activeSection = activePage?.dataset.navSection || 'core';
-    let expandedSections = new Set([activeSection, 'core']);
+    let activeSection = activePage?.dataset.navSection || pageToSection.get('lot_io') || FPT_NAV_SECTIONS[0].id;
+    let focusedSection = null;
+    let expandedSections = new Set([activeSection]);
+    let navCollapsed = false;
+    let collapsedUserChanged = false;
+    let expandedSectionsUserChanged = false;
+    let pendingCompactSection = null;
+    let pendingCompactTimer = null;
 
     function normalizeSectionIds(value) {
         const ids = Array.isArray(value) || value instanceof Set ? Array.from(value) : [];
@@ -2873,50 +3191,94 @@ function setupNavigationSections(toolsPopup) {
         } catch (_) {}
     }
 
+    function isNavCollapsed() {
+        return navCollapsed;
+    }
+
+    function setNavCollapsed(collapsed, persist = true) {
+        if (typeof collapsed !== 'boolean') return;
+        if (pendingCompactSection && collapsed) cancelPendingCompactSection();
+        navCollapsed = collapsed;
+        nav.classList.toggle('is-nav-collapsed', navCollapsed);
+        if (collapseButton) {
+            collapseButton.setAttribute('aria-expanded', navCollapsed ? 'false' : 'true');
+            collapseButton.setAttribute('aria-label', navCollapsed ? 'Развернуть меню' : 'Свернуть меню');
+            collapseButton.title = navCollapsed ? 'Развернуть меню' : 'Свернуть меню';
+        }
+        if (persist) {
+            collapsedUserChanged = true;
+            try {
+                if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+                    chrome.storage.local.set({ [FPT_NAV_COLLAPSED_STORAGE_KEY]: navCollapsed });
+                }
+            } catch (_) {}
+        }
+    }
+
     function renderExpandedSections() {
         nav.dataset.expandedSections = Array.from(expandedSections).join(',');
         groupRefs.forEach(({ group, toggle, collapse, icon }, sectionId) => {
             const expanded = expandedSections.has(sectionId);
             group.classList.toggle('is-expanded', expanded);
-            group.classList.toggle('is-active-section', sectionId === activeSection);
+            group.classList.toggle('is-active-section', !focusedSection && sectionId === activeSection);
+            group.classList.toggle('is-focused-section', !!focusedSection && sectionId === focusedSection);
             toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
             collapse.setAttribute('aria-hidden', expanded ? 'false' : 'true');
             collapse.toggleAttribute('inert', !expanded);
-            const assetSet = FPT_NAV_ICON_ASSETS[sectionId];
-            if (icon && assetSet) {
-                const state = expanded ? 'expanded' : 'collapsed';
-                icon.src = fptGetMenuAssetUrl(`icons/${assetSet[state]}`);
-                icon.dataset.state = state;
-            }
+            if (icon) icon.dataset.state = expanded ? 'expanded' : 'collapsed';
         });
     }
 
     function setExpandedSections(next, persist = true) {
         expandedSections = new Set(normalizeSectionIds(next));
         renderExpandedSections();
-        if (persist) persistExpandedSections();
+        if (persist) {
+            expandedSectionsUserChanged = true;
+            persistExpandedSections();
+        }
         return Array.from(expandedSections);
+    }
+
+    function cancelPendingCompactSection() {
+        pendingCompactSection = null;
+        nav.classList.remove('is-nav-opening');
+        nav.removeEventListener('transitionend', onCompactNavExpanded);
+        if (pendingCompactTimer !== null) {
+            clearTimeout(pendingCompactTimer);
+            pendingCompactTimer = null;
+        }
+    }
+
+    function onCompactNavExpanded(event) {
+        if (event.target === nav && event.propertyName === 'flex-basis') cancelPendingCompactSection();
     }
 
     function expandSection(sectionId, persist = true) {
         if (!sectionById.has(sectionId)) return;
         expandedSections.add(sectionId);
         renderExpandedSections();
-        if (persist) persistExpandedSections();
+        if (persist) {
+            expandedSectionsUserChanged = true;
+            persistExpandedSections();
+        }
     }
 
     function toggleSection(sectionId) {
         if (!sectionById.has(sectionId)) return;
+        focusedSection = null;
         if (expandedSections.has(sectionId)) expandedSections.delete(sectionId);
         else expandedSections.add(sectionId);
         renderExpandedSections();
+        expandedSectionsUserChanged = true;
         persistExpandedSections();
     }
 
     function showSectionForPage(pageId) {
         const item = pageItems.find(entry => entry.dataset.page === pageId);
-        const sectionId = item?.dataset.navSection || pageToSection.get(pageId) || 'more';
+        const sectionId = item?.dataset.navSection || pageToSection.get(pageId);
+        if (!sectionId || !sectionById.has(sectionId)) return;
         activeSection = sectionId;
+        focusedSection = null;
         expandSection(sectionId);
         renderExpandedSections();
     }
@@ -2925,6 +3287,11 @@ function setupNavigationSections(toolsPopup) {
         const ids = sectionIds == null ? FPT_NAV_SECTIONS.map(section => section.id) : normalizeSectionIds(sectionIds);
         setExpandedSections(ids, false);
         pageItems.forEach(item => {
+            if (!isPopupPageAvailable(toolsPopup, item.dataset.page)) {
+                item.classList.add('fpt-nav-hidden');
+                item.setAttribute('aria-hidden', 'true');
+                return;
+            }
             item.classList.remove('fpt-nav-section-hidden');
             item.setAttribute('aria-hidden', 'false');
         });
@@ -2938,22 +3305,80 @@ function setupNavigationSections(toolsPopup) {
         getExpandedSections: () => Array.from(expandedSections),
         setExpandedSections,
         refresh: renderExpandedSections,
-        revealAllForSearch
+        revealAllForSearch,
+        isNavCollapsed,
+        setNavCollapsed,
+        getNavStateSnapshot: () => ({
+            collapsed: navCollapsed,
+            expandedSections: Array.from(expandedSections),
+            focusedSection
+        }),
+        restoreNavStateSnapshot(snapshot) {
+            if (!snapshot || typeof snapshot !== 'object') return;
+            setNavCollapsed(snapshot.collapsed === true, false);
+            expandedSections = new Set(normalizeSectionIds(snapshot.expandedSections));
+            focusedSection = sectionById.has(snapshot.focusedSection) ? snapshot.focusedSection : null;
+            renderExpandedSections();
+        }
     };
     toolsPopup._fptNavSections = api;
 
     groupRefs.forEach(({ toggle }, sectionId) => {
-        toggle.addEventListener('click', () => toggleSection(sectionId));
+        toggle.addEventListener('click', () => {
+            if (pendingCompactSection) {
+                focusedSection = sectionId;
+                pendingCompactSection = sectionId;
+                setExpandedSections([sectionId], true);
+                return;
+            }
+            if (isNavCollapsed()) {
+                focusedSection = sectionId;
+                pendingCompactSection = sectionId;
+                nav.classList.add('is-nav-opening');
+                nav.addEventListener('transitionend', onCompactNavExpanded);
+                setNavCollapsed(false, true);
+                setExpandedSections([sectionId], true);
+                if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+                    cancelPendingCompactSection();
+                } else {
+                    pendingCompactTimer = setTimeout(cancelPendingCompactSection, 460);
+                }
+                return;
+            }
+            toggleSection(sectionId);
+        });
     });
+
+    if (collapseButton) {
+        collapseButton.addEventListener('click', () => {
+            cancelPendingCompactSection();
+            if (isNavCollapsed()) {
+                focusedSection = null;
+                setNavCollapsed(false, true);
+                setExpandedSections([], true);
+            } else {
+                setExpandedSections([], true);
+                setNavCollapsed(true, true);
+            }
+        });
+    }
 
     renderExpandedSections();
     try {
         if (typeof chrome !== 'undefined' && chrome.storage?.local) {
-            Promise.resolve(chrome.storage.local.get(FPT_NAV_EXPANDED_STORAGE_KEY)).then(result => {
-                if (Array.isArray(result?.[FPT_NAV_EXPANDED_STORAGE_KEY])) {
-                    const restored = new Set(result[FPT_NAV_EXPANDED_STORAGE_KEY]);
-                    if (activeSection) restored.add(activeSection);
+            Promise.resolve(chrome.storage.local.get([FPT_NAV_EXPANDED_STORAGE_KEY, FPT_NAV_COLLAPSED_STORAGE_KEY])).then(result => {
+                const collapsed = result?.[FPT_NAV_COLLAPSED_STORAGE_KEY];
+                if (typeof collapsed === 'boolean' && !collapsedUserChanged) setNavCollapsed(collapsed, false);
+
+                const savedExpandedSections = result?.[FPT_NAV_EXPANDED_STORAGE_KEY];
+                const validSavedExpandedSections = Array.isArray(savedExpandedSections)
+                    && savedExpandedSections.every(sectionId => typeof sectionId === 'string' && sectionById.has(sectionId));
+                if (validSavedExpandedSections && !expandedSectionsUserChanged) {
+                    const restored = new Set(savedExpandedSections);
+                    if (collapsed !== true && activeSection && restored.size) restored.add(activeSection);
                     setExpandedSections(restored, false);
+                } else if (!expandedSectionsUserChanged) {
+                    setExpandedSections(activeSection ? [activeSection] : [], false);
                 }
             }).catch(() => {});
         }
@@ -2961,80 +3386,557 @@ function setupNavigationSections(toolsPopup) {
     return api;
 }
 
+const FPT_POPUP_ROUTE_ALIASES = Object.create(null);
+const FPT_POPUP_PAGE_MODE_HANDLERS = Object.create(null);
+
+function registerPopupRouteAlias(alias, route) {
+    const aliasId = String(alias || '').trim();
+    const routeId = typeof route === 'string' ? route : route?.pageId;
+    if (!aliasId || !routeId || aliasId === routeId) return false;
+    FPT_POPUP_ROUTE_ALIASES[aliasId] = typeof route === 'string'
+        ? { pageId: routeId }
+        : { pageId: routeId, mode: route.mode };
+    return true;
+}
+
+function registerPopupPageModeHandler(pageId, handler, targetPopup) {
+    const id = String(pageId || '').trim();
+    if (!id || !handler || typeof handler !== 'object') return false;
+    FPT_POPUP_PAGE_MODE_HANDLERS[id] = handler;
+    const popup = targetPopup || document.querySelector('.fp-tools-popup');
+    if (popup) {
+        popup._fptPageModeHandlers ||= Object.create(null);
+        popup._fptPageModeHandlers[id] = handler;
+    }
+    return true;
+}
+
+function getPopupPageModeHandler(toolsPopup, pageId) {
+    return toolsPopup?._fptPageModeHandlers?.[pageId]
+        || FPT_POPUP_PAGE_MODE_HANDLERS[pageId]
+        || window.__fptPopupPageModeHandlers?.[pageId]
+        || null;
+}
+
+function popupPageModeDefault(handler) {
+    return handler && Object.prototype.hasOwnProperty.call(handler, 'defaultMode')
+        ? handler.defaultMode
+        : null;
+}
+
+function isPopupPageModeSupported(handler, mode) {
+    if (mode == null) return mode === popupPageModeDefault(handler);
+    if (typeof handler?.isModeSupported === 'function') return !!handler.isModeSupported(mode);
+    if (Array.isArray(handler?.modes)) return handler.modes.includes(mode);
+    return mode === popupPageModeDefault(handler);
+}
+
+function normalizePopupRoute(pageId) {
+    let normalizedId = typeof pageId === 'string' ? pageId : '';
+    let aliasMode;
+    const visited = new Set();
+    while (normalizedId && FPT_POPUP_ROUTE_ALIASES[normalizedId] && !visited.has(normalizedId)) {
+        visited.add(normalizedId);
+        const alias = FPT_POPUP_ROUTE_ALIASES[normalizedId];
+        if (alias.mode !== undefined && aliasMode === undefined) aliasMode = alias.mode;
+        normalizedId = alias.pageId;
+    }
+    return { pageId: normalizedId, mode: aliasMode };
+}
+
+function findPopupPage(toolsPopup, pageId) {
+    return Array.from(toolsPopup.querySelectorAll('.fp-tools-page-content'))
+        .find(page => page.dataset.page === pageId) || null;
+}
+
+function getPopupNavigationActions(toolsPopup) {
+    return Array.from(toolsPopup.querySelectorAll('.fp-tools-nav [data-page], .fp-tools-header-tab[data-page]'));
+}
+
+function isPopupPageAvailable(toolsPopup, pageId) {
+    if (pageId !== 'global_chat') return true;
+    const navItem = getPopupNavigationActions(toolsPopup).find(item => item.dataset.page === pageId);
+    return toolsPopup._fptGlobalChatDisplay !== false && !navItem?.hidden && navItem?.style?.display !== 'none';
+}
+
+function isPopupPageSearchable(toolsPopup, pageId) {
+    if (pageId !== 'global_chat') return true;
+    const pageNode = findPopupPage(toolsPopup, pageId);
+    return isPopupPageAvailable(toolsPopup, pageId) && pageNode?.dataset?.fptSearchExcluded !== 'true';
+}
+
+function enqueuePopupNavigationWrite(toolsPopup, write) {
+    const previous = toolsPopup._fptNavigationWriteQueue || Promise.resolve();
+    const current = previous.catch(() => {}).then(write);
+    toolsPopup._fptNavigationWriteQueue = current.catch(() => {});
+    return current;
+}
+
+function persistPopupRouteState(toolsPopup, pageId, mode) {
+    return enqueuePopupNavigationWrite(toolsPopup, async () => {
+        const stored = await chrome.storage.local.get('fpToolsPageModes');
+        const savedModes = stored?.fpToolsPageModes && typeof stored.fpToolsPageModes === 'object' && !Array.isArray(stored.fpToolsPageModes)
+            ? stored.fpToolsPageModes
+            : {};
+        await chrome.storage.local.set({
+            fpToolsLastPage: pageId,
+            fpToolsLastPageMode: mode,
+            fpToolsPageModes: { ...savedModes, [pageId]: mode }
+        });
+    });
+}
+
+function persistPopupPageMode(pageId, mode) {
+    const toolsPopup = document.querySelector('.fp-tools-popup');
+    if (!toolsPopup) return Promise.resolve(false);
+    const handler = getPopupPageModeHandler(toolsPopup, pageId);
+    if (!handler || !isPopupPageModeSupported(handler, mode)) return Promise.resolve(false);
+    return enqueuePopupNavigationWrite(toolsPopup, async () => {
+        const stored = await chrome.storage.local.get(['fpToolsPageModes', 'fpToolsLastPage']);
+        const savedModes = stored?.fpToolsPageModes && typeof stored.fpToolsPageModes === 'object' && !Array.isArray(stored.fpToolsPageModes)
+            ? stored.fpToolsPageModes
+            : {};
+        const currentPageId = toolsPopup._fptCurrentPageId || stored?.fpToolsLastPage;
+        const nextState = { fpToolsPageModes: { ...savedModes, [pageId]: mode } };
+        if (currentPageId === pageId) nextState.fpToolsLastPageMode = mode;
+        await chrome.storage.local.set(nextState);
+        return true;
+    });
+}
+
+async function openPopupPage(pageId, options = {}) {
+    const toolsPopup = document.querySelector('.fp-tools-popup');
+    if (!toolsPopup) return false;
+    const opts = options && typeof options === 'object' ? options : {};
+    const persist = opts.persist !== false;
+    const initialRoute = normalizePopupRoute(pageId);
+    let targetPageId = initialRoute.pageId;
+    let requestedMode = opts.mode === undefined ? initialRoute.mode : opts.mode;
+    const routeVersion = (toolsPopup._fptRouteVersion || 0) + 1;
+    toolsPopup._fptRouteVersion = routeVersion;
+
+    let pageNode = findPopupPage(toolsPopup, targetPageId);
+    if (!pageNode || !isPopupPageAvailable(toolsPopup, targetPageId)) {
+        targetPageId = 'lot_io';
+        requestedMode = undefined;
+        pageNode = findPopupPage(toolsPopup, targetPageId);
+    }
+    if (!pageNode) return false;
+
+    const previousPageId = toolsPopup._fptCurrentPageId
+        || Array.from(toolsPopup.querySelectorAll('.fp-tools-page-content')).find(page => page.classList.contains('active'))?.dataset.page
+        || null;
+    if (previousPageId === 'finance_hub' && targetPageId !== 'finance_hub'
+        && window.fptFinanceHub && typeof window.fptFinanceHub.onPageLeave === 'function') {
+        window.fptFinanceHub.onPageLeave();
+    }
+
+    const actions = getPopupNavigationActions(toolsPopup);
+    const navItem = actions.find(item => item.dataset.page === targetPageId) || null;
+    const navSections = toolsPopup._fptNavSections;
+    if (navSections && typeof navSections.showSectionForPage === 'function') navSections.showSectionForPage(targetPageId);
+    actions.forEach(item => item.classList.toggle('active', item.dataset.page === targetPageId));
+    toolsPopup.querySelectorAll('.fp-tools-page-content').forEach(page => {
+        page.classList.toggle('active', page === pageNode);
+    });
+    toolsPopup._fptCurrentPageId = targetPageId;
+
+    let stored = {};
+    try {
+        stored = await chrome.storage.local.get(['fpToolsLastPage', 'fpToolsLastPageMode', 'fpToolsPageModes']);
+    } catch (_) {}
+    if (routeVersion !== toolsPopup._fptRouteVersion) return false;
+
+    const handler = getPopupPageModeHandler(toolsPopup, targetPageId);
+    const savedModes = stored?.fpToolsPageModes && typeof stored.fpToolsPageModes === 'object' && !Array.isArray(stored.fpToolsPageModes)
+        ? stored.fpToolsPageModes
+        : {};
+    const hasSavedPageMode = Object.prototype.hasOwnProperty.call(savedModes, targetPageId);
+    let targetMode = popupPageModeDefault(handler);
+
+    if (requestedMode !== undefined) {
+        targetMode = isPopupPageModeSupported(handler, requestedMode) ? requestedMode : popupPageModeDefault(handler);
+    } else if (hasSavedPageMode) {
+        targetMode = isPopupPageModeSupported(handler, savedModes[targetPageId])
+            ? savedModes[targetPageId]
+            : popupPageModeDefault(handler);
+    } else if (targetPageId === 'finance_hub' && handler) {
+        try {
+            const sessionMode = sessionStorage.getItem('fpt_fin_active_subtab');
+            if (isPopupPageModeSupported(handler, sessionMode)) targetMode = sessionMode;
+        } catch (_) {}
+    }
+
+    if (handler && typeof handler.select === 'function') {
+        toolsPopup._fptApplyingRouteMode = true;
+        try {
+            const selection = await handler.select(targetMode, { persist: false, pageId: targetPageId });
+            if (selection === false && targetMode !== popupPageModeDefault(handler)) {
+                targetMode = popupPageModeDefault(handler);
+                await handler.select(targetMode, { persist: false, pageId: targetPageId });
+            }
+        } catch (_) {
+            targetMode = popupPageModeDefault(handler);
+            try { await handler.select(targetMode, { persist: false, pageId: targetPageId }); } catch (_) {}
+        } finally {
+            toolsPopup._fptApplyingRouteMode = false;
+        }
+    }
+    if (routeVersion !== toolsPopup._fptRouteVersion) return false;
+
+    const isNewEntry = previousPageId !== targetPageId;
+    if (isNewEntry) {
+        const initialize = name => {
+            const fn = window[name] || globalThis[name];
+            if (typeof fn !== 'function') return;
+            try {
+                const result = fn();
+                if (result && typeof result.catch === 'function') result.catch(() => {});
+            } catch (_) {}
+        };
+        if (targetPageId === 'epic_nicks') initialize('renderEpicPreviews');
+        if (targetPageId === 'finance_hub') initialize('initializeFinanceHub');
+        if (targetPageId === 'notes') initialize('initializeNotes');
+        if (targetPageId === 'global_chat') initialize('initializeGlobalChat');
+        if (targetPageId === 'templates') {
+            initialize('setupTemplateSettingsHandlers');
+            initialize('initializeSlashCommandsUI');
+        }
+        if (targetPageId === 'piggy_banks') initialize('renderPiggyBankSettings');
+        if (targetPageId === 'lot_io') initialize('initializeLotIO');
+        if (targetPageId === 'auto_reply') initialize('initializeAutoReplyUI');
+        if (targetPageId === 'auto_review') initialize('initializeAutoReviewUI');
+        if (targetPageId === 'needs') initialize('initializeNeedsTab');
+        if (targetPageId === 'telegram') initialize('initializeTelegramUI');
+        if (targetPageId === 'blacklist') initialize('initializeBlacklist');
+        if (targetPageId === 'tickets') initialize('initTicketsTab');
+        if (targetPageId === 'theme') initialize('initializeWallpaperPresets');
+    }
+
+    const wallpaperCarousel = document.getElementById('fp-wallpaper-carousel');
+    if (wallpaperCarousel) wallpaperCarousel.style.display = targetPageId === 'theme' ? 'block' : 'none';
+    if (typeof opts.focusTarget === 'string') {
+        const target = pageNode.querySelector(opts.focusTarget);
+        if (target && typeof target.focus === 'function') target.focus({ preventScroll: true });
+    } else if (opts.focusTarget && typeof opts.focusTarget.focus === 'function') {
+        opts.focusTarget.focus({ preventScroll: true });
+    } else if (opts.focusTarget === true && navItem && typeof navItem.focus === 'function') {
+        navItem.focus({ preventScroll: true });
+    }
+
+    if (persist) {
+        try { await persistPopupRouteState(toolsPopup, targetPageId, targetMode); } catch (_) {}
+    }
+    return true;
+}
+
+function setupGlobalChatVisibilityHandoff(toolsPopup) {
+    if (!toolsPopup || toolsPopup.dataset.fptGlobalChatVisibilityBound) return;
+    toolsPopup.dataset.fptGlobalChatVisibilityBound = '1';
+    window.addEventListener('fpt:global-chat-visibility', event => {
+        const detail = event?.detail || {};
+        const display = detail.display !== false;
+        const active = detail.active !== false;
+        const changed = toolsPopup._fptGlobalChatDisplay !== display || toolsPopup._fptGlobalChatActive !== active;
+        toolsPopup._fptGlobalChatDisplay = display;
+        toolsPopup._fptGlobalChatActive = active;
+
+        const navItem = getPopupNavigationActions(toolsPopup).find(item => item.dataset.page === 'global_chat');
+        const pageNode = findPopupPage(toolsPopup, 'global_chat');
+        if (navItem) {
+            navItem.hidden = !display;
+            navItem.style.display = display ? '' : 'none';
+            navItem.setAttribute('aria-hidden', display ? 'false' : 'true');
+            navItem.setAttribute('aria-disabled', active ? 'false' : 'true');
+            navItem.classList.toggle('fpt-nav-disabled', !active);
+        }
+        if (pageNode) {
+            pageNode.dataset.fptSearchExcluded = display ? 'false' : 'true';
+            pageNode.classList.toggle('fpt-page-disabled', !active);
+        }
+        if (!changed) return;
+
+        if (toolsPopup._fptNavSearch && typeof toolsPopup._fptNavSearch.refreshVisibility === 'function') {
+            toolsPopup._fptNavSearch.refreshVisibility();
+        }
+        if (!display && toolsPopup._fptCurrentPageId === 'global_chat') {
+            openPopupPage('lot_io');
+        }
+    });
+}
+
+if (typeof window !== 'undefined') {
+    window.__fptPopupRouteAliases ||= FPT_POPUP_ROUTE_ALIASES;
+    window.__fptPopupPageModeHandlers ||= FPT_POPUP_PAGE_MODE_HANDLERS;
+    if (typeof window.fptRegisterPopupRouteAlias !== 'function') {
+        window.fptRegisterPopupRouteAlias = registerPopupRouteAlias;
+    }
+    if (typeof window.fptRegisterPopupPageModeHandler !== 'function') {
+        window.fptRegisterPopupPageModeHandler = registerPopupPageModeHandler;
+    }
+    if (typeof window.fptSetPopupPageMode !== 'function') {
+        window.fptSetPopupPageMode = persistPopupPageMode;
+    }
+    if (typeof window.fptOpenPopupPage !== 'function') {
+        window.fptOpenPopupPage = (pageId, options) => openPopupPage(pageId, options);
+    }
+}
+
 function setupPopupNavigation() {
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (!toolsPopup) return;
     const navSections = setupNavigationSections(toolsPopup);
-    const navItems = toolsPopup.querySelectorAll('.fp-tools-nav li, .fp-tools-header-tab');
-    const contentPages = toolsPopup.querySelectorAll('.fp-tools-page-content');
+    const navItems = getPopupNavigationActions(toolsPopup);
+    setupGlobalChatVisibilityHandoff(toolsPopup);
 
-    navItems.forEach(li => {
-        if (!li.dataset.page) return;
-        li.addEventListener('click', (e) => {
-            e.preventDefault();
-            const pageId = li.dataset.page;
-            if (navSections) navSections.showSectionForPage(pageId);
-
-            navItems.forEach(item => item.classList.remove('active'));
-            li.classList.add('active');
-            
-            contentPages.forEach(page => {
-                page.classList.toggle('active', page.dataset.page === pageId);
-            });
-            if (pageId === 'epic_nicks') { if (typeof renderEpicPreviews === 'function') renderEpicPreviews(); }
-            if (pageId === 'finance_hub') {
-                if (typeof initializeFinanceHub === 'function') initializeFinanceHub();
-            } else {
-                if (window.fptFinanceHub && typeof window.fptFinanceHub.onPageLeave === 'function') {
-                    window.fptFinanceHub.onPageLeave();
-                }
-            }
-            if (pageId === 'currency_calc') initializeCurrencyCalculator();
-            if (pageId === 'notes') { if (typeof initializeNotes === 'function') initializeNotes(); }
-            if (pageId === 'global_chat') { if (typeof initializeGlobalChat === 'function') initializeGlobalChat(); }
-            if (pageId === 'templates') { if (typeof setupTemplateSettingsHandlers === 'function') setupTemplateSettingsHandlers(); }
-            if (pageId === 'piggy_banks') { if (typeof renderPiggyBankSettings === 'function') renderPiggyBankSettings(); }
-            if (pageId === 'lot_io') { if (typeof initializeLotIO === 'function') initializeLotIO(); }
-            if (pageId === 'auto_review') { if (typeof initializeAutoReviewUI === 'function') initializeAutoReviewUI(); }
-            if (pageId === 'needs') { if (typeof initializeNeedsTab === 'function') initializeNeedsTab(); }
-            if (pageId === 'slash_commands') { if (typeof initializeSlashCommandsUI === 'function') initializeSlashCommandsUI(); }
-            if (pageId === 'telegram') { if (typeof initializeTelegramUI === 'function') initializeTelegramUI(); }
-            if (pageId === 'blacklist') { if (typeof initializeBlacklist === 'function') initializeBlacklist(); }
-            if (pageId === 'tickets') { initTicketsTab(); }
-            if (pageId === 'theme') {
-                initializeWallpaperPresets();
-                const g = document.getElementById('fp-wallpaper-carousel');
-                if (g) g.style.display = 'block';
-            } else {
-                const g = document.getElementById('fp-wallpaper-carousel');
-                if (g) g.style.display = 'none';
-            }
-
-            chrome.storage.local.set({ fpToolsLastPage: pageId });
+    navItems.forEach(item => {
+        if (!item.dataset.page) return;
+        item.addEventListener('click', event => {
+            event.preventDefault();
+            openPopupPage(item.dataset.page);
         });
     });
 
     const promoLink = document.querySelector('a[data-nav-to="support"]');
     if (promoLink) {
-        promoLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            const supportTabLi = document.querySelector('.fp-tools-nav li[data-page="support"]');
-            if (supportTabLi) supportTabLi.click();
+        promoLink.addEventListener('click', event => {
+            event.preventDefault();
+            openPopupPage('support');
         });
     }
 
     setupNavSearch(toolsPopup);
     setupAccentPicker(toolsPopup);
+    setupQuickRepliesUI(toolsPopup);
+    setupCalculatorUI(toolsPopup);
+    setupNotificationCenterUI(toolsPopup);
     setupFinanceHubUI(toolsPopup);
     attachAutoReplyImageButtons(toolsPopup);
 
     // Общий чат: подтянуть удалённый конфиг и сразу применить видимость вкладки.
     // Если чат выключен/скрыт на GitHub - юзер увидит это без обновления расширения.
     if (typeof fptGcRefreshConfig === 'function') {
-        fptGcRefreshConfig(false).then(() => {
+        Promise.resolve(fptGcRefreshConfig(false)).then(() => {
             if (typeof fptGcApplyVisibility === 'function') fptGcApplyVisibility();
+        }).catch(() => {});
+    }
+}
+
+function selectQuickRepliesMode(mode, options = {}) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const toolsPopup = opts.popup || document.querySelector('.fp-tools-popup');
+    const page = toolsPopup?.querySelector('.fp-tools-page-content[data-page="templates"]')
+        || document.querySelector('.fp-tools-page-content[data-page="templates"]');
+    if (!page || !['templates', 'commands'].includes(mode)) return false;
+
+    const tabs = Array.from(page.querySelectorAll('[data-quick-replies-mode]'));
+    const panes = Array.from(page.querySelectorAll('[data-quick-replies-pane]'));
+    const tab = tabs.find(item => item.dataset.quickRepliesMode === mode);
+    const pane = panes.find(item => item.dataset.quickRepliesPane === mode);
+    if (!tab || !pane) return false;
+
+    tabs.forEach(item => {
+        const selected = item === tab;
+        item.setAttribute('role', 'tab');
+        item.setAttribute('aria-selected', selected ? 'true' : 'false');
+        item.tabIndex = selected ? 0 : -1;
+        item.classList.toggle('active', selected);
+    });
+    panes.forEach(item => {
+        const selected = item === pane;
+        item.hidden = !selected;
+        item.setAttribute('aria-hidden', selected ? 'false' : 'true');
+        item.classList.toggle('active', selected);
+    });
+    page.dataset.fptQuickRepliesMode = mode;
+
+    if (opts.persist !== false && !toolsPopup?._fptApplyingRouteMode
+        && typeof window.fptSetPopupPageMode === 'function') {
+        Promise.resolve(window.fptSetPopupPageMode('templates', mode)).catch(() => {});
+    }
+    return true;
+}
+
+function setupQuickRepliesUI(targetPopup) {
+    const toolsPopup = targetPopup || document.querySelector('.fp-tools-popup');
+    const page = toolsPopup?.querySelector('.fp-tools-page-content[data-page="templates"]')
+        || document.querySelector('.fp-tools-page-content[data-page="templates"]');
+    if (!page) return false;
+
+    registerPopupRouteAlias('slash_commands', { pageId: 'templates', mode: 'commands' });
+    const modes = ['templates', 'commands'];
+    registerPopupPageModeHandler('templates', {
+        defaultMode: 'templates',
+        modes,
+        getMode() { return page.dataset.fptQuickRepliesMode || 'templates'; },
+        select(mode, options = {}) { return selectQuickRepliesMode(mode, { ...options, popup: toolsPopup }); }
+    }, toolsPopup);
+
+    if (page.dataset.fptQuickRepliesBound) return true;
+    const tabs = Array.from(page.querySelectorAll('[data-quick-replies-mode]'));
+    const panes = Array.from(page.querySelectorAll('[data-quick-replies-pane]'));
+    if (tabs.length !== modes.length || panes.length !== modes.length) return false;
+    page.dataset.fptQuickRepliesBound = '1';
+
+    tabs.forEach((tab, index) => {
+        tab.addEventListener('click', event => {
+            event.preventDefault();
+            selectQuickRepliesMode(tab.dataset.quickRepliesMode, { popup: toolsPopup });
+        });
+        tab.addEventListener('keydown', event => {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const currentIndex = tabs.indexOf(tab);
+            let nextIndex = currentIndex;
+            if (event.key === 'ArrowLeft') nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+            if (event.key === 'ArrowRight') nextIndex = (currentIndex + 1) % tabs.length;
+            if (event.key === 'Home') nextIndex = 0;
+            if (event.key === 'End') nextIndex = tabs.length - 1;
+            const nextTab = tabs[nextIndex];
+            if (!nextTab) return;
+            selectQuickRepliesMode(nextTab.dataset.quickRepliesMode, { popup: toolsPopup });
+            nextTab.focus({ preventScroll: true });
+        });
+        if (!tab.getAttribute('aria-controls')) {
+            tab.setAttribute('aria-controls', panes[index].id);
+        }
+        panes[index].setAttribute('aria-labelledby', tab.id);
+        panes[index].setAttribute('role', 'tabpanel');
+    });
+
+    selectQuickRepliesMode(page.dataset.fptQuickRepliesMode || 'templates', { persist: false, popup: toolsPopup });
+    return true;
+}
+
+function setupPopupPageModeTabs(options = {}) {
+    const opts = options && typeof options === 'object' ? options : {};
+    const toolsPopup = opts.popup || document.querySelector('.fp-tools-popup');
+    const page = toolsPopup?.querySelector(opts.pageSelector) || document.querySelector(opts.pageSelector);
+    if (!page) return false;
+
+    const tabs = Array.from(page.querySelectorAll(opts.tabSelector));
+    const panes = Array.from(page.querySelectorAll(opts.paneSelector));
+    const modes = tabs.map(tab => tab.dataset[opts.tabModeKey]).filter(Boolean);
+    if (!tabs.length || tabs.length !== panes.length || !modes.includes(opts.defaultMode)) return false;
+
+    if (opts.alias) registerPopupRouteAlias(opts.alias, { pageId: opts.pageId, mode: opts.aliasMode });
+
+    const select = (mode, selectionOptions = {}) => {
+        const tabIndex = tabs.findIndex(tab => tab.dataset[opts.tabModeKey] === mode);
+        const pane = panes.find(item => item.dataset[opts.paneModeKey] === mode);
+        if (tabIndex === -1 || !pane) return false;
+        const tab = tabs[tabIndex];
+
+        tabs.forEach(item => {
+            const selected = item === tab;
+            item.setAttribute('role', 'tab');
+            item.setAttribute('aria-selected', selected ? 'true' : 'false');
+            item.tabIndex = selected ? 0 : -1;
+            item.classList.toggle(opts.activeClass, selected);
+        });
+        panes.forEach(item => {
+            const selected = item === pane;
+            item.setAttribute('role', 'tabpanel');
+            item.setAttribute('aria-hidden', selected ? 'false' : 'true');
+            item.hidden = !selected;
+            item.classList.toggle('active', selected);
+        });
+        page.dataset[opts.pageModeKey] = mode;
+
+        if (opts.pageId === 'calculator' && mode === 'currency' && page.dataset.fptCurrencyInitRequested !== '1') {
+            const initialize = window.initializeCurrencyCalculator
+                || (typeof initializeCurrencyCalculator === 'function' ? initializeCurrencyCalculator : null);
+            if (typeof initialize === 'function') {
+                page.dataset.fptCurrencyInitRequested = '1';
+                try {
+                    const result = initialize();
+                    if (result && typeof result.catch === 'function') result.catch(() => {});
+                } catch (_) {}
+            }
+        }
+
+        if (selectionOptions.persist !== false && !toolsPopup?._fptApplyingRouteMode
+            && typeof window.fptSetPopupPageMode === 'function') {
+            Promise.resolve(window.fptSetPopupPageMode(opts.pageId, mode)).catch(() => {});
+        }
+        return true;
+    };
+
+    registerPopupPageModeHandler(opts.pageId, {
+        defaultMode: opts.defaultMode,
+        modes,
+        getMode() { return page.dataset[opts.pageModeKey] || opts.defaultMode; },
+        select(mode, selectionOptions = {}) { return select(mode, { ...selectionOptions, persist: false }); }
+    }, toolsPopup);
+
+    if (!page.dataset[opts.boundKey]) {
+        page.dataset[opts.boundKey] = '1';
+        tabs.forEach((tab, index) => {
+            const pane = panes.find(item => item.dataset[opts.paneModeKey] === tab.dataset[opts.tabModeKey]);
+            if (!pane) return;
+            const tabId = tab.id || `${opts.idPrefix}${tab.dataset[opts.tabModeKey][0].toUpperCase()}${tab.dataset[opts.tabModeKey].slice(1)}Tab`;
+            const paneId = pane.id || `${opts.idPrefix}${tab.dataset[opts.tabModeKey][0].toUpperCase()}${tab.dataset[opts.tabModeKey].slice(1)}Pane`;
+            tab.id = tabId;
+            pane.id = paneId;
+            tab.setAttribute('aria-controls', paneId);
+            pane.setAttribute('aria-labelledby', tabId);
+
+            tab.addEventListener('click', event => {
+                event.preventDefault();
+                select(tab.dataset[opts.tabModeKey]);
+            });
+            tab.addEventListener('keydown', event => {
+                if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                event.preventDefault();
+                const currentIndex = tabs.indexOf(tab);
+                const nextIndex = event.key === 'Home' ? 0
+                    : event.key === 'End' ? tabs.length - 1
+                        : (currentIndex + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+                const nextTab = tabs[nextIndex];
+                if (select(nextTab.dataset[opts.tabModeKey])) nextTab.focus({ preventScroll: true });
+            });
         });
     }
+
+    const savedOnPage = page.dataset[opts.pageModeKey];
+    select(modes.includes(savedOnPage) ? savedOnPage : opts.defaultMode, { persist: false });
+    return true;
+}
+
+function setupCalculatorUI(targetPopup) {
+    return setupPopupPageModeTabs({
+        popup: targetPopup,
+        pageId: 'calculator',
+        pageSelector: '.fp-tools-page-content[data-page="calculator"]',
+        tabSelector: '.calc-subtab',
+        paneSelector: '.calc-pane',
+        tabModeKey: 'calcMode',
+        paneModeKey: 'calcPane',
+        pageModeKey: 'fptCalculatorMode',
+        boundKey: 'fptCalculatorModesBound',
+        idPrefix: 'fptCalculator',
+        activeClass: 'is-active',
+        defaultMode: 'math',
+        alias: 'currency_calc',
+        aliasMode: 'currency'
+    });
+}
+
+function setupNotificationCenterUI(targetPopup) {
+    return setupPopupPageModeTabs({
+        popup: targetPopup,
+        pageId: 'telegram',
+        pageSelector: '.fp-tools-page-content[data-page="telegram"]',
+        tabSelector: '[data-notification-mode]',
+        paneSelector: '[data-notification-pane]',
+        tabModeKey: 'notificationMode',
+        paneModeKey: 'notificationPane',
+        pageModeKey: 'fptNotificationMode',
+        boundKey: 'fptNotificationModesBound',
+        idPrefix: 'fptNotification',
+        activeClass: 'active',
+        defaultMode: 'telegram'
+    });
 }
 
 function setupFinanceHubUI(toolsPopup) {
@@ -3045,8 +3947,8 @@ function setupFinanceHubUI(toolsPopup) {
     // Subtabs: one shared "liquid glass" indicator slides under the active item.
     const subtabsBar = finPage.querySelector('#fptFinSubtabs');
     const indicator = finPage.querySelector('#fptFinSubtabsIndicator');
-    const subtabs = finPage.querySelectorAll('.fpt-fin-subtab');
-    const panes = finPage.querySelectorAll('.fpt-fin-tab-pane');
+    const subtabs = Array.from(finPage.querySelectorAll('.fpt-fin-subtab'));
+    const panes = Array.from(finPage.querySelectorAll('.fpt-fin-tab-pane'));
     let indicatorMotionTimer = null;
     let paneTransitionTimer = null;
     let paneTransitionToken = 0;
@@ -3081,7 +3983,7 @@ function setupFinanceHubUI(toolsPopup) {
         }
     }
 
-    function switchSubtab(target) {
+    function switchSubtab(target, persistMode = true) {
         if (!target) return;
         const prevSubtab = finPage.querySelector('.fpt-fin-subtab.active')?.dataset?.subtab;
         const currentPane = finPage.querySelector('.fpt-fin-tab-pane.active');
@@ -3164,7 +4066,22 @@ function setupFinanceHubUI(toolsPopup) {
         if (window.fptFinanceHub && typeof window.fptFinanceHub.onSubtabChange === 'function') {
             window.fptFinanceHub.onSubtabChange(target, prevSubtab);
         }
+
+        if (persistMode && !toolsPopup?._fptApplyingRouteMode && typeof window.fptSetPopupPageMode === 'function') {
+            window.fptSetPopupPageMode('finance_hub', target).catch(() => {});
+        }
     }
+
+    registerPopupPageModeHandler('finance_hub', {
+        defaultMode: 'overview',
+        modes: subtabs.map(subtab => subtab.dataset.subtab),
+        getMode() { return finPage.querySelector('.fpt-fin-subtab.active')?.dataset?.subtab || 'overview'; },
+        select(mode) {
+            if (!subtabs.some(subtab => subtab.dataset.subtab === mode)) return false;
+            switchSubtab(mode, false);
+            return true;
+        }
+    }, toolsPopup);
 
     subtabs.forEach((btn, index) => {
         btn.addEventListener('click', (e) => {
@@ -3208,7 +4125,7 @@ function setupFinanceHubUI(toolsPopup) {
     try {
         const savedSubtab = sessionStorage.getItem('fpt_fin_active_subtab');
         if (savedSubtab && finPage.querySelector(`.fpt-fin-subtab[data-subtab="${savedSubtab}"]`)) {
-            switchSubtab(savedSubtab);
+            switchSubtab(savedSubtab, false);
             restored = true;
         }
     } catch (_) {}
@@ -3328,12 +4245,30 @@ function setupAccentPicker(toolsPopup) {
 function setupNavSearch(toolsPopup) {
     const input = toolsPopup.querySelector('#fptNavSearch');
     const clearBtn = toolsPopup.querySelector('#fptNavSearchClear');
+    const searchToggle = toolsPopup.querySelector('#fptNavSearchToggle');
     const resultsBox = toolsPopup.querySelector('#fptNavSearchResults');
     const nav = toolsPopup.querySelector('.fp-tools-nav');
     const body = toolsPopup.querySelector('.fp-tools-body');
     const navSections = toolsPopup._fptNavSections || null;
     if (!input || !nav || !resultsBox) return;
-    let searchExpandedSnapshot = null;
+    let searchNavStateSnapshot = null;
+
+    function restoreNavStateSnapshot() {
+        if (!searchNavStateSnapshot || !navSections) return false;
+        navSections.restoreNavStateSnapshot(searchNavStateSnapshot);
+        searchNavStateSnapshot = null;
+        return true;
+    }
+
+    if (searchToggle) {
+        searchToggle.addEventListener('click', () => {
+            if (navSections?.isNavCollapsed()) {
+                if (!searchNavStateSnapshot) searchNavStateSnapshot = navSections.getNavStateSnapshot();
+                navSections.setNavCollapsed(false, false);
+            }
+            input.focus();
+        });
+    }
 
     // Выносим выпадашку результатов из левой панели (у неё overflow:auto, который
     // обрезал бы список) в общий контейнер тела попапа — так список может свободно
@@ -3343,6 +4278,7 @@ function setupNavSearch(toolsPopup) {
     }
 
     const norm = (s) => (s || '').toLowerCase().replace(/ё/g, 'е').trim();
+    let currentSearchQuery = '';
 
     // Плавное скрытие: сначала снимаем active (запускается transition), затем, когда
     // анимация закончилась, чистим содержимое. Это убирает резкое мигание.
@@ -3359,55 +4295,193 @@ function setupNavSearch(toolsPopup) {
         }
     }
 
+    const searchableFeatureSelector = 'h3, h4, h5, label > span, .feature-title, .setting-group > h4';
+    const searchableModePaneSelector = '[data-quick-replies-pane], .fpt-fin-tab-pane[data-subtab], [data-calc-pane], [data-notification-pane], [data-route-mode]';
+    const legacySearchAliases = Object.freeze({
+        lot_io: [{ mode: null, aliases: ['Импорт / экспорт'] }],
+        templates: [
+            { mode: 'templates', aliases: ['Шаблоны'] },
+            { mode: 'commands', aliases: ['Слэш-команды'] }
+        ],
+        calculator: [{ mode: 'currency', aliases: ['Валюты'] }],
+        theme: [{ mode: null, aliases: ['Кастомизация'] }],
+        ai_audit: [{ mode: null, aliases: ['ИИ-аудит'] }],
+        tickets: [{ mode: null, aliases: ['Тикеты'] }],
+        overview: [{ mode: null, aliases: ['Функции', 'Видео-обзор'] }],
+        settings_io: [{ mode: null, aliases: ['Импорт / экспорт'] }],
+        support: [{ mode: null, aliases: ['оценить', 'отзыв о расширении', 'поддержать разработчика'] }]
+    });
+
+    function getSearchableModePanes(page) {
+        return Array.from(page?.querySelectorAll(searchableModePaneSelector) || []);
+    }
+
+    function getSearchMode(pane) {
+        const data = pane?.dataset || {};
+        return data.routeMode || data.quickRepliesPane || data.subtab || data.calcPane || data.notificationPane || null;
+    }
+
+    function getLegacyAliases(pageId, mode) {
+        return (legacySearchAliases[pageId] || [])
+            .filter(entry => entry.mode === (mode || null))
+            .flatMap(entry => entry.aliases);
+    }
+
+    function getPageGroupId(pageId, navItem) {
+        if (navItem?.dataset?.navSection) return navItem.dataset.navSection;
+        return FPT_NAV_SECTIONS.find(section => section.pages.includes(pageId))?.id || null;
+    }
+
     function buildFeatureIndex() {
         const index = [];
-        const pages = toolsPopup.querySelectorAll('.fp-tools-page-content');
+        const pages = Array.from(toolsPopup.querySelectorAll('.fp-tools-page-content'));
+        const actions = getPopupNavigationActions(toolsPopup);
+        const pageById = new Map(pages.map(page => [page.dataset.page, page]));
+        const actionById = new Map(actions.filter(item => item.dataset.page).map(item => [item.dataset.page, item]));
+        const groupToggles = Array.from(toolsPopup.querySelectorAll('.fpt-nav-group-toggle'));
+        const groupToggleById = new Map(groupToggles.map(item => [item.dataset.section, item]));
+        const seen = new Set();
+        const addEntry = (groupId, pageId, mode, text, aliases, element) => {
+            const normalizedText = (text || '').replace(/\s+/g, ' ').trim();
+            if (!normalizedText || normalizedText.length < 2 || normalizedText.length > 100) return;
+            const key = [groupId || '', pageId || '', mode || '', normalizedText.toLowerCase()].join('::');
+            if (seen.has(key)) return;
+            seen.add(key);
+            index.push({ groupId: groupId || null, pageId: pageId || null, mode: mode || null, text: normalizedText, aliases: aliases || [], element: element || null });
+        };
+
+        FPT_NAV_SECTIONS.forEach(section => {
+            addEntry(section.id, null, null, section.label, [], groupToggleById.get(section.id));
+        });
+
+        actions.forEach(navItem => {
+            const pageId = navItem.dataset.page;
+            if (!pageId || !isPopupPageSearchable(toolsPopup, pageId)) return;
+            const page = pageById.get(pageId);
+            const label = (navItem.querySelector('span:last-child')?.textContent || pageId).trim();
+            const groupId = getPageGroupId(pageId, navItem);
+            const pageHeading = page?.querySelector(searchableFeatureSelector.split(',')[0]) || page;
+            addEntry(groupId, pageId, null, label, getLegacyAliases(pageId, null), pageHeading || navItem);
+
+            (legacySearchAliases[pageId] || []).filter(aliasRoute => aliasRoute.mode).forEach(aliasRoute => {
+                const modePane = aliasRoute.mode && page
+                    ? getSearchableModePanes(page).find(pane => getSearchMode(pane) === aliasRoute.mode)
+                    : null;
+                const modeHeading = modePane?.querySelector(searchableFeatureSelector.split(',')[0]);
+                aliasRoute.aliases.forEach(alias => {
+                    addEntry(groupId, pageId, aliasRoute.mode, alias, [alias], modeHeading || modePane || pageHeading || navItem);
+                });
+            });
+        });
+
         pages.forEach(page => {
             const pageId = page.dataset.page;
-            const navLi = toolsPopup.querySelector(`.fp-tools-nav li[data-page="${pageId}"]`);
-            const pageLabel = navLi ? (navLi.querySelector('span:last-child')?.textContent || '').trim() : pageId;
-            const seen = new Set();
-            page.querySelectorAll('h3, h4, h5, label > span, .feature-title, .setting-group > h4').forEach(el => {
-                if (el.closest('.fpt-nav-search')) return;
-                const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-                if (!text || text.length < 3 || text.length > 80) return;
-                const key = pageId + '::' + text.toLowerCase();
-                if (seen.has(key)) return;
-                seen.add(key);
-                index.push({ pageId, pageLabel, text, el });
+            if (!isPopupPageSearchable(toolsPopup, pageId)) return;
+            const navItem = actionById.get(pageId);
+            const groupId = getPageGroupId(pageId, navItem);
+            const addFeature = (container, mode) => {
+                const headings = Array.from(container.querySelectorAll(searchableFeatureSelector));
+                if (!headings.length && mode) {
+                    const text = (container.textContent || '').replace(/\s+/g, ' ').trim();
+                    addEntry(groupId, pageId, mode, text, [], container);
+                    return;
+                }
+                headings.forEach(element => {
+                    if (element.closest('.fpt-nav-search')) return;
+                    if (!mode && element.closest(searchableModePaneSelector)) return;
+                    const text = (element.textContent || '').replace(/\s+/g, ' ').trim();
+                    addEntry(groupId, pageId, mode, text, [], element);
+                });
+            };
+
+            addFeature(page, null);
+            getSearchableModePanes(page).forEach(pane => {
+                const mode = getSearchMode(pane);
+                if (mode) addFeature(pane, mode);
             });
         });
         return index;
+    }
+
+    function searchItemMatches(item, query) {
+        return norm(item.text).includes(query) || (item.aliases || []).some(alias => norm(alias).includes(query));
+    }
+
+    function getMatchingGroupIds(index, query) {
+        return new Set(index
+            .filter(item => !item.pageId && item.groupId && searchItemMatches(item, query))
+            .map(item => item.groupId));
     }
 
     function clearHighlights() {
         toolsPopup.querySelectorAll('.fpt-search-flash').forEach(el => el.classList.remove('fpt-search-flash'));
     }
 
+    function waitForSearchMode(item, attempts = 30) {
+        return new Promise(resolve => {
+            const page = Array.from(toolsPopup.querySelectorAll('.fp-tools-page-content')).find(node => node.dataset.page === item.pageId);
+            const pane = item.mode && page
+                ? getSearchableModePanes(page).find(node => getSearchMode(node) === item.mode)
+                : null;
+            if (!pane) { resolve(); return; }
+            const check = remaining => {
+                if ((!pane.hidden && pane.getAttribute('aria-hidden') !== 'true') || remaining <= 0) { resolve(); return; }
+                setTimeout(() => check(remaining - 1), 35);
+            };
+            check(attempts);
+        });
+    }
+
     function jumpToFeature(item) {
-        const navLi = toolsPopup.querySelector(`.fp-tools-nav li[data-page="${item.pageId}"]`);
-        if (navLi) navLi.click();
-        setTimeout(() => {
-            clearHighlights();
-            const target = item.el.closest('.setting-group, .feature-item, .form-group, .template-container') || item.el;
-            try { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { target.scrollIntoView(); }
-            target.classList.add('fpt-search-flash');
-            setTimeout(() => target.classList.remove('fpt-search-flash'), 2200);
-        }, 90);
+        const routeOptions = item.mode ? { mode: item.mode } : {};
+        openPopupPage(item.pageId, routeOptions).then(routed => {
+            if (routed === false) return;
+            return waitForSearchMode(item).then(() => {
+                const target = item.element;
+                if (!target) return;
+                clearHighlights();
+                try { target.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (_) { target.scrollIntoView(); }
+                target.classList.add('fpt-search-flash');
+                setTimeout(() => target.classList.remove('fpt-search-flash'), 2200);
+            });
+        }).catch(() => {});
     }
 
     // Обновляем список результатов «на месте», не пересоздавая с нуля, чтобы не было
     // мигания: existing rows fade in, а не пропадают/появляются рывком.
     let lastKeys = '';
-    function renderResults(query) {
-        const q = norm(query);
-        if (!q) { hideResults(true); lastKeys = ''; return; }
-        const index = buildFeatureIndex();
-        const hits = index.filter(it => norm(it.text).includes(q)).slice(0, 20);
-        if (!hits.length) { hideResults(true); lastKeys = ''; return; }
+    function clearResultsImmediately() {
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        resultsBox.classList.remove('active');
+        resultsBox.innerHTML = '';
+        lastKeys = '';
+    }
 
-        const keys = hits.map(h => h.pageId + '::' + h.text).join('|');
-        if (keys === lastKeys) { showResults(); return; } // содержимое не изменилось
+    function renderResults(query, invalidateImmediately = false) {
+        const q = norm(query);
+        if (!q) {
+            if (invalidateImmediately) clearResultsImmediately();
+            else { hideResults(true); lastKeys = ''; }
+            return;
+        }
+        const index = buildFeatureIndex();
+        const matchingGroups = getMatchingGroupIds(index, q);
+        const hits = index
+            .filter(it => searchItemMatches(it, q))
+            .filter(it => !it.pageId || !matchingGroups.size || matchingGroups.has(it.groupId))
+            .slice(0, 20);
+        if (!hits.length) {
+            if (invalidateImmediately) clearResultsImmediately();
+            else { hideResults(true); lastKeys = ''; }
+            return;
+        }
+
+        const keys = hits.map(h => [h.groupId || '', h.pageId || '', h.mode || '', h.text].join('::')).join('|');
+        if (keys === lastKeys) {
+            resultsBox.querySelectorAll('.fpt-nav-search-result').forEach(row => { row._fptSearchQuery = q; });
+            showResults();
+            return;
+        } // содержимое не изменилось
         lastKeys = keys;
 
         resultsBox.innerHTML = '';
@@ -3415,12 +4489,23 @@ function setupNavSearch(toolsPopup) {
         hits.forEach((it, i) => {
             const row = document.createElement('div');
             row.className = 'fpt-nav-search-result';
+            row._fptSearchQuery = q;
             row.style.animationDelay = Math.min(i * 18, 180) + 'ms';
             row.innerHTML = `<span class="fpt-nsr-text"></span><span class="fpt-nsr-page"></span>`;
             row.querySelector('.fpt-nsr-text').textContent = it.text;
-            row.querySelector('.fpt-nsr-page').textContent = it.pageLabel;
+            const navItem = it.pageId ? getPopupNavigationActions(toolsPopup).find(item => item.dataset.page === it.pageId) : null;
+            row.querySelector('.fpt-nsr-page').textContent = it.pageId
+                ? (navItem?.querySelector('span:last-child')?.textContent || it.pageId).trim()
+                : 'Группа';
             row.addEventListener('click', () => {
+                if (!currentSearchQuery || row._fptSearchQuery !== currentSearchQuery) return;
+                if (!it.pageId && it.groupId) {
+                    navSections?.revealAllForSearch(new Set([it.groupId]));
+                    return;
+                }
+                cancelPendingSearchRender();
                 input.value = '';
+                currentSearchQuery = '';
                 applyFilter('');
                 hideResults(true);
                 jumpToFeature(it);
@@ -3440,27 +4525,34 @@ function setupNavSearch(toolsPopup) {
 
         if (!q) {
             items.forEach(li => {
-                li.classList.remove('fpt-nav-hidden', 'fpt-nav-match');
-                li.setAttribute('aria-hidden', 'false');
+                const searchable = isPopupPageSearchable(toolsPopup, li.dataset.page);
+                li.classList.toggle('fpt-nav-hidden', !searchable);
+                li.classList.remove('fpt-nav-match');
+                li.setAttribute('aria-hidden', searchable ? 'false' : 'true');
             });
             dividers.forEach(d => d.classList.remove('fpt-nav-hidden'));
             if (navSections) {
-                if (searchExpandedSnapshot) navSections.setExpandedSections(searchExpandedSnapshot, false);
-                else navSections.refresh();
+                if (!restoreNavStateSnapshot()) navSections.refresh();
             }
-            searchExpandedSnapshot = null;
             return;
         }
 
-        if (!searchExpandedSnapshot && navSections) {
-            searchExpandedSnapshot = navSections.getExpandedSections();
+        if (!searchNavStateSnapshot && navSections) {
+            searchNavStateSnapshot = navSections.getNavStateSnapshot();
         }
 
-        const matchingSections = new Set();
+        const searchIndex = buildFeatureIndex();
+        const matchingGroups = getMatchingGroupIds(searchIndex, q);
+        const matchingPages = new Set(searchIndex
+            .filter(item => item.pageId && searchItemMatches(item, q)
+                && (!matchingGroups.size || matchingGroups.has(item.groupId)))
+            .map(item => item.pageId));
+        const matchingSections = new Set(matchingGroups);
 
         items.forEach(li => {
             const label = norm(li.querySelector('span:last-child')?.textContent || '');
-            const match = label.includes(q);
+            const match = isPopupPageSearchable(toolsPopup, li.dataset.page)
+                && (label.includes(q) || matchingPages.has(li.dataset.page) || matchingGroups.has(li.dataset.navSection));
             li.classList.toggle('fpt-nav-hidden', !match);
             li.classList.toggle('fpt-nav-match', match);
             li.setAttribute('aria-hidden', match ? 'false' : 'true');
@@ -3472,21 +4564,29 @@ function setupNavSearch(toolsPopup) {
     }
 
     let t = null;
+    function cancelPendingSearchRender() {
+        if (t) clearTimeout(t);
+        t = null;
+    }
+
     input.addEventListener('input', () => {
         const v = input.value;
+        currentSearchQuery = norm(v);
         applyFilter(v);
-        if (t) clearTimeout(t);
-        t = setTimeout(() => renderResults(v), 90);
+        cancelPendingSearchRender();
+        t = setTimeout(() => { t = null; renderResults(v); }, 90);
     });
     input.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { input.value = ''; applyFilter(''); hideResults(true); input.blur(); }
+        if (e.key === 'Escape') { cancelPendingSearchRender(); input.value = ''; currentSearchQuery = ''; applyFilter(''); hideResults(true); input.blur(); }
         if (e.key === 'Enter') {
             const first = resultsBox.querySelector('.fpt-nav-search-result');
-            if (first) first.click();
+            if (first && currentSearchQuery && first._fptSearchQuery === currentSearchQuery) first.click();
         }
     });
     clearBtn.addEventListener('click', () => {
+        cancelPendingSearchRender();
         input.value = '';
+        currentSearchQuery = '';
         applyFilter('');
         hideResults(true);
         input.focus();
@@ -3502,33 +4602,45 @@ function setupNavSearch(toolsPopup) {
             if (!(e.ctrlKey || e.metaKey) || String(e.key).toLowerCase() !== 'k') return;
             if (!toolsPopup.classList.contains('active')) return;
             e.preventDefault();
+            if (navSections?.isNavCollapsed() && searchToggle) searchToggle.click();
             input.focus();
             input.select();
         });
     }
+
+    toolsPopup._fptNavSearch = {
+        buildFeatureIndex,
+        refreshVisibility() {
+            currentSearchQuery = norm(input.value);
+            applyFilter(input.value);
+            renderResults(input.value, true);
+        }
+    };
 }
 
 
 async function loadLastActivePage() {
-    const { fpToolsLastPage } = await chrome.storage.local.get('fpToolsLastPage');
-    if (fpToolsLastPage) {
-        const itemToActivate = document.querySelector(`.fp-tools-nav li[data-page="${fpToolsLastPage}"]`);
-        if (itemToActivate) {
-            itemToActivate.click();
-        }
-    }
+    let fpToolsLastPage = null;
+    try {
+        ({ fpToolsLastPage } = await chrome.storage.local.get('fpToolsLastPage'));
+    } catch (_) {}
+    const popup = document.querySelector('.fp-tools-popup');
+    const activePage = popup && Array.from(popup.querySelectorAll('.fp-tools-page-content'))
+        .find(page => page.classList.contains('active'))?.dataset.page;
+    const pageId = typeof fpToolsLastPage === 'string' && fpToolsLastPage ? fpToolsLastPage : activePage || 'lot_io';
+    return openPopupPage(pageId);
 }
 
 function makePopupInteractive(popupEl) {
-    const header = popupEl.querySelector('.fp-tools-header h2');
-    if (!header) return;
+    const dragHandle = popupEl.querySelector('.fpt-nav-brand');
+    if (!dragHandle) return;
 
     let isDragging = false;
     let offset = { x: 0, y: 0 };
     let hasBeenDragged = popupEl.classList.contains('no-transform');
 
-    header.addEventListener('mousedown', (e) => {
-        if (e.target !== header) return;
+    dragHandle.addEventListener('mousedown', (e) => {
+        if (e.button !== 0 || e.target.closest('button')) return;
         isDragging = true;
         if (!hasBeenDragged) {
             const rect = popupEl.getBoundingClientRect();

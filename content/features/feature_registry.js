@@ -34,6 +34,8 @@ const FPT_NEEDS_CHAT_SUBGROUP_ORDER = [
     'Действия в диалоге'
 ];
 
+const FPT_NEEDS_LEGACY_PAGE_LABELS = ['Функции'];
+
 const FPT_FEATURE_REGISTRY = [
     // ───────────── Шапка сайта ─────────────
     {

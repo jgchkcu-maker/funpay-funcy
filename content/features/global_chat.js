@@ -59,6 +59,7 @@ async function fptGcRefreshConfig(force) {
             const { fpToolsGCConfig, fpToolsGCConfigTs } = await chrome.storage.local.get(['fpToolsGCConfig', 'fpToolsGCConfigTs']);
             if (fpToolsGCConfig && fpToolsGCConfigTs && (Date.now() - fpToolsGCConfigTs) < FPT_GC_CFG_TTL_MS) {
                 _fptGcApplyConfig(fpToolsGCConfig);
+                fptGcApplyVisibility();
                 return _fptGcConfig;
             }
         }
@@ -75,6 +76,7 @@ async function fptGcRefreshConfig(force) {
         if (cfg && typeof cfg === 'object') {
             _fptGcApplyConfig(cfg);
             await chrome.storage.local.set({ fpToolsGCConfig: cfg, fpToolsGCConfigTs: Date.now() });
+            fptGcApplyVisibility();
         }
     } catch (e) { /* offline - keep defaults */ }
     return _fptGcConfig;
@@ -82,7 +84,18 @@ async function fptGcRefreshConfig(force) {
 
 function fptGcApplyVisibility() {
     const navLi = document.querySelector('li[data-page="global_chat"]');
-    if (navLi) navLi.style.display = _fptGcConfig.display ? '' : 'none';
+    if (navLi) {
+        navLi.hidden = !_fptGcConfig.display;
+        navLi.style.display = _fptGcConfig.display ? '' : 'none';
+        navLi.setAttribute('aria-hidden', _fptGcConfig.display ? 'false' : 'true');
+        navLi.setAttribute('aria-disabled', _fptGcConfig.active ? 'false' : 'true');
+        navLi.classList.toggle('fpt-nav-disabled', !_fptGcConfig.active);
+    }
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof CustomEvent !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('fpt:global-chat-visibility', {
+            detail: { display: _fptGcConfig.display, active: _fptGcConfig.active }
+        }));
+    }
 }
 
 // =============================================================================

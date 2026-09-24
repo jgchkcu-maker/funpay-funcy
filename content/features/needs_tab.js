@@ -42,7 +42,60 @@ function fptNeedsPreviewHtml(entry) {
     return `<div class="fpt-pv-stage fpt-pv-none">Нет предпросмотра</div>`;
 }
 
-// Render the full feature list grouped by `group`.
+function fptNeedsNormalizeSearchText(value) {
+    return String(value == null ? '' : value).toLowerCase().replace(/ё/g, 'е').trim();
+}
+
+function fptNeedsEntryMatches(entry, query) {
+    if (!query) return true;
+    const legacyLabels = Array.isArray(entry.legacyLabels) ? entry.legacyLabels : [];
+    const legacyPageLabels = typeof FPT_NEEDS_LEGACY_PAGE_LABELS !== 'undefined'
+        ? FPT_NEEDS_LEGACY_PAGE_LABELS
+        : [];
+    const searchable = [entry.label, entry.desc, entry.group, entry.subgroup, ...legacyLabels, ...legacyPageLabels]
+        .filter(Boolean)
+        .join(' ');
+    return fptNeedsNormalizeSearchText(searchable).includes(query);
+}
+
+function fptNeedsEntryHtml(entry, options) {
+    const { disabled, contextOnly } = options;
+    const on = !disabled.has(entry.id);
+    const locked = !!entry.locked;
+    const dependentDisabled = entry.id === 'lot_keyboard_btn' && disabled.has('lot_font_controls');
+    const itemClasses = [
+        'fpt-needs-item',
+        locked ? 'fpt-needs-locked' : '',
+        contextOnly ? 'fpt-needs-context' : '',
+        dependentDisabled ? 'fpt-needs-dependent-disabled' : ''
+    ].filter(Boolean).join(' ');
+    const control = locked
+        ? `<span class="fpt-needs-lock" title="Эту функцию нельзя отключить - иначе пропадёт доступ к расширению"><span class="material-symbols-rounded">lock</span></span>`
+        : `<input type="checkbox" class="fpt-needs-cb" data-id="${entry.id}" ${on ? 'checked' : ''}${contextOnly ? ' disabled aria-disabled="true"' : ''}>`;
+    const previewDisabled = contextOnly ? ' disabled aria-disabled="true"' : '';
+    const dependencyNote = entry.id === 'lot_keyboard_btn'
+        ? `<span class="fpt-needs-dependent-note"${dependentDisabled ? '' : ' hidden'}>Включите блок шрифта и спецсимволов, чтобы использовать клавиатуру.</span>`
+        : '';
+
+    return `
+        <div class="${itemClasses}" data-id="${entry.id}"${contextOnly ? ' aria-label="Контекст элемента"' : ''}>
+            <label class="fpt-needs-check">
+                ${control}
+                <span class="fpt-needs-item-text">
+                    <span class="fpt-needs-item-label">${fptEscapeHtml(entry.label)}</span>
+                    <span class="fpt-needs-item-desc">${fptEscapeHtml(entry.desc)}</span>
+                    ${dependencyNote}
+                </span>
+            </label>
+            <button type="button" class="fpt-needs-preview-btn" data-id="${entry.id}" title="Показать предпросмотр"${previewDisabled}><span class="material-symbols-rounded">visibility</span></button>
+        </div>
+        <div class="fpt-needs-preview-row" data-id="${entry.id}" style="display:none;">
+            <span class="fpt-needs-preview-caption">Так выглядит элемент:</span>
+            ${fptNeedsPreviewHtml(entry)}
+        </div>`;
+}
+
+// Render the full feature list in an explicit taxonomy order.
 async function fptRenderNeedsList(filterText) {
     const list = document.getElementById('fptNeedsList');
     if (!list) return;
@@ -50,53 +103,88 @@ async function fptRenderNeedsList(filterText) {
     const { fpToolsDisabledFeatures = [] } = await chrome.storage.local.get('fpToolsDisabledFeatures');
     const disabled = new Set(Array.isArray(fpToolsDisabledFeatures) ? fpToolsDisabledFeatures : []);
 
-    const q = (filterText || '').trim().toLowerCase();
-    const groups = {};
-    reg.forEach(entry => {
-        if (q && !(`${entry.label} ${entry.desc}`.toLowerCase().includes(q))) return;
-        (groups[entry.group] = groups[entry.group] || []).push(entry);
-    });
-
-    const groupNames = Object.keys(groups);
-    if (!groupNames.length) {
+    const q = fptNeedsNormalizeSearchText(filterText);
+    const matchingEntries = reg.filter(entry => fptNeedsEntryMatches(entry, q));
+    const matchingIds = new Set(matchingEntries.map(entry => entry.id));
+    const contextIds = new Set();
+    if (q && matchingIds.has('lot_keyboard_btn') && !matchingIds.has('lot_font_controls')) {
+        contextIds.add('lot_font_controls');
+    }
+    const visibleIds = new Set([...matchingIds, ...contextIds]);
+    const entriesToRender = reg.filter(entry => visibleIds.has(entry.id));
+    if (!entriesToRender.length) {
         list.innerHTML = `<p class="template-info" style="text-align:center;">Ничего не найдено.</p>`;
         return;
     }
 
-    list.innerHTML = groupNames.map(g => {
-        const items = groups[g].map(entry => {
-            const on = !disabled.has(entry.id);
-            const locked = !!entry.locked;
-            const control = locked
-                ? `<span class="fpt-needs-lock" title="Эту функцию нельзя отключить - иначе пропадёт доступ к расширению"><span class="material-symbols-rounded">lock</span></span>`
-                : `<input type="checkbox" class="fpt-needs-cb" data-id="${entry.id}" ${on ? 'checked' : ''}>`;
-            return `
-            <div class="fpt-needs-item${locked ? ' fpt-needs-locked' : ''}" data-id="${entry.id}">
-                <label class="fpt-needs-check">
-                    ${control}
-                    <span class="fpt-needs-item-text">
-                        <span class="fpt-needs-item-label">${fptEscapeHtml(entry.label)}</span>
-                        <span class="fpt-needs-item-desc">${fptEscapeHtml(entry.desc)}</span>
-                    </span>
-                </label>
-                <button type="button" class="fpt-needs-preview-btn" data-id="${entry.id}" title="Показать предпросмотр"><span class="material-symbols-rounded">visibility</span></button>
-            </div>
-            <div class="fpt-needs-preview-row" data-id="${entry.id}" style="display:none;">
-                <span class="fpt-needs-preview-caption">Так выглядит элемент:</span>
-                ${fptNeedsPreviewHtml(entry)}
-            </div>`;
-        }).join('');
+    const groupOrder = typeof FPT_NEEDS_GROUP_ORDER !== 'undefined' ? FPT_NEEDS_GROUP_ORDER : [];
+    const subgroupOrder = typeof FPT_NEEDS_CHAT_SUBGROUP_ORDER !== 'undefined' ? FPT_NEEDS_CHAT_SUBGROUP_ORDER : [];
+    list.innerHTML = groupOrder.map(group => {
+        const groupEntries = entriesToRender.filter(entry => entry.group === group);
+        if (!groupEntries.length) return '';
+        const renderEntry = entry => fptNeedsEntryHtml(entry, {
+            disabled,
+            contextOnly: contextIds.has(entry.id)
+        });
+        const renderEntries = entries => {
+            const parentByChildId = { lot_keyboard_btn: 'lot_font_controls' };
+            return entries.map(entry => {
+                const parentId = parentByChildId[entry.id];
+                if (parentId && entries.some(candidate => candidate.id === parentId)) return '';
+
+                const children = entries.filter(candidate => parentByChildId[candidate.id] === entry.id);
+                if (!children.length) return renderEntry(entry);
+
+                return `
+                    <div class="fpt-needs-entry-branch" data-parent-id="${fptEscapeHtml(entry.id)}">
+                        ${renderEntry(entry)}
+                        <div class="fpt-needs-child-items" data-parent-id="${fptEscapeHtml(entry.id)}">
+                            ${children.map(renderEntry).join('')}
+                        </div>
+                    </div>`;
+            }).join('');
+        };
+        let contents = '';
+        if (group === 'Чат') {
+            contents = subgroupOrder.map(subgroup => {
+                const subgroupEntries = groupEntries.filter(entry => entry.subgroup === subgroup);
+                if (!subgroupEntries.length) return '';
+                return `
+                    <section class="fpt-needs-subgroup" data-subgroup="${fptEscapeHtml(subgroup)}">
+                        <h5 class="fpt-needs-subgroup-title">${fptEscapeHtml(subgroup)}</h5>
+                        ${renderEntries(subgroupEntries)}
+                    </section>`;
+            }).join('');
+            const uncategorized = groupEntries.filter(entry => !subgroupOrder.includes(entry.subgroup));
+            if (uncategorized.length) contents += renderEntries(uncategorized);
+        } else {
+            contents = renderEntries(groupEntries);
+        }
         return `
-            <div class="fpt-needs-group">
-                <div class="fpt-needs-group-title">${fptEscapeHtml(g)}</div>
-                ${items}
-            </div>`;
+            <section class="fpt-needs-group" data-group="${fptEscapeHtml(group)}">
+                <h4 class="fpt-needs-group-title">${fptEscapeHtml(group)}</h4>
+                ${contents}
+            </section>`;
     }).join('');
+}
+
+function fptUpdateNeedsDependencyState() {
+    const list = document.getElementById('fptNeedsList');
+    if (!list) return;
+    const checkboxes = Array.from(list.querySelectorAll('.fpt-needs-cb'));
+    const rows = Array.from(list.querySelectorAll('.fpt-needs-item'));
+    const parentCheckbox = checkboxes.find(checkbox => checkbox.dataset.id === 'lot_font_controls');
+    const childRow = rows.find(row => row.dataset.id === 'lot_keyboard_btn');
+    if (!parentCheckbox || !childRow) return;
+    const disabled = !parentCheckbox.checked;
+    childRow.classList.toggle('fpt-needs-dependent-disabled', disabled);
+    const note = childRow.querySelector('.fpt-needs-dependent-note');
+    if (note) note.hidden = !disabled;
 }
 
 // Save the current checkbox state immediately (autosave). Called on every
 // checkbox change - there is no separate "apply" button anymore.
-async function fptApplyNeedsSelection() {
+async function fptApplyNeedsSelection(additionalDisabledIds = []) {
     const list = document.getElementById('fptNeedsList');
     const status = document.getElementById('fptNeedsStatus');
     if (!list) return;
@@ -122,11 +210,15 @@ async function fptApplyNeedsSelection() {
         if (cb.checked) disabledSet.delete(cb.dataset.id);
         else disabledSet.add(cb.dataset.id);
     });
+    for (const id of additionalDisabledIds) {
+        if (knownIds.has(id) && !lockedIds.has(id)) disabledSet.add(id);
+    }
 
     const disabled = Array.from(disabledSet);
 
     try {
         await chrome.storage.local.set({ fpToolsDisabledFeatures: disabled });
+        fptUpdateNeedsDependencyState();
         // refresh live CSS hiding immediately
         if (typeof window !== 'undefined' && typeof window.fptApplyDisabledFeatures === 'function') {
             await window.fptApplyDisabledFeatures(disabled);
@@ -257,9 +349,10 @@ function initializeNeedsTab() {
     if (filter) filter.addEventListener('input', () => fptRenderNeedsList(filter.value));
 
     // AUTOSAVE: every checkbox toggle in the list saves instantly (no apply button).
-    page.addEventListener('change', (e) => {
+    page.addEventListener('change', async (e) => {
         if (e.target.classList && e.target.classList.contains('fpt-needs-cb')) {
-            fptApplyNeedsSelection();
+            fptUpdateNeedsDependencyState();
+            await fptApplyNeedsSelection();
         }
     });
 
@@ -286,7 +379,8 @@ function initializeNeedsTab() {
             document.querySelectorAll('.fpt-needs-cb').forEach(cb => {
                 if (toDisable.has(cb.dataset.id)) cb.checked = false;
             });
-            await fptApplyNeedsSelection();
+            fptUpdateNeedsDependencyState();
+            await fptApplyNeedsSelection(toDisable);
             const confirmBtn = resultBox.querySelector('#fptNeedsAiConfirm');
             if (confirmBtn) confirmBtn.textContent = 'Отключено ✓';
         }
