@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const backgroundSource = fs.readFileSync(path.join(ROOT, 'background', 'background.js'), 'utf8');
@@ -254,7 +255,7 @@ function createHubRefreshEnv({ sendMessageHandler, getInventoryHandler } = {}) {
         },
         clearTimeout() {}
     });
-    vm.runInContext(hubSource, context, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, context);
     const hub = context.root.fptFinanceHub;
     hub.init(container);
     return { hub, sentMessages, notifications, inventoryCalls: () => inventoryCalls };

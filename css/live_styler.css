@@ -1,5 +1,30 @@
 /* css/live_styler.css */
 
+:root {
+    --ms-bg: rgba(30, 30, 30, 0.92);
+    --ms-card-bg: #2a2a2a;
+    --ms-border: #444;
+    --ms-text: #eee;
+    --ms-text-muted: #888;
+    --ms-input-bg: #2a2a2a;
+    --ms-input-border: #555;
+    --ms-input-color: #fff;
+    --ms-shadow: rgba(0, 0, 0, 0.4);
+}
+
+html.fpt-theme-light,
+html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) {
+    --ms-bg: rgba(255, 255, 255, 0.95);
+    --ms-card-bg: #f5f7fa;
+    --ms-border: rgba(0, 0, 0, 0.12);
+    --ms-text: #16181d;
+    --ms-text-muted: #64748b;
+    --ms-input-bg: #ffffff;
+    --ms-input-border: rgba(0, 0, 0, 0.18);
+    --ms-input-color: #16181d;
+    --ms-shadow: rgba(0, 0, 0, 0.15);
+}
+
 /* --- Режим Редактора --- */
 body.fp-tools-magic-stick-active * {
     cursor: crosshair !important;
@@ -27,23 +52,24 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     top: 20px;
     right: 20px;
     z-index: 99999;
-    background: rgba(30, 30, 30, 0.8);
+    background: var(--ms-bg);
     backdrop-filter: blur(5px);
-    color: #fff;
+    color: var(--ms-text);
     width: 48px;
     height: 48px;
     border-radius: 50%;
-    border: 1px solid #444;
+    border: 1px solid var(--ms-border);
     cursor: pointer;
     justify-content: center;
     align-items: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 15px var(--ms-shadow);
     transition: all 0.3s ease;
     animation: ms-sway 5s ease-in-out infinite alternate;
 }
 #ms-exit-btn:hover {
     transform: scale(1.1);
     background: #e53935;
+    color: #fff;
     animation-play-state: paused;
 }
 @keyframes ms-sway {
@@ -60,12 +86,13 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     width: auto;
     max-width: 95%;
     z-index: 99999;
-    background: rgba(30, 30, 30, 0.9);
+    background: var(--ms-bg);
     backdrop-filter: blur(10px);
-    border: 1px solid #444;
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text);
     border-radius: 12px;
     padding: 10px;
-    box-shadow: 0 5px 25px rgba(0,0,0,0.4);
+    box-shadow: 0 5px 25px var(--ms-shadow);
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
@@ -79,18 +106,18 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     padding: 0 10px;
 }
 .ms-panel-section:not(:last-child) {
-    border-right: 1px solid #444;
+    border-right: 1px solid var(--ms-border);
 }
 
 .ms-target-info {
     font-family: monospace;
     font-size: 13px;
-    color: #888;
+    color: var(--ms-text-muted);
     max-width: 250px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    background: rgba(0,0,0,0.2);
+    background: var(--ms-card-bg);
     padding: 5px 8px;
     border-radius: 4px;
 }
@@ -115,19 +142,19 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     gap: 8px;
     padding: 5px;
     border-radius: 6px;
-    background: rgba(0,0,0,0.15);
+    background: var(--ms-card-bg);
 }
 .ms-control-group .ms-control {
     flex-direction: row;
 }
 
-.ms-control .material-icons { color: #aaa; font-size: 20px; }
+.ms-control .material-icons { color: var(--ms-text-muted); font-size: 20px; }
 .ms-control input {
     width: 60px;
     text-align: center;
-    background: #2a2a2a;
-    border: 1px solid #555;
-    color: #fff;
+    background: var(--ms-input-bg);
+    border: 1px solid var(--ms-input-border);
+    color: var(--ms-input-color);
     border-radius: 4px;
     padding: 4px;
 }
@@ -138,7 +165,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     width: 80px;
 }
 .ms-reset-btn {
-    background: none; border: none; color: #777; cursor: pointer; padding: 0;
+    background: none; border: none; color: var(--ms-text-muted); cursor: pointer; padding: 0;
     position: relative;
     height: 16px;
 }
@@ -153,7 +180,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 }
 .ms-section-title {
     font-size: 11px;
-    color: #888;
+    color: var(--ms-text-muted);
     font-weight: bold;
     text-transform: uppercase;
     margin-bottom: 5px;
@@ -169,8 +196,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 .ms-toggle-btn {
     width: 30px;
     height: 30px;
-    border: 1px solid #555;
-    background: #2a2a2a;
+    border: 1px solid var(--ms-input-border);
+    background: var(--ms-input-bg);
+    color: var(--ms-input-color);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -178,6 +206,7 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 .ms-toggle-btn.active {
     background: #1b75bb;
     border-color: #1b75bb;
+    color: #fff;
 }
 
 /* --- Кнопки действий --- */
@@ -186,9 +215,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     justify-content: center;
 }
 .ms-actions button {
-    background: #444;
-    color: #eee;
-    border: 1px solid #666;
+    background: var(--ms-card-bg);
+    color: var(--ms-text);
+    border: 1px solid var(--ms-border);
     border-radius: 6px;
     width: 40px;
     height: 40px;
@@ -200,14 +229,15 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     position: relative;
 }
 .ms-actions button:hover {
-    background: #555;
-    color: #fff;
-    border-color: #888;
+    background: var(--ms-input-border);
+    color: var(--ms-text);
+    border-color: var(--ms-border);
 }
 .ms-actions button#ms-continue-click-btn.active {
     background-color: #16a085;
     border-color: #1abc9c;
     box-shadow: 0 0 10px #1abc9c;
+    color: #fff;
 }
 
 /* --- Модальные окна --- */
@@ -216,30 +246,35 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     position: fixed;
     z-index: 100000;
     top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.7);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
     justify-content: center;
     align-items: center;
 }
 .ms-modal-content {
-    background: #1e1e1e;
-    border: 1px solid #444;
+    background: var(--ms-bg);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text);
     border-radius: 12px;
     width: 90%;
     max-width: 700px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
+    box-shadow: 0 10px 30px var(--ms-shadow);
 }
-.ms-modal-header { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid #444; }
-.ms-modal-header h3 { margin: 0; font-size: 18px; }
-.ms-modal-close { background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer; }
+.ms-modal-header { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid var(--ms-border); }
+.ms-modal-header h3 { margin: 0; font-size: 18px; color: var(--ms-text); }
+.ms-modal-close { background: none; border: none; color: var(--ms-text-muted); font-size: 24px; cursor: pointer; }
+.ms-modal-close:hover { color: var(--ms-text); }
 
 .ms-styles-list { padding: 20px; overflow-y: auto; }
-.ms-styles-empty { text-align: center; color: #888; }
+.ms-styles-empty { text-align: center; color: var(--ms-text-muted); }
 .ms-style-item {
     display: flex;
     align-items: center;
-    background: #2a2a2a;
+    background: var(--ms-card-bg);
+    border: 1px solid var(--ms-border);
     padding: 10px 15px;
     border-radius: 6px;
     margin-bottom: 10px;
@@ -253,9 +288,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 .ms-style-props {
     flex-grow: 1;
     font-size: 13px;
-    color: #ccc;
+    color: var(--ms-text);
     padding-left: 15px;
-    border-left: 1px solid #444;
+    border-left: 1px solid var(--ms-border);
     margin-left: 15px;
 }
 .ms-style-props code { color: #f4d03f; }
@@ -272,9 +307,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 }
 .ms-selector-option {
     width: 100%;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #ccc;
+    background: var(--ms-card-bg);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text);
     padding: 12px 15px;
     border-radius: 6px;
     font-family: monospace;
@@ -284,9 +319,9 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
     transition: all 0.2s ease;
 }
 .ms-selector-option:hover {
-    background: #3c3c3c;
+    background: var(--ms-input-border);
     border-color: #1b75bb;
-    color: #fff;
+    color: var(--ms-text);
 }
 
 /* Моментальные кастомные тултипы */

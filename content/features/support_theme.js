@@ -75,6 +75,11 @@
         const surface     = s.containerBgColor;                 // основной фон карточек
         const surfaceUp    = shade(s.containerBgColor, 18);      // приподнятый (поля, кнопки)
         const surfaceUp2   = shade(s.containerBgColor, 30);      // ещё выше (ховеры)
+        const [surfaceR, surfaceG, surfaceB] = toRgb(surface).split(',').map(Number);
+        const surfaceIsDark = (0.2126 * surfaceR + 0.7152 * surfaceG + 0.0722 * surfaceB) / 255 < 0.5;
+        const closeButtonFilter = surfaceIsDark
+            ? 'invert(1) grayscale(1) brightness(1.6)'
+            : 'none';
         const textRgb      = toRgb(s.textColor);
         const accent       = s.bgColor1;
         const accentRgb    = toRgb(s.bgColor1);
@@ -137,7 +142,7 @@
 
             --bs-secondary-color-rgb: ${textRgb};
             --bs-tertiary-color-rgb: ${textRgb};
-            color-scheme: dark;
+            color-scheme: ${surfaceIsDark ? 'dark' : 'light'};
         }
 
         body {
@@ -188,8 +193,8 @@
         .alert-info    { background: ${hexToRgba(s.linkColor, .12)} !important; border-color: ${hexToRgba(s.linkColor, .3)} !important; }
         .alert .alert-icon, .alert i, .alert svg { fill: ${hexToRgba(s.textColor, .7)} !important; color: ${hexToRgba(s.textColor, .7)} !important; }
 
-        /* ── Кнопка закрытия модалки видимой на тёмном ── */
-        .btn-close { filter: invert(1) grayscale(1) brightness(1.6); }
+        /* ── Иконка закрытия контрастирует с выбранным фоном ── */
+        .btn-close { filter: ${closeButtonFilter}; }
 
         /* ── Тултипы ── */
         .tooltip { --bs-tooltip-bg: ${surfaceUp2}; --bs-tooltip-color: ${s.textColor}; }

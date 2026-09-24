@@ -23,7 +23,7 @@ const labels = {
     finance_hub: 'Обзор и аналитика', piggy_banks: 'Копилки', calculator: 'Калькуляторы', theme: 'Темы', effects: 'Эффекты',
     epic_nicks: 'Оформление ника', needs: 'Элементы интерфейса', accounts: 'Аккаунты', general: 'Отображение FunPay',
     telegram: 'Уведомления и интеграции', settings_io: 'Перенос настроек', overview: 'Справочник функций',
-    tickets: 'Поддержка FunPay', global_chat: 'Чат сообщества', notes: 'Заметки', support: 'Оценить расширение'
+    tickets: 'Поддержка FunPay', global_chat: 'Чат сообщества', support: 'Оценить расширение'
 };
 
 class FakeClassList {
@@ -112,7 +112,7 @@ function createHarness() {
     const order = [];
     const storageWrites = [];
     let globalChatVisible = true;
-    const pageIds = sections.flatMap(section => section.pages).concat(['notes', 'support']);
+    const pageIds = sections.flatMap(section => section.pages).concat(['support']);
     const pageToSection = new Map(sections.flatMap(section => section.pages.map(pageId => [pageId, section.id])));
     const navItems = pageIds.map(pageId => {
         const li = new FakeElement({ pageId, label: new FakeElement({ text: pageId === 'tickets' ? 'Поддержка FunPay' : labels[pageId] }) });
@@ -245,7 +245,6 @@ function testIndexContractAndAliases() {
         ['overview', null, 'Функции'], ['overview', null, 'Видео-обзор'], ['lot_io', null, 'Импорт / экспорт'],
         ['settings_io', null, 'Импорт / экспорт']
     ]) assert.ok(find(pageId, mode, alias), `${alias} targets ${pageId}${mode ? `/${mode}` : ''}`);
-    assert.ok(index.some(item => item.pageId === 'notes' && item.text === 'Заметки'), 'footer notes is indexed with its human label');
     assert.ok(index.some(item => item.pageId === 'support' && item.text === 'Оценить расширение'), 'footer rating action is indexed with its human label');
     assert.ok(index.some(item => item.pageId === 'calculator' && item.mode === 'currency' && item.element.textContent === 'Скрытый прогноз валютного рынка'),
         'headings inside hidden route-mode panes are indexed');
@@ -283,12 +282,6 @@ async function testSupportAndQuickActionRoutesStayDistinct() {
     const labelsFound = new Set(importRows.map(row => row.querySelector('.fpt-nsr-page').textContent));
     assert.ok(labelsFound.has('Управление лотами'));
     assert.ok(labelsFound.has('Перенос настроек'));
-
-    const notesRows = await search(h, 'Заметки');
-    const notes = notesRows.find(row => row.querySelector('.fpt-nsr-page').textContent === 'Заметки');
-    assert.ok(notes, 'the notes footer action is available in search');
-    await notes.dispatch('click');
-    assert.deepEqual(h.routeCalls.at(-1), ['notes', undefined]);
 }
 
 async function testEveryGroupHeadingRevealsOnlyItsChildren() {

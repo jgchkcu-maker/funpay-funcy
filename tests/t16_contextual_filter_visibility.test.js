@@ -2,10 +2,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeHubSource = fs.readFileSync(
     path.join(ROOT, 'content', 'features', 'finance_hub.js'),
+    'utf8'
+).replace(/\r\n/g, '\n');
+const financeHubFiltersSource = fs.readFileSync(
+    path.join(ROOT, 'content', 'features', 'finance_hub', 'filters.js'),
     'utf8'
 ).replace(/\r\n/g, '\n');
 const cssSource = fs.readFileSync(
@@ -182,7 +187,7 @@ function createHubEnvironment() {
     };
 
     const context = vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, context, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, context);
     const hub = context.root.fptFinanceHub || context.root.FPTFinanceHub;
     assert.ok(hub, 'FPTFinanceHub must be registered');
     hub.init(container);
@@ -218,21 +223,21 @@ function runStaticContractChecks() {
         'Finance hidden utility must override legacy display rules'
     );
     assert.match(
-        financeHubSource,
+        financeHubFiltersSource,
         /function\s+setFinanceControlVisible\s*\(\s*el\s*,\s*visible(?:\s*,\s*visibleDisplay)?\s*\)/,
         'Finance controls must share one visibility helper'
     );
 
-    const statusOptionsCode = financeHubSource.match(
+    const statusOptionsCode = financeHubFiltersSource.match(
         /function\s+updateStatusSelectOptions\(subtab\)[\s\S]*?\n\s*}\n\s*\n\s*function\s+setupHeaderFilters/
     );
     assert.ok(statusOptionsCode, 'status options function must be present');
     assert.doesNotMatch(statusOptionsCode[0], /\.style\.(?:display|setProperty|removeProperty)/, 'status options must not own visibility');
 
-    const visibilityStart = financeHubSource.indexOf('function updateHeaderFiltersVisibility(subtab)');
-    const visibilityEnd = financeHubSource.indexOf('function ensureExportModalStyles', visibilityStart);
+    const visibilityStart = financeHubFiltersSource.indexOf('function updateHeaderFiltersVisibility(subtab)');
+    const visibilityEnd = financeHubFiltersSource.indexOf('\n        return {', visibilityStart);
     assert.ok(visibilityStart >= 0 && visibilityEnd > visibilityStart, 'header visibility function must be present');
-    const visibilityCode = financeHubSource.slice(visibilityStart, visibilityEnd);
+    const visibilityCode = financeHubFiltersSource.slice(visibilityStart, visibilityEnd);
     assert.doesNotMatch(visibilityCode, /(?:periodSelect|snapshotBadge|customRangeWrap|catSelect|statusSelect)\.style\./, 'header filters must not mutate visibility through individual styles');
 }
 

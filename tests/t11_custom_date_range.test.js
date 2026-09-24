@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeDataSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_data.js'), 'utf8').replace(/\r\n/g, '\n');
@@ -85,7 +86,7 @@ function createFinanceHub() {
     sandbox.window = sandbox;
     sandbox.globalThis = sandbox;
     const ctx = vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, ctx, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, ctx);
     return {
         hub: ctx.FPTFinanceHub || ctx.fptFinanceHub,
         getStored: key => stored.get(key)
@@ -123,7 +124,7 @@ function testHubPersistsCustomRangeAndReset() {
 }
 
 function testCustomRangeControlsExistInFinanceHubMarkup() {
-    assert.match(mainPopupSource, /<option value="custom">Custom range…<\/option>/, 'period selector has Custom range option');
+    assert.match(mainPopupSource, /<option value="custom">Произвольный период…<\/option>/, 'period selector has localized custom range option');
     for (const id of ['fptFinCustomFrom', 'fptFinCustomTo', 'fptFinCustomApplyBtn', 'fptFinCustomResetBtn']) {
         assert.match(mainPopupSource, new RegExp('id="' + id + '"'), id + ' exists in Finance Hub markup');
     }

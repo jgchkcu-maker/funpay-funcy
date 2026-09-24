@@ -2,9 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubProfitSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'profit.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubOverviewSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'overview.js'), 'utf8').replace(/\r\n/g, '\n');
 const financeDataSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_data.js'), 'utf8').replace(/\r\n/g, '\n');
 const mainPopupSource = fs.readFileSync(path.join(ROOT, 'content', 'ui', 'main_popup.js'), 'utf8').replace(/\r\n/g, '\n');
 
@@ -26,13 +29,13 @@ function runStaticContractChecks() {
 
     // 2. В renderProfitSubtab запрещено присваивание state.profitLastUpdate = Date.now()
     assert.ok(
-        !financeHubSource.match(/function renderProfitSubtab[\s\S]*?state\.profitLastUpdate\s*=\s*Date\.now\(\)/),
+        !financeHubProfitSource.match(/function renderProfitSubtab[\s\S]*?state\.profitLastUpdate\s*=\s*Date\.now\(\)/),
         'renderProfitSubtab must not set profitLastUpdate to Date.now()'
     );
 
     // 3. В renderOverviewSubtab запрещено присваивание state.overviewLastUpdate = Date.now()
     assert.ok(
-        !financeHubSource.match(/function renderOverviewSubtab[\s\S]*?state\.overviewLastUpdate\s*=\s*Date\.now\(\)/),
+        !financeHubOverviewSource.match(/function renderOverviewSubtab[\s\S]*?state\.overviewLastUpdate\s*=\s*Date\.now\(\)/),
         'renderOverviewSubtab must not set overviewLastUpdate to Date.now()'
     );
 
@@ -266,7 +269,7 @@ function createHubSandbox(storageData = {}) {
     sandbox.window = sandbox;
 
     vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, sandbox);
+    loadFinanceHub(vm, sandbox);
 
     const hub = sandbox.window.FPTFinanceHub || sandbox.window.fptFinanceHub;
     hub.init(container);

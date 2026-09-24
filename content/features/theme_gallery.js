@@ -266,7 +266,11 @@
                 throw new Error('неверный формат темы');
             }
 
-            await chrome.storage.local.set({ fpToolsTheme: theme });
+            const sanitizedTheme = (typeof fptSanitizeThemeColors === 'function')
+                ? fptSanitizeThemeColors(theme)
+                : theme;
+
+            await chrome.storage.local.set({ fpToolsTheme: sanitizedTheme });
             // Применяем теми же функциями, что использует ручной импорт.
             if (typeof applyCustomTheme === 'function') await applyCustomTheme();
             if (typeof applyHeaderPosition === 'function') await applyHeaderPosition();

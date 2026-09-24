@@ -69,8 +69,8 @@ function testHeaderAndSearchMatchReference() {
     const navMarkup = source.slice(navStart, navEnd);
     assert.match(navMarkup, /<div class="fpt-nav-brand">[\s\S]*?<img class="fp-tools-brand-logo"[^>]+data-icon="funcy-logo"[\s\S]*?<span class="fpt-nav-brand-title">FunPay Funcy<\/span>[\s\S]*?<button[^>]+id="fptNavCollapse"/, 'brand, title, and collapse control must live in the reference sidebar header');
     assert.match(navMarkup, /<div class="fpt-nav-footer">[\s\S]*?<ul class="fpt-nav-quick-actions"[^>]*>[\s\S]*?<button[^>]+id="fptAccentBtn"[\s\S]*?id="fptAccentInput"/, 'footer routes and the existing accent picker must live in the sidebar footer');
-    assert.match(source, /const FPT_NAV_QUICK_ACTIONS = Object\.freeze\(\['notes',\s*'support'\]\)/,
-        'notes and support must be the only footer route actions');
+    assert.match(source, /const FPT_NAV_QUICK_ACTIONS = Object\.freeze\(\['support'\]\)/,
+        'support must be the footer route action');
     assert.match(source, /class="close-btn" aria-label="Закрыть"/, 'the existing popup close control must remain available');
     assert.match(
         source,

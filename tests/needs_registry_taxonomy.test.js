@@ -46,7 +46,6 @@ const EXPECTED_ID_SELECTOR_PAIRS = [
     ['lot_category_peek', '#fpt-peek-toggle, .fpt-peek-panel'],
     ['lot_public_clone_btn', '#fp-tools-public-clone-btn'],
     ['multi_clone_foreign', '.actions .clone-lots'],
-    ['lot_notes_chat_btn', '.fpt-chat-note-btn'],
     ['lot_delete_btn', '.fpt-lot-del-btn'],
     ['lot_search_bar', '#fp-lot-search-bar'],
     ['lot_select_btn', '#fp-tools-select-lots-btn'],
@@ -67,7 +66,7 @@ const EXPECTED_GROUP_IDS = {
         'chat_custom_attach', 'chat_ai_rewrite_btn', 'chat_reply',
         'chat_char_counter', 'profanity_warning', 'chat_read_all_btn',
         'chat_filter_marked_btn', 'chat_menu_buyer_history', 'chat_menu_translate',
-        'chat_menu_export', 'chat_menu_blacklist', 'lot_notes_chat_btn'
+        'chat_menu_export', 'chat_menu_blacklist'
     ],
     'Создание и оформление лота': [
         'chat_image_generator_btn', 'lot_ai_gen_btn', 'lot_font_controls',
@@ -104,7 +103,7 @@ const EXPECTED_CHAT_SUBGROUP_IDS = {
     'Шапка диалога': ['chat_read_all_btn', 'chat_filter_marked_btn'],
     'Действия в диалоге': [
         'chat_menu_buyer_history', 'chat_menu_translate', 'chat_menu_export',
-        'chat_menu_blacklist', 'lot_notes_chat_btn'
+        'chat_menu_blacklist'
     ]
 };
 
@@ -197,7 +196,6 @@ test('renamed font controls retain their prior searchable labels locally', () =>
 test('stored disabled IDs still hide the exact original live selectors across all six groups', async () => {
     const disabledIds = [
         'rmthub_seller_search',
-        'lot_notes_chat_btn',
         'lot_font_controls',
         'lot_keyboard_btn',
         'lot_clone_btn',
@@ -231,7 +229,6 @@ test('stored disabled IDs still hide the exact original live selectors across al
         .sort();
     const expectedSelectors = [
         '#fp-rmthub-form',
-        '.fpt-chat-note-btn',
         '.fp-tools-font-controls',
         '.fp-tools-symbols-panel',
         '#fpToolsKeyboardToggleBtn',

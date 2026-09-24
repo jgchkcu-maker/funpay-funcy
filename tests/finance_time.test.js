@@ -2,10 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeData = require('../content/features/finance_data.js');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8');
+const financeHubFiltersSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'filters.js'), 'utf8');
 
 function testMskBoundaryIsDeterministic() {
     const beforeMidnight = Date.UTC(2026, 8, 20, 20, 59, 59, 999);
@@ -151,7 +153,7 @@ function setupHubForLifecycleTest() {
         setTimeout(fn) { fn(); return 0; },
         clearTimeout() {}
     });
-    vm.runInContext(financeHubSource, context, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, context);
     return {
         hub: context.root.fptFinanceHub,
         container,
@@ -177,7 +179,7 @@ async function testRepeatedInitAndPotentialPeriodSemantics() {
 
 async function main() {
     testMskBoundaryIsDeterministic();
-    assert.match(financeHubSource, /setFinanceControlVisible\(periodSelect,\s*!isPotential\)/);
+    assert.match(financeHubFiltersSource, /setFinanceControlVisible\(periodControl,\s*!isPotential\)/);
     await testRepeatedInitAndPotentialPeriodSemantics();
     console.log('FINANCE_TIME_PASS');
 }

@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
@@ -147,7 +148,7 @@ function createHubEnvironment() {
     };
     sandbox.window = sandbox;
     vm.createContext(sandbox);
-    vm.runInContext(financeHubSource, sandbox, { filename: 'finance_hub.js' });
+    loadFinanceHub(vm, sandbox);
 
     const hub = sandbox.FPTFinanceHub || sandbox.fptFinanceHub;
     assert.ok(hub, 'FPTFinanceHub must be registered');

@@ -16,7 +16,7 @@ const GROUP_ORDER = [
 const CHAT_SUBGROUP_IDS = {
     'Поле ввода': ['chat_custom_attach', 'chat_ai_rewrite_btn', 'chat_reply', 'chat_char_counter', 'profanity_warning'],
     'Шапка диалога': ['chat_read_all_btn', 'chat_filter_marked_btn'],
-    'Действия в диалоге': ['chat_menu_buyer_history', 'chat_menu_translate', 'chat_menu_export', 'chat_menu_blacklist', 'lot_notes_chat_btn']
+    'Действия в диалоге': ['chat_menu_buyer_history', 'chat_menu_translate', 'chat_menu_export', 'chat_menu_blacklist']
 };
 
 function loadRegistry() {
@@ -118,14 +118,14 @@ test('renders six groups and three chat subgroups in taxonomy order with every o
         assert.deepEqual(idsInItemRows(block).sort(), [...expectedIds].sort(), `${subgroup} contains its assigned entries`);
     }
 
-    assert.equal(idsInItemRows(html).length, 37);
+    assert.equal(idsInItemRows(html).length, 36);
     for (const entry of registry) {
         assert.match(html, new RegExp(`class="fpt-needs-item[^\"]*" data-id="${entry.id}"`));
         assert.match(html, new RegExp(`class="fpt-needs-cb" data-id="${entry.id}" checked`));
         assert.match(html, new RegExp(`class="fpt-needs-preview-btn" data-id="${entry.id}"`));
         assert.match(html, new RegExp(`class="fpt-needs-preview-row" data-id="${entry.id}"`));
     }
-    assert.equal((html.match(/class="fpt-pv-stage/g) || []).length, 37, 'each entry renders its preview stage');
+    assert.equal((html.match(/class="fpt-pv-stage/g) || []).length, 36, 'each entry renders its preview stage');
     assert.match(html, /<div class="fpt-needs-entry-branch" data-parent-id="lot_font_controls">[\s\S]*?<div class="fpt-needs-child-items" data-parent-id="lot_font_controls">[\s\S]*?class="fpt-needs-item[^\"]*" data-id="lot_keyboard_btn"/);
 });
 
@@ -145,10 +145,7 @@ test('local search covers groups, subgroups, legacy labels and descriptions whil
     assert.deepEqual(idsInItemRows(byOldFeatureName.html), ['lot_font_controls']);
 
     const byOldPageName = await render('Функции');
-    assert.equal(idsInItemRows(byOldPageName.html).length, 37, 'the former page label remains a local search alias');
-
-    const byDescription = await render('показывается, если у просматриваемого лота');
-    assert.deepEqual(idsInItemRows(byDescription.html), ['lot_notes_chat_btn']);
+    assert.equal(idsInItemRows(byOldPageName.html).length, 36, 'the former page label remains a local search alias');
 
     const noResults = await render('несуществующий элемент');
     assert.match(noResults.html, /Ничего не найдено/);
@@ -172,7 +169,6 @@ test('keyboard-only search shows a disabled parent context row and preserves sto
 test('reopening restores only the stored disabled IDs from all six groups', async () => {
     const disabledIds = [
         'rmthub_seller_search',
-        'lot_notes_chat_btn',
         'lot_font_controls',
         'lot_keyboard_btn',
         'lot_clone_btn',
@@ -200,7 +196,7 @@ test('search can be cleared and restores the complete catalog without changing s
 
     harness.input.value = '';
     await harness.handlers['filter:input']();
-    assert.equal(idsInItemRows(harness.list.innerHTML).length, 37);
+    assert.equal(idsInItemRows(harness.list.innerHTML).length, 36);
     assert.equal((harness.list.innerHTML.match(/class="fpt-needs-group-title"/g) || []).length, 6);
     assert.equal(harness.writes.length, 0);
 });
@@ -336,7 +332,7 @@ test('confirmed AI action saves a selected feature even when search hides its ch
     const harness = createInteractiveHarness({
         aiPickId: 'lot_keyboard_btn',
         visibleIds: ['lot_font_controls'],
-        initialDisabled: ['lot_notes_chat_btn']
+        initialDisabled: ['lot_public_clone_btn']
     });
     vm.runInContext('initializeNeedsTab()', harness.context);
     await new Promise((resolve) => setImmediate(resolve));
@@ -345,32 +341,32 @@ test('confirmed AI action saves a selected feature even when search hides its ch
 
     assert.equal(harness.checkboxes[0].checked, true, 'the visible, unselected parent keeps its saved state');
     assert.equal(harness.checkboxes[1].checked, true, 'the filtered-out keyboard checkbox is not changed in the DOM');
-    assert.deepEqual(harness.getStoredDisabled(), ['lot_notes_chat_btn', 'lot_keyboard_btn']);
+    assert.deepEqual(harness.getStoredDisabled(), ['lot_public_clone_btn', 'lot_keyboard_btn']);
 });
 
-test('AI accepts an older response ID and applies it by stable ID', async () => {
+test('AI applies a returned feature by its stable ID', async () => {
     const harness = createHarness({ withPage: true });
-    const pick = { dataset: { id: 'lot_notes_chat_btn' }, checked: true };
+    const pick = { dataset: { id: 'lot_keyboard_btn' }, checked: true };
     const confirmButton = { textContent: 'Отключить выбранное' };
     const originalGetElementById = harness.document.getElementById.bind(harness.document);
     harness.document.getElementById = id => id === 'fptNeedsInput'
-        ? { value: 'убрать кнопку заметки в чате' }
+        ? { value: 'убрать кнопку клавиатуры' }
         : originalGetElementById(id);
     harness.resultBox.querySelectorAll = selector => selector === '.fpt-needs-ai-pick' ? [pick] : [];
     harness.resultBox.querySelector = selector => selector === '#fptNeedsAiConfirm' ? confirmButton : null;
     harness.context.chrome.runtime.sendMessage = async () => ({
         success: true,
-        data: JSON.stringify([{ id: 'lot_notes_chat_btn', confidence: 0.94, reason: 'Найдена кнопка заметки' }])
+        data: JSON.stringify([{ id: 'lot_keyboard_btn', confidence: 0.94, reason: 'Найдена кнопка клавиатуры' }])
     });
     vm.runInContext('initializeNeedsTab()', harness.context);
     await new Promise((resolve) => setImmediate(resolve));
 
     await vm.runInContext('fptNeedsAskAI()', harness.context);
-    assert.match(harness.resultBox.innerHTML, /data-id="lot_notes_chat_btn" checked/);
-    assert.match(harness.resultBox.innerHTML, /Кнопка «Заметка» в чате/);
+    assert.match(harness.resultBox.innerHTML, /data-id="lot_keyboard_btn" checked/);
+    assert.match(harness.resultBox.innerHTML, /Кнопка „Клавиатура“/);
 
     await harness.handlers.click({ target: { closest: selector => selector === '#fptNeedsAiConfirm' ? confirmButton : null } });
-    assert.deepEqual(harness.getStoredDisabled(), ['lot_notes_chat_btn']);
+    assert.deepEqual(harness.getStoredDisabled(), ['lot_keyboard_btn']);
 });
 
 test('preview toggle opens the nested row and resolves the image preview asset', async () => {

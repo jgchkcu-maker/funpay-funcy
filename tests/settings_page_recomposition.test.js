@@ -115,9 +115,8 @@ function createHarness(storageSeed = {}, financeSubtab = null, { realCurrency = 
     const calculator = createModePage('calculator', '.calc-subtab', '.calc-pane', 'calcMode', 'calcPane', ['math', 'time', 'currency'], 'fptCalc');
     const notifications = createModePage('telegram', '[data-notification-mode]', '[data-notification-pane]', 'notificationMode', 'notificationPane', ['browser', 'telegram', 'discord'], 'fptNotification');
     const finance = createFinancePage();
-    const notes = new FakeElement({ page: 'notes' });
     const lotIo = new FakeElement({ page: 'lot_io' });
-    const pages = [calculator.page, notifications.page, finance.page, notes, lotIo];
+    const pages = [calculator.page, notifications.page, finance.page, lotIo];
     const currencyElements = Object.fromEntries([
         'currencyAmountFrom', 'currencyAmountTo', 'currencySelectFrom', 'currencySelectTo',
         'currencySwapBtn', 'currencyRateDisplay', 'currency-error-display', 'discordWebhookUrl'
@@ -233,7 +232,7 @@ async function testCalculatorAndNotificationModes() {
     assert.equal(h.storage.fpToolsPageModes.calculator, 'currency');
     assert.ok(h.currencyInitializations() > 0, 'the FX API is initialized on entering currency mode');
 
-    await h.window.fptOpenPopupPage('notes');
+    await h.window.fptOpenPopupPage('lot_io');
     await h.window.fptOpenPopupPage('calculator');
     assert.equal(h.calculator.page.dataset.fptCalculatorMode, 'currency', 'calculator mode restores after visiting another page');
     await h.window.fptOpenPopupPage('currency_calc');
@@ -323,7 +322,7 @@ async function testFinanceHubSubtabCompatibility() {
     assert.equal(h.session.get('fpt_fin_active_subtab'), 'purchases', 'a manual Finance Hub subtab click updates the legacy session key');
     await h.finance.subtabs.find(tab => tab.dataset.subtab === 'sales').dispatch('click');
     await h.popup._fptNavigationWriteQueue;
-    await h.window.fptOpenPopupPage('notes');
+    await h.window.fptOpenPopupPage('lot_io');
     await h.window.fptOpenPopupPage('finance_hub');
     assert.equal(h.finance.subtabs.find(tab => tab.classList.contains('active')).dataset.subtab, 'sales', 'Finance Hub restores its own subtab');
 }
@@ -342,7 +341,7 @@ async function testCurrencyApiIsLazy() {
     assert.equal(h.fetchRequests.length, 2, 'currency initialization makes no duplicate requests');
     assert.equal(h.currencyElements.currencyAmountTo.value, '9200.00');
 
-    await h.window.fptOpenPopupPage('notes');
+    await h.window.fptOpenPopupPage('lot_io');
     await h.window.fptOpenPopupPage('calculator');
     assert.equal(h.fetchRequests.length, 2, 'restoring currency mode reuses the initialized page and session cache');
 }

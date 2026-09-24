@@ -153,7 +153,6 @@ function createMainPopup() {
                     <li data-page="piggy_banks"><a><span class="nav-icon material-symbols-rounded">savings</span><span>Копилки</span></a></li>
                     <li data-page="calculator"><a><span class="nav-icon material-symbols-rounded">calculate</span><span>Калькуляторы</span></a></li>
                     <li class="fp-nav-divider">Прочее</li>
-                    <li data-page="notes"><a><span class="nav-icon material-symbols-rounded">edit_note</span><span>Заметки</span></a></li>
                     <li data-page="overview"><a><span class="nav-icon material-symbols-rounded">movie</span><span>Справочник функций</span></a></li>
                     <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>
                     <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>
@@ -166,6 +165,11 @@ function createMainPopup() {
                 </div>
             </nav>
             <main class="fp-tools-content">
+                <div class="fp-tools-start-screen" id="fpToolsStartScreen" role="status" aria-live="polite" aria-hidden="true">
+                    <span class="fp-tools-start-screen-icon material-symbols-rounded" aria-hidden="true">category</span>
+                    <h2>Выберите категорию</h2>
+                    <p>Откройте категорию слева, чтобы увидеть доступные инструменты.</p>
+                </div>
                 <div class="fp-tools-page-content" data-page="general">
                     <h3>Отображение FunPay</h3>
                     <div class="checkbox-label-inline">
@@ -725,10 +729,6 @@ function createMainPopup() {
                     <p class="template-info">Измените название, описание или сообщение покупателю сразу у нескольких лотов.</p>
                     <button id="fp-bulk-edit-btn" class="btn btn-default" style="width:auto;padding:8px 16px;"><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;margin-right:5px;">edit</span>Массово изменить лоты</button>
 
-                    <h4 style="margin-top: 30px;">Личные заметки к лотам</h4>
-                    <p class="template-info">Заметки видны только тебе. Добавляй их через ПКМ по лоту (в профиле, на странице лота) или прямо в чате с покупателем. Здесь — все заметки сразу, даже к удалённым лотам.</p>
-                    <button id="fp-open-notes-btn" class="btn btn-default" style="width:auto;padding:8px 16px;"><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;margin-right:5px;">sticky_note_2</span>Открыть все заметки</button>
-
                     <a href="#" id="convert-cardinal-lots-btn" style="display: block; text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: var(--fptm-muted, #a0a0a0); text-decoration: underline;">Конвертер лотов FunPay Cardinal → FunPay Funcy</a>
 
                     <h4 style="margin-top: 30px;">Незавершённые импорты</h4>
@@ -792,23 +792,50 @@ function createMainPopup() {
 
                     <div class="fpt-fin-filterbar">
                         <div class="fpt-fin-period-wrap">
-                            <select id="fptFinPeriodSelect" class="fpt-fin-period-select" aria-label="Период статистики">
-                                <option value="today">Сегодня</option>
-                                <option value="yesterday">Вчера</option>
-                                <option value="24h">24 часа</option>
-                                <option value="7d" selected>7 дней</option>
-                                <option value="30d">30 дней</option>
-                                <option value="365d">Год</option>
-                                <option value="all">Всё время</option>
-                                <option value="custom">Custom range…</option>
-                            </select>
-                            <div id="fptFinCustomRange" class="fpt-fin-custom-range" role="group" aria-label="Custom date range">
-                                <label for="fptFinCustomFrom">From</label>
-                                <input id="fptFinCustomFrom" type="date" aria-label="From">
-                                <label for="fptFinCustomTo">To</label>
-                                <input id="fptFinCustomTo" type="date" aria-label="To">
-                                <button type="button" id="fptFinCustomApplyBtn" class="btn btn-default fpt-fin-custom-range-btn">Apply</button>
-                                <button type="button" id="fptFinCustomResetBtn" class="btn btn-default fpt-fin-custom-range-btn">Reset</button>
+                            <div class="fpt-fin-filter-control" data-fin-control="period">
+                                <label class="fpt-fin-filter-label" for="fptFinPeriodSelect">Период</label>
+                                <select id="fptFinPeriodSelect" class="fpt-fin-period-select" aria-label="Период статистики">
+                                    <option value="today">Сегодня</option>
+                                    <option value="yesterday">Вчера</option>
+                                    <option value="24h">24 часа</option>
+                                    <option value="7d" selected>7 дней</option>
+                                    <option value="30d">30 дней</option>
+                                    <option value="365d">Год</option>
+                                    <option value="all">Всё время</option>
+                                    <option value="custom">Произвольный период…</option>
+                                </select>
+                            </div>
+                            <div class="fpt-fin-filter-control" data-fin-control="currency">
+                                <label class="fpt-fin-filter-label" for="fptFinCurrencySelect">Валюта</label>
+                                <select id="fptFinCurrencySelect" class="fpt-fin-period-select" aria-label="Валюта статистики">
+                                    <option value="all">Все валюты</option>
+                                    <option value="RUB">₽ RUB</option>
+                                    <option value="USD">$ USD</option>
+                                    <option value="EUR">€ EUR</option>
+                                </select>
+                            </div>
+                            <div class="fpt-fin-filter-control" data-fin-control="status">
+                                <label class="fpt-fin-filter-label" id="fptFinStatusLabel" for="fptFinStatusSelect">Статус заказа</label>
+                                <select id="fptFinStatusSelect" class="fpt-fin-period-select" aria-label="Статус заказов">
+                                    <option value="all">Все статусы</option>
+                                    <option value="closed">Закрытые</option>
+                                    <option value="paid">Оплаченные</option>
+                                    <option value="refunded">Возвраты</option>
+                                </select>
+                            </div>
+                            <div class="fpt-fin-filter-control" data-fin-control="category">
+                                <label class="fpt-fin-filter-label" for="fptFinCategorySelect">Категория</label>
+                                <select id="fptFinCategorySelect" class="fpt-fin-period-select" aria-label="Категория товаров">
+                                    <option value="all">Все категории</option>
+                                </select>
+                            </div>
+                            <div id="fptFinCustomRange" class="fpt-fin-custom-range" role="group" aria-label="Произвольный период">
+                                <label for="fptFinCustomFrom">С</label>
+                                <input id="fptFinCustomFrom" type="date" aria-label="Дата начала">
+                                <label for="fptFinCustomTo">По</label>
+                                <input id="fptFinCustomTo" type="date" aria-label="Дата окончания">
+                                <button type="button" id="fptFinCustomApplyBtn" class="btn btn-default fpt-fin-custom-range-btn">Применить</button>
+                                <button type="button" id="fptFinCustomResetBtn" class="btn btn-default fpt-fin-custom-range-btn">Сбросить</button>
                                 <span id="fptFinCustomRangeError" class="fpt-fin-custom-range-error" role="alert"></span>
                             </div>
                         </div>
@@ -1196,11 +1223,12 @@ function createMainPopup() {
                     <div class="fpt-fin-tab-pane" data-subtab="profit">
                         <div class="fpt-fin-grid">
                             <div class="fpt-fin-col-12 fpt-fin-profit-cost-warning-col fpt-fin-control-hidden" id="fptFinProfitCostWarning" role="status" aria-live="polite" aria-hidden="true">
-                                <div class="fpt-fin-profit-cost-warning">
+                                <div class="fpt-fin-profit-cost-warning is-loading">
                                     <span class="material-symbols-rounded fpt-fin-profit-cost-warning-icon" aria-hidden="true">warning_amber</span>
                                     <div class="fpt-fin-profit-cost-warning-copy">
-                                        <strong>Нет заказов с указанной себестоимостью</strong>
-                                        <span>Прибыль, маржинальность и ROI пока нельзя рассчитать.</span>
+                                        <strong>Загружаем данные о себестоимости</strong>
+                                        <span>Проверяем покрытие завершённых заказов за выбранный период.</span>
+                                        <button type="button" class="fpt-fin-profit-cost-warning-action" id="fptFinProfitCostWarningAction" hidden></button>
                                     </div>
                                 </div>
                             </div>
@@ -1367,7 +1395,7 @@ function createMainPopup() {
                                         <h5 class="fpt-fin-card-title">Таблица активных предложений</h5>
                                         <span class="fpt-fin-empty-badge" id="fptFinPotCountBadge"><span class="material-symbols-rounded">storefront</span> 0 лотов</span>
                                     </div>
-                                    <div class="fpt-fin-table-wrap">
+                                    <div class="fpt-fin-table-wrap fpt-fin-pot-table-wrap" id="fptFinPotTableWrap">
                                         <table class="fpt-fin-table" id="fptFinPotTable">
                                             <thead>
                                                 <tr>
@@ -1394,6 +1422,11 @@ function createMainPopup() {
                                                 </tr>
                                             </tbody>
                                         </table>
+                                    </div>
+                                    <div class="fpt-fin-empty-state fpt-fin-pot-empty fpt-fin-control-hidden" id="fptFinPotEmptyState" role="status" aria-hidden="true">
+                                        <span class="material-symbols-rounded fpt-fin-empty-icon" aria-hidden="true">inventory_2</span>
+                                        <strong class="fpt-fin-empty-title" id="fptFinPotEmptyTitle">Нет активных предложений</strong>
+                                        <span class="fpt-fin-empty-desc" id="fptFinPotEmptyDescription">Добавьте или активируйте лоты, чтобы увидеть их потенциал.</span>
                                     </div>
                                 </div>
                             </div>
@@ -1584,16 +1617,11 @@ function createMainPopup() {
                     <label style="margin-top: 20px;">Консоль логов:</label>
                     <div id="autoBumpConsole" class="fp-tools-console"></div>
                 </div>
-                <div class="fp-tools-page-content" data-page="notes">
-                    <h3>Заметки</h3>
-                    <p class="template-info">Это ваш личный блокнот. Текст сохраняется автоматически при вводе и доступен между сессиями браузера.</p>
-                    <textarea id="fpToolsNotesArea" class="template-input" style="height: 80%; resize: none; min-height: 400px;" placeholder="Запишите сюда что-нибудь важное: список дел, временные данные для покупателя, идеи для новых лотов..."></textarea>
-                </div>
                 <div class="fp-tools-page-content" data-page="global_chat">
                     <h3>Чат сообщества</h3>
                     <p class="template-info">Чат для пользователей расширения</p>
                     
-                    <!-- ЗАМЕТКА С ПРАВИЛАМИ И ПРЕДУПРЕЖДЕНИЕМ -->
+                    <!-- ПРЕДУПРЕЖДЕНИЕ О ПРАВИЛАХ ЧАТА -->
                     <div class="fpt-gc-disclaimer" style="flex-direction: column; gap: 10px;">
                         <div style="display:flex; align-items:flex-start; gap: 6px;">
                             <span class="material-symbols-rounded" style="color:#e05252;">shield</span>
@@ -2325,6 +2353,18 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-content{ background:var(--fptm-bg) !important; color:var(--fptm-text) !important; }
 .fp-tools-popup.fptm-themed .fp-tools-content::-webkit-scrollbar-track{ background:transparent !important; }
 .fp-tools-popup.fptm-themed .fp-tools-content::-webkit-scrollbar-thumb{ background:var(--fptm-border) !important; }
+.fp-tools-popup.fptm-themed .fp-tools-content.fpt-start-state-active{ display:flex; align-items:center; justify-content:center; }
+.fp-tools-popup.fptm-themed .fp-tools-start-screen{
+    box-sizing:border-box; width:100%; min-height:100%; display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:12px; padding:36px; text-align:center; color:var(--fptm-text);
+}
+.fp-tools-popup.fptm-themed .fp-tools-content.fpt-start-state-active .fp-tools-start-screen{ display:flex; }
+.fp-tools-popup.fptm-themed .fp-tools-start-screen-icon{
+    width:64px; height:64px; display:inline-flex; align-items:center; justify-content:center; border-radius:22px;
+    background:var(--fptm-accent-soft); color:var(--fptm-accent); font-size:32px;
+}
+.fp-tools-popup.fptm-themed .fp-tools-start-screen h2{ margin:4px 0 0; color:var(--fptm-text); font-size:22px; font-weight:650; }
+.fp-tools-popup.fptm-themed .fp-tools-start-screen p{ max-width:360px; margin:0; color:var(--fptm-muted); font-size:14px; line-height:1.55; }
 .fp-tools-popup.fptm-themed .setting-group,
 .fp-tools-popup.fptm-themed .template-container,
 .fp-tools-popup.fptm-themed .fp-tools-console,
@@ -2540,17 +2580,21 @@ const FPT_MENU_THEME_CSS = `
 `;
 
 function fptParseMenuColors() {
-    const pick = (sel) => document.querySelector(sel);
-    const candidates = [pick('.content-account'), pick('.content'), pick('.container'), document.body, document.documentElement].filter(Boolean);
-    let bgStr = '';
-    for (const el of candidates) {
-        const b = getComputedStyle(el).backgroundColor;
-        if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') { bgStr = b; break; }
-    }
-    if (!bgStr) bgStr = getComputedStyle(document.body).backgroundColor || 'rgb(255,255,255)';
-    const rgb = (bgStr.match(/\d+/g) || [255, 255, 255]).map(Number);
-    const lum = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]);
-    const isLight = lum > 140;
+    let isLight = true;
+    try {
+        // Используем тот же детектор, что задаёт общую палитру поверхностей.
+        // Локальные карточки вроде .content-account могут быть тёмными и при
+        // светлой теме страницы, поэтому не определяем режим по первому блоку.
+        if (typeof fptComputePalette === 'function') {
+            isLight = !fptComputePalette().dark;
+        } else if (typeof fptResolveBg === 'function' && typeof fptLuma === 'function') {
+            isLight = fptLuma(fptResolveBg()) >= 0.5;
+        } else {
+            const bodyColor = getComputedStyle(document.body).backgroundColor;
+            const rgb = (bodyColor.match(/\d+/g) || [255, 255, 255]).map(Number);
+            isLight = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) >= 127.5;
+        }
+    } catch (_) {}
 
     // Акцент: фирменная голубая кнопка FunPay, иначе фирменный голубой #1b75bb.
     let accent = '';
@@ -3035,11 +3079,10 @@ const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     overview: 'Справочник функций',
     tickets: 'Поддержка FunPay',
     global_chat: 'Чат сообщества',
-    notes: 'Заметки',
     support: 'Оценить расширение'
 });
 
-const FPT_NAV_QUICK_ACTIONS = Object.freeze(['notes', 'support']);
+const FPT_NAV_QUICK_ACTIONS = Object.freeze(['support']);
 const FPT_NAV_EXPANDED_STORAGE_KEY = 'fpToolsNavExpandedSectionsV2';
 const FPT_NAV_COLLAPSED_STORAGE_KEY = 'fpToolsNavCollapsed';
 
@@ -3319,6 +3362,15 @@ function setupNavigationSections(toolsPopup) {
             expandedSections = new Set(normalizeSectionIds(snapshot.expandedSections));
             focusedSection = sectionById.has(snapshot.focusedSection) ? snapshot.focusedSection : null;
             renderExpandedSections();
+        },
+        resetForInitialOpen() {
+            cancelPendingCompactSection();
+            collapsedUserChanged = true;
+            expandedSectionsUserChanged = true;
+            activeSection = null;
+            focusedSection = null;
+            setNavCollapsed(false, false);
+            setExpandedSections([], false);
         }
     };
     toolsPopup._fptNavSections = api;
@@ -3539,6 +3591,9 @@ async function openPopupPage(pageId, options = {}) {
     toolsPopup.querySelectorAll('.fp-tools-page-content').forEach(page => {
         page.classList.toggle('active', page === pageNode);
     });
+    const content = toolsPopup.querySelector('.fp-tools-content');
+    content?.classList.remove('fpt-start-state-active');
+    toolsPopup.querySelector('#fpToolsStartScreen')?.setAttribute('aria-hidden', 'true');
     toolsPopup._fptCurrentPageId = targetPageId;
 
     let stored = {};
@@ -3596,7 +3651,6 @@ async function openPopupPage(pageId, options = {}) {
         };
         if (targetPageId === 'epic_nicks') initialize('renderEpicPreviews');
         if (targetPageId === 'finance_hub') initialize('initializeFinanceHub');
-        if (targetPageId === 'notes') initialize('initializeNotes');
         if (targetPageId === 'global_chat') initialize('initializeGlobalChat');
         if (targetPageId === 'templates') {
             initialize('setupTemplateSettingsHandlers');
@@ -4610,6 +4664,15 @@ function setupNavSearch(toolsPopup) {
 
     toolsPopup._fptNavSearch = {
         buildFeatureIndex,
+        resetForPopupStart() {
+            cancelPendingSearchRender();
+            input.value = '';
+            currentSearchQuery = '';
+            searchNavStateSnapshot = null;
+            applyFilter('');
+            clearResultsImmediately();
+            input.blur();
+        },
         refreshVisibility() {
             currentSearchQuery = norm(input.value);
             applyFilter(input.value);
@@ -4618,6 +4681,32 @@ function setupNavSearch(toolsPopup) {
     };
 }
 
+
+function resetPopupStartState() {
+    const toolsPopup = document.querySelector('.fp-tools-popup');
+    if (!toolsPopup) return false;
+
+    toolsPopup._fptRouteVersion = (toolsPopup._fptRouteVersion || 0) + 1;
+    if (toolsPopup._fptCurrentPageId === 'finance_hub'
+        && window.fptFinanceHub && typeof window.fptFinanceHub.onPageLeave === 'function') {
+        window.fptFinanceHub.onPageLeave();
+    }
+
+    if (toolsPopup._fptNavSearch?.resetForPopupStart) toolsPopup._fptNavSearch.resetForPopupStart();
+    getPopupNavigationActions(toolsPopup).forEach(item => item.classList.remove('active'));
+    toolsPopup.querySelectorAll('.fp-tools-page-content').forEach(page => page.classList.remove('active'));
+    toolsPopup._fptCurrentPageId = null;
+
+    const content = toolsPopup.querySelector('.fp-tools-content');
+    content?.classList.add('fpt-start-state-active');
+    if (content) content.scrollTop = 0;
+    toolsPopup.querySelector('#fpToolsStartScreen')?.setAttribute('aria-hidden', 'false');
+    const wallpaperCarousel = toolsPopup.querySelector('#fp-wallpaper-carousel');
+    if (wallpaperCarousel) wallpaperCarousel.style.display = 'none';
+
+    if (toolsPopup._fptNavSections?.resetForInitialOpen) toolsPopup._fptNavSections.resetForInitialOpen();
+    return true;
+}
 
 async function loadLastActivePage() {
     let fpToolsLastPage = null;

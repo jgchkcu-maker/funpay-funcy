@@ -254,17 +254,6 @@ const FPT_FEATURE_REGISTRY = [
         preview: { kind: 'html', html: '<div class="fpt-pv-buyrow"><span class="fpt-pv-fpbtn" style="background:#7c5cff;color:#fff;">Копировать</span></div>' }
     },
 
-    // ───────────── Заметки ─────────────
-    {
-        id: 'lot_notes_chat_btn',
-        label: 'Кнопка «Заметка» в чате',
-        desc: 'Тонкая кнопка «📝 Заметка» под панелью «Покупатель смотрит» в чате — показывается, если у просматриваемого лота есть твоя личная заметка. Клик открывает заметку.',
-        group: 'Чат',
-        subgroup: 'Действия в диалоге',
-        selector: '.fpt-chat-note-btn',
-        preview: { kind: 'html', html: '<div class="fpt-pv-fpbtn" style="color:#7c5cff;border-color:#7c5cff;">📝 Заметка</div>' }
-    },
-
     // ───────────── Свои лоты ─────────────
     {
         id: 'lot_delete_btn',
@@ -362,7 +351,7 @@ const FPT_FEATURE_REGISTRY = [
     {
         id: 'notes_add_status_btn',
         label: 'Пункт «Добавить новую метку»',
-        desc: 'Пункт «+ Добавить новую метку» в меню статусов/меток собеседника (заметки о пользователях).',
+        desc: 'Пункт «+ Добавить новую метку» в меню статусов и меток собеседника.',
         group: 'Список лотов и профиль',
         selector: '#fp-tools-add-status-btn',
         preview: { kind: 'html', html: '<div class="fpt-pv-menu"><a>+ Добавить новую метку</a></div>' }

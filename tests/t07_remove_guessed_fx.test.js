@@ -2,10 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeDataSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_data.js'), 'utf8').replace(/\r\n/g, '\n');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
+const financeHubOperationsSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'operations.js'), 'utf8').replace(/\r\n/g, '\n');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. СТАТИЧЕСКИЕ ПРОВЕРКИ (T07)
@@ -20,10 +22,10 @@ function runStaticChecks() {
     assert.doesNotMatch(financeDataSource, /absVal \* \(rates\[cur\] \|\| 0\)/, 'finance_data.js must not convert operations using guessed rates');
 
     // 3. Safe UX message must be present in finance_hub.js
-    assert.match(financeHubSource, /Выберите валюту для отображения денежного графика/, 'finance_hub.js must contain Safe UX message for multi-currency');
+    assert.match(financeHubOperationsSource, /Выберите валюту для отображения денежного графика/, 'operations renderer must contain Safe UX message for multi-currency');
 
     // 4. Old normalization label in operations legend must be removed
-    assert.doesNotMatch(financeHubSource, /визуальная ось нормализована к ₽/, 'finance_hub.js must not claim visual axis is normalized to RUB');
+    assert.doesNotMatch(financeHubOperationsSource, /визуальная ось нормализована к ₽/, 'operations renderer must not claim visual axis is normalized to RUB');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -139,7 +141,7 @@ function setupEnvironment() {
 
     vm.createContext(sandbox);
     vm.runInContext(financeDataSource, sandbox);
-    vm.runInContext(financeHubSource, sandbox);
+    loadFinanceHub(vm, sandbox);
 
     return {
         finData: sandbox.FPTFinanceData,
