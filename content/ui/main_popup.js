@@ -2540,17 +2540,21 @@ const FPT_MENU_THEME_CSS = `
 `;
 
 function fptParseMenuColors() {
-    const pick = (sel) => document.querySelector(sel);
-    const candidates = [pick('.content-account'), pick('.content'), pick('.container'), document.body, document.documentElement].filter(Boolean);
-    let bgStr = '';
-    for (const el of candidates) {
-        const b = getComputedStyle(el).backgroundColor;
-        if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') { bgStr = b; break; }
-    }
-    if (!bgStr) bgStr = getComputedStyle(document.body).backgroundColor || 'rgb(255,255,255)';
-    const rgb = (bgStr.match(/\d+/g) || [255, 255, 255]).map(Number);
-    const lum = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]);
-    const isLight = lum > 140;
+    let isLight = true;
+    try {
+        // Используем тот же детектор, что задаёт общую палитру поверхностей.
+        // Локальные карточки вроде .content-account могут быть тёмными и при
+        // светлой теме страницы, поэтому не определяем режим по первому блоку.
+        if (typeof fptComputePalette === 'function') {
+            isLight = !fptComputePalette().dark;
+        } else if (typeof fptResolveBg === 'function' && typeof fptLuma === 'function') {
+            isLight = fptLuma(fptResolveBg()) >= 0.5;
+        } else {
+            const bodyColor = getComputedStyle(document.body).backgroundColor;
+            const rgb = (bodyColor.match(/\d+/g) || [255, 255, 255]).map(Number);
+            isLight = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) >= 127.5;
+        }
+    } catch (_) {}
 
     // Акцент: фирменная голубая кнопка FunPay, иначе фирменный голубой #1b75bb.
     let accent = '';
