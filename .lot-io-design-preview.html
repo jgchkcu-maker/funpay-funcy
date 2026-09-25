@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lot management design preview</title>
+<link rel="stylesheet" href="css/content_styles.css">
+<link rel="stylesheet" href="css/fpt_icons_theme.css">
+<style>
+:root { --fptm-bg:#f8fafc; --fptm-surface:#fff; --fptm-surface-2:#f6f9fc; --fptm-text:#111827; --fptm-muted:#68778c; --fptm-border:#e2eaf3; --fptm-field:#f3f6fa; --fptm-hover:#edf5ff; }
+html,body { min-height:100%; margin:0; background:#edf2f8; color:#111827; font-family:Inter,'Segoe UI',Arial,sans-serif; }
+.fp-tools-popup { position:static !important; width:min(1322px,calc(100% - 40px)) !important; min-height:976px; height:auto !important; margin:28px auto !important; padding:32px !important; display:block !important; transform:none !important; overflow:visible !important; box-sizing:border-box; border:1px solid #e5eaf1; border-radius:18px; background:#fff !important; box-shadow:0 18px 50px rgba(38,62,91,.12); }
+.fp-tools-content { display:block !important; width:100%; min-height:900px; max-height:none !important; padding:0 !important; overflow:visible !important; background:transparent !important; container-type:inline-size; container-name:fpt-content; }
+.fp-tools-page-content.active { display:block !important; animation:none !important; }
+</style>
+</head>
+<body>
+<div class="fp-tools-popup fptm-themed active">
+<div class="fp-tools-content">
+<div class="fp-tools-page-content active" data-page="lot_io">
+                    <h3 class="lot-io-page-title">Управление лотами</h3>
+
+                    <section class="lot-io-card lot-io-info-card" aria-label="Инструменты для работы с лотами">
+                        <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">info</span></div>
+                        <div class="lot-io-card-copy">
+                            <p class="lot-io-lead">Здесь собраны инструменты для массовой работы с вашими лотами.</p>
+                            <ul class="lot-io-feature-list">
+                                <li><strong>Экспорт/Импорт:</strong> Сохраняйте все свои лоты в файл и восстанавливайте их на любом аккаунте.</li>
+                                <li><strong>Массовое управление:</strong> На странице вашего профиля (<code>funpay.com/users/ID</code>) или в категории с вашими лотами появится кнопка «Выбрать» для массового удаления, дублирования или изменения цен.</li>
+                                <li><strong>Продвинутое клонирование:</strong> На странице редактирования лота кнопка «Копировать» позволяет создавать копии в разных категориях (например, на разных серверах).</li>
+                                <li><strong>Автоподнятие:</strong> Настройте автоматическое поднятие лотов по таймеру. <a class="lot-io-inline-link" href="#" onclick="document.querySelector('.fp-tools-nav li[data-page=autobump] a').click(); return false;">Перейти к настройке.</a></li>
+                            </ul>
+                        </div>
+                    </section>
+
+                    <section class="lot-io-card lot-io-export-card" aria-labelledby="lot-io-export-title">
+                        <div class="lot-io-card-top">
+                            <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">upload</span></div>
+                            <div class="lot-io-card-copy">
+                                <h4 id="lot-io-export-title">Экспорт и импорт лотов</h4>
+                                <p class="lot-io-description">Создайте полную резервную копию всех ваших лотов в файл JSON. Этот файл можно использовать для переноса лотов на другой аккаунт или для восстановления.</p>
+                            </div>
+                        </div>
+                        <div class="lot-io-buttons">
+                            <button type="button" id="lot-io-export-btn" class="btn lot-io-action-btn lot-io-action-primary">
+                                <span class="material-symbols-rounded" aria-hidden="true">upload</span><span>Экспорт</span>
+                            </button>
+                            <button type="button" id="lot-io-import-btn" class="btn btn-default lot-io-action-btn lot-io-action-secondary">
+                                <span class="material-symbols-rounded" aria-hidden="true">download</span><span>Импорт</span>
+                            </button>
+                            <input type="file" id="lot-io-import-file" accept=".json" style="display: none;">
+                        </div>
+                    </section>
+
+                    <section class="lot-io-card lot-io-editor-card" aria-labelledby="lot-io-editor-title">
+                        <div class="lot-io-card-top">
+                            <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">edit</span></div>
+                            <div class="lot-io-card-copy">
+                                <h4 id="lot-io-editor-title">Массовое редактирование</h4>
+                                <p class="lot-io-description">Измените название, описание или сообщение покупателю сразу у нескольких лотов.</p>
+                                <button type="button" id="fp-bulk-edit-btn" class="btn btn-default lot-io-bulk-edit-btn">
+                                    <span class="material-symbols-rounded" aria-hidden="true">edit</span><span>Массово изменить лоты</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="lot-io-card-footer">
+                            <a href="#" id="convert-cardinal-lots-btn">Конвертер лотов FunPay Cardinal → FunPay Funcy</a>
+                        </div>
+                    </section>
+
+                    <section class="lot-io-card lot-io-pending-card" aria-labelledby="lot-io-pending-title">
+                        <div class="lot-io-card-top">
+                            <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">schedule</span></div>
+                            <div class="lot-io-card-copy">
+                                <h4 id="lot-io-pending-title">Незавершённые импорты</h4>
+                                <div id="lot-io-pending-imports-list" aria-live="polite">
+                                    <p class="lot-io-description">Здесь будут отображаться отложенные процессы импорта.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                
+</div>
+</div>
+</body>
+</html>
+

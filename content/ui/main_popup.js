@@ -707,34 +707,67 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content active" data-page="lot_io">
-                    <h3>Управление лотами</h3>
-                    <div class="template-info" style="padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px;">
-                        <p style="margin-top:0;">Здесь собраны инструменты для массовой работы с вашими лотами.</p>
-                        <ul style="padding-left: 20px; margin-bottom: 0;">
-                            <li><strong>Экспорт/Импорт:</strong> Сохраняйте все свои лоты в файл и восстанавливайте их на любом аккаунте.</li>
-                            <li><strong>Массовое управление:</strong> На странице вашего профиля (<code>funpay.com/users/ID</code>) или в категории с вашими лотами появится кнопка "Выбрать" для массового удаления, дублирования или изменения цен.</li>
-                            <li><strong>Продвинутое клонирование:</strong> На странице редактирования лота кнопка "Копировать" позволяет создавать копии в разных категориях (например, на разных серверах).</li>
-                            <li><strong>Автоподнятие:</strong> Настройте автоматическое поднятие лотов по таймеру. <a href="#" onclick="document.querySelector('.fp-tools-nav li[data-page=autobump] a').click(); return false;">Перейти к настройке</a>.</li>
-                        </ul>
-                    </div>
-                    
-                    <h4 style="margin-top: 30px;">Экспорт и импорт лотов</h4>
-                    <p class="template-info">Создайте полную резервную копию всех ваших лотов в файл JSON. Этот файл можно использовать для переноса лотов на другой аккаунт или для восстановления.</p>
-                    <div class="lot-io-buttons">
-                        <button id="lot-io-export-btn" class="btn"><span class="material-icons">file_upload</span>Экспорт</button>
-                        <button id="lot-io-import-btn" class="btn btn-default"><span class="material-icons">file_download</span>Импорт</button>
-                        <input type="file" id="lot-io-import-file" accept=".json" style="display: none;">
-                    </div>
-                    <h4 style="margin-top: 30px;">Массовое редактирование</h4>
-                    <p class="template-info">Измените название, описание или сообщение покупателю сразу у нескольких лотов.</p>
-                    <button id="fp-bulk-edit-btn" class="btn btn-default" style="width:auto;padding:8px 16px;"><span class="material-symbols-rounded" style="font-size:16px;vertical-align:-3px;margin-right:5px;">edit</span>Массово изменить лоты</button>
+                    <h3 class="lot-io-page-title">Управление лотами</h3>
 
-                    <a href="#" id="convert-cardinal-lots-btn" style="display: block; text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; color: var(--fptm-muted, #a0a0a0); text-decoration: underline;">Конвертер лотов FunPay Cardinal → FunPay Funcy</a>
+                    <section class="lot-io-card lot-io-info-card" aria-label="Инструменты для работы с лотами">
+                        <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">info</span></div>
+                        <div class="lot-io-card-copy">
+                            <p class="lot-io-lead">Здесь собраны инструменты для массовой работы с вашими лотами.</p>
+                            <ul class="lot-io-feature-list">
+                                <li><strong>Экспорт/Импорт:</strong> Сохраняйте все свои лоты в файл и восстанавливайте их на любом аккаунте.</li>
+                                <li><strong>Массовое управление:</strong> На странице вашего профиля (<code>funpay.com/users/ID</code>) или в категории с вашими лотами появится кнопка «Выбрать» для массового удаления, дублирования или изменения цен.</li>
+                                <li><strong>Продвинутое клонирование:</strong> На странице редактирования лота кнопка «Копировать» позволяет создавать копии в разных категориях (например, на разных серверах).</li>
+                                <li><strong>Автоподнятие:</strong> Настройте автоматическое поднятие лотов по таймеру. <a class="lot-io-inline-link" href="#" onclick="document.querySelector('.fp-tools-nav li[data-page=autobump] a').click(); return false;">Перейти к настройке.</a></li>
+                            </ul>
+                        </div>
+                    </section>
 
-                    <h4 style="margin-top: 30px;">Незавершённые импорты</h4>
-                    <div id="lot-io-pending-imports-list">
-                        <p class="template-info">Здесь будут отображаться отложенные процессы импорта.</p>
-                    </div>
+                    <section class="lot-io-card lot-io-export-card" aria-labelledby="lot-io-export-title">
+                        <div class="lot-io-card-top">
+                        <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">file_upload</span></div>
+                            <div class="lot-io-card-copy">
+                                <h4 id="lot-io-export-title">Экспорт и импорт лотов</h4>
+                                <p class="lot-io-description">Создайте полную резервную копию всех ваших лотов в файл JSON. Этот файл можно использовать для переноса лотов на другой аккаунт или для восстановления.</p>
+                            </div>
+                        </div>
+                        <div class="lot-io-buttons">
+                            <button type="button" id="lot-io-export-btn" class="btn lot-io-action-btn lot-io-action-primary">
+                                <span class="material-symbols-rounded" aria-hidden="true">file_upload</span><span>Экспорт</span>
+                            </button>
+                            <button type="button" id="lot-io-import-btn" class="btn btn-default lot-io-action-btn lot-io-action-secondary">
+                                <span class="material-symbols-rounded" aria-hidden="true">file_download</span><span>Импорт</span>
+                            </button>
+                            <input type="file" id="lot-io-import-file" accept=".json" style="display: none;">
+                        </div>
+                    </section>
+
+                    <section class="lot-io-card lot-io-editor-card" aria-labelledby="lot-io-editor-title">
+                        <div class="lot-io-card-top">
+                            <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">edit</span></div>
+                            <div class="lot-io-card-copy">
+                                <h4 id="lot-io-editor-title">Массовое редактирование</h4>
+                                <p class="lot-io-description">Измените название, описание или сообщение покупателю сразу у нескольких лотов.</p>
+                                <button type="button" id="fp-bulk-edit-btn" class="btn btn-default lot-io-bulk-edit-btn">
+                                    <span class="material-symbols-rounded" aria-hidden="true">edit</span><span>Массово изменить лоты</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="lot-io-card-footer">
+                            <a href="#" id="convert-cardinal-lots-btn">Конвертер лотов FunPay Cardinal → FunPay Funcy</a>
+                        </div>
+                    </section>
+
+                    <section class="lot-io-card lot-io-pending-card" aria-labelledby="lot-io-pending-title">
+                        <div class="lot-io-card-top">
+                            <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">schedule</span></div>
+                            <div class="lot-io-card-copy">
+                                <h4 id="lot-io-pending-title">Незавершённые импорты</h4>
+                                <div id="lot-io-pending-imports-list" aria-live="polite">
+                                    <p class="lot-io-description">Здесь будут отображаться отложенные процессы импорта.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
                 <div class="fp-tools-page-content" data-page="finance_hub">
                     <div class="fpt-fin-header">

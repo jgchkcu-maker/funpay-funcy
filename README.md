@@ -38,7 +38,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_ai_assistant.png" width="100%"/>
 </div>
 
 | Функция | Описание |
@@ -59,7 +58,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_themes.png" width="100%"/>
 </div>
 
 | Функция | Описание |
@@ -82,7 +80,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_lot_io.png" width="100%"/>
 </div>
 
 | Функция | Описание |
@@ -110,7 +107,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_autobump.png" width="100%"/>
 </div>
 
 | Функция | Описание |
@@ -136,7 +132,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_autoresponder.png" width="100%"/>
 </div>
 
 *   **Переписан с нуля** - Новый движок фоновых процессов и 5-уровневая защита от сна. Работает без перебоев даже при свёрнутом браузере.
@@ -161,7 +156,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_auto_delivery.png" width="100%"/>
 </div>
 
 *   Полностью переделанный интерфейс: лоты сгруппированы по категориям, у каждого виден остаток товаров.
@@ -178,7 +172,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_templates.png" width="100%"/>
 </div>
 
 *   **Новое меню прикрепления** - Отправляйте несколько фото сразу и добавляйте к ним текст в одном сообщении (уникально, на FunPay стандартно доступно только 1 фото без подписи).
@@ -204,7 +197,6 @@
 </div>
 
 <div align="center">
-  <img src="assets/banner_accounts.png" width="100%"/>
 </div>
 
 *   **Менеджер аккаунтов** - Добавляйте и переключайте аккаунты в любом порядке. Расширение само разбирается с сессиями - мгновенно, без сброса.
@@ -218,7 +210,6 @@
 <div align="center">
 </div>
 
-![how](assets/how.png)
 
 ### 📥 Установка
 
@@ -228,7 +219,6 @@
 
 ---
 
-![start](assets/start.png)
 
 ### 🚀 Как начать
 
