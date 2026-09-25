@@ -341,12 +341,12 @@ async function renderPendingImports() {
                 </div>
             `;
         } else {
-            container.innerHTML = '<p class="template-info">Здесь будут отображаться отложенные процессы импорта.</p>';
+            container.innerHTML = '<p class="lot-io-description">Здесь будут отображаться отложенные процессы импорта.</p>';
         }
         
         container.querySelector('.resume-import-btn')?.addEventListener('click', () => {
             chrome.runtime.sendMessage({ action: 'resumeLotImport' });
-            container.innerHTML = '<p class="template-info">Возобновление...</p>';
+            container.innerHTML = '<p class="lot-io-description">Возобновление...</p>';
         });
         
         container.querySelector('.delete-import-btn')?.addEventListener('click', () => {
@@ -357,6 +357,6 @@ async function renderPendingImports() {
         });
 
     } catch (error) {
-        container.innerHTML = `<p class="template-info" style="color: #ff6b6b;">Ошибка загрузки отложенных импортов: ${error.message}</p>`;
+        container.innerHTML = `<p class="lot-io-description" style="color: #ff6b6b;">Ошибка загрузки отложенных импортов: ${error.message}</p>`;
     }
 }
