@@ -690,6 +690,9 @@ async function loadSavedSettings() {
             restoreImgs('fpt-review-2', ar.reviewTemplateImages['2']);
             restoreImgs('fpt-review-1', ar.reviewTemplateImages['1']);
         }
+        if (typeof updateAutoReviewTemplateStatuses === 'function') {
+            updateAutoReviewTemplateStatuses();
+        }
     }
 
     // Review request template

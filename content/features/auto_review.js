@@ -270,6 +270,76 @@ function setupAutoReplyUI(page, settings) {
     });
 }
 
+function autoReviewTemplateConfigured(textarea) {
+    if (!textarea) return false;
+    if (String(textarea.value || '').trim()) return true;
+    if (!textarea.dataset?.fptImages) return false;
+    try {
+        const images = JSON.parse(textarea.dataset.fptImages);
+        return Array.isArray(images) && images.length > 0;
+    } catch (_) {
+        return false;
+    }
+}
+
+function updateAutoReviewTemplateStatuses() {
+    for (let rating = 1; rating <= 5; rating++) {
+        const textarea = document.getElementById(`fpt-review-${rating}`);
+        const status = document.getElementById(`fpt-review-status-${rating}`);
+        if (!status) continue;
+        const configured = autoReviewTemplateConfigured(textarea);
+        status.textContent = configured ? 'Настроен' : 'Не настроен';
+        status.classList.toggle('is-configured', configured);
+    }
+}
+
+function setupAutoReviewPresentation(page) {
+    if (!page || page.dataset.fptReviewPresentation === 'true') {
+        updateAutoReviewTemplateStatuses();
+        return;
+    }
+    page.dataset.fptReviewPresentation = 'true';
+
+    const reviewEnabled = document.getElementById('autoReviewEnabled');
+    const reviewState = document.getElementById('autoReviewState');
+    const bonusEnabled = document.getElementById('bonusForReviewEnabled');
+    const bonusState = document.getElementById('bonusForReviewState');
+    const bonusBody = document.getElementById('bonusForReviewBody');
+
+    const syncReviewMaster = () => {
+        const enabled = !!reviewEnabled?.checked;
+        if (reviewState) {
+            reviewState.textContent = enabled ? 'Включено' : 'Выключено';
+            reviewState.classList.toggle('is-enabled', enabled);
+        }
+    };
+
+    const syncBonusMaster = () => {
+        const enabled = !!bonusEnabled?.checked;
+        if (bonusBody) bonusBody.hidden = !enabled;
+        if (bonusState) {
+            bonusState.textContent = enabled ? 'Включено' : 'Выключено';
+            bonusState.classList.toggle('is-enabled', enabled);
+        }
+    };
+
+    reviewEnabled?.addEventListener('change', syncReviewMaster);
+    bonusEnabled?.addEventListener('change', syncBonusMaster);
+
+    for (let rating = 1; rating <= 5; rating++) {
+        const textarea = document.getElementById(`fpt-review-${rating}`);
+        textarea?.addEventListener('input', updateAutoReviewTemplateStatuses);
+        if (textarea && typeof MutationObserver === 'function') {
+            const observer = new MutationObserver(updateAutoReviewTemplateStatuses);
+            observer.observe(textarea, { attributes: true, attributeFilter: ['data-fpt-images'] });
+        }
+    }
+
+    syncReviewMaster();
+    syncBonusMaster();
+    updateAutoReviewTemplateStatuses();
+}
+
 function setupAutoReviewUI(page, settings) {
     setAutoReplyCheckbox('autoReviewEnabled', settings.autoReviewEnabled);
     for (let rating = 1; rating <= 5; rating++) {
@@ -282,13 +352,14 @@ function setupAutoReviewUI(page, settings) {
     if (bonusModeRadio) bonusModeRadio.checked = true;
     setAutoReplyValue('singleBonusText', settings.singleBonusText);
     setAutoReplyValue('bonusForReviewDelaySec', settings.bonusForReviewDelaySec);
+    setupAutoReviewPresentation(page);
 
     const singleBonusContainer = document.getElementById('singleBonusContainer');
     const randomBonusContainer = document.getElementById('randomBonusContainer');
     const toggleBonusContainers = () => {
         const selectedMode = document.querySelector('input[name="bonusMode"]:checked')?.value || 'single';
-        singleBonusContainer.style.display = selectedMode === 'single' ? 'block' : 'none';
-        randomBonusContainer.style.display = selectedMode === 'random' ? 'block' : 'none';
+        if (singleBonusContainer) singleBonusContainer.hidden = selectedMode !== 'single';
+        if (randomBonusContainer) randomBonusContainer.hidden = selectedMode !== 'random';
     };
     document.querySelectorAll('input[name="bonusMode"]').forEach(radio => {
         radio.addEventListener('change', toggleBonusContainers);
@@ -390,17 +461,21 @@ function renderBonusesList(bonuses) {
     const listContainer = document.getElementById('bonus-list-container');
     if (!listContainer) return;
     if (!bonuses || bonuses.length === 0) {
-        listContainer.innerHTML = '<p class="template-info" style="text-align:center;">Добавьте хотя бы один бонус.</p>';
+        listContainer.innerHTML =
+            '<div class="fpt-ui-state fp-review-bonus-empty">' +
+                '<p class="fpt-ui-state-title">Список бонусов пуст</p>' +
+                '<p class="fpt-ui-state-text">Добавьте хотя бы один вариант, чтобы случайный режим мог выбрать сообщение.</p>' +
+            '</div>';
         return;
     }
 
-    const esc = (value) => String(value == null ? '' : value)
+    const esc = value => String(value == null ? '' : value)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
     listContainer.innerHTML = bonuses.map((text, index) => `
-        <div class="bonus-item">
-            <span class="bonus-text">${esc(text)}</span>
-            <button class="btn btn-default delete-bonus-btn" data-index="${index}" data-value="${esc(text)}">Удалить</button>
+        <div class="bonus-item fp-review-bonus-item">
+            <span class="bonus-text fp-review-bonus-text">${esc(text)}</span>
+            <button type="button" class="fpt-ui-button fpt-ui-button--tertiary fp-review-bonus-delete delete-bonus-btn" data-index="${index}" data-value="${esc(text)}">Удалить</button>
         </div>
     `).join('');
 }

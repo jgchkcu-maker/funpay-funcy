@@ -580,72 +580,179 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content" data-page="auto_review">
-                    <h3>Ответы на отзывы</h3>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="autoReviewEnabled">
-                        <label for="autoReviewEnabled" style="margin-bottom:0;"><span>Включить автоматический ответ на отзывы</span></label>
-                    </div>
-                    <p class="template-info">Расширение будет автоматически отвечать на новые отзывы, используя заданные шаблоны. Ответ не будет отправлен, если вы уже ответили вручную.</p>
-                    <div class="template-variables-guide" style="margin-bottom: 15px;">
-                        <h5>Переменные в ответах на отзывы</h5>
-                        <ul class="variables-list">
-                            <li><span class="variable-code">{buyername}</span> - Имя покупателя.</li>
-                            <li><span class="variable-code">{lotname}</span> - Название купленного товара.</li>
-                            <li><span class="variable-code">{orderid}</span> - Номер заказа.</li>
-                            <li><span class="variable-code">{orderlink}</span> - Ссылка на заказ.</li>
-                            <li><span class="variable-code">{date}</span> - Текущая дата.</li>
-                            <li><span class="variable-code">{welcome}</span> - Приветствие по времени суток.</li>
-                        </ul>
-                    </div>
-                    <div class="review-templates-grid">
-                        <div class="template-container">
-                            <label for="fpt-review-5" class="fpt-stars"><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span></label>
-                            <textarea id="fpt-review-5" class="template-input" placeholder="Шаблон для 5 звёзд"></textarea>
+                    <header class="fpt-ui-page-header fp-review-page-header">
+                        <div class="fp-review-page-header-copy">
+                            <h3 class="fpt-ui-page-title fp-review-page-title">Отзывы и бонусы</h3>
+                            <p class="fpt-ui-helper fp-review-page-description">Автоматически отвечайте на отзывы по оценке и отправляйте бонус покупателю за отзыв 5 звёзд.</p>
                         </div>
-                        <div class="template-container">
-                            <label for="fpt-review-4" class="fpt-stars"><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span></label>
-                            <textarea id="fpt-review-4" class="template-input" placeholder="Шаблон для 4 звёзд"></textarea>
-                        </div>
-                        <div class="template-container">
-                            <label for="fpt-review-3" class="fpt-stars"><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span></label>
-                            <textarea id="fpt-review-3" class="template-input" placeholder="Шаблон для 3 звёзд"></textarea>
-                        </div>
-                        <div class="template-container">
-                            <label for="fpt-review-2" class="fpt-stars"><span class="material-symbols-rounded">star</span><span class="material-symbols-rounded">star</span></label>
-                            <textarea id="fpt-review-2" class="template-input" placeholder="Шаблон для 2 звёзд"></textarea>
-                        </div>
-                        <div class="template-container">
-                            <label for="fpt-review-1" class="fpt-stars"><span class="material-symbols-rounded">star</span></label>
-                            <textarea id="fpt-review-1" class="template-input" placeholder="Шаблон для 1 звезды"></textarea>
-                        </div>
-                    </div>
-                    
-                    <h3>Бонус за отзыв</h3>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="bonusForReviewEnabled">
-                        <label for="bonusForReviewEnabled" style="margin-bottom:0;"><span>Отправлять бонус в чат за отзыв 5 <span class="material-symbols-rounded" style="font-size:15px;vertical-align:-2px;color:#f4c84a;">star</span></span></label>
-                    </div>
-                    <p class="template-info">Если покупатель оставит отзыв 5 звёзд, ему в чат будет автоматически отправлено сообщение с бонусом. Ничего не будет отправлено за оценки ниже 5 звёзд.</p>
-                    <div class="fp-tools-radio-group" id="bonusModeSelector">
-                        <label class="fp-tools-radio-option"><input type="radio" name="bonusMode" value="single" checked><span>Один бонус</span></label>
-                        <label class="fp-tools-radio-option"><input type="radio" name="bonusMode" value="random"><span>Случайный из списка</span></label>
-                    </div>
-                    <div id="singleBonusContainer" class="template-container">
-                        <textarea id="singleBonusText" class="template-input" placeholder="Текст вашего бонуса..."></textarea>
-                    </div>
-                    <div id="randomBonusContainer" class="template-container" style="display: none;">
-                        <div id="bonus-list-container" class="bonus-list"></div>
-                        <div class="bonus-add-form">
-                            <textarea id="newBonusText" placeholder="Текст нового бонуса для списка..."></textarea>
-                            <button id="addBonusBtn" class="btn btn-default">Добавить бонус в список</button>
-                        </div>
-                    </div>
-                    <div class="template-container" style="margin-top:8px;">
-                        <label for="bonusForReviewDelaySec" style="display:block;margin-bottom:4px;">Задержка перед отправкой бонуса (сек)</label>
-                        <input type="number" id="bonusForReviewDelaySec" class="template-input" min="0" max="60" step="1" value="4" style="max-width:120px;">
-                        <p class="template-info">Пауза между ответом на отзыв и сообщением с бонусом. Без паузы ответ на отзыв в некоторых случаях может не отправиться. Рекомендуется 3-5 секунд.</p>
-                    </div>
+                    </header>
 
+                    <section class="fpt-ui-surface fp-review-card" aria-labelledby="fp-review-replies-title">
+                        <div class="fp-review-master-row">
+                            <label class="fp-review-master-copy" for="autoReviewEnabled">
+                                <span id="fp-review-replies-title" class="fpt-ui-section-title">Ответы на отзывы</span>
+                                <span class="fpt-ui-helper fp-review-master-description">Ответ не отправляется автоматически, если вы уже ответили покупателю вручную.</span>
+                            </label>
+                            <div class="fp-review-master-control">
+                                <span id="autoReviewState" class="fp-review-state-label">Выключено</span>
+                                <input type="checkbox" id="autoReviewEnabled" class="fp-review-master-checkbox">
+                            </div>
+                        </div>
+
+                        <details class="fp-review-variables">
+                            <summary class="fp-review-variables-summary">
+                                <span>Переменные в ответах</span>
+                                <span class="fp-review-variables-chevron" aria-hidden="true"></span>
+                            </summary>
+                            <div class="fp-review-variable-grid">
+                                <div class="fp-review-variable"><code>{buyername}</code><span>имя покупателя</span></div>
+                                <div class="fp-review-variable"><code>{lotname}</code><span>название товара</span></div>
+                                <div class="fp-review-variable"><code>{orderid}</code><span>номер заказа</span></div>
+                                <div class="fp-review-variable"><code>{orderlink}</code><span>ссылка на заказ</span></div>
+                                <div class="fp-review-variable"><code>{date}</code><span>текущая дата</span></div>
+                                <div class="fp-review-variable"><code>{welcome}</code><span>приветствие по времени суток</span></div>
+                            </div>
+                        </details>
+
+                        <div class="fp-review-template-list">
+                        <details class="fp-review-template" data-rating="5">
+                            <summary class="fp-review-template-summary">
+                                <span class="fp-review-template-name">
+                                    <span class="fp-review-stars" aria-label="5 звёзд">★★★★★</span>
+                                    <span>Ответ для 5 звёзд</span>
+                                </span>
+                                <span class="fp-review-template-meta">
+                                    <span id="fpt-review-status-5" class="fp-review-template-status">Не настроен</span>
+                                    <span class="fp-review-template-chevron" aria-hidden="true"></span>
+                                </span>
+                            </summary>
+                            <div class="fp-review-template-body">
+                                <label class="fp-review-field-label" for="fpt-review-5">Текст ответа</label>
+                                <textarea id="fpt-review-5" class="template-input fp-review-textarea" placeholder="Шаблон для 5 звёзд"></textarea>
+                                <div class="fp-review-editor-actions" data-editor-actions-for="fpt-review-5"></div>
+                            </div>
+                        </details>
+                        <details class="fp-review-template" data-rating="4">
+                            <summary class="fp-review-template-summary">
+                                <span class="fp-review-template-name">
+                                    <span class="fp-review-stars" aria-label="4 звёзд">★★★★</span>
+                                    <span>Ответ для 4 звёзд</span>
+                                </span>
+                                <span class="fp-review-template-meta">
+                                    <span id="fpt-review-status-4" class="fp-review-template-status">Не настроен</span>
+                                    <span class="fp-review-template-chevron" aria-hidden="true"></span>
+                                </span>
+                            </summary>
+                            <div class="fp-review-template-body">
+                                <label class="fp-review-field-label" for="fpt-review-4">Текст ответа</label>
+                                <textarea id="fpt-review-4" class="template-input fp-review-textarea" placeholder="Шаблон для 4 звёзд"></textarea>
+                                <div class="fp-review-editor-actions" data-editor-actions-for="fpt-review-4"></div>
+                            </div>
+                        </details>
+                        <details class="fp-review-template" data-rating="3">
+                            <summary class="fp-review-template-summary">
+                                <span class="fp-review-template-name">
+                                    <span class="fp-review-stars" aria-label="3 звёзд">★★★</span>
+                                    <span>Ответ для 3 звёзд</span>
+                                </span>
+                                <span class="fp-review-template-meta">
+                                    <span id="fpt-review-status-3" class="fp-review-template-status">Не настроен</span>
+                                    <span class="fp-review-template-chevron" aria-hidden="true"></span>
+                                </span>
+                            </summary>
+                            <div class="fp-review-template-body">
+                                <label class="fp-review-field-label" for="fpt-review-3">Текст ответа</label>
+                                <textarea id="fpt-review-3" class="template-input fp-review-textarea" placeholder="Шаблон для 3 звёзд"></textarea>
+                                <div class="fp-review-editor-actions" data-editor-actions-for="fpt-review-3"></div>
+                            </div>
+                        </details>
+                        <details class="fp-review-template" data-rating="2">
+                            <summary class="fp-review-template-summary">
+                                <span class="fp-review-template-name">
+                                    <span class="fp-review-stars" aria-label="2 звёзд">★★</span>
+                                    <span>Ответ для 2 звёзд</span>
+                                </span>
+                                <span class="fp-review-template-meta">
+                                    <span id="fpt-review-status-2" class="fp-review-template-status">Не настроен</span>
+                                    <span class="fp-review-template-chevron" aria-hidden="true"></span>
+                                </span>
+                            </summary>
+                            <div class="fp-review-template-body">
+                                <label class="fp-review-field-label" for="fpt-review-2">Текст ответа</label>
+                                <textarea id="fpt-review-2" class="template-input fp-review-textarea" placeholder="Шаблон для 2 звёзд"></textarea>
+                                <div class="fp-review-editor-actions" data-editor-actions-for="fpt-review-2"></div>
+                            </div>
+                        </details>
+                        <details class="fp-review-template" data-rating="1">
+                            <summary class="fp-review-template-summary">
+                                <span class="fp-review-template-name">
+                                    <span class="fp-review-stars" aria-label="1 звезда">★</span>
+                                    <span>Ответ для 1 звезды</span>
+                                </span>
+                                <span class="fp-review-template-meta">
+                                    <span id="fpt-review-status-1" class="fp-review-template-status">Не настроен</span>
+                                    <span class="fp-review-template-chevron" aria-hidden="true"></span>
+                                </span>
+                            </summary>
+                            <div class="fp-review-template-body">
+                                <label class="fp-review-field-label" for="fpt-review-1">Текст ответа</label>
+                                <textarea id="fpt-review-1" class="template-input fp-review-textarea" placeholder="Шаблон для 1 звезды"></textarea>
+                                <div class="fp-review-editor-actions" data-editor-actions-for="fpt-review-1"></div>
+                            </div>
+                        </details>
+                        </div>
+                    </section>
+
+                    <section class="fpt-ui-surface fp-review-card fp-review-bonus-card" aria-labelledby="fp-review-bonus-title">
+                        <div class="fp-review-master-row">
+                            <label class="fp-review-master-copy" for="bonusForReviewEnabled">
+                                <span id="fp-review-bonus-title" class="fpt-ui-section-title fp-review-bonus-title">Бонус за отзыв <span class="fp-review-inline-star" aria-label="5 звёзд">5★</span></span>
+                                <span class="fpt-ui-helper fp-review-master-description">После пятизвёздочного отзыва отправить покупателю сообщение с бонусом.</span>
+                            </label>
+                            <div class="fp-review-master-control">
+                                <span id="bonusForReviewState" class="fp-review-state-label">Выключено</span>
+                                <input type="checkbox" id="bonusForReviewEnabled" class="fp-review-master-checkbox">
+                            </div>
+                        </div>
+
+                        <div id="bonusForReviewBody" class="fp-review-bonus-body" hidden>
+                            <div class="fp-review-bonus-setting">
+                                <span class="fp-review-field-label">Источник бонуса</span>
+                                <div class="fp-tools-radio-group fp-review-bonus-modes" id="bonusModeSelector">
+                                    <label class="fp-tools-radio-option"><input type="radio" name="bonusMode" value="single" checked><span>Один бонус</span></label>
+                                    <label class="fp-tools-radio-option"><input type="radio" name="bonusMode" value="random"><span>Случайный из списка</span></label>
+                                </div>
+                            </div>
+
+                            <div id="singleBonusContainer" class="fp-review-bonus-mode">
+                                <label class="fp-review-field-label" for="singleBonusText">Сообщение с бонусом</label>
+                                <textarea id="singleBonusText" class="template-input fp-review-textarea" placeholder="Текст вашего бонуса..."></textarea>
+                                <div class="fp-review-editor-actions" data-editor-actions-for="singleBonusText"></div>
+                            </div>
+
+                            <div id="randomBonusContainer" class="fp-review-bonus-mode" hidden>
+                                <div id="bonus-list-container" class="bonus-list fp-review-bonus-list"></div>
+                                <div class="bonus-add-form fp-review-bonus-add-form">
+                                    <label class="fp-review-field-label" for="newBonusText">Новый вариант бонуса</label>
+                                    <textarea id="newBonusText" class="template-input fp-review-bonus-add-text" placeholder="Текст нового бонуса для списка..."></textarea>
+                                    <div class="fp-review-bonus-add-actions">
+                                        <button type="button" id="addBonusBtn" class="fpt-ui-button fpt-ui-button--secondary fp-review-add-bonus-btn">Добавить в список</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="fpt-ui-setting-row fp-review-delay-row">
+                                <label class="fp-review-setting-copy" for="bonusForReviewDelaySec">
+                                    <span class="fp-review-setting-title">Задержка перед бонусом</span>
+                                    <span class="fpt-ui-helper">Пауза после ответа на отзыв. Рекомендуется 3–5 секунд.</span>
+                                </label>
+                                <div class="fp-review-delay-field">
+                                    <input type="number" id="bonusForReviewDelaySec" class="fpt-ui-control fp-review-delay-input" min="0" max="60" step="1" value="4" inputmode="numeric" aria-label="Задержка перед бонусом в секундах">
+                                    <span>сек.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="fp-tools-page-content" data-page="auto_reply">
@@ -4436,8 +4543,16 @@ function attachAutoReplyImageButtons(toolsPopup) {
         const autoReplyPage = typeof ta.closest === 'function'
             ? ta.closest('.fp-tools-page-content[data-page="auto_reply"]')
             : null;
+        const autoReviewPage = typeof ta.closest === 'function'
+            ? ta.closest('.fp-tools-page-content[data-page="auto_review"]')
+            : null;
         if (autoReplyPage) {
             btn.className = 'fpt-ui-button fpt-ui-button--secondary fpt-ui-icon-button fp-ar-image-btn fpt-autoreply-img-btn';
+            btn.title = 'Добавить изображение';
+            btn.setAttribute('aria-label', 'Добавить изображение');
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><path d="m6.5 17 4.2-4.2 2.8 2.8 1.7-1.7L19 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        } else if (autoReviewPage) {
+            btn.className = 'fpt-ui-button fpt-ui-button--secondary fpt-ui-icon-button fp-review-image-btn fpt-autoreply-img-btn';
             btn.title = 'Добавить изображение';
             btn.setAttribute('aria-label', 'Добавить изображение');
             btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><path d="m6.5 17 4.2-4.2 2.8 2.8 1.7-1.7L19 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -4450,8 +4565,9 @@ function attachAutoReplyImageButtons(toolsPopup) {
             e.preventDefault();
             if (typeof handleImageAddClick === 'function') handleImageAddClick(ta);
         });
-        if (autoReplyPage) {
-            const actionHost = autoReplyPage.querySelector('[data-editor-actions-for="' + id + '"]');
+        if (autoReplyPage || autoReviewPage) {
+            const pageHost = autoReplyPage || autoReviewPage;
+            const actionHost = pageHost.querySelector('[data-editor-actions-for="' + id + '"]');
             if (actionHost) actionHost.appendChild(btn);
             else ta.insertAdjacentElement('afterend', btn);
         } else if (ta.parentNode) {
