@@ -24,6 +24,8 @@ assert.match(page, /id="lot-io-import-btn"[\s\S]*?<svg class="lot-io-action-icon
 assert.match(page, /id="convert-cardinal-lots-btn" class="lot-io-tertiary-link"/, 'Cardinal converter stays available as a tertiary transfer action');
 assert.doesNotMatch(page, /lot-io-info-card/, 'oversized introductory info card must be removed');
 
+assert.match(page, /id="lot-io-import-file" class="lot-io-hidden-file-input"[\s\S]*?hidden/, 'native file input must carry the dedicated hidden class');
+assert.match(css, /\.lot-io-hidden-file-input\s*\{[\s\S]*?display:\s*none\s*!important;/, 'native file input must be hidden by an author-level scoped rule');
 assert.match(page, /id="lot-io-pending-section"[\s\S]*?hidden/, 'pending imports section is hidden before storage resolves');
 assert.match(page, /id="lot-io-pending-imports-list" aria-live="polite"><\/div>/, 'pending list starts empty instead of rendering a permanent placeholder');
 assert.doesNotMatch(page, /Здесь будут отображаться отложенные процессы импорта/, 'empty pending copy must not consume page space');
