@@ -418,164 +418,218 @@ function createMainPopup() {
                 </div>
                 <!-- КОНЕЦ ВКЛАДКИ "TELEGRAM" -->
                 <div class="fp-tools-page-content" data-page="templates">
-                    <h3>Быстрые ответы</h3>
-                    <div class="fpt-quick-replies-tabs" role="tablist" aria-label="Режимы быстрых ответов">
-                        <button type="button" id="fptQuickRepliesTemplatesTab" class="btn btn-default" role="tab" aria-selected="true" aria-controls="fptQuickRepliesTemplatesPane" tabindex="0" data-quick-replies-mode="templates">Шаблоны</button>
-                        <button type="button" id="fptQuickRepliesCommandsTab" class="btn btn-default" role="tab" aria-selected="false" aria-controls="fptQuickRepliesCommandsPane" tabindex="-1" data-quick-replies-mode="commands">Команды</button>
-                    </div>
-                    <div id="fptQuickRepliesTemplatesPane" data-quick-replies-pane="templates" role="tabpanel" aria-labelledby="fptQuickRepliesTemplatesTab">
-                    <h3>Настройки шаблонов</h3>
-                    <div class="checkbox-label-inline"><input type="checkbox" id="templatesEnabled" checked><label for="templatesEnabled" style="margin-bottom:0;"><span><b>Включить шаблоны</b></span></label></div>
-                    <div class="checkbox-label-inline" style="margin-top:8px;"><input type="checkbox" id="sendTemplatesImmediately"><label for="sendTemplatesImmediately" style="margin-bottom:0;"><span>Отправлять шаблоны сразу по клику</span></label></div>
+                    <header class="fpt-ui-page-header fp-qr-page-header">
+                        <div class="fp-qr-page-header-copy">
+                            <h3 class="fpt-ui-page-title fp-qr-page-title">Быстрые ответы</h3>
+                            <p class="fpt-ui-helper fp-qr-page-description">Настройте кнопки-шаблоны и слэш-команды для быстрого ответа в чате.</p>
+                        </div>
+                        <div class="fpt-ui-segmented fpt-quick-replies-tabs" role="tablist" aria-label="Режимы быстрых ответов">
+                            <button type="button" id="fptQuickRepliesTemplatesTab" role="tab" aria-selected="true" aria-controls="fptQuickRepliesTemplatesPane" tabindex="0" data-quick-replies-mode="templates">Шаблоны</button>
+                            <button type="button" id="fptQuickRepliesCommandsTab" role="tab" aria-selected="false" aria-controls="fptQuickRepliesCommandsPane" tabindex="-1" data-quick-replies-mode="commands">Команды</button>
+                        </div>
+                    </header>
 
-                    <div id="fpt-templates-config">
-                    <label style="margin-top:10px;display:block;">Расположение кнопок:</label>
-                    <div class="fpt-pos-grid">
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="above"><span class="fpt-pos-ico"><span class="fpt-pos-row"></span><span class="fpt-pos-field"></span></span><span class="fpt-pos-name">Над полем</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="bottom" checked><span class="fpt-pos-ico"><span class="fpt-pos-field"></span><span class="fpt-pos-row"></span></span><span class="fpt-pos-name">Под полем</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_top"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-top"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">В панели сверху</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_bottom"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-bottom"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">В панели снизу</span></label>
-                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="popover"><span class="fpt-pos-ico fpt-pos-ico-pop"><span class="fpt-pos-field"></span><span class="fpt-pos-pop-btn"></span></span><span class="fpt-pos-name">Меню у скрепки</span></label>
-                    </div>
-                    <p class="template-info" id="fpt-popover-hint" style="margin-top:6px;display:none;">«Меню у скрепки»: слева от кнопки прикрепления файла появится отдельная кнопка с иконкой шаблонов. По клику открывается компактное меню со всеми шаблонами и быстрым переходом в эти настройки.</p>
-
-                    <h3>Внешний вид кнопок</h3>
-                    <div class="fpt-appx">
-                        <div class="fpt-appx-grid">
-                            <div class="fpt-appx-block">
-                                <div class="fpt-appx-cap">Форма</div>
-                                <div class="fpt-seg" data-fpt-opt="shape">
-                                    <button type="button" data-val="rounded" title="Скруглённые"><span class="fpt-shape-prev" style="border-radius:5px;"></span></button>
-                                    <button type="button" data-val="pill" title="Капсула"><span class="fpt-shape-prev" style="border-radius:999px;"></span></button>
-                                    <button type="button" data-val="square" title="Прямые углы"><span class="fpt-shape-prev" style="border-radius:1px;"></span></button>
+                    <div id="fptQuickRepliesTemplatesPane" class="fp-qr-pane" data-quick-replies-pane="templates" role="tabpanel" aria-labelledby="fptQuickRepliesTemplatesTab">
+                        <section class="fpt-ui-surface fp-qr-card fp-qr-template-settings" aria-labelledby="fp-qr-template-settings-title">
+                            <div class="fpt-ui-section-header fp-qr-section-header">
+                                <div>
+                                    <h4 id="fp-qr-template-settings-title" class="fpt-ui-section-title">Шаблоны в чате</h4>
+                                    <p class="fpt-ui-helper fp-qr-section-description">Показывайте готовые ответы рядом с полем сообщения и выбирайте, как они выглядят.</p>
                                 </div>
                             </div>
-                            <div class="fpt-appx-block">
-                                <div class="fpt-appx-cap">Размер</div>
-                                <div class="fpt-seg" data-fpt-opt="size">
-                                    <button type="button" data-val="s" title="Маленький"><span class="fpt-az" style="font-size:11px;">Aa</span></button>
-                                    <button type="button" data-val="m" title="Средний"><span class="fpt-az" style="font-size:14px;">Aa</span></button>
-                                    <button type="button" data-val="l" title="Большой"><span class="fpt-az" style="font-size:17px;">Aa</span></button>
+
+                            <div class="fp-qr-settings-list">
+                                <div class="fpt-ui-setting-row fp-qr-setting-row">
+                                    <label class="fp-qr-setting-copy" for="templatesEnabled">
+                                        <span class="fp-qr-setting-title">Включить шаблоны</span>
+                                        <span class="fpt-ui-helper">Показывать быстрые кнопки ответов в чате.</span>
+                                    </label>
+                                    <input type="checkbox" id="templatesEnabled" class="fp-qr-setting-checkbox" checked>
+                                </div>
+                                <div class="fpt-ui-setting-row fp-qr-setting-row">
+                                    <label class="fp-qr-setting-copy" for="sendTemplatesImmediately">
+                                        <span class="fp-qr-setting-title">Отправлять сразу по клику</span>
+                                        <span class="fpt-ui-helper">Если выключено, текст сначала подставляется в поле ввода.</span>
+                                    </label>
+                                    <input type="checkbox" id="sendTemplatesImmediately" class="fp-qr-setting-checkbox">
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="fpt-appx-block">
-                            <div class="fpt-appx-cap">Заливка</div>
-                            <div class="fpt-seg fpt-seg-fill" data-fpt-opt="fill">
-                                <button type="button" data-val="solid" title="Сплошная"><span class="fpt-fill-prev" style="background:#1b75bb;"></span><span class="fpt-fill-name">Сплошная</span></button>
-                                <button type="button" data-val="soft" title="Мягкая"><span class="fpt-fill-prev" style="background:rgba(27,117,187,.28);"></span><span class="fpt-fill-name">Мягкая</span></button>
-                                <button type="button" data-val="outline" title="Контур"><span class="fpt-fill-prev" style="background:transparent;border:2px solid #1b75bb;"></span><span class="fpt-fill-name">Контур</span></button>
-                                <button type="button" data-val="ghost" title="Призрачная"><span class="fpt-fill-prev" style="background:transparent;border:1px dashed #1b75bb;"></span><span class="fpt-fill-name">Призрак</span></button>
-                            </div>
-                        </div>
+                            <div id="fpt-templates-config" class="fp-qr-template-config">
+                                <div class="fp-qr-config-section">
+                                    <div class="fp-qr-config-heading">
+                                        <span class="fp-qr-config-title">Расположение</span>
+                                        <span class="fpt-ui-helper">Выберите место для быстрых кнопок.</span>
+                                    </div>
+                                    <div class="fpt-pos-grid fp-qr-position-grid">
+                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="above"><span class="fpt-pos-ico"><span class="fpt-pos-row"></span><span class="fpt-pos-field"></span></span><span class="fpt-pos-name">Над полем</span></label>
+                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="bottom" checked><span class="fpt-pos-ico"><span class="fpt-pos-field"></span><span class="fpt-pos-row"></span></span><span class="fpt-pos-name">Под полем</span></label>
+                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_top"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-top"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">Панель сверху</span></label>
+                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_bottom"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-bottom"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">Панель снизу</span></label>
+                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="popover"><span class="fpt-pos-ico fpt-pos-ico-pop"><span class="fpt-pos-field"></span><span class="fpt-pos-pop-btn"></span></span><span class="fpt-pos-name">У скрепки</span></label>
+                                    </div>
+                                    <p class="fpt-ui-helper fp-qr-inline-hint" id="fpt-popover-hint" hidden>Возле кнопки прикрепления файла появится отдельная кнопка шаблонов с компактным меню.</p>
+                                </div>
 
-                        <div class="fpt-appx-block fpt-align-block" id="fpt-align-block">
-                            <div class="fpt-appx-cap">Выравнивание текста</div>
-                            <div class="fpt-seg" data-fpt-opt="align">
-                                <button type="button" data-val="left" title="Слева"><span class="material-symbols-rounded">format_align_left</span></button>
-                                <button type="button" data-val="center" title="По центру"><span class="material-symbols-rounded">format_align_center</span></button>
-                                <button type="button" data-val="right" title="Справа"><span class="material-symbols-rounded">format_align_right</span></button>
-                            </div>
-                            <div class="fpt-align-hint">Доступно при включённом «На всю ширину»</div>
-                        </div>
+                                <div class="fp-qr-config-section fp-qr-appearance-section">
+                                    <div class="fp-qr-config-heading">
+                                        <span class="fp-qr-config-title">Внешний вид</span>
+                                        <span class="fpt-ui-helper">Все параметры сразу отображаются в одном предпросмотре.</span>
+                                    </div>
 
-                        <div class="fpt-appx-block">
-                            <div class="fpt-appx-cap">Дополнительно</div>
-                            <div class="fpt-appx-toggles">
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="fullWidth"><span class="material-symbols-rounded">width_full</span><span>На всю ширину</span></button>
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="compact"><span class="material-symbols-rounded">density_small</span><span>Компактно</span></button>
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="uppercase"><span class="material-symbols-rounded">text_fields</span><span>ЗАГЛАВНЫЕ</span></button>
-                                <button type="button" class="fpt-chip-toggle" data-fpt-toggle="showPreview"><span class="material-symbols-rounded">preview</span><span>Превью при наведении</span></button>
-                            </div>
-                        </div>
+                                    <div class="fpt-appx fp-qr-appearance-layout">
+                                        <div class="fp-qr-controls-column">
+                                            <div class="fp-qr-control-group">
+                                                <span class="fpt-appx-cap">Форма</span>
+                                                <div class="fpt-seg" data-fpt-opt="shape">
+                                                    <button type="button" data-val="rounded" title="Скруглённые"><span class="fpt-shape-prev fp-qr-shape-rounded"></span><span class="fp-qr-sr-only">Скруглённые</span></button>
+                                                    <button type="button" data-val="pill" title="Капсула"><span class="fpt-shape-prev fp-qr-shape-pill"></span><span class="fp-qr-sr-only">Капсула</span></button>
+                                                    <button type="button" data-val="square" title="Прямые углы"><span class="fpt-shape-prev fp-qr-shape-square"></span><span class="fp-qr-sr-only">Прямые углы</span></button>
+                                                </div>
+                                            </div>
 
-                        <!-- Доп. настройки, видимые только для «в панели» -->
-                        <div class="fpt-appx-block fpt-sidebar-only" id="fpt-sidebar-extra">
-                            <div class="fpt-appx-cap">Компактность панели</div>
-                            <div class="fpt-seg" data-fpt-opt="sidebarDensity">
-                                <button type="button" data-val="cozy" title="Просторно">Просторно</button>
-                                <button type="button" data-val="normal" title="Обычно">Обычно</button>
-                                <button type="button" data-val="dense" title="Плотно">Плотно</button>
-                            </div>
-                            <div class="fpt-appx-cap" style="margin-top:10px;">Раскладка</div>
-                            <div class="fpt-seg" data-fpt-opt="sidebarLayout">
-                                <button type="button" data-val="flow" title="Авто-сетка (по ширине)">Авто-сетка</button>
-                                <button type="button" data-val="list" title="Список (в столбик)">Список</button>
-                            </div>
-                            <div class="fpt-align-hint" style="display:block;color:#6b7194;">«Авто-сетка» умно раскладывает кнопки по ширине панели, как на скрине.</div>
-                        </div>
+                                            <div class="fp-qr-control-group">
+                                                <span class="fpt-appx-cap">Размер</span>
+                                                <div class="fpt-seg" data-fpt-opt="size">
+                                                    <button type="button" data-val="s" title="Маленький"><span class="fpt-az fp-qr-size-s">S</span></button>
+                                                    <button type="button" data-val="m" title="Средний"><span class="fpt-az fp-qr-size-m">M</span></button>
+                                                    <button type="button" data-val="l" title="Большой"><span class="fpt-az fp-qr-size-l">L</span></button>
+                                                </div>
+                                            </div>
 
-                        <div class="fpt-appx-block">
-                            <div class="fpt-appx-cap">Живой предпросмотр</div>
-                            <div id="fpt-appearance-preview" class="chat-buttons-container" data-fpt-shape="rounded" data-fpt-size="m" data-fpt-fill="solid" data-fpt-align="center" data-fpt-fullwidth="0" data-fpt-uppercase="0" data-fpt-compact="0">
-                                <button type="button" class="chat-template-btn" style="background-color:var(--fpt-accent,#1b75bb);--btn-color:var(--fpt-accent,#1b75bb);">Приветствие</button>
-                                <button type="button" class="chat-template-btn" style="background-color:#FF6B6B;--btn-color:#FF6B6B;">Спасибо за заказ</button>
-                                <button type="button" class="custom-chat-template-btn" style="background-color:var(--fpt-accent,#1b75bb);--btn-color:var(--fpt-accent,#1b75bb);">Свой шаблон</button>
+                                            <div class="fp-qr-control-group fp-qr-fill-group">
+                                                <span class="fpt-appx-cap">Заливка</span>
+                                                <div class="fpt-seg fpt-seg-fill" data-fpt-opt="fill">
+                                                    <button type="button" data-val="solid" title="Сплошная"><span class="fpt-fill-prev fp-qr-fill-solid"></span><span class="fpt-fill-name">Сплошная</span></button>
+                                                    <button type="button" data-val="soft" title="Мягкая"><span class="fpt-fill-prev fp-qr-fill-soft"></span><span class="fpt-fill-name">Мягкая</span></button>
+                                                    <button type="button" data-val="outline" title="Контур"><span class="fpt-fill-prev fp-qr-fill-outline"></span><span class="fpt-fill-name">Контур</span></button>
+                                                    <button type="button" data-val="ghost" title="Призрачная"><span class="fpt-fill-prev fp-qr-fill-ghost"></span><span class="fpt-fill-name">Призрак</span></button>
+                                                </div>
+                                            </div>
+
+                                            <div class="fp-qr-control-group fpt-align-block" id="fpt-align-block">
+                                                <span class="fpt-appx-cap">Выравнивание</span>
+                                                <div class="fpt-seg fp-qr-align-segment" data-fpt-opt="align">
+                                                    <button type="button" data-val="left" title="Слева" aria-label="Слева"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h9M4 8h12M4 11h8M4 14h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                                                    <button type="button" data-val="center" title="По центру" aria-label="По центру"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5h9M4 8h12M6 11h8M4.5 14h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                                                    <button type="button" data-val="right" title="Справа" aria-label="Справа"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5h9M4 8h12M8 11h8M5 14h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
+                                                </div>
+                                                <span class="fpt-align-hint">Доступно при «На всю ширину»</span>
+                                            </div>
+
+                                            <div class="fp-qr-control-group">
+                                                <span class="fpt-appx-cap">Дополнительно</span>
+                                                <div class="fpt-appx-toggles fp-qr-toggle-row">
+                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="fullWidth"><span>На всю ширину</span></button>
+                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="compact"><span>Компактно</span></button>
+                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="uppercase"><span>ЗАГЛАВНЫЕ</span></button>
+                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="showPreview"><span>Превью при наведении</span></button>
+                                                </div>
+                                            </div>
+
+                                            <div class="fp-qr-control-group fpt-sidebar-only" id="fpt-sidebar-extra">
+                                                <span class="fpt-appx-cap">Панель</span>
+                                                <div class="fp-qr-sidebar-controls">
+                                                    <div class="fpt-seg" data-fpt-opt="sidebarDensity">
+                                                        <button type="button" data-val="cozy">Просторно</button>
+                                                        <button type="button" data-val="normal">Обычно</button>
+                                                        <button type="button" data-val="dense">Плотно</button>
+                                                    </div>
+                                                    <div class="fpt-seg" data-fpt-opt="sidebarLayout">
+                                                        <button type="button" data-val="flow">Авто-сетка</button>
+                                                        <button type="button" data-val="list">Список</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="fp-qr-preview-panel">
+                                            <span class="fpt-appx-cap">Живой предпросмотр</span>
+                                            <div id="fpt-appearance-preview" class="chat-buttons-container fp-qr-live-preview" data-fpt-shape="rounded" data-fpt-size="m" data-fpt-fill="solid" data-fpt-align="center" data-fpt-fullwidth="0" data-fpt-uppercase="0" data-fpt-compact="0">
+                                                <button type="button" class="chat-template-btn fp-qr-preview-primary">Приветствие</button>
+                                                <button type="button" class="chat-template-btn fp-qr-preview-secondary">Спасибо за заказ</button>
+                                                <button type="button" class="custom-chat-template-btn fp-qr-preview-primary">Свой шаблон</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        </section>
+
+                        <section class="fpt-ui-surface fp-qr-card fp-qr-editor-card" aria-labelledby="fp-qr-editor-title">
+                            <div class="fpt-ui-section-header fp-qr-section-header fp-qr-editor-header">
+                                <div>
+                                    <h4 id="fp-qr-editor-title" class="fpt-ui-section-title">Редактор шаблонов</h4>
+                                    <p class="fpt-ui-helper fp-qr-section-description">Название, цвет и текст сохраняются автоматически.</p>
+                                </div>
+                                <button id="addCustomTemplateBtn" type="button" class="fpt-ui-button fpt-ui-button--secondary fp-qr-add-template-btn">Добавить шаблон</button>
+                            </div>
+
+                            <details class="fp-qr-reference">
+                                <summary class="fp-qr-reference-summary"><span>Переменные и изображения</span><span class="fp-qr-reference-chevron" aria-hidden="true"></span></summary>
+                                <div class="fp-qr-reference-body">
+                                    <div class="fp-qr-variable-grid">
+                                        <div><code>{buyername}</code><span>имя покупателя</span></div>
+                                        <div><code>{lotname}</code><span>название товара</span></div>
+                                        <div><code>{welcome}</code><span>приветствие по времени суток</span></div>
+                                        <div><code>{date}</code><span>дата и время</span></div>
+                                        <div><code>{bal}</code><span>баланс</span></div>
+                                        <div><code>{activesells}</code><span>активные продажи</span></div>
+                                        <div class="fp-qr-variable-wide"><code>{ai: ваш запрос}</code><span>текст, сгенерированный ИИ</span></div>
+                                    </div>
+                                    <p class="fpt-ui-helper fp-qr-image-reference">Изображение добавляется кнопкой рядом с текстом шаблона. Порядок «текст / изображение» выбирается на плашке вложения.</p>
+                                </div>
+                            </details>
+
+                            <div id="template-settings-container" class="template-settings-list fp-qr-template-list"></div>
+                        </section>
                     </div>
-                    </div>
 
-                    <h3>Редактор шаблонов</h3>
-                     <p class="template-info">Кликните на название или текст шаблона, чтобы его изменить. Все изменения сохраняются автоматически.</p>
-                     
-                     <div class="template-variables-guide">
-                        <h5>Справка по переменным</h5>
-                        <ul class="variables-list">
-                            <li><span class="variable-code">{buyername}</span> - Имя покупателя в текущем чате.</li>
-                            <li><span class="variable-code">{lotname}</span> - Название товара, который обсуждается в чате.</li>
-                            <li><span class="variable-code">{welcome}</span> - "Доброе утро!", "Добрый день!" или "Добрый вечер!" в зависимости от времени.</li>
-                            <li><span class="variable-code">{date}</span> - Текущая дата и время (например, 25.12.2025 14:30).</li>
-                            <li><span class="variable-code">{bal}</span> - Ваш текущий баланс на FunPay.</li>
-                            <li><span class="variable-code">{activesells}</span> - Количество ваших активных продаж.</li>
-                            <li><span class="variable-code">{ai: ваш запрос}</span> - Вставляет текст, сгенерированный ИИ на основе вашего запроса. 
-                                <br><em>Пример: <code>{ai: вежливо поблагодари за покупку}</code></em>
-                            </li>
-                        </ul>
-                     </div>
-                     
-                     <div class="template-info image-upload-warning">
-                        <span class="nav-icon material-symbols-rounded">image</span>
-                        <span><b>Изображения в шаблонах:</b> Нажмите кнопку с иконкой изображения под текстом, чтобы прикрепить картинку. Появится плашка «Прикреплённое изображение» - нажмите на неё, чтобы выбрать порядок отправки (сначала текст, потом картинка - или наоборот). При отправке шаблона всё уйдёт в чат автоматически.</span>
-                     </div>
-
-                    <div id="template-settings-container" class="template-settings-list"></div>
-                    <button id="addCustomTemplateBtn" class="btn" style="margin-top: 10px;">+ Добавить свой шаблон</button>
-                    </div>
-                    <div id="fptQuickRepliesCommandsPane" data-quick-replies-pane="commands" role="tabpanel" aria-labelledby="fptQuickRepliesCommandsTab" hidden>
-                        <h3>Команды</h3>
-                        <p class="template-info">Свои быстрые ответы для поля чата. Вы задаёте команду (например <code>/привет</code>) и её ответ (например «Привет, я тут. Какие вопросы?»). В чате начинаете печатать команду - <code>/при</code> - появляется подсказка; нажимаете Tab или Enter, и команда сразу превращается в полный текст ответа. Удобно для приветствий, реквизитов, частых фраз.</p>
-
-                        <div class="checkbox-label-inline">
-                            <input type="checkbox" id="fptSlashEnabled" checked>
-                            <label for="fptSlashEnabled" style="margin-bottom:0;"><span><b>Включить слэш-команды</b></span></label>
-                        </div>
-
-                        <div id="fptSlashConfig">
-                            <div class="checkbox-label-inline" style="margin-top:8px;">
-                                <input type="checkbox" id="fptSlashAutocomplete" checked>
-                                <label for="fptSlashAutocomplete" style="margin-bottom:0;"><span>Показывать выпадающую подсказку при вводе</span></label>
+                    <div id="fptQuickRepliesCommandsPane" class="fp-qr-pane" data-quick-replies-pane="commands" role="tabpanel" aria-labelledby="fptQuickRepliesCommandsTab" hidden>
+                        <section class="fpt-ui-surface fp-qr-card fp-qr-commands-card" aria-labelledby="fp-qr-commands-title">
+                            <div class="fp-qr-command-master">
+                                <label class="fp-qr-setting-copy" for="fptSlashEnabled">
+                                    <span id="fp-qr-commands-title" class="fpt-ui-section-title">Слэш-команды</span>
+                                    <span class="fpt-ui-helper">Введите в чате <code>/команду</code>, чтобы быстро развернуть сохранённый ответ.</span>
+                                </label>
+                                <input type="checkbox" id="fptSlashEnabled" class="fp-qr-setting-checkbox" checked>
                             </div>
 
-                            <label style="display:block;margin-top:14px;margin-bottom:6px;font-size:13px;">Чем разворачивать команду:</label>
-                            <div class="fp-tools-radio-group" id="fptSlashKeyGroup">
-                                <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="both" checked><span>Tab или Enter</span></label>
-                                <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="tab"><span>Только Tab</span></label>
-                                <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="enter"><span>Только Enter</span></label>
-                            </div>
+                            <div id="fptSlashConfig" class="fp-qr-slash-config">
+                                <div class="fp-qr-settings-list">
+                                    <div class="fpt-ui-setting-row fp-qr-setting-row">
+                                        <label class="fp-qr-setting-copy" for="fptSlashAutocomplete">
+                                            <span class="fp-qr-setting-title">Подсказка при вводе</span>
+                                            <span class="fpt-ui-helper">Показывать подходящие команды после символа /.</span>
+                                        </label>
+                                        <input type="checkbox" id="fptSlashAutocomplete" class="fp-qr-setting-checkbox" checked>
+                                    </div>
+                                </div>
 
-                            <div class="support-promo" style="background:rgba(27,117,187,0.07);border-color:rgba(27,117,187,0.2);margin:16px 0;">
-                                <span class="material-symbols-rounded" style="font-size:16px;color:#f4c84a;vertical-align:-3px;">lightbulb</span>
-                                <span>Переменные в ответе: <code>{buyername}</code> - имя собеседника, <code>{date}</code>, <code>{time}</code>.</span>
-                            </div>
+                                <div class="fp-qr-command-options">
+                                    <span class="fp-qr-config-title">Разворачивать команду</span>
+                                    <div class="fp-tools-radio-group fp-qr-command-keys" id="fptSlashKeyGroup">
+                                        <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="both" checked><span>Tab или Enter</span></label>
+                                        <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="tab"><span>Только Tab</span></label>
+                                        <label class="fp-tools-radio-option"><input type="radio" name="fptSlashKey" value="enter"><span>Только Enter</span></label>
+                                    </div>
+                                </div>
 
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                                <h4 style="margin:0;">Мои команды</h4>
-                                <button id="fptSlashAddBtn" class="btn btn-default" style="padding:5px 12px;font-size:13px;">+ Добавить команду</button>
+                                <div class="fpt-ui-callout fpt-ui-callout--single-line fp-qr-command-vars">
+                                    <span class="fpt-ui-icon-slot" aria-hidden="true"><svg viewBox="0 0 20 20"><path d="M6 4.5h8M5 8h10M6.5 11.5h7M8 15.5h4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+                                    <span>В ответах доступны <code>{buyername}</code>, <code>{date}</code> и <code>{time}</code>.</span>
+                                </div>
+
+                                <div class="fpt-ui-section-header fp-qr-command-list-header">
+                                    <div>
+                                        <h4 class="fpt-ui-section-title">Мои команды</h4>
+                                        <p class="fpt-ui-helper">Изменения в командах сохраняются автоматически.</p>
+                                    </div>
+                                    <button id="fptSlashAddBtn" type="button" class="fpt-ui-button fpt-ui-button--secondary fp-qr-add-command-btn">Добавить команду</button>
+                                </div>
+                                <div id="fptSlashList" class="fp-qr-slash-list" aria-live="polite"></div>
                             </div>
-                            <div id="fptSlashList"></div>
-                        </div>
+                        </section>
                     </div>
                 </div>
 

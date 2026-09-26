@@ -20,25 +20,49 @@ async function fptSlashSave() {
     await chrome.storage.local.set({ [FPT_SLASH_KEY]: _fptSlashCfg });
 }
 
+async function fptSlashAddCommand() {
+    _fptSlashCfg.commands.push({ id: Date.now().toString(), trigger: '/', response: '' });
+    await fptSlashSave();
+    fptSlashRenderList();
+}
+
 function fptSlashRenderList() {
     const list = _fptSlashPanel?.querySelector('#fptSlashList') || document.getElementById('fptSlashList');
     if (!list) return;
+
     if (!_fptSlashCfg.commands.length) {
-        list.innerHTML = '<p class="template-info">Пока нет команд. Нажмите «+ Добавить команду».</p>';
+        list.innerHTML = `
+            <div class="fpt-ui-state fp-qr-slash-empty">
+                <svg class="fp-qr-empty-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                    <path d="M7 6.5h10A2.5 2.5 0 0 1 19.5 9v6A2.5 2.5 0 0 1 17 17.5H9l-4.5 2v-10A3 3 0 0 1 7 6.5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="M8.5 10.5h7M8.5 13.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+                <p class="fpt-ui-state-title">Команд пока нет</p>
+                <p class="fpt-ui-state-text">Создайте первую команду, например /привет, и сохраните готовый ответ.</p>
+                <button type="button" class="fpt-ui-button fpt-ui-button--primary fpt-slash-empty-add">Добавить первую команду</button>
+            </div>
+        `;
         return;
     }
+
     list.innerHTML = _fptSlashCfg.commands.map((c, i) => `
-        <div class="fpt-slash-row" data-i="${i}" style="background:var(--fpt-surface, #f5f7fa);border:1px solid #1e2030;border-radius:8px;padding:10px;margin-bottom:8px;">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
-                <input type="text" class="fpt-slash-trigger template-input" data-i="${i}" value="${fptSlashEsc(c.trigger || '')}" placeholder="/привет" style="flex:0 0 150px;margin:0;">
-                <span style="color:var(--fpt-text-muted, #8a90a6);font-size:12px;">→</span>
-                <button class="fpt-slash-del btn btn-default" data-i="${i}" title="Удалить" style="margin-left:auto;padding:4px 10px;">🗑️</button>
+        <article class="fpt-slash-row fp-qr-slash-row" data-i="${i}">
+            <div class="fp-qr-slash-row-header">
+                <label class="fp-qr-slash-trigger-wrap">
+                    <span class="fp-qr-field-label">Команда</span>
+                    <input type="text" class="fpt-slash-trigger fpt-ui-control fp-qr-slash-trigger" data-i="${i}" value="${fptSlashEsc(c.trigger || '')}" placeholder="/привет" autocomplete="off" spellcheck="false">
+                </label>
+                <button type="button" class="fpt-ui-button fpt-ui-button--tertiary fpt-ui-icon-button fpt-slash-del fp-qr-slash-delete" data-i="${i}" title="Удалить команду" aria-label="Удалить команду">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M8 7h8m-7 0 .5 11h5L15 7m-5-2h4l.5 2h-5L10 5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
             </div>
-            <textarea class="fpt-slash-response template-input" data-i="${i}" rows="2" placeholder="Текст-ответ. Напр.: Привет, я тут. Какие вопросы?" style="margin:0;resize:vertical;">${fptSlashEsc(c.response || '')}</textarea>
-        </div>
+            <label class="fp-qr-slash-response-wrap">
+                <span class="fp-qr-field-label">Ответ</span>
+                <textarea class="fpt-slash-response template-input fp-qr-slash-response" data-i="${i}" rows="2" placeholder="Текст ответа. Можно использовать переменные.">${fptSlashEsc(c.response || '')}</textarea>
+            </label>
+        </article>
     `).join('');
 }
-
 function fptSlashEsc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -68,7 +92,7 @@ async function initializeSlashCommandsUI() {
     if (enabledEl) enabledEl.checked = _fptSlashCfg.enabled !== false;
     if (autoEl) autoEl.checked = _fptSlashCfg.autocomplete !== false;
     keyRadios.forEach(r => { r.checked = (r.value === (_fptSlashCfg.expandKey || 'both')); });
-    if (configEl) configEl.style.display = (_fptSlashCfg.enabled === false) ? 'none' : '';
+    if (configEl) configEl.hidden = (_fptSlashCfg.enabled === false);
 
     fptSlashRenderList();
 
@@ -77,7 +101,7 @@ async function initializeSlashCommandsUI() {
 
     enabledEl && enabledEl.addEventListener('change', async () => {
         _fptSlashCfg.enabled = enabledEl.checked;
-        if (configEl) configEl.style.display = enabledEl.checked ? '' : 'none';
+        if (configEl) configEl.hidden = !enabledEl.checked;
         await fptSlashSave();
     });
     autoEl && autoEl.addEventListener('change', async () => {
@@ -89,11 +113,7 @@ async function initializeSlashCommandsUI() {
     }));
 
     const addBtn = page.querySelector('#fptSlashAddBtn');
-    addBtn && addBtn.addEventListener('click', async () => {
-        _fptSlashCfg.commands.push({ id: Date.now().toString(), trigger: '/', response: '' });
-        await fptSlashSave();
-        fptSlashRenderList();
-    });
+    addBtn && addBtn.addEventListener('click', fptSlashAddCommand);
 
     const list = page.querySelector('#fptSlashList');
     if (list && !list.dataset.bound) {
@@ -122,6 +142,11 @@ async function initializeSlashCommandsUI() {
             }
         });
         list.addEventListener('click', async (e) => {
+            const emptyAdd = e.target.closest('.fpt-slash-empty-add');
+            if (emptyAdd) {
+                await fptSlashAddCommand();
+                return;
+            }
             const del = e.target.closest('.fpt-slash-del');
             if (!del) return;
             const i = parseInt(del.dataset.i, 10);

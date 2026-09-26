@@ -18,23 +18,29 @@ async function renderTemplateSettings(targetPanel = getTemplateSettingsPanel()) 
         const item = createElement('div', { class: 'template-item' });
         if (!config.enabled) item.classList.add('disabled-in-settings');
         
-        const colorPickerHtml = `<input type="color" class="template-color-picker" value="${config.color || '#1b75bb'}" data-key="${key}" data-custom="${isCustom}">`;
-        const deleteBtnHtml = isCustom ? `<button class="delete-custom-template-btn" data-id="${config.id}" title="Удалить"><span class="material-symbols-rounded">delete</span></button>` : '';
+        const escapeHtml = value => String(value == null ? '' : value)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        const colorPickerHtml = `<input type="color" class="template-color-picker" value="${escapeHtml(config.color || '#1b75bb')}" data-key="${escapeHtml(key)}" data-custom="${isCustom}" aria-label="Цвет шаблона">`;
+        const deleteBtnHtml = isCustom ? `
+            <button type="button" class="fpt-ui-button fpt-ui-button--tertiary fpt-ui-icon-button delete-custom-template-btn fp-qr-template-delete" data-id="${escapeHtml(config.id)}" title="Удалить шаблон" aria-label="Удалить шаблон">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 7h8m-7 0 .5 11h5L15 7m-5-2h4l.5 2h-5L10 5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>` : '';
 
-        // === ИЗМЕНЕНИЕ ЗДЕСЬ ===
         item.innerHTML = `
             <div class="template-item-header">
-                <input type="checkbox" class="template-toggle" data-key="${key}" data-custom="${isCustom}" ${config.enabled ? 'checked' : ''}>
+                <input type="checkbox" class="template-toggle fp-qr-template-toggle" data-key="${escapeHtml(key)}" data-custom="${isCustom}" ${config.enabled ? 'checked' : ''}>
                 ${colorPickerHtml}
-                <span class="template-label" contenteditable="true" data-key="${key}" data-custom="${isCustom}">${config.label}</span>
+                <span class="template-label" contenteditable="true" role="textbox" aria-label="Название шаблона" data-key="${escapeHtml(key)}" data-custom="${isCustom}">${escapeHtml(config.label)}</span>
                 ${deleteBtnHtml}
             </div>
             <div class="textarea-with-controls">
-                <textarea class="template-input template-text" data-key="${key}" data-custom="${isCustom}" placeholder="Текст шаблона...">${config.text}</textarea>
-                <button class="btn add-image-btn fpt-img-btn" title="Добавить изображение"><span class="material-symbols-rounded">image</span></button>
+                <textarea class="template-input template-text" data-key="${escapeHtml(key)}" data-custom="${isCustom}" placeholder="Текст шаблона...">${escapeHtml(config.text)}</textarea>
+                <button type="button" class="fpt-ui-button fpt-ui-button--secondary fpt-ui-icon-button add-image-btn fpt-img-btn fp-qr-template-image" title="Добавить изображение" aria-label="Добавить изображение">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><path d="m6.5 17 4.2-4.2 2.8 2.8 1.7-1.7L19 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
             </div>
         `;
-        // === КОНЕЦ ИЗМЕНЕНИЯ ===
         container.appendChild(item);
 
         // restore previously-attached images as chips (separate from text)
