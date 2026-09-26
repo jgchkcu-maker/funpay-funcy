@@ -29,7 +29,7 @@ assert.match(page, /data-state="idle"/, 'initial lots state is explicit');
 assert.match(page, /id="fp-load-delivery-lots-btn" class="fpt-ui-button fpt-ui-button--secondary fp-ad-load-btn"/, 'load action uses shared button primitive');
 
 for (const state of ['loading', 'empty', 'error']) {
-    assert.ok(popupUi.includes(\`renderDeliveryState(listEl, '\${state}'\`), 'UI must explicitly render ' + state + ' state');
+    assert.ok(popupUi.includes("renderDeliveryState(listEl, '" + state + "'"), 'UI must explicitly render ' + state + ' state');
 }
 assert.match(popupUi, /container\.dataset\.state = 'loaded'/, 'loaded state must be explicit');
 assert.match(popupUi, /settings\.hidden = !lotConfig\.enabled/, 'disabled lot keeps settings collapsed');
