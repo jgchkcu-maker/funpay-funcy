@@ -12709,6 +12709,10 @@ textarea.fp-cw-input { line-height:1.4; }
     margin-top: var(--fpt-ui-space-4);
 }
 
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-hidden-file-input {
+    display: none !important;
+}
+
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn {
     width: 100%;
     min-height: var(--fpt-ui-control-h);
