@@ -45,7 +45,12 @@ const attachmentBlock = popup.slice(popup.indexOf('function attachAutoReplyImage
 assert.match(attachmentBlock, /fpt-ui-button fpt-ui-button--secondary fpt-ui-icon-button fp-ar-image-btn/, 'auto_reply attachment button uses shared button geometry');
 assert.match(attachmentBlock, /setAttribute\('aria-label', 'Добавить изображение'\)/, 'attachment icon has an accessible name');
 assert.match(attachmentBlock, /data-editor-actions-for="/, 'attachment control is inserted into the editor action host');
-assert.doesNotMatch(attachmentBlock, /autoReplyPage[\s\S]*?material-symbols-rounded">image<\/span>/, 'auto_reply image control does not depend on Material ligature text');
+const autoReplyBranchStart = attachmentBlock.indexOf('if (autoReplyPage) {');
+const autoReplyBranchEnd = attachmentBlock.indexOf('} else {', autoReplyBranchStart);
+assert.ok(autoReplyBranchStart >= 0 && autoReplyBranchEnd > autoReplyBranchStart, 'auto_reply attachment branch must be explicit');
+const autoReplyAttachmentBranch = attachmentBlock.slice(autoReplyBranchStart, autoReplyBranchEnd);
+assert.match(autoReplyAttachmentBranch, /<svg viewBox="0 0 24 24"/, 'auto_reply attachment action uses an inline SVG');
+assert.doesNotMatch(autoReplyAttachmentBranch, /material-symbols-rounded/, 'auto_reply image control does not depend on Material ligature text');
 
 for (const key of [
     'greetingEnabled','greetingText','onlyNewChats','ignoreSystemMessages','greetingCooldownDays',
