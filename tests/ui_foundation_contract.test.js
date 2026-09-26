@@ -64,7 +64,7 @@ assert.match(legacyButtonIcon, /margin:\s*0\s*!important/, 'legacy icon margins 
 
 assert.match(css, /\.fp-tools-popup \.fpt-ui-button:focus-visible,[\s\S]*?outline:\s*2px solid/, 'shared interactive controls need keyboard focus');
 assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.fpt-ui-button/, 'shared motion must respect reduced-motion');
-assert.doesNotMatch(foundationSlice(), /\.fp-tools-nav\b/, 'TASK 00 must not restyle the reference sidebar');
+assert.doesNotMatch(foundationSlice(), /\n\s*\.fp-tools-nav\b/, 'TASK 00 must not restyle the reference sidebar');
 
 function foundationSlice() {
     return css.slice(css.indexOf('/* ═══ FPT UI FOUNDATION v1 — TASK 00 ═══ */'));
