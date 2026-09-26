@@ -557,25 +557,11 @@
                 const periodWrap = container.querySelector('.fpt-fin-period-wrap');
                 if (!periodWrap) return;
 
-                // 0. Potential Snapshot Badge (T05)
-                let snapshotBadge = container.querySelector('#fptFinPeriodSnapshotBadge');
-                if (!snapshotBadge) {
-                    snapshotBadge = document.createElement('div');
-                    snapshotBadge.id = 'fptFinPeriodSnapshotBadge';
-                    snapshotBadge.className = 'fpt-fin-snapshot-badge';
-                    snapshotBadge.setAttribute('role', 'status');
-                    snapshotBadge.setAttribute('aria-label', 'Текущий снимок инвентаря');
-                    snapshotBadge.innerHTML = '<span class="material-symbols-rounded" style="font-size:16px;color:var(--fpt-text-muted,#676a73);vertical-align:middle;margin-right:4px;">inventory_2</span><span>Текущий снимок</span>';
-                    setFinanceControlVisible(snapshotBadge, false);
-                    const periodControl = container.querySelector('[data-fin-control="period"]');
-                    const periodSelect = container.querySelector('#fptFinPeriodSelect');
-                    const insertAfter = periodControl || periodSelect;
-                    if (insertAfter && insertAfter.parentNode) {
-                        insertAfter.parentNode.insertBefore(snapshotBadge, insertAfter.nextSibling);
-                    } else {
-                        periodWrap.appendChild(snapshotBadge);
-                    }
-                }
+                // 0. Potential uses a static, labelled snapshot field so its
+                // grammar matches Period/Currency/Category instead of becoming a one-off tile.
+                const snapshotBadge = container.querySelector('#fptFinPeriodSnapshotBadge');
+                const snapshotControl = container.querySelector('[data-fin-control="snapshot"]') || snapshotBadge;
+                setFinanceControlVisible(snapshotControl, false);
 
                 // 1. Period Select
                 const periodSelect = container.querySelector('#fptFinPeriodSelect');
@@ -677,6 +663,7 @@
                 if (!state.container) return;
                 const periodSelect = state.container.querySelector('#fptFinPeriodSelect');
                 const snapshotBadge = state.container.querySelector('#fptFinPeriodSnapshotBadge');
+                const snapshotControl = state.container.querySelector('[data-fin-control="snapshot"]') || snapshotBadge;
                 const currencySelect = state.container.querySelector('#fptFinCurrencySelect');
                 const statusSelect = state.container.querySelector('#fptFinStatusSelect');
                 const catSelect = state.container.querySelector('#fptFinCategorySelect');
@@ -689,7 +676,7 @@
 
                 // T05: Potential is a live snapshot, not a historical date range.
                 setFinanceControlVisible(periodControl, !isPotential);
-                setFinanceControlVisible(snapshotBadge, isPotential, 'inline-flex');
+                setFinanceControlVisible(snapshotControl, isPotential, 'flex');
                 setFinanceControlVisible(currencyControl, true);
                 setFinanceControlVisible(statusControl, !isPotential);
                 setFinanceControlVisible(categoryControl, subtab !== 'operations');
