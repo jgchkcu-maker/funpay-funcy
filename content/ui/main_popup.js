@@ -4446,6 +4446,9 @@ function setupFinanceHubUI(toolsPopup) {
 
     function switchSubtab(target, persistMode = true) {
         if (!target) return;
+        if (finPage.classList.contains('active') && toolsPopup?._fptNavSections?.showSectionForPage) {
+            toolsPopup._fptNavSections.showSectionForPage('finance_hub');
+        }
         const prevSubtab = finPage.querySelector('.fpt-fin-subtab.active')?.dataset?.subtab;
         const currentPane = finPage.querySelector('.fpt-fin-tab-pane.active');
         const targetPane = finPage.querySelector(`.fpt-fin-tab-pane[data-subtab="${target}"]`);
