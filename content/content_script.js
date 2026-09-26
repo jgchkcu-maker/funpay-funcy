@@ -377,7 +377,6 @@
                 initializeAnnouncementsFeature();
                 initializeLotIO();
                 initializeAutoReview();
-                initializeAILotAudit();
                 initializeSettingsIO();
                 initBulkLotEditor();
                 initAutoDeliveryUI();
