@@ -738,7 +738,7 @@ function createMainPopup() {
                                 </svg>
                                 <span>Импорт</span>
                             </button>
-                            <input type="file" id="lot-io-import-file" accept=".json" hidden>
+                            <input type="file" id="lot-io-import-file" class="lot-io-hidden-file-input" accept=".json" hidden aria-hidden="true" tabindex="-1">
                         </div>
                         <div class="lot-io-card-footer lot-io-transfer-footer">
                             <a href="#" id="convert-cardinal-lots-btn" class="lot-io-tertiary-link">
