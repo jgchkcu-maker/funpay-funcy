@@ -122,7 +122,7 @@
                     else cardEl.appendChild(body);
                 }
                 if (!keys.length) {
-                    body.innerHTML = '<div class="fpt-fin-empty-state" style="padding:28px 16px;">Нет операций за период.</div>';
+                    body.innerHTML = '<div class="fpt-ui-state fpt-fin-visual-empty"><p class="fpt-ui-state-title">Нет операций за период</p><p class="fpt-ui-state-text">Измените период или фильтры, чтобы увидеть динамику.</p></div>';
                     return;
                 }
 
@@ -138,16 +138,14 @@
 
                 if (!activeCur && opCurs.size > 1) {
                     const curButtons = Array.from(opCurs).map(c =>
-                        `<button type="button" class="fpt-fin-btn fpt-fin-btn-secondary fpt-fin-cur-select-btn" data-cur="${esc(c)}" style="margin:4px;padding:4px 12px;font-size:12px;border-radius:14px;cursor:pointer;">${esc(c)} (${esc(SYMBOLS[c] || c)})</button>`
+                        `<button type="button" class="fpt-ui-button fpt-ui-button--secondary fpt-fin-cur-select-btn" data-cur="${esc(c)}">${esc(c)} (${esc(SYMBOLS[c] || c)})</button>`
                     ).join('');
                     body.innerHTML = `
-                        <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;text-align:center;">
-                            <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:32px;color:var(--fptm-muted, #9099b8);">currency_exchange</span>
-                            <div class="fpt-fin-empty-title" style="font-size:14px;font-weight:600;margin-top:8px;">Выберите валюту для отображения денежного графика</div>
-                            <div class="fpt-fin-empty-desc" style="font-size:12px;color:var(--fptm-muted, #9099b8);margin-top:4px;max-width:460px;margin-left:auto;margin-right:auto;">
-                                В операциях за выбранный период присутствуют разные валюты. Финансовый хаб отображает динамику по каждой валюте без искусственной конвертации.
-                            </div>
-                            <div class="fpt-fin-chart-cur-actions" style="margin-top:12px;display:flex;justify-content:center;gap:6px;flex-wrap:wrap;">
+                        <div class="fpt-ui-state fpt-fin-visual-empty fpt-fin-currency-choice">
+                            <span class="material-symbols-rounded fpt-fin-empty-icon" aria-hidden="true">currency_exchange</span>
+                            <p class="fpt-ui-state-title">Выберите валюту для графика</p>
+                            <p class="fpt-ui-state-text">В выбранном периоде есть разные валюты. Динамика показывается отдельно без искусственной конвертации.</p>
+                            <div class="fpt-fin-chart-cur-actions">
                                 ${curButtons}
                             </div>
                         </div>`;
