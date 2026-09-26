@@ -13010,3 +13010,389 @@ textarea.fp-cw-input { line-height:1.4; }
         transition-duration: .01ms !important;
     }
 }
+
+
+/* ═══ FPT UI FOUNDATION v1 — TASK 00 ═══ */
+/*
+ * Shared content-side primitives. The sidebar remains the visual reference;
+ * these rules intentionally do not target .fp-tools-nav.
+ */
+.fp-tools-popup {
+    --fpt-ui-radius-page: 20px;
+    --fpt-ui-radius-card: 16px;
+    --fpt-ui-radius-control: 12px;
+    --fpt-ui-radius-small: 10px;
+    --fpt-ui-control-h: 42px;
+    --fpt-ui-icon-button: 40px;
+    --fpt-ui-row-min-h: 48px;
+    --fpt-ui-space-1: 4px;
+    --fpt-ui-space-2: 8px;
+    --fpt-ui-space-3: 12px;
+    --fpt-ui-space-4: 16px;
+    --fpt-ui-space-5: 20px;
+    --fpt-ui-space-6: 24px;
+    --fpt-ui-space-8: 32px;
+}
+
+/* Typography primitives: pages opt in instead of inheriting the oversized legacy h3 contract. */
+.fp-tools-popup .fpt-ui-page-title {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -.012em;
+}
+.fp-tools-popup .fpt-ui-section-title {
+    margin: 0;
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    font-size: 16px;
+    font-weight: 680;
+    line-height: 1.3;
+}
+.fp-tools-popup .fpt-ui-card-title {
+    margin: 0;
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.35;
+}
+.fp-tools-popup .fpt-ui-body {
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    font-size: 14px;
+    line-height: 1.45;
+}
+.fp-tools-popup .fpt-ui-helper {
+    color: var(--fptm-muted, var(--fpt-text-muted, #676a73));
+    font-size: 12.5px;
+    line-height: 1.4;
+}
+.fp-tools-popup .fpt-ui-meta {
+    color: var(--fptm-faint, var(--fpt-text-muted, #7b8090));
+    font-size: 11.5px;
+    line-height: 1.35;
+}
+
+/* Page/section structure. */
+.fp-tools-popup .fpt-ui-page-header,
+.fp-tools-popup .fpt-ui-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fpt-ui-space-4);
+    min-width: 0;
+}
+.fp-tools-popup .fpt-ui-page-header {
+    margin: 0 0 var(--fpt-ui-space-5);
+}
+.fp-tools-popup .fpt-ui-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--fpt-ui-space-3);
+    margin: 0 0 var(--fpt-ui-space-3);
+}
+.fp-tools-popup .fpt-ui-surface {
+    box-sizing: border-box;
+    padding: var(--fpt-ui-space-4);
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    background: var(--fptm-surface, var(--fpt-surface, #fff));
+    border: 1px solid var(--fptm-border, var(--fpt-border, rgba(22, 24, 29, .10)));
+    border-radius: var(--fpt-ui-radius-card);
+    box-shadow: none;
+}
+
+/* Fixed optical box for all icon + text compositions. */
+.fp-tools-popup .fpt-ui-icon-slot {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    line-height: 1;
+}
+.fp-tools-popup .fpt-ui-icon-slot > .material-symbols-rounded,
+.fp-tools-popup .fpt-ui-icon-slot > .material-icons {
+    margin: 0 !important;
+    vertical-align: initial !important;
+    font-size: 20px;
+    line-height: 1;
+}
+
+/*
+ * Legacy checkbox compatibility.
+ * Old CSS contributes margin-right:10px, child span margin-left:5px and a
+ * newer row gap. This final contract leaves exactly one spacing source: gap.
+ */
+.fp-tools-popup .checkbox-label-inline,
+.fp-tools-popup .fpt-ui-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 24px;
+    margin: 0 0 var(--fpt-ui-space-2);
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    font-size: 14px;
+    line-height: 1.35;
+}
+.fp-tools-popup .checkbox-label-inline > input[type="checkbox"],
+.fp-tools-popup .fpt-ui-checkbox-row > input[type="checkbox"] {
+    box-sizing: border-box;
+    flex: 0 0 16px;
+    width: 16px;
+    height: 16px;
+    margin: 0 !important;
+    vertical-align: initial !important;
+}
+.fp-tools-popup .checkbox-label-inline > span,
+.fp-tools-popup .fpt-ui-checkbox-row > span {
+    min-width: 0;
+    margin: 0 !important;
+    line-height: inherit;
+}
+.fp-tools-popup .fpt-ui-checkbox-row--multiline {
+    align-items: flex-start;
+}
+
+/*
+ * Split one-line fields from textareas. Previously .template-input gave
+ * min-height:60px and resize:vertical to number/text/select controls.
+ */
+.fp-tools-popup input.template-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+.fp-tools-popup select.template-input,
+.fp-tools-popup .fpt-ui-control {
+    box-sizing: border-box;
+    min-height: 0 !important;
+    height: var(--fpt-ui-control-h);
+    margin-bottom: var(--fpt-ui-space-3);
+    padding-top: 0;
+    padding-bottom: 0;
+    border-radius: var(--fpt-ui-radius-control);
+    line-height: 1.2;
+    resize: none !important;
+}
+.fp-tools-popup textarea.template-input,
+.fp-tools-popup textarea.fpt-ui-control {
+    box-sizing: border-box;
+    height: auto;
+    min-height: 88px !important;
+    padding: 10px 12px;
+    border-radius: var(--fpt-ui-radius-control);
+    line-height: 1.45;
+    resize: vertical !important;
+}
+
+/* Authoritative button primitives for migrated pages. */
+.fp-tools-popup .fpt-ui-button {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: var(--fpt-ui-control-h);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fpt-ui-space-2);
+    margin: 0;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: var(--fpt-ui-radius-control);
+    box-shadow: none;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 620;
+    line-height: 1.2;
+    letter-spacing: normal;
+    text-align: center;
+    text-transform: none;
+    cursor: pointer;
+    transition: background-color .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, opacity .16s ease;
+}
+.fp-tools-popup .fpt-ui-button--primary {
+    color: #fff;
+    background: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+}
+.fp-tools-popup .fpt-ui-button--secondary {
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    background: var(--fptm-field, var(--fpt-surface-2, #fff));
+    border-color: var(--fptm-border, var(--fpt-border, rgba(22, 24, 29, .12)));
+}
+.fp-tools-popup .fpt-ui-button--tertiary {
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+    background: transparent;
+}
+.fp-tools-popup .fpt-ui-button--danger {
+    color: var(--fpt-danger, #c93f4b);
+    background: color-mix(in srgb, var(--fpt-danger, #c93f4b) 7%, transparent);
+    border-color: color-mix(in srgb, var(--fpt-danger, #c93f4b) 24%, transparent);
+}
+.fp-tools-popup .fpt-ui-icon-button {
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 var(--fpt-ui-icon-button);
+    align-items: center;
+    justify-content: center;
+    width: var(--fpt-ui-icon-button);
+    height: var(--fpt-ui-icon-button);
+    min-width: var(--fpt-ui-icon-button);
+    min-height: var(--fpt-ui-icon-button);
+    padding: 0;
+    border-radius: var(--fpt-ui-radius-control);
+    line-height: 1;
+}
+.fp-tools-popup .fpt-ui-button > .material-symbols-rounded,
+.fp-tools-popup .fpt-ui-button > .material-icons,
+.fp-tools-popup .fpt-ui-icon-button > .material-symbols-rounded,
+.fp-tools-popup .fpt-ui-icon-button > .material-icons {
+    flex: 0 0 auto;
+    margin: 0 !important;
+    vertical-align: initial !important;
+    line-height: 1;
+}
+
+/* Stabilise existing icon+label .btn controls while pages migrate to fpt-ui-button. */
+.fp-tools-popup .btn:has(> .material-symbols-rounded),
+.fp-tools-popup .btn:has(> .material-icons) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--fpt-ui-space-2);
+}
+.fp-tools-popup .btn > .material-symbols-rounded,
+.fp-tools-popup .btn > .material-icons {
+    flex: 0 0 auto;
+    margin: 0 !important;
+    vertical-align: initial !important;
+    line-height: 1;
+}
+
+.fp-tools-popup .fpt-ui-button:focus-visible,
+.fp-tools-popup .fpt-ui-icon-button:focus-visible,
+.fp-tools-popup .fpt-ui-control:focus-visible,
+.fp-tools-popup .fpt-ui-segmented button:focus-visible {
+    outline: 2px solid var(--fptm-accent, var(--fpt-accent, #1b75bb));
+    outline-offset: 2px;
+}
+.fp-tools-popup .fpt-ui-button:disabled,
+.fp-tools-popup .fpt-ui-icon-button:disabled {
+    opacity: .48;
+    cursor: not-allowed;
+}
+
+/* Settings row: simple settings no longer require a card per checkbox. */
+.fp-tools-popup .fpt-ui-setting-row {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fpt-ui-space-4);
+    min-height: var(--fpt-ui-row-min-h);
+    padding: 10px 0;
+}
+.fp-tools-popup .fpt-ui-setting-row + .fpt-ui-setting-row {
+    border-top: 1px solid var(--fptm-border, var(--fpt-border, rgba(22, 24, 29, .08)));
+}
+.fp-tools-popup .fpt-ui-setting-row-copy {
+    min-width: 0;
+}
+
+/* Shared segmented tabs. */
+.fp-tools-popup .fpt-ui-segmented {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    background: var(--fptm-surface-2, var(--fpt-surface-2, rgba(22, 24, 29, .045)));
+    border: 1px solid var(--fptm-border, var(--fpt-border, rgba(22, 24, 29, .10)));
+    border-radius: var(--fpt-ui-radius-control);
+}
+.fp-tools-popup .fpt-ui-segmented > button {
+    box-sizing: border-box;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0 12px;
+    color: var(--fptm-muted, var(--fpt-text-muted, #676a73));
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: calc(var(--fpt-ui-radius-control) - 3px) !important;
+    box-shadow: none !important;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1;
+    text-transform: none;
+    transform: none !important;
+}
+.fp-tools-popup .fpt-ui-segmented > button.active,
+.fp-tools-popup .fpt-ui-segmented > button[aria-selected="true"] {
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    background: var(--fptm-field, var(--fpt-surface, #fff)) !important;
+    box-shadow: 0 1px 3px var(--fptm-shadow, rgba(22, 24, 29, .10)) !important;
+}
+
+/* Callouts deliberately share one geometry; semantic color is the modifier. */
+.fp-tools-popup .fpt-ui-callout {
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    align-items: start;
+    gap: var(--fpt-ui-space-3);
+    padding: 12px 14px;
+    border: 1px solid var(--fptm-border, var(--fpt-border, rgba(22, 24, 29, .10)));
+    border-radius: var(--fpt-ui-radius-control);
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    background: var(--fptm-surface-2, var(--fpt-surface-2, rgba(22, 24, 29, .035)));
+    font-size: 13px;
+    line-height: 1.45;
+}
+.fp-tools-popup .fpt-ui-callout--single-line {
+    align-items: center;
+}
+.fp-tools-popup .fpt-ui-callout--warning {
+    border-color: color-mix(in srgb, #d89b25 32%, transparent);
+    background: color-mix(in srgb, #d89b25 7%, transparent);
+}
+.fp-tools-popup .fpt-ui-callout--error {
+    border-color: color-mix(in srgb, #c93f4b 30%, transparent);
+    background: color-mix(in srgb, #c93f4b 7%, transparent);
+}
+
+/* Shared async / empty states. */
+.fp-tools-popup .fpt-ui-state {
+    box-sizing: border-box;
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: var(--fpt-ui-space-2);
+    min-height: 128px;
+    padding: var(--fpt-ui-space-5);
+    text-align: center;
+    color: var(--fptm-muted, var(--fpt-text-muted, #676a73));
+}
+.fp-tools-popup .fpt-ui-state-title {
+    margin: 0;
+    color: var(--fptm-text, var(--fpt-text, #16181d));
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.35;
+}
+.fp-tools-popup .fpt-ui-state-text {
+    max-width: 440px;
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup .fpt-ui-button,
+    .fp-tools-popup .fpt-ui-icon-button,
+    .fp-tools-popup .fpt-ui-segmented > button {
+        transition-duration: .01ms !important;
+    }
+}
