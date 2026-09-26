@@ -172,7 +172,7 @@ await fptPatchAutoReplies({ arrayOps: { randomBonuses: [{ op: 'append', value: '
 
 ```js
 const targetSections = {
-  sales: ['lot_io', 'auto_delivery', 'autobump', 'ai_audit'],
+  sales: ['lot_io', 'auto_delivery', 'autobump'],
   customers: ['auto_reply', 'auto_review', 'templates', 'blacklist'],
   finance: ['finance_hub', 'piggy_banks', 'calculator'],
   interface: ['theme', 'effects', 'epic_nicks', 'needs'],
@@ -199,7 +199,7 @@ const targetSections = {
 
 **Interfaces:** Search index entries include `{ groupId, pageId, mode, text, aliases, element }`. Navigation and result activation call `openPopupPage` before scrolling. Quick actions have human labels even without a nav `li`. A query matching a group heading reveals that group's child page entries and expands the group; it does not navigate automatically.
 
-- [x] Тестами проверить старые названия «Слэш-команды», «Валюты», «Функции», «Тикеты», «ИИ-аудит», новые названия, `notes`, `support`, каждый заголовок группы (по совпадению раскрыты все страницы только этой группы), заголовок внутри неактивного режима и позднее скрытие `global_chat` после построения индекса (пункт и внутренние элементы исключены, stale results убраны).
+- [x] Тестами проверить старые названия «Слэш-команды», «Валюты», «Функции», «Тикеты», новые названия, `notes`, `support`, каждый заголовок группы (по совпадению раскрыты все страницы только этой группы), заголовок внутри неактивного режима и позднее скрытие `global_chat` после построения индекса (пункт и внутренние элементы исключены, stale results убраны).
 - [x] Проверить отдельным тестом, что «поддержка» выводит `tickets` с пометкой FunPay, а «оценить расширение» — нижнее действие `support`; поиск по импорту показывает и лоты, и перенос настроек.
 - [x] Запустить тест до обновления индекса.
 - [x] Добавить явный словарь синонимов, названия `FPT_NAV_SECTIONS` в индекс и индексы внутренних панелей режимов. Совпадение с группой раскрывает только её дочерние пункты; совпадение пункта или старого термина фильтрует меню по соответствующей подписи. Полный индекс исключает страницы, у которых nav `li` скрыт remote config; при изменении display индекс и результаты перестраиваются. Результат вызывает `openPopupPage(pageId, { mode })`, ждёт появления нужной панели, затем подсвечивает точный элемент.
