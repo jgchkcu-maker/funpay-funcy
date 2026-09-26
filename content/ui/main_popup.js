@@ -146,7 +146,6 @@ function createMainPopup() {
                     <li class="fp-nav-divider">Торговля</li>
                     <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>
                     <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>
-                    <li data-page="ai_audit"><a><span class="nav-icon material-symbols-rounded">search_insights</span><span>Аудит магазина</span></a></li>
                     <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>
                     <li class="fp-nav-divider">Финансы</li>
                     <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>
@@ -1715,48 +1714,6 @@ function createMainPopup() {
                     <div class="overview-container"><h3 style="border:none">Видео-обзор функций</h3><p class="template-info">Посмотрите короткий кинематографический ролик, демонстрирующий все возможности FunPay Funcy в действии. Откройте для себя инструменты, о которых вы могли не знать!</p><div class="overview-promo-art"></div><button id="start-overview-tour-btn" class="btn">▶️ Начать обзор</button></div>
                     <div class="feature-list-container"><h3>Справочник по функциям</h3><div class="feature-item"><div class="feature-title"><span class="material-icons">smart_toy</span>ИИ-Ассистент в чате</div><div class="feature-location"><strong>Где найти:</strong> В любом чате, кнопка "AI" рядом с полем ввода.</div><div class="feature-desc">Улучшает ваш текст, делая его вежливым и профессиональным. Активируйте режим и нажмите Enter для обработки. Также предупреждает о грубости.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_high</span>AI-Генератор лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота.</div><div class="feature-desc">Создает название и описание для лота на основе ваших идей, анализируя и копируя стиль ваших существующих предложений.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">add_photo_alternate</span>AI-Генератор изображений</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота, в разделе "Изображения".</div><div class="feature-desc">Создавайте уникальные и стильные превью для ваших предложений с помощью встроенного генератора, в том числе по текстовому запросу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">palette</span>Полная кастомизация</div><div class="feature-location"><strong>Где найти:</strong> Страница «Темы».</div><div class="feature-desc">Измените внешний вид FunPay: установите анимированный фон, настройте цвета, шрифты, прозрачность блоков и даже расположение верхней панели.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_normal</span>"Кастомизатор (режим редактора)</div><div class="feature-location"><strong>Где найти:</strong> Страница «Темы».</div><div class="feature-desc">Редактируйте любой элемент сайта в реальном времени. Меняйте цвета, размеры или скрывайте ненужное, сохраняя стили навсегда.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">description</span>Шаблоны и AI-переменные</div><div class="feature-location"><strong>Где найти:</strong> Под полем ввода в чате. Настраиваются на странице «Быстрые ответы», во вкладке «Шаблоны».</div><div class="feature-desc">Быстрая вставка готовых сообщений. Поддерживают переменные {buyername}, {date} и даже генерацию текста через {ai:ваш запрос}.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">checklist</span>Управление лотами и ценами</div><div class="feature-location"><strong>Где найти:</strong> На странице вашего профиля (funpay.com/users/...).</div><div class="feature-desc">Кнопка "Выбрать" позволяет выделить несколько лотов для массового удаления, дублирования, отключения или редактирования цен.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">control_point_duplicate</span>Клонирование лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования любого вашего лота.</div><div class="feature-desc">Кнопка "Копировать" позволяет создать точную копию лота или массово размножить его по разным категориям (например, по разным серверам).</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">content_copy</span>Копировать лот со страницы заказа</div><div class="feature-location"><strong>Где найти:</strong> На странице купленного заказа (funpay.com/orders/...), кнопка под блоком "Оплаченный товар".</div><div class="feature-desc">Создаёт копию купленного лота через тот же мастер, что и обычное клонирование: подтягивает описание, автоматически переводит его на английский и, если у лота была автовыдача, сразу вставляет выданный товар в поле автовыдачи.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">public</span>Глобальный импорт лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования лота, кнопка "Импорт".</div><div class="feature-desc">Импортируйте название и описание любого лота с FunPay, чтобы анализировать конкурентов или использовать как основу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">sort_by_alpha</span>Сортировка по отзывам</div><div class="feature-location"><strong>Где найти:</strong> На любой странице со списком лотов.</div><div class="feature-desc">Кликните на заголовок "Продавец" в таблице, чтобы отсортировать все предложения по количеству отзывов у продавцов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">label</span>Пометки для пользователей</div><div class="feature-location"><strong>Где найти:</strong> В выпадающем меню в заголовке чата с человеком.</div><div class="feature-desc">Устанавливайте настраиваемые цветные метки для пользователей, которые будут видны в вашем списке контактов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">rocket_launch</span>Автоподнятие лотов</div><div class="feature-location"><strong>Где найти:</strong> Страница «Автоподнятие».</div><div class="feature-desc">Настройте автоматическое поднятие лотов по таймеру. Можно выбрать для поднятия только определенные категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">monitoring</span>Статистика</div><div class="feature-location"><strong>Где найти:</strong> В FunPay: страница «Продажи» для статистики и кнопка «Аналитика рынка» на странице игры.</div><div class="feature-desc">Получайте детальную статистику по своим продажам и анализируйте рыночную ситуацию в любой категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">savings</span>Финансовые копилки</div><div class="feature-location"><strong>Где найти:</strong> Страница «Копилки» и иконка в шапке сайта.</div><div class="feature-desc">Устанавливайте финансовые цели и отслеживайте их достижение. Копилка синхронизируется с балансом FunPay.</div></div></div>
                 </div>
-                <div class="fp-tools-page-content" data-page="ai_audit">
-                    <h3>Аудит магазина</h3>
-
-                    <!-- START STATE -->
-                    <div id="fp-audit-start-wrap">
-                        <p class="template-info">ИИ прочитает все ваши лоты и последние 30 отзывов, сгенерирует ~40 вопросов и на основе ваших ответов выдаст конкретные рекомендации.</p>
-                        <div class="support-promo" style="background:rgba(27,117,187,0.07);border-color:rgba(27,117,187,0.2);margin-bottom:16px;">
-                            <span class="material-symbols-rounded" style="font-size:16px;color:#f4c84a;vertical-align:-3px;">lightbulb</span>
-                            <span>Вопросы будут именно о ваших лотах - ИИ внимательно их изучит перед генерацией.</span>
-                        </div>
-                        <button id="fp-audit-start-btn" class="btn" style="width:100%;padding:12px;"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:-4px;margin-right:6px;">search_insights</span>Начать аудит</button>
-                        <p id="fp-audit-cooldown-msg" style="display:none;text-align:center;font-size:12px;color:var(--fptm-faint, #5a5f7a);margin-top:8px;"></p>
-                    </div>
-
-                    <!-- LOADING STATE -->
-                    <div id="fp-audit-loading" style="display:none;font-size:13px;color:var(--fptm-faint, #5a5f7a);margin-top:10px;white-space:pre-line;text-align:center;line-height:1.7;padding:20px 0;"></div>
-
-                    <!-- SURVEY STATE -->
-                    <div id="fp-audit-survey" style="display:none;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                            <span id="fp-audit-q-num" style="font-size:12px;color:var(--fptm-faint, #5a5f7a);"></span>
-                            <span id="fp-audit-skip" style="font-size:11px;color:var(--fptm-faint, #3a3d52);cursor:pointer;" onclick="document.getElementById('fp-audit-next-btn')?.click()">Пропустить →</span>
-                        </div>
-                        <div style="height:4px;background:var(--fptm-surface, #1e2030);border-radius:2px;margin-bottom:16px;overflow:hidden;">
-                            <div id="fp-audit-progress-bar" style="height:100%;background:#1b75bb;width:0;transition:width .3s;border-radius:2px;"></div>
-                        </div>
-                        <div id="fp-audit-q-container" style="min-height:120px;"></div>
-                        <div style="display:flex;gap:8px;margin-top:16px;">
-                            <button id="fp-audit-prev-btn" class="btn btn-default" style="flex:1;">← Назад</button>
-                            <button id="fp-audit-next-btn" class="btn" style="flex:2;">Далее →</button>
-                        </div>
-                    </div>
-
-                    <!-- PROCESSING STATE -->
-                    <div id="fp-audit-processing" style="display:none;text-align:center;padding:30px 0;color:var(--fptm-faint, #5a5f7a);font-size:13px;">
-                        ИИ анализирует ваши ответы и готовит рекомендации...
-                    </div>
-
-                    <!-- RESULTS STATE -->
-                    <div id="fp-audit-results" style="display:none;overflow-y:auto;max-height:460px;padding-right:4px;"></div>
-                </div>
-
                 <div class="fp-tools-page-content" data-page="settings_io">
                     <h3>Перенос настроек</h3>
                     <p class="template-info">Сохраните все настройки FunPay Funcy в файл и восстановите на другом устройстве или аккаунте.</p>
@@ -3082,7 +3039,7 @@ function _updateColorInputs(palette) {
 
 
 const FPT_NAV_SECTIONS = Object.freeze([
-    { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump', 'ai_audit']) },
+    { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump']) },
     { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist']) },
     { id: 'finance', label: 'Финансы', icon: 'analytics', pages: Object.freeze(['finance_hub', 'piggy_banks', 'calculator']) },
     { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'epic_nicks', 'needs']) },
@@ -3094,7 +3051,6 @@ const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     lot_io: 'Управление лотами',
     auto_delivery: 'Автовыдача',
     autobump: 'Автоподнятие',
-    ai_audit: 'Аудит магазина',
     auto_reply: 'Автоответчик',
     auto_review: 'Отзывы и бонусы',
     templates: 'Быстрые ответы',
@@ -4393,7 +4349,6 @@ function setupNavSearch(toolsPopup) {
         ],
         calculator: [{ mode: 'currency', aliases: ['Валюты'] }],
         theme: [{ mode: null, aliases: ['Кастомизация'] }],
-        ai_audit: [{ mode: null, aliases: ['ИИ-аудит'] }],
         tickets: [{ mode: null, aliases: ['Тикеты'] }],
         overview: [{ mode: null, aliases: ['Функции', 'Видео-обзор'] }],
         settings_io: [{ mode: null, aliases: ['Импорт / экспорт'] }],
