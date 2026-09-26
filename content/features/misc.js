@@ -320,6 +320,115 @@ function fptBuildAutoReplyPatch(changedTargets = null) {
     return { set, merge, unset };
 }
 
+
+const FP_AUTOBUMP_LOG_KEY = 'fpToolsAutoBumpLogs';
+
+function fpAutoBumpCategoryCountLabel(count) {
+    const value = Number(count) || 0;
+    const mod100 = value % 100;
+    const mod10 = value % 10;
+    if (mod100 >= 11 && mod100 <= 14) return value + ' категорий';
+    if (mod10 === 1) return value + ' категория';
+    if (mod10 >= 2 && mod10 <= 4) return value + ' категории';
+    return value + ' категорий';
+}
+
+function updateAutoBumpCategorySummary(selectedIds = []) {
+    const summary = document.getElementById('autoBumpSelectedSummary');
+    const label = document.getElementById('autoBumpConfigureLabel');
+    const count = Array.isArray(selectedIds) ? selectedIds.length : 0;
+    if (summary) summary.textContent = count ? fpAutoBumpCategoryCountLabel(count) : 'Категории не выбраны';
+    if (label) label.textContent = count ? 'Изменить' : 'Выбрать';
+}
+
+function syncAutoBumpUIState() {
+    const master = document.getElementById('autoBumpEnabled');
+    const selective = document.getElementById('selectiveBumpEnabled');
+    const onlyAutoDelivery = document.getElementById('bumpOnlyAutoDelivery');
+    const dependent = document.getElementById('autoBumpDependentSettings');
+    const selectedRow = document.getElementById('autoBumpSelectedCategoriesRow');
+    const configure = document.getElementById('configureSelectiveBumpBtn');
+    const stateLabel = document.getElementById('autoBumpMasterState');
+    if (!master || !selective || !onlyAutoDelivery || !dependent) return;
+
+    const enabled = master.checked;
+    dependent.classList.toggle('is-disabled', !enabled);
+    dependent.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+    selective.disabled = !enabled;
+    onlyAutoDelivery.disabled = !enabled;
+    if (selectedRow) selectedRow.hidden = !selective.checked;
+    if (configure) configure.disabled = !enabled || !selective.checked;
+    if (stateLabel) {
+        stateLabel.textContent = enabled ? 'Включено' : 'Выключено';
+        stateLabel.classList.toggle('is-enabled', enabled);
+    }
+}
+
+function fpAutoBumpIsError(message) {
+    return /ошиб|не удалось|системная ошибка/i.test(String(message || ''));
+}
+
+function renderAutoBumpLogEntries(entries = []) {
+    const consoleEl = document.getElementById('autoBumpConsole');
+    const lastStatus = document.getElementById('autoBumpLastStatus');
+    const status = document.getElementById('autoBumpStatus');
+    if (!consoleEl || !lastStatus || !status) return;
+    const logs = Array.isArray(entries) ? entries.filter(item => typeof item === 'string' && item.trim()).slice(0, 50) : [];
+    consoleEl.replaceChildren();
+    if (!logs.length) {
+        lastStatus.textContent = 'Событий пока нет';
+        status.dataset.status = 'idle';
+        return;
+    }
+    lastStatus.textContent = logs[0];
+    status.dataset.status = fpAutoBumpIsError(logs[0]) ? 'error' : 'ok';
+    const fragment = document.createDocumentFragment();
+    logs.forEach(message => {
+        const entry = document.createElement('p');
+        entry.className = 'fp-autobump-log-entry';
+        if (fpAutoBumpIsError(message)) entry.classList.add('is-error');
+        entry.textContent = message;
+        fragment.appendChild(entry);
+    });
+    consoleEl.appendChild(fragment);
+}
+
+function appendAutoBumpLog(message) {
+    const consoleEl = document.getElementById('autoBumpConsole');
+    const lastStatus = document.getElementById('autoBumpLastStatus');
+    const status = document.getElementById('autoBumpStatus');
+    if (!consoleEl || !lastStatus || !status) return;
+    const entry = document.createElement('p');
+    entry.className = 'fp-autobump-log-entry';
+    const isError = fpAutoBumpIsError(message);
+    if (isError) entry.classList.add('is-error');
+    entry.textContent = message;
+    consoleEl.prepend(entry);
+    while (consoleEl.children.length > 50) consoleEl.removeChild(consoleEl.lastChild);
+    lastStatus.textContent = message;
+    status.dataset.status = isError ? 'error' : 'ok';
+    if (isError) {
+        const toggle = document.getElementById('autoBumpLogToggle');
+        const label = toggle && toggle.querySelector('.auto-bump-log-toggle-label');
+        consoleEl.hidden = false;
+        if (toggle) toggle.setAttribute('aria-expanded', 'true');
+        if (label) label.textContent = 'Скрыть журнал';
+    }
+}
+
+function createAutoBumpCategoryItem(category, checked) {
+    const label = document.createElement('label');
+    label.className = 'autobump-category-item';
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.dataset.id = String((category && category.id) || '');
+    checkbox.checked = !!checked;
+    const text = document.createElement('span');
+    text.textContent = String((category && category.name) || 'Без названия');
+    label.append(checkbox, text);
+    return label;
+}
+
 function initializeToolsPopup() {
     const popup = document.querySelector('.fp-tools-popup');
     if (!popup || popup.dataset.initialized === 'true') {
@@ -480,66 +589,99 @@ function initializeToolsPopup() {
         });
     }
 
+
+    const autoBumpMaster = document.getElementById('autoBumpEnabled');
+    const selectiveBump = document.getElementById('selectiveBumpEnabled');
     const configureBtn = document.getElementById('configureSelectiveBumpBtn');
     const modalOverlay = document.getElementById('autobump-category-modal-overlay');
+    const logToggle = document.getElementById('autoBumpLogToggle');
+    const logConsole = document.getElementById('autoBumpConsole');
 
-    configureBtn.addEventListener('click', async () => {
+    autoBumpMaster?.addEventListener('change', syncAutoBumpUIState);
+    selectiveBump?.addEventListener('change', syncAutoBumpUIState);
+
+    logToggle?.addEventListener('click', () => {
+        if (!logConsole) return;
+        const willOpen = logConsole.hidden;
+        logConsole.hidden = !willOpen;
+        logToggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+        const label = logToggle.querySelector('.auto-bump-log-toggle-label');
+        if (label) label.textContent = willOpen ? 'Скрыть журнал' : 'Открыть журнал';
+    });
+
+    chrome.storage.local.get(['fpToolsSelectedBumpCategories', FP_AUTOBUMP_LOG_KEY]).then(data => {
+        updateAutoBumpCategorySummary(data.fpToolsSelectedBumpCategories || []);
+        renderAutoBumpLogEntries(data[FP_AUTOBUMP_LOG_KEY] || []);
+        syncAutoBumpUIState();
+    }).catch(() => syncAutoBumpUIState());
+
+    configureBtn?.addEventListener('click', async () => {
+        if (!modalOverlay || configureBtn.disabled) return;
         modalOverlay.style.display = 'flex';
         const listContainer = document.getElementById('autobump-category-list');
-        listContainer.innerHTML = '<div class="fp-import-loader"></div>';
-
+        if (!listContainer) return;
+        listContainer.replaceChildren();
+        const loader = document.createElement('div');
+        loader.className = 'fp-import-loader';
+        listContainer.appendChild(loader);
         try {
             const response = await chrome.runtime.sendMessage({ action: 'getUserCategories' });
-            if (!response.success) throw new Error(response.error);
-            const categories = response.data;
-            const { fpToolsSelectedBumpCategories = [] } = await chrome.storage.local.get('fpToolsSelectedBumpCategories');
-            
-            if (categories && categories.length > 0) {
-                listContainer.innerHTML = categories.map(cat => `
-                    <label class="autobump-category-item">
-                        <input type="checkbox" data-id="${cat.id}" ${fpToolsSelectedBumpCategories.includes(cat.id) ? 'checked' : ''}>
-                        <span>${cat.name}</span>
-                    </label>
-                `).join('');
+            if (!response?.success) throw new Error(response?.error || 'Не удалось загрузить категории');
+            const categories = Array.isArray(response.data) ? response.data : [];
+            const stored = await chrome.storage.local.get('fpToolsSelectedBumpCategories');
+            const selected = Array.isArray(stored.fpToolsSelectedBumpCategories) ? stored.fpToolsSelectedBumpCategories : [];
+            listContainer.replaceChildren();
+            if (categories.length) {
+                const fragment = document.createDocumentFragment();
+                categories.forEach(category => {
+                    const categoryId = String((category && category.id) || '');
+                    fragment.appendChild(createAutoBumpCategoryItem(category, selected.map(String).includes(categoryId)));
+                });
+                listContainer.appendChild(fragment);
             } else {
-                listContainer.innerHTML = '<div class="fp-import-empty">Не найдено категорий на вашем профиле.</div>';
+                const empty = document.createElement('div');
+                empty.className = 'fp-import-empty';
+                empty.textContent = 'Не найдено категорий на вашем профиле.';
+                listContainer.appendChild(empty);
             }
         } catch (error) {
-            listContainer.innerHTML = `<div class="fp-import-empty">Ошибка загрузки: ${error.message}</div>`;
+            listContainer.replaceChildren();
+            const errorState = document.createElement('div');
+            errorState.className = 'fp-import-empty';
+            errorState.textContent = 'Ошибка загрузки: ' + error.message;
+            listContainer.appendChild(errorState);
         }
     });
 
-    modalOverlay.querySelector('.fp-tools-modal-close').addEventListener('click', () => {
+    modalOverlay?.querySelector('.fp-tools-modal-close')?.addEventListener('click', () => {
         modalOverlay.style.display = 'none';
     });
 
-    document.getElementById('autobump-select-all').addEventListener('click', () => {
-        const firstVisibleCheckbox = document.querySelector('#autobump-category-list .autobump-category-item:not([style*="display: none"]) input');
-        if (!firstVisibleCheckbox) return;
-        const isChecked = !firstVisibleCheckbox.checked;
-        document.querySelectorAll('#autobump-category-list input[type="checkbox"]').forEach(cb => {
-            if (cb.closest('.autobump-category-item').style.display !== 'none') {
-                cb.checked = isChecked;
-            }
+    document.getElementById('autobump-select-all')?.addEventListener('click', () => {
+        const visibleCheckboxes = Array.from(document.querySelectorAll('#autobump-category-list .autobump-category-item:not([hidden]) input[type="checkbox"]'));
+        if (!visibleCheckboxes.length) return;
+        const shouldCheck = visibleCheckboxes.some(cb => !cb.checked);
+        visibleCheckboxes.forEach(cb => { cb.checked = shouldCheck; });
+    });
+
+    document.getElementById('autobump-category-search')?.addEventListener('input', event => {
+        const query = String(event.target.value || '').trim().toLowerCase();
+        document.querySelectorAll('#autobump-category-list .autobump-category-item').forEach(item => {
+            const name = item.querySelector('span')?.textContent?.toLowerCase() || '';
+            item.hidden = !name.includes(query);
         });
     });
 
-    document.getElementById('autobump-category-search').addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase();
-        document.querySelectorAll('.autobump-category-item').forEach(item => {
-            const name = item.querySelector('span').textContent.toLowerCase();
-            item.style.display = name.includes(query) ? 'flex' : 'none';
-        });
-    });
-
-    document.getElementById('autobump-category-save').addEventListener('click', async () => {
+    document.getElementById('autobump-category-save')?.addEventListener('click', async () => {
         const selectedIds = Array.from(document.querySelectorAll('#autobump-category-list input:checked'))
-                                .map(cb => cb.dataset.id);
+            .map(cb => cb.dataset.id)
+            .filter(Boolean);
         await chrome.storage.local.set({ fpToolsSelectedBumpCategories: selectedIds });
-        modalOverlay.style.display = 'none';
-        showNotification('Список категорий для поднятия сохранен!', false);
+        updateAutoBumpCategorySummary(selectedIds);
+        if (modalOverlay) modalOverlay.style.display = 'none';
+        showNotification('Список категорий для поднятия сохранён!', false);
     });
-    
+
     if (typeof renderCustomTemplatesList === 'function') renderCustomTemplatesList();
     if (typeof setupThemeCustomizationHandlers === 'function') setupThemeCustomizationHandlers();
     if (typeof updateThemePreview === 'function') updateThemePreview();
@@ -557,15 +699,7 @@ function initializeToolsPopup() {
 }
 
 function logToAutoBumpConsole(message) {
-    const consoleEl = document.getElementById('autoBumpConsole');
-    if(consoleEl) {
-        const logEntry = document.createElement('p');
-        logEntry.textContent = message;
-        consoleEl.prepend(logEntry);
-        while (consoleEl.children.length > 100) {
-            consoleEl.removeChild(consoleEl.lastChild);
-        }
-    }
+    appendAutoBumpLog(message);
 }
 
 async function initializeQuickGamesMenu() {

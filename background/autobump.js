@@ -2,10 +2,22 @@
 
 export const BUMP_ALARM_NAME = 'fpToolsAutoBump';
 
+const AUTOBUMP_LOG_KEY = 'fpToolsAutoBumpLogs';
+const AUTOBUMP_LOG_LIMIT = 50;
+
 async function logToConsole(message) {
     const timestamp = new Date().toLocaleTimeString();
-    const logMessage = `[${timestamp}] ${message}`;
-    console.log(`[FunPay Funcy AutoBump] ${logMessage}`);
+    const logMessage = '[' + timestamp + '] ' + message;
+    console.log('[FunPay Funcy AutoBump] ' + logMessage);
+    try {
+        const stored = await chrome.storage.local.get(AUTOBUMP_LOG_KEY);
+        const previous = Array.isArray(stored[AUTOBUMP_LOG_KEY]) ? stored[AUTOBUMP_LOG_KEY] : [];
+        await chrome.storage.local.set({
+            [AUTOBUMP_LOG_KEY]: [logMessage, ...previous].slice(0, AUTOBUMP_LOG_LIMIT)
+        });
+    } catch (error) {
+        console.error('Error persisting autobump log:', error);
+    }
     try {
         const tabs = await chrome.tabs.query({ url: "*://funpay.com/*" });
         if (tabs.length > 0) {
@@ -13,11 +25,11 @@ async function logToConsole(message) {
                 chrome.tabs.sendMessage(tab.id, {
                     action: 'logToAutoBumpConsole',
                     message: logMessage
-                }).catch(e => {});
+                }).catch(() => {});
             });
         }
     } catch (error) {
-        console.error("Error sending log message to content script:", error);
+        console.error('Error sending log message to content script:', error);
     }
 }
 

@@ -1650,19 +1650,79 @@ function createMainPopup() {
                     <div class="setting-group" id="fptTextOutlineGroup"><h4 style="margin-top: 0;">Контур тексту</h4><div class="checkbox-label-inline"><input type="checkbox" id="fptTextOutlineEnabled"><label for="fptTextOutlineEnabled" style="margin-bottom:0;"><span>Включить контур буквам</span></label></div><small style="font-size:12px;opacity:0.7;display:block;margin-top:-10px;margin-bottom:8px;">Обводит все буквы в меню контуром для возможного повышения читаемости.</small><div id="fptTextOutlineControls" style="display:none;"><div class="template-container color-input-grid"><div><label for="fptTextOutlineColor">Цвет контура:</label><input type="color" id="fptTextOutlineColor" class="theme-color-input" value="#1b75bb"></div></div><div class="template-container"><div class="range-label"><label for="fptTextOutlineWidth">Толщина:</label><span id="fptTextOutlineWidthValue">1px</span></div><input type="range" id="fptTextOutlineWidth" min="0" max="5" step="0.5"></div></div></div>
                     <div class="theme-actions-grid"><button id="enableMagicStickBtn" class="btn" style="grid-column: 1 / -1;"><span class="material-icons">auto_fix_normal</span><span>Включить режим редактора</span></button><button id="generatePaletteBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">auto_fix_high</span>цвета фона</button><button id="randomizeThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">casino</span>рандом</button><button id="shareThemeBtn" class="btn btn-default" style="display: flex; align-items: center; justify-content: center; gap: 8px;"><span class="material-icons" style="font-size: 18px;">share</span>Поделиться темой</button><button id="exportThemeBtn" class="btn btn-default" title="Сохранить текущие настройки темы в файл (.fptheme)">Экспорт</button><button id="importThemeBtn" class="btn btn-default" title="Загрузить настройки темы из файла (.fptheme)">Импорт</button><input type="file" id="importThemeInput" accept=".fptheme" style="display: none;"><button id="resetThemeBtn" class="btn btn-default">СБРОСИТЬ ТЕМУ</button></div>
                 </div>
+
                 <div class="fp-tools-page-content" data-page="autobump">
-                    <h3>Автоподнятие лотов</h3>
-                    <div class="checkbox-label-inline"><input type="checkbox" id="autoBumpEnabled"><label for="autoBumpEnabled" style="margin-bottom:0;"><span>Включить автоподнятие</span></label></div>
-                    <small style="font-size:12px;opacity:0.75;display:block;margin-top:-10px;margin-left:30px;margin-bottom:8px;">Стабильно поднимает все лоты через FunPay API</small>
+                    <header class="fpt-ui-page-header fp-autobump-page-header">
+                        <div class="fp-autobump-page-header-copy">
+                            <h3 class="fpt-ui-page-title fp-autobump-page-title">Автоподнятие лотов</h3>
+                            <p class="fpt-ui-helper fp-autobump-page-description">Автоматически поднимайте доступные категории через FunPay API и ограничивайте область поднятия при необходимости.</p>
+                        </div>
+                    </header>
 
-                    <div class="checkbox-label-inline"><input type="checkbox" id="selectiveBumpEnabled"><label for="selectiveBumpEnabled" style="margin-bottom:0;"><span>Поднимать только выбранные категории</span></label></div>
-                    <button id="configureSelectiveBumpBtn" class="btn btn-default" style="width: auto; padding: 8px 16px; font-size: 14px;">выбрать...</button>
+                    <section class="fpt-ui-surface fp-autobump-section fp-autobump-settings-section" aria-labelledby="fp-autobump-settings-title">
+                        <div class="fpt-ui-section-header fp-autobump-section-header">
+                            <div>
+                                <h4 id="fp-autobump-settings-title" class="fpt-ui-section-title">Автоматическое поднятие</h4>
+                                <p class="fpt-ui-helper fp-autobump-section-description">Главный переключатель управляет всей автоматизацией. Фильтры ниже применяются одновременно.</p>
+                            </div>
+                        </div>
+                        <div class="fp-autobump-master-row">
+                            <label class="fp-autobump-setting-copy" for="autoBumpEnabled">
+                                <span class="fp-autobump-setting-title">Включить автоподнятие</span>
+                                <span class="fpt-ui-helper fp-autobump-setting-description">Расширение будет поднимать подходящие категории и само планировать следующую попытку.</span>
+                            </label>
+                            <div class="fp-autobump-master-control">
+                                <span id="autoBumpMasterState" class="fp-autobump-state-label">Выключено</span>
+                                <input type="checkbox" id="autoBumpEnabled" class="fp-autobump-setting-checkbox">
+                            </div>
+                        </div>
 
-                    <div class="checkbox-label-inline" style="margin-top: 15px;"><input type="checkbox" id="bumpOnlyAutoDelivery"><label for="bumpOnlyAutoDelivery" style="margin-bottom:0;"><span>Поднимать только категории с автовыдачей</span></label></div>
-                    <small style="font-size: 12px; opacity: 0.7; display: block; margin-top: -10px; margin-left: 30px;">Будут подняты только те категории, в которых есть хотя бы один лот с иконкой автовыдачи (⚡️).</small>
+                        <div id="autoBumpDependentSettings" class="fp-autobump-dependent" aria-disabled="true">
+                            <div class="fpt-ui-setting-row fp-autobump-setting-row">
+                                <label class="fp-autobump-setting-copy" for="selectiveBumpEnabled">
+                                    <span class="fp-autobump-setting-title">Только выбранные категории</span>
+                                    <span class="fpt-ui-helper fp-autobump-setting-description">Ограничить поднятие заранее выбранным набором категорий.</span>
+                                </label>
+                                <input type="checkbox" id="selectiveBumpEnabled" class="fp-autobump-setting-checkbox">
+                            </div>
+                            <div id="autoBumpSelectedCategoriesRow" class="fp-autobump-selected-row" hidden>
+                                <div class="fp-autobump-selected-copy">
+                                    <span class="fp-autobump-setting-title">Выбранные категории</span>
+                                    <span id="autoBumpSelectedSummary" class="fpt-ui-helper fp-autobump-selected-summary">Категории не выбраны</span>
+                                </div>
+                                <button type="button" id="configureSelectiveBumpBtn" class="fpt-ui-button fpt-ui-button--secondary fp-autobump-configure-btn">
+                                    <span id="autoBumpConfigureLabel">Выбрать</span>
+                                </button>
+                            </div>
+                            <div class="fpt-ui-setting-row fp-autobump-setting-row">
+                                <label class="fp-autobump-setting-copy" for="bumpOnlyAutoDelivery">
+                                    <span class="fp-autobump-setting-title">Только категории с автовыдачей</span>
+                                    <span class="fpt-ui-helper fp-autobump-setting-description">Дополнительно оставить только категории, где хотя бы один лот использует автовыдачу.</span>
+                                </label>
+                                <input type="checkbox" id="bumpOnlyAutoDelivery" class="fp-autobump-setting-checkbox">
+                            </div>
+                        </div>
+                    </section>
 
-                    <label style="margin-top: 20px;">Консоль логов:</label>
-                    <div id="autoBumpConsole" class="fp-tools-console"></div>
+                    <section class="fpt-ui-surface fp-autobump-section fp-autobump-log-section" aria-labelledby="fp-autobump-log-title">
+                        <div class="fpt-ui-section-header fp-autobump-log-header">
+                            <div>
+                                <h4 id="fp-autobump-log-title" class="fpt-ui-section-title">Журнал</h4>
+                                <p class="fpt-ui-helper fp-autobump-section-description">Последние события автоподнятия сохраняются между открытиями панели.</p>
+                            </div>
+                            <button type="button" id="autoBumpLogToggle" class="fpt-ui-button fpt-ui-button--tertiary fp-autobump-log-toggle" aria-expanded="false" aria-controls="autoBumpConsole">
+                                <span class="auto-bump-log-toggle-label">Открыть журнал</span>
+                            </button>
+                        </div>
+                        <div id="autoBumpStatus" class="fp-autobump-status" data-status="idle">
+                            <span class="fp-autobump-status-dot" aria-hidden="true"></span>
+                            <div class="fp-autobump-status-copy">
+                                <span class="fp-autobump-status-caption">Последнее действие</span>
+                                <span id="autoBumpLastStatus" class="fp-autobump-status-text">Событий пока нет</span>
+                            </div>
+                        </div>
+                        <div id="autoBumpConsole" class="fp-autobump-log-list" hidden aria-live="polite" aria-label="Журнал автоподнятия"></div>
+                    </section>
                 </div>
                 <div class="fp-tools-page-content" data-page="global_chat">
                     <h3>Чат сообщества</h3>
