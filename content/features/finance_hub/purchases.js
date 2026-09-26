@@ -41,6 +41,15 @@
 
             function renderPurchasesTopSellersCard(cardEl, orders, agg) {
                 const topSellers = (agg && agg.topSellers) ? agg.topSellers : ((agg && agg.topBuyers) ? agg.topBuyers : []);
+                const sideCol = cardEl?.closest('.fpt-fin-col-4');
+                const primaryCol = sideCol?.previousElementSibling?.classList?.contains('fpt-fin-col-8')
+                    ? sideCol.previousElementSibling
+                    : null;
+                const setSideAnalyticsVisible = visible => {
+                    const hasContent = Boolean(visible);
+                    sideCol?.classList.toggle('fpt-fin-secondary-empty', !hasContent);
+                    primaryCol?.classList.toggle('fpt-fin-primary-full', !hasContent);
+                };
 
                 const titleEl = cardEl.querySelector('.fpt-fin-card-title');
                 if (titleEl) {
@@ -51,7 +60,7 @@
                 const cardHeader = cardEl.querySelector('.fpt-fin-card-header');
                 if (cardHeader && !cardHeader.querySelector('.fpt-fin-chart-toggles')) {
                     const toggles = document.createElement('div');
-                    toggles.className = 'fpt-fin-chart-toggles';
+                    toggles.className = 'fpt-ui-segmented fpt-fin-chart-toggles';
                     toggles.setAttribute('role', 'group');
                     toggles.setAttribute('aria-label', 'Вид аналитики');
                     toggles.innerHTML = `
@@ -83,7 +92,12 @@
                 if (state.purchasesCol4View === 'categories') {
                     const sellersWrap = cardEl.querySelector('.fpt-fin-sellers-container');
                     if (sellersWrap) sellersWrap.remove();
-                    renderCategoryDonut(cardEl, orders, agg, { isPurchases: true });
+                    const hasCategoryBreakdown = (Array.isArray(orders) ? orders : [])
+                        .some(order => order.orderStatus === 'closed' || order.orderStatus === 'paid');
+                    setSideAnalyticsVisible(hasCategoryBreakdown);
+                    if (hasCategoryBreakdown) {
+                        renderCategoryDonut(cardEl, orders, agg, { isPurchases: true });
+                    }
                     return;
                 }
 
@@ -100,15 +114,12 @@
                 }
 
                 if (!topSellers.length) {
-                    sellersContainer.innerHTML = `
-                        <div class="fpt-fin-empty-state" style="padding:28px 16px;margin:8px 0;">
-                            <span class="material-symbols-rounded fpt-fin-empty-icon" style="font-size:30px;">storefront</span>
-                            <div class="fpt-fin-empty-title">Нет продавцов</div>
-                            <div class="fpt-fin-empty-desc">За выбранный период нет завершённых покупок.</div>
-                        </div>`;
+                    setSideAnalyticsVisible(false);
+                    sellersContainer.innerHTML = '';
                     return;
                 }
 
+                setSideAnalyticsVisible(true);
                 const topSlices = topSellers.slice(0, 5);
                 const allOrders = Array.isArray(orders) ? orders : [];
 
@@ -525,7 +536,7 @@
                     const dynHeader = dynCard.querySelector('.fpt-fin-card-header');
                     if (dynHeader && !dynHeader.querySelector('.fpt-fin-chart-toggles')) {
                         const togglesDiv = document.createElement('div');
-                        togglesDiv.className = 'fpt-fin-chart-toggles';
+                        togglesDiv.className = 'fpt-ui-segmented fpt-fin-chart-toggles';
                         togglesDiv.setAttribute('role', 'group');
                         togglesDiv.setAttribute('aria-label', 'Интервал покупок');
                         togglesDiv.innerHTML = `
@@ -574,7 +585,7 @@
                     const detailsHeader = detailsCard.querySelector('.fpt-fin-card-header');
                     if (detailsHeader && !detailsHeader.querySelector('.fpt-fin-chart-toggles')) {
                         const togglesDiv = document.createElement('div');
-                        togglesDiv.className = 'fpt-fin-chart-toggles';
+                        togglesDiv.className = 'fpt-ui-segmented fpt-fin-chart-toggles';
                         togglesDiv.setAttribute('role', 'group');
                         togglesDiv.setAttribute('aria-label', 'Вид детализации покупок');
                         togglesDiv.innerHTML = `
