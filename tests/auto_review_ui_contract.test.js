@@ -49,7 +49,7 @@ const attachmentStart = popup.indexOf('function attachAutoReplyImageButtons(');
 const attachmentEnd = popup.indexOf('\nfunction setupAccentPicker', attachmentStart);
 const attachmentBlock = popup.slice(attachmentStart, attachmentEnd);
 assert.match(attachmentBlock, /fp-review-image-btn fpt-autoreply-img-btn/, 'review attachment actions use dedicated shared geometry');
-assert.match(attachmentBlock, /autoReviewPage\.querySelector\('\[data-editor-actions-for="/, 'review attachment actions are placed beside their editors');
+assert.match(attachmentBlock, /const pageHost = autoReplyPage \|\| autoReviewPage;[\s\S]*?pageHost\.querySelector\('\[data-editor-actions-for="/, 'review attachment actions are placed beside their editors');
 const reviewBranchStart = attachmentBlock.indexOf('} else if (autoReviewPage) {');
 const reviewBranchEnd = attachmentBlock.indexOf('} else {', reviewBranchStart);
 assert.ok(reviewBranchStart >= 0 && reviewBranchEnd > reviewBranchStart, 'review attachment branch is explicit');
