@@ -338,7 +338,7 @@
                 }
 
                 if (!filtered.length) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="fpt-fin-empty-state" style="text-align:center;padding:24px;">Нет заказов по выбранному фильтру</td></tr>';
+                    tbody.innerHTML = '<tr class="fpt-fin-empty-row"><td colspan="8"><div class="fpt-ui-state fpt-fin-table-empty"><p class="fpt-ui-state-title">Нет заказов по выбранному фильтру</p><p class="fpt-ui-state-text">Измените фильтр или период, чтобы увидеть заказы.</p></div></td></tr>';
                     return;
                 }
 
@@ -385,13 +385,13 @@
                     if (info.isRefunded) {
                         statusCell = '<span class="fpt-fin-badge-refunded">Возврат</span>';
                     } else if (info.isClosed) {
-                        statusCell = '<span style="color:#4caf82;font-size:11px;">Закрыт</span>';
+                        statusCell = '<span class="fpt-fin-status-badge fpt-fin-status-success">Закрыт</span>';
                     }
 
                     return `
                         <tr>
                             <td><strong>${orderId}</strong></td>
-                            <td style="font-size:11.5px;color:var(--fptm-muted,#9099b8);">${dateStr}</td>
+                            <td class="fpt-fin-table-muted">${dateStr}</td>
                             <td>${revenueCell}</td>
                             <td>${costCell}</td>
                             <td>${profitCell}</td>
@@ -453,7 +453,7 @@
                 });
                 const tbody = pane.querySelector('#fptFinProfitTableBody');
                 if (tbody) {
-                    tbody.innerHTML = '<tr><td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td></tr><tr><td colspan="8"><div class="fpt-fin-skeleton fpt-fin-skeleton-text" style="width:100%;height:24px;"></div></td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8"><div class="fpt-fin-skeleton fpt-fin-table-skeleton"></div></td></tr><tr><td colspan="8"><div class="fpt-fin-skeleton fpt-fin-table-skeleton"></div></td></tr>';
                 }
             }
 
@@ -514,7 +514,7 @@
                         renderProfitMissingCostWarning(pane, null, state.profitCurrency, false, true);
                         const tbody = pane.querySelector('#fptFinProfitTableBody');
                         if (tbody) {
-                            tbody.innerHTML = '<tr><td colspan="8" class="fpt-fin-empty-state" style="text-align:center;padding:24px;">Не удалось загрузить данные о прибыли</td></tr>';
+                            tbody.innerHTML = '<tr class="fpt-fin-empty-row"><td colspan="8"><div class="fpt-ui-state fpt-fin-table-empty is-error"><p class="fpt-ui-state-title">Не удалось загрузить данные о прибыли</p><p class="fpt-ui-state-text">Попробуйте обновить Finance Hub ещё раз.</p></div></td></tr>';
                         }
                         return;
                     }
