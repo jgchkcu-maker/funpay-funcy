@@ -25,7 +25,6 @@ This handoff records the automated checks for the seller navigation redesign and
 | `auto_delivery` | `auto_delivery` — Sales |
 | `lot_io` | `lot_io` — Sales; initial route |
 | `autobump` | `autobump` — Sales |
-| `ai_audit` | `ai_audit` — Sales / Аудит магазина |
 | `blacklist` | `blacklist` — Customers |
 | `finance_hub` | `finance_hub` — Finance |
 | `piggy_banks` | `piggy_banks` — Finance |
