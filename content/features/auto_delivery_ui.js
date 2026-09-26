@@ -105,6 +105,15 @@ function createDeliveryRadio(name, value, checked, labelText) {
     return label;
 }
 
+function fpAdLotCountLabel(count) {
+    const mod100 = count % 100;
+    const mod10 = count % 10;
+    if (mod100 >= 11 && mod100 <= 14) return `${count} лотов`;
+    if (mod10 === 1) return `${count} лот`;
+    if (mod10 >= 2 && mod10 <= 4) return `${count} лота`;
+    return `${count} лотов`;
+}
+
 function createDeliveryLotCard(lot, lotConfig) {
     const lotId = String(lot.id);
     const item = fpAdCreateElement('article', 'fp-ad-lot-card');
@@ -201,7 +210,7 @@ function renderDeliveryLots(lots, config, container) {
         const heading = fpAdCreateElement('div', 'fp-ad-category-header');
         heading.append(
             fpAdCreateElement('h5', 'fp-ad-category-title', categoryName),
-            fpAdCreateElement('span', 'fp-ad-category-count', `${categoryLots.length} ${categoryLots.length === 1 ? 'лот' : 'лотов'}`)
+            fpAdCreateElement('span', 'fp-ad-category-count', fpAdLotCountLabel(categoryLots.length))
         );
         category.appendChild(heading);
 
