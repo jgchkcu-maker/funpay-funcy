@@ -415,9 +415,16 @@
                     renderDynamicChart(dynCard, orders, state.salesStep);
                 }
 
-                // 3. Круговая диаграмма по категориям
+                // 3. Круговая диаграмма по категориям. Не резервируем треть строки
+                // под пустой breakdown: основной график занимает всю ширину, пока
+                // для боковой аналитики нет ни одного валидного заказа.
                 const catCard = salesPane.querySelector('.fpt-fin-col-4 .fpt-fin-card');
-                if (catCard) {
+                const dynCol = dynCard?.closest('.fpt-fin-col-8');
+                const catCol = catCard?.closest('.fpt-fin-col-4');
+                const hasCategoryBreakdown = validOrders.length > 0;
+                dynCol?.classList.toggle('fpt-fin-primary-full', !hasCategoryBreakdown);
+                catCol?.classList.toggle('fpt-fin-secondary-empty', !hasCategoryBreakdown);
+                if (catCard && hasCategoryBreakdown) {
                     renderCategoryDonut(catCard, orders, agg);
                 }
 
