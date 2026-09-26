@@ -324,39 +324,70 @@ function updateImportProgressUI(processData) {
 }
 
 async function renderPendingImports() {
+    const section = document.getElementById('lot-io-pending-section');
     const container = document.getElementById('lot-io-pending-imports-list');
-    if (!container) return;
+    if (!section || !container) return;
+
+    const setSectionVisible = (visible) => {
+        section.hidden = !visible;
+        if (visible) section.removeAttribute('aria-hidden');
+        else section.setAttribute('aria-hidden', 'true');
+    };
+
+    const renderStatus = (message, isError = false) => {
+        container.replaceChildren();
+        const status = document.createElement('p');
+        status.className = 'lot-io-description lot-io-pending-status';
+        status.setAttribute('role', 'status');
+        if (isError) status.classList.add('lot-io-pending-error');
+        status.textContent = message;
+        container.appendChild(status);
+    };
+
+    setSectionVisible(false);
+    container.replaceChildren();
 
     try {
         const { [IMPORT_PROCESS_KEY]: process } = await chrome.storage.local.get(IMPORT_PROCESS_KEY);
 
-        if (process && process.state === 'postponed') {
-            container.innerHTML = `
-                <div class="pending-import-item">
-                    <span class="pending-import-name">${process.name}</span>
-                    <div class="pending-import-actions">
-                        <button class="btn resume-import-btn">Продолжить</button>
-                        <button class="btn btn-default delete-import-btn">Удалить</button>
-                    </div>
-                </div>
-            `;
-        } else {
-            container.innerHTML = '<p class="lot-io-description">Здесь будут отображаться отложенные процессы импорта.</p>';
+        if (!process || process.state !== 'postponed') {
+            return;
         }
-        
-        container.querySelector('.resume-import-btn')?.addEventListener('click', () => {
-            chrome.runtime.sendMessage({ action: 'resumeLotImport' });
-            container.innerHTML = '<p class="lot-io-description">Возобновление...</p>';
-        });
-        
-        container.querySelector('.delete-import-btn')?.addEventListener('click', () => {
-            if(confirm('Удалить этот отложенный импорт?')) {
-                chrome.runtime.sendMessage({ action: 'cancelLotImport' });
-                renderPendingImports();
+
+        setSectionVisible(true);
+        container.innerHTML = `
+            <div class="pending-import-item">
+                <span class="pending-import-name"></span>
+                <div class="pending-import-actions">
+                    <button type="button" class="fpt-ui-button fpt-ui-button--primary lot-io-pending-action resume-import-btn">Продолжить</button>
+                    <button type="button" class="fpt-ui-button fpt-ui-button--secondary lot-io-pending-action delete-import-btn">Удалить</button>
+                </div>
+            </div>
+        `;
+
+        const nameEl = container.querySelector('.pending-import-name');
+        if (nameEl) nameEl.textContent = process.name || 'Отложенный импорт';
+
+        container.querySelector('.resume-import-btn')?.addEventListener('click', async () => {
+            renderStatus('Возобновляем импорт…');
+            try {
+                await chrome.runtime.sendMessage({ action: 'resumeLotImport' });
+            } catch (error) {
+                renderStatus(`Не удалось возобновить импорт: ${error.message}`, true);
             }
         });
 
+        container.querySelector('.delete-import-btn')?.addEventListener('click', async () => {
+            if (!confirm('Удалить этот отложенный импорт?')) return;
+            try {
+                await chrome.runtime.sendMessage({ action: 'cancelLotImport' });
+                await renderPendingImports();
+            } catch (error) {
+                renderStatus(`Не удалось удалить импорт: ${error.message}`, true);
+            }
+        });
     } catch (error) {
-        container.innerHTML = `<p class="lot-io-description" style="color: #ff6b6b;">Ошибка загрузки отложенных импортов: ${error.message}</p>`;
+        setSectionVisible(true);
+        renderStatus(`Ошибка загрузки отложенных импортов: ${error.message}`, true);
     }
 }

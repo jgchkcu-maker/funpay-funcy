@@ -17,7 +17,7 @@ function getModalOverlaysHTML() {
                     </div>
                     <div class="lot-io-category-list"></div>
                     <div class="lot-io-warning">
-                        <span class="material-icons">warning</span>
+                        <svg class="lot-io-warning-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M10.7 4.7 3.2 17.8a1.5 1.5 0 0 0 1.3 2.2h15a1.5 1.5 0 0 0 1.3-2.2L13.3 4.7a1.5 1.5 0 0 0-2.6 0Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9v4.2M12 16.5h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                         <span><b>Внимание!</b> Не закрывайте и не перезагружайте эту вкладку до завершения процесса экспорта.</span>
                     </div>
                 </div>
@@ -706,64 +706,79 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content active" data-page="lot_io">
-                    <h3 class="lot-io-page-title">Управление лотами</h3>
-
-                    <section class="lot-io-card lot-io-info-card" aria-label="Инструменты для работы с лотами">
-                        <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">info</span></div>
-                        <div class="lot-io-card-copy">
-                            <p class="lot-io-lead">Здесь собраны инструменты для массовой работы с вашими лотами.</p>
-                            <ul class="lot-io-feature-list">
-                                <li><strong>Экспорт/Импорт:</strong> Сохраняйте все свои лоты в файл и восстанавливайте их на любом аккаунте.</li>
-                                <li><strong>Массовое управление:</strong> На странице вашего профиля (<code>funpay.com/users/ID</code>) или в категории с вашими лотами появится кнопка «Выбрать» для массового удаления, дублирования или изменения цен.</li>
-                                <li><strong>Продвинутое клонирование:</strong> На странице редактирования лота кнопка «Копировать» позволяет создавать копии в разных категориях (например, на разных серверах).</li>
-                                <li><strong>Автоподнятие:</strong> Настройте автоматическое поднятие лотов по таймеру. <a class="lot-io-inline-link" href="#" onclick="document.querySelector('.fp-tools-nav li[data-page=autobump] a').click(); return false;">Перейти к настройке.</a></li>
-                            </ul>
+                    <header class="fpt-ui-page-header lot-io-header">
+                        <div class="lot-io-header-copy">
+                            <h3 class="fpt-ui-page-title lot-io-page-title">Управление лотами</h3>
+                            <p class="fpt-ui-helper lot-io-page-description">Экспортируйте и восстанавливайте лоты, запускайте массовое редактирование и продолжайте отложенный импорт.</p>
                         </div>
-                    </section>
+                    </header>
 
-                    <section class="lot-io-card lot-io-export-card" aria-labelledby="lot-io-export-title">
+                    <section class="fpt-ui-surface lot-io-card lot-io-export-card" aria-labelledby="lot-io-export-title">
                         <div class="lot-io-card-top">
-                        <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">file_upload</span></div>
+                            <div class="lot-io-icon-tile" aria-hidden="true">
+                                <svg class="lot-io-svg-icon" viewBox="0 0 24 24" fill="none" focusable="false">
+                                    <path d="M12 15V4m0 0L8 8m4-4 4 4M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
                             <div class="lot-io-card-copy">
-                                <h4 id="lot-io-export-title">Экспорт и импорт лотов</h4>
-                                <p class="lot-io-description">Создайте полную резервную копию всех ваших лотов в файл JSON. Этот файл можно использовать для переноса лотов на другой аккаунт или для восстановления.</p>
+                                <h4 id="lot-io-export-title">Перенос лотов</h4>
+                                <p class="lot-io-description">Создайте резервную копию лотов в JSON или восстановите её на другом аккаунте.</p>
                             </div>
                         </div>
                         <div class="lot-io-buttons">
-                            <button type="button" id="lot-io-export-btn" class="btn lot-io-action-btn lot-io-action-primary">
-                                <span class="material-symbols-rounded" aria-hidden="true">file_upload</span><span>Экспорт</span>
+                            <button type="button" id="lot-io-export-btn" class="fpt-ui-button fpt-ui-button--primary lot-io-action-btn">
+                                <svg class="lot-io-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                                    <path d="M12 15V4m0 0L8 8m4-4 4 4M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span>Экспорт</span>
                             </button>
-                            <button type="button" id="lot-io-import-btn" class="btn btn-default lot-io-action-btn lot-io-action-secondary">
-                                <span class="material-symbols-rounded" aria-hidden="true">file_download</span><span>Импорт</span>
+                            <button type="button" id="lot-io-import-btn" class="fpt-ui-button fpt-ui-button--secondary lot-io-action-btn">
+                                <svg class="lot-io-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                                    <path d="M12 4v11m0 0-4-4m4 4 4-4M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span>Импорт</span>
                             </button>
-                            <input type="file" id="lot-io-import-file" accept=".json" style="display: none;">
+                            <input type="file" id="lot-io-import-file" accept=".json" hidden>
+                        </div>
+                        <div class="lot-io-card-footer lot-io-transfer-footer">
+                            <a href="#" id="convert-cardinal-lots-btn" class="lot-io-tertiary-link">
+                                <span>Конвертер FunPay Cardinal → FunPay Funcy</span>
+                                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false"><path d="M7 5.5 11.5 10 7 14.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </a>
                         </div>
                     </section>
 
-                    <section class="lot-io-card lot-io-editor-card" aria-labelledby="lot-io-editor-title">
+                    <section class="fpt-ui-surface lot-io-card lot-io-editor-card" aria-labelledby="lot-io-editor-title">
                         <div class="lot-io-card-top">
-                            <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">edit</span></div>
+                            <div class="lot-io-icon-tile" aria-hidden="true">
+                                <svg class="lot-io-svg-icon" viewBox="0 0 24 24" fill="none" focusable="false">
+                                    <path d="m14.7 5.3 4 4M5 19l3.4-.8 10.1-10.1a1.4 1.4 0 0 0 0-2l-.6-.6a1.4 1.4 0 0 0-2 0L5.8 15.6 5 19Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
                             <div class="lot-io-card-copy">
                                 <h4 id="lot-io-editor-title">Массовое редактирование</h4>
                                 <p class="lot-io-description">Измените название, описание или сообщение покупателю сразу у нескольких лотов.</p>
-                                <button type="button" id="fp-bulk-edit-btn" class="btn btn-default lot-io-bulk-edit-btn">
-                                    <span class="material-symbols-rounded" aria-hidden="true">edit</span><span>Массово изменить лоты</span>
+                                <button type="button" id="fp-bulk-edit-btn" class="fpt-ui-button fpt-ui-button--secondary lot-io-bulk-edit-btn">
+                                    <svg class="lot-io-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                                        <path d="m14.7 5.3 4 4M5 19l3.4-.8 10.1-10.1a1.4 1.4 0 0 0 0-2l-.6-.6a1.4 1.4 0 0 0-2 0L5.8 15.6 5 19Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span>Массово изменить лоты</span>
                                 </button>
                             </div>
                         </div>
-                        <div class="lot-io-card-footer">
-                            <a href="#" id="convert-cardinal-lots-btn">Конвертер лотов FunPay Cardinal → FunPay Funcy</a>
-                        </div>
                     </section>
 
-                    <section class="lot-io-card lot-io-pending-card" aria-labelledby="lot-io-pending-title">
+                    <section id="lot-io-pending-section" class="fpt-ui-surface lot-io-card lot-io-pending-card" aria-labelledby="lot-io-pending-title" hidden>
                         <div class="lot-io-card-top">
-                            <div class="lot-io-icon-tile" aria-hidden="true"><span class="material-symbols-rounded">schedule</span></div>
+                            <div class="lot-io-icon-tile" aria-hidden="true">
+                                <svg class="lot-io-svg-icon" viewBox="0 0 24 24" fill="none" focusable="false">
+                                    <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/>
+                                    <path d="M12 7.8v4.7l3 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </div>
                             <div class="lot-io-card-copy">
                                 <h4 id="lot-io-pending-title">Незавершённые импорты</h4>
-                                <div id="lot-io-pending-imports-list" aria-live="polite">
-                                    <p class="lot-io-description">Здесь будут отображаться отложенные процессы импорта.</p>
-                                </div>
+                                <div id="lot-io-pending-imports-list" aria-live="polite"></div>
                             </div>
                         </div>
                     </section>

@@ -12600,91 +12600,81 @@ textarea.fp-cw-input { line-height:1.4; }
     border-left: 1px solid var(--fptm-border, rgba(127, 127, 127, 0.35));
 }
 
-/* Lot management page — compact scale aligned with the real popup/navigation density. */
+/* Lot management page — TASK 01, built on the shared TASK 00 foundation. */
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] {
-    --lot-io-blue: #1479ed;
-    --lot-io-text: var(--fptm-text, var(--fpt-text, #121a2a));
-    --lot-io-muted: var(--fptm-muted, var(--fpt-text-muted, #64748b));
-    --lot-io-border: var(--fptm-border, #e2eaf3);
-    --lot-io-surface: var(--fptm-surface, #ffffff);
+    --lot-io-accent: var(--fptm-accent, var(--fpt-accent, #1b75bb));
+    --lot-io-text: var(--fptm-text, var(--fpt-text, #16181d));
+    --lot-io-muted: var(--fptm-muted, var(--fpt-text-muted, #676a73));
+    --lot-io-border: var(--fptm-border, var(--fpt-border, rgba(22, 24, 29, .10)));
     color: var(--lot-io-text);
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-header {
+    margin-bottom: var(--fpt-ui-space-4);
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-header-copy {
+    min-width: 0;
+    max-width: 680px;
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-page-title {
-    margin: 0 0 14px !important;
+    margin: 0 !important;
     padding: 0 !important;
     border: 0 !important;
     color: var(--lot-io-text) !important;
-    font-size: 23px !important;
-    font-weight: 750 !important;
-    line-height: 1.18 !important;
-    letter-spacing: .012em !important;
-    text-transform: uppercase;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    letter-spacing: -.012em !important;
+    text-transform: none !important;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-page-description {
+    max-width: 640px;
+    margin: 5px 0 0;
+    color: var(--lot-io-muted);
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card {
-    box-sizing: border-box;
-    margin: 0 0 12px;
-    padding: 15px 16px;
-    border: 1px solid var(--lot-io-border);
-    border-radius: 14px;
-    background: var(--lot-io-surface);
-    color: var(--lot-io-text);
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card {
-    display: grid;
-    grid-template-columns: 48px minmax(0, 1fr);
-    align-items: start;
-    gap: 16px;
-    padding: 14px 16px;
-    border-color: rgba(20, 121, 237, .18);
-    background: rgba(20, 121, 237, .045);
+    margin: 0 0 var(--fpt-ui-space-3);
+    padding: var(--fpt-ui-space-4);
+    border-color: var(--lot-io-border);
+    border-radius: var(--fpt-ui-radius-card);
+    box-shadow: none;
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-top {
     display: grid;
-    grid-template-columns: 48px minmax(0, 1fr);
+    grid-template-columns: 40px minmax(0, 1fr);
     align-items: start;
-    gap: 16px;
+    gap: var(--fpt-ui-space-3);
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-icon-tile {
     box-sizing: border-box;
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 13px;
-    background: rgba(20, 121, 237, .105);
-    color: var(--lot-io-blue);
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card .lot-io-icon-tile {
-    width: 48px;
-    height: 48px;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-icon-tile .material-symbols-rounded {
-    font-size: 23px;
-    line-height: 1;
-    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    border-radius: var(--fpt-ui-radius-control);
+    color: var(--lot-io-accent);
+    background: color-mix(in srgb, var(--lot-io-accent) 9%, transparent);
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-editor-card .lot-io-icon-tile {
-    background: rgba(78, 91, 221, .095);
-    color: #4658cc;
+    color: var(--fptm-accent, var(--fpt-accent, #1b75bb));
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-pending-card .lot-io-icon-tile {
-    background: rgba(76, 116, 229, .095);
+    color: var(--lot-io-accent);
 }
 
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card .material-symbols-rounded,
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-export-card .lot-io-icon-tile .material-symbols-rounded,
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn .material-symbols-rounded {
-    font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-svg-icon {
+    width: 21px;
+    height: 21px;
+    display: block;
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-copy {
@@ -12692,325 +12682,230 @@ textarea.fp-cw-input { line-height:1.4; }
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-copy h4 {
-    margin: 0 0 5px !important;
+    margin: 0 0 4px !important;
     padding: 0 !important;
     border: 0 !important;
     color: var(--lot-io-text) !important;
-    font-size: 19px !important;
-    font-weight: 700 !important;
-    line-height: 1.25 !important;
-    letter-spacing: -.012em;
+    font-size: 15px !important;
+    font-weight: 680 !important;
+    line-height: 1.3 !important;
+    letter-spacing: -.005em;
+    text-transform: none !important;
 }
 
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-lead,
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-description {
     margin: 0 !important;
     color: var(--lot-io-muted) !important;
-    font-size: 14.5px !important;
+    font-size: 13px !important;
     font-weight: 400;
-    line-height: 1.45 !important;
+    line-height: 1.42 !important;
     opacity: 1 !important;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-lead {
-    margin-bottom: 8px !important;
-    color: var(--lot-io-text) !important;
-    font-size: 15px !important;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-feature-list {
-    margin: 0;
-    padding-left: 18px;
-    color: var(--lot-io-muted);
-    font-size: 14px;
-    line-height: 1.42;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-feature-list li {
-    margin: 0 0 4px;
-    padding-left: 1px;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-feature-list li:last-child {
-    margin-bottom: 0;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-feature-list li::marker {
-    color: var(--lot-io-blue);
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-feature-list strong {
-    color: var(--lot-io-text);
-    font-weight: 700;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] code {
-    padding: 1px 5px;
-    border: 1px solid var(--lot-io-border);
-    border-radius: 5px;
-    background: var(--fptm-field, rgba(255, 255, 255, .72));
-    color: var(--lot-io-text);
-    font-family: inherit;
-    font-size: .92em;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-inline-link,
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-footer a {
-    color: var(--lot-io-blue) !important;
-    text-decoration: underline;
-    text-decoration-color: currentColor;
-    text-underline-offset: 2px;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-inline-link:focus-visible,
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-footer a:focus-visible {
-    border-radius: 3px;
-    outline: 2px solid var(--lot-io-blue);
-    outline-offset: 3px;
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-buttons {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 14px;
+    gap: var(--fpt-ui-space-2);
+    margin-top: var(--fpt-ui-space-4);
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn {
-    box-sizing: border-box;
     width: 100%;
-    min-width: 0;
-    min-height: 50px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 0;
-    padding: 9px 14px;
-    border: 1px solid transparent !important;
-    border-radius: 11px !important;
-    box-shadow: none !important;
-    font: inherit;
-    font-size: 15.5px !important;
-    font-weight: 600 !important;
+    min-height: var(--fpt-ui-control-h);
+    height: var(--fpt-ui-control-h);
+    padding: 0 14px;
+    gap: var(--fpt-ui-space-2);
+    border-radius: var(--fpt-ui-radius-control) !important;
+    font-size: 14px !important;
     line-height: 1.2;
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-    transition: background-color .16s ease, border-color .16s ease, color .16s ease, transform .16s ease, box-shadow .16s ease;
+    transform: none !important;
 }
 
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn .material-symbols-rounded {
-    font-size: 19px;
-    line-height: 1;
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn:hover,
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn:active {
+    transform: none !important;
 }
 
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-primary {
-    border-color: #1479ed !important;
-    background: linear-gradient(105deg, #176de0, #087fe9) !important;
-    color: #ffffff !important;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-primary:hover {
-    background: linear-gradient(105deg, #0f62d0, #0872d7) !important;
-    box-shadow: 0 4px 12px rgba(20, 121, 237, .16) !important;
-    transform: translateY(-1px);
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-secondary {
-    border-color: var(--lot-io-border) !important;
-    background: var(--fptm-field, #f4f7fa) !important;
-    color: var(--lot-io-text) !important;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-secondary:hover {
-    border-color: rgba(20, 121, 237, .36) !important;
-    background: rgba(20, 121, 237, .07) !important;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn:focus-visible,
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn:focus-visible {
-    outline: 3px solid rgba(20, 121, 237, .36);
-    outline-offset: 3px;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn:active,
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn:active {
-    transform: translateY(1px);
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-icon {
+    width: 18px;
+    height: 18px;
+    display: block;
+    flex: 0 0 18px;
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn {
-    box-sizing: border-box;
     width: auto;
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin: 10px 0 0;
-    padding: 8px 14px;
-    border: 1px solid var(--lot-io-border) !important;
-    border-radius: 10px !important;
-    background: var(--fptm-field, #f4f7fa) !important;
-    color: var(--lot-io-text) !important;
-    box-shadow: none !important;
-    font: inherit;
-    font-size: 14.5px !important;
-    font-weight: 600 !important;
-    line-height: 1.25;
-    cursor: pointer;
-    transition: background-color .16s ease, border-color .16s ease, transform .16s ease;
+    min-height: var(--fpt-ui-control-h);
+    height: var(--fpt-ui-control-h);
+    margin-top: var(--fpt-ui-space-3);
+    padding: 0 14px;
+    border-radius: var(--fpt-ui-radius-control) !important;
+    font-size: 13.5px !important;
+    transform: none !important;
 }
 
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn:hover {
-    border-color: rgba(20, 121, 237, .3) !important;
-    background: rgba(20, 121, 237, .07) !important;
-}
-
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn .material-symbols-rounded {
-    font-size: 18px;
-    color: var(--lot-io-blue);
-    font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn:hover,
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn:active {
+    transform: none !important;
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-footer {
-    margin-top: 12px;
-    padding-top: 11px;
+    margin-top: var(--fpt-ui-space-3);
+    padding-top: var(--fpt-ui-space-3);
     border-top: 1px solid var(--lot-io-border);
-    text-align: center;
-    font-size: 13.5px;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-tertiary-link {
+    width: fit-content;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    color: var(--lot-io-accent) !important;
+    font-size: 12.5px;
+    font-weight: 600;
     line-height: 1.35;
+    text-decoration: none;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-tertiary-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-tertiary-link svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+    flex: 0 0 16px;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-tertiary-link:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid var(--lot-io-accent);
+    outline-offset: 3px;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] #lot-io-pending-section[hidden] {
+    display: none !important;
 }
 
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-pending-card {
     margin-bottom: 0;
 }
 
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] #lot-io-pending-imports-list .lot-io-description {
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] #lot-io-pending-imports-list {
+    margin-top: var(--fpt-ui-space-2);
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .pending-import-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--fpt-ui-space-3);
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--lot-io-accent) 6%, transparent);
+    border: 1px solid color-mix(in srgb, var(--lot-io-accent) 18%, transparent);
+    border-radius: var(--fpt-ui-radius-small);
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .pending-import-name {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--lot-io-text);
+    font-size: 13px;
+    font-weight: 620;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .pending-import-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--fpt-ui-space-2);
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-pending-action {
+    min-height: 34px;
+    height: 34px;
+    padding: 0 11px;
+    border-radius: var(--fpt-ui-radius-small) !important;
+    font-size: 12.5px !important;
+}
+
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-pending-status {
     margin-top: 0 !important;
 }
 
-.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] #lot-io-pending-imports-list:empty {
-    display: none;
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-pending-error {
+    color: var(--fpt-danger, #c93f4b) !important;
 }
 
-.fp-tools-popup.fptm-dark .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card {
-    background: rgba(57, 137, 255, .09);
-    border-color: rgba(106, 171, 255, .24);
+.fp-tools-popup .lot-io-warning {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: start;
+    gap: 9px;
 }
 
-/* Match the glass/transparent menu mode instead of rendering opaque cards on top of it. */
+.fp-tools-popup .lot-io-warning-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+    color: #d89b25;
+}
+
 .fp-tools-popup.fpt-menu-transparent .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card {
     background: var(--fpt-menu-navbtn, rgba(42, 16, 51, .05));
     border-color: var(--fptm-border, rgba(127, 127, 127, .22));
 }
 
-.fp-tools-popup.fpt-menu-transparent .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card {
-    background: var(--fpt-menu-navactive, rgba(20, 121, 237, .07));
-    border-color: rgba(20, 121, 237, .2);
-}
-
-.fp-tools-popup.fpt-menu-transparent .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-secondary,
-.fp-tools-popup.fpt-menu-transparent .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn {
-    background: var(--fpt-menu-navbtn, rgba(42, 16, 51, .05)) !important;
-}
-
-@container fpt-content (max-width: 900px) {
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-page-title {
-        margin-bottom: 12px !important;
-        font-size: 22px !important;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card {
-        padding: 14px;
-        border-radius: 13px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card {
-        grid-template-columns: 46px minmax(0, 1fr);
-        gap: 14px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-top {
-        grid-template-columns: 46px minmax(0, 1fr);
-        gap: 14px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-icon-tile,
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card .lot-io-icon-tile {
-        width: 46px;
-        height: 46px;
-        border-radius: 12px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-icon-tile .material-symbols-rounded {
-        font-size: 22px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-copy h4 {
-        font-size: 18px !important;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-lead,
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-description {
-        font-size: 14px !important;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn {
-        min-height: 48px;
-        font-size: 15px !important;
-    }
-}
-
-@container fpt-content (max-width: 720px) {
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card,
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card {
-        padding: 13px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card,
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-top {
-        grid-template-columns: 44px minmax(0, 1fr);
-        gap: 12px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-icon-tile,
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-info-card .lot-io-icon-tile {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
-    }
-
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-feature-list {
-        font-size: 13.5px;
-        line-height: 1.4;
-    }
-}
-
 @container fpt-content (max-width: 560px) {
     .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-buttons {
         grid-template-columns: minmax(0, 1fr);
-        gap: 9px;
-        margin-top: 12px;
     }
 
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn {
-        min-height: 46px;
-        font-size: 14.5px !important;
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-card-top {
+        grid-template-columns: 36px minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-icon-tile {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-svg-icon {
+        width: 19px;
+        height: 19px;
     }
 
     .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn {
         width: 100%;
     }
+
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .pending-import-item {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .pending-import-actions {
+        width: 100%;
+    }
+
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-pending-action {
+        flex: 1 1 0;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-action-btn,
-    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn {
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-bulk-edit-btn,
+    .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="lot_io"] .lot-io-pending-action {
         transition-duration: .01ms !important;
     }
 }
-
 
 /* ═══ FPT UI FOUNDATION v1 — TASK 00 ═══ */
 /*
