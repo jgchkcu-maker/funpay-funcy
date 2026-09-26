@@ -468,7 +468,7 @@ function createMainPopup() {
                                         <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_bottom"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-bottom"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">Панель снизу</span></label>
                                         <label class="fpt-pos-card"><input type="radio" name="templatePos" value="popover"><span class="fpt-pos-ico fpt-pos-ico-pop"><span class="fpt-pos-field"></span><span class="fpt-pos-pop-btn"></span></span><span class="fpt-pos-name">У скрепки</span></label>
                                     </div>
-                                    <p class="fpt-ui-helper fp-qr-inline-hint" id="fpt-popover-hint" hidden>Возле кнопки прикрепления файла появится отдельная кнопка шаблонов с компактным меню.</p>
+                                    <p class="fpt-ui-helper fp-qr-inline-hint" id="fpt-popover-hint" style="display:none;">Возле кнопки прикрепления файла появится отдельная кнопка шаблонов с компактным меню.</p>
                                 </div>
 
                                 <div class="fp-qr-config-section fp-qr-appearance-section">
