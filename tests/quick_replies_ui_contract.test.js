@@ -20,6 +20,7 @@ assert.match(page, /data-quick-replies-mode="templates"/);
 assert.match(page, /data-quick-replies-mode="commands"/);
 assert.match(page, /data-quick-replies-pane="templates"/);
 assert.match(page, /data-quick-replies-pane="commands"/);
+assert.match(page, /id="fpt-popover-hint" style="display:none;"/, 'popover hint remains compatible with existing style.display synchronisation');
 assert.match(page, /id="fpt-appearance-preview" class="chat-buttons-container fp-qr-live-preview"/, 'there is one live preview');
 assert.equal((page.match(/id="fpt-appearance-preview"/g) || []).length, 1, 'only one live preview is rendered');
 for (const opt of ['shape','size','fill','align','sidebarDensity','sidebarLayout']) {
