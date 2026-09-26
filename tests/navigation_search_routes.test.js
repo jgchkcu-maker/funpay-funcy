@@ -10,7 +10,7 @@ const searchEnd = popupSource.indexOf('async function loadLastActivePage()', sea
 assert.ok(searchStart >= 0 && searchEnd > searchStart, 'setupNavSearch source block exists');
 
 const sections = [
-    { id: 'sales', label: 'Лоты и продажи', pages: ['lot_io', 'auto_delivery', 'autobump', 'ai_audit'] },
+    { id: 'sales', label: 'Лоты и продажи', pages: ['lot_io', 'auto_delivery', 'autobump'] },
     { id: 'customers', label: 'Покупатели', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
     { id: 'finance', label: 'Финансы', pages: ['finance_hub', 'piggy_banks', 'calculator'] },
     { id: 'interface', label: 'Интерфейс', pages: ['theme', 'effects', 'epic_nicks', 'needs'] },
@@ -18,7 +18,7 @@ const sections = [
     { id: 'help', label: 'Справка', pages: ['overview', 'tickets', 'global_chat'] }
 ];
 const labels = {
-    lot_io: 'Управление лотами', auto_delivery: 'Автовыдача', autobump: 'Автоподнятие', ai_audit: 'Аудит магазина',
+    lot_io: 'Управление лотами', auto_delivery: 'Автовыдача', autobump: 'Автоподнятие',
     auto_reply: 'Автоответчик', auto_review: 'Отзывы и бонусы', templates: 'Быстрые ответы', blacklist: 'Чёрный список',
     finance_hub: 'Обзор и аналитика', piggy_banks: 'Копилки', calculator: 'Калькуляторы', theme: 'Темы', effects: 'Эффекты',
     epic_nicks: 'Оформление ника', needs: 'Элементы интерфейса', accounts: 'Аккаунты', general: 'Отображение FunPay',
@@ -241,7 +241,7 @@ function testIndexContractAndAliases() {
     assert.ok(index.some(item => item.groupId === 'sales' && item.pageId == null && item.text === 'Лоты и продажи'), 'group headings have group-only entries');
     for (const [pageId, mode, alias] of [
         ['templates', 'commands', 'Слэш-команды'], ['templates', 'templates', 'Шаблоны'], ['calculator', 'currency', 'Валюты'],
-        ['theme', null, 'Кастомизация'], ['ai_audit', null, 'ИИ-аудит'], ['tickets', null, 'Тикеты'],
+        ['theme', null, 'Кастомизация'], ['tickets', null, 'Тикеты'],
         ['overview', null, 'Функции'], ['overview', null, 'Видео-обзор'], ['lot_io', null, 'Импорт / экспорт'],
         ['settings_io', null, 'Импорт / экспорт']
     ]) assert.ok(find(pageId, mode, alias), `${alias} targets ${pageId}${mode ? `/${mode}` : ''}`);
@@ -303,7 +303,7 @@ async function testLegacyAliasesActivateCanonicalPageAndMode() {
     const cases = [
         ['Слэш-команды', 'templates', 'commands'], ['Шаблоны', 'templates', 'templates'],
         ['Валюты', 'calculator', 'currency'], ['Кастомизация', 'theme', undefined],
-        ['ИИ-аудит', 'ai_audit', undefined], ['Тикеты', 'tickets', undefined],
+        ['Тикеты', 'tickets', undefined],
         ['Функции', 'overview', undefined], ['Видео-обзор', 'overview', undefined]
     ];
     for (const [query, pageId, mode] of cases) {
@@ -371,7 +371,7 @@ async function testImmediateClearCancelsPendingSearchRender() {
 
 async function testEnterIgnoresRowsFromPreviousQuery() {
     const h = createHarness();
-    assert.equal((await search(h, 'Аудит магазина')).length, 1);
+    assert.equal((await search(h, 'Автоподнятие')).length, 1);
     h.input.value = 'ничего не найдено';
     await h.input.dispatch('input');
     await h.input.dispatch('keydown', { key: 'Enter' });
@@ -380,7 +380,7 @@ async function testEnterIgnoresRowsFromPreviousQuery() {
 
 async function testEnterIgnoresRowsAfterClearDuringFade() {
     const h = createHarness();
-    assert.equal((await search(h, 'Аудит магазина')).length, 1);
+    assert.equal((await search(h, 'Автоподнятие')).length, 1);
     await h.clearButton.dispatch('click');
     await h.input.dispatch('keydown', { key: 'Enter' });
     assert.deepEqual(h.routeCalls, [], 'Enter cannot activate a row left in the results DOM after Clear');
