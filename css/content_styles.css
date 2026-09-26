@@ -14807,6 +14807,14 @@ textarea.fp-cw-input { line-height:1.4; }
     font-size: 12px;
 }
 
+/* Wide chart + side breakdown is conditional: no empty reserved third-column panel. */
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="finance_hub"] .fpt-fin-grid > .fpt-fin-col-8.fpt-fin-primary-full {
+    grid-column: span 12;
+}
+.fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="finance_hub"] .fpt-fin-grid > .fpt-fin-col-4.fpt-fin-secondary-empty {
+    display: none;
+}
+
 /* Keep dense tables readable instead of squeezing the last columns. */
 .fp-tools-popup .fp-tools-content .fp-tools-page-content[data-page="finance_hub"] .fpt-fin-table th {
     line-height: 1.2;
