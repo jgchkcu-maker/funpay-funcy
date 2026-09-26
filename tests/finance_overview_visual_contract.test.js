@@ -13,19 +13,22 @@ assert.ok(overviewStart >= 0 && overviewEnd > overviewStart, 'overview pane mark
 const overview = popup.slice(overviewStart, overviewEnd);
 
 const overviewCards = overview.match(/class="fpt-fin-card fpt-fin-kpi-card fpt-fin-overview-kpi[^"]*"/g) || [];
-assert.equal(overviewCards.length, 8, 'overview must expose eight redesigned KPI cards');
-assert.equal((overview.match(/fpt-fin-kpi-icon(?:\s|"|$)/g) || []).length, 8, 'each overview KPI needs an icon tile');
-assert.equal((overview.match(/fpt-fin-kpi-more/g) || []).length, 8, 'each overview KPI needs a compact menu affordance');
-assert.equal((overview.match(/fpt-fin-kpi-chevron/g) || []).length, 8, 'each overview KPI needs a navigation chevron');
-assert.equal((overview.match(/fpt-fin-kpi-sparkline(?:\s|"|$)/g) || []).length, 8, 'each overview KPI needs a lightweight trend affordance');
-assert.match(overview, /role="button" tabindex="0"/, 'overview KPI cards must be keyboard reachable');
+assert.equal(overviewCards.length, 8, 'overview must expose eight KPI cards');
+assert.equal((overview.match(/fpt-fin-kpi-icon(?:\s|"|$)/g) || []).length, 8, 'each overview KPI keeps one meaningful icon tile');
+assert.equal((overview.match(/fpt-fin-kpi-chevron/g) || []).length, 8, 'each clickable overview KPI keeps a navigation chevron');
+assert.equal((overview.match(/fpt-fin-kpi-more/g) || []).length, 0, 'overview must not advertise fake per-card menus');
+assert.equal((overview.match(/fpt-fin-kpi-sparkline/g) || []).length, 0, 'overview must not render decorative fake sparklines');
+assert.doesNotMatch(overview, />show_chart</, 'overview must not use static show_chart glyphs as data visualization');
+assert.doesNotMatch(overview, />more_vert</, 'overview must not use non-functional overflow-menu glyphs');
+assert.match(overview, /role="button" tabindex="0"/, 'overview KPI cards must remain keyboard reachable');
 
-assert.match(css, /\.fpt-fin-overview-kpi\s*\{[\s\S]*?border-radius:\s*15px;[\s\S]*?overflow:\s*hidden;/, 'overview cards need the soft rounded surface treatment');
-assert.match(css, /\.fpt-fin-overview-kpi\s*\.fpt-fin-kpi-icon\s*\{[\s\S]*?width:\s*35px;[\s\S]*?height:\s*35px;/, 'overview icon tiles need a stable 35px footprint');
-assert.match(css, /\.fpt-fin-overview-kpi:hover\s*\{[\s\S]*?transform:\s*translateY\(-2px\);/, 'overview cards need a visible hover state');
-assert.match(css, /\.fpt-fin-overview-kpi:focus-visible\s*\{[\s\S]*?outline:/, 'overview cards need a visible keyboard focus state');
-assert.match(css, /\.fpt-fin-overview-kpi\s+\.fpt-fin-kpi-sparkline\s*\{[\s\S]*?pointer-events:\s*none;/, 'trend affordances must stay decorative and non-interactive');
-assert.match(css, /@container \(max-width: 720px\)[\s\S]*?\.fpt-fin-overview-kpi\s+\.fpt-fin-card-header/, 'overview card rhythm must adapt at the tablet breakpoint');
+const taskCssStart = css.indexOf('FINANCE HUB UI — TASK 08');
+assert.ok(taskCssStart >= 0, 'TASK 08 Finance CSS must exist');
+const taskCss = css.slice(taskCssStart);
+assert.match(taskCss, /\.fpt-fin-overview-kpi \.fpt-fin-card-header\s*\{[\s\S]*?grid-template-columns:\s*35px minmax\(0, 1fr\);/, 'overview header uses icon + title only');
+assert.match(taskCss, /\.fpt-fin-overview-kpi \.fpt-fin-card-value\s*\{[\s\S]*?padding-left:\s*0 !important;/, 'overview values share the card content axis');
+assert.match(taskCss, /\.fpt-fin-kpi-card \.fpt-fin-card-title\s*\{[\s\S]*?white-space:\s*normal !important;[\s\S]*?overflow-wrap:\s*anywhere;/, 'long KPI titles may wrap without ellipsis');
+assert.match(taskCss, /\.fpt-fin-kpi-sparkline,[\s\S]*?\.fpt-fin-kpi-more\s*\{[\s\S]*?display:\s*none !important;/, 'legacy fake affordances are defensively hidden');
 
 assert.match(hub, /function bindOverviewKpiKeyboard\(pane\)/, 'overview cards need keyboard activation wiring');
 assert.match(hub, /bindOverviewKpiKeyboard\(pane\);/, 'overview keyboard wiring must run after rendering');
