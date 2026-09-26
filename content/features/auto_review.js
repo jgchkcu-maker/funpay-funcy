@@ -90,6 +90,38 @@ function attachAutoReplyImageHandler(page) {
     });
 }
 
+function setupAutoReplyRuleDisclosure(page) {
+    if (!page || page.dataset.fptRuleDisclosure === 'true') return;
+    page.dataset.fptRuleDisclosure = 'true';
+
+    const rules = [
+        { toggle: 'greetingEnabled', body: 'greetingRuleBody', status: 'greetingRuleStatus' },
+        { toggle: 'newOrderReplyEnabled', body: 'newOrderRuleBody', status: 'newOrderRuleStatus' },
+        { toggle: 'orderConfirmReplyEnabled', body: 'orderConfirmRuleBody', status: 'orderConfirmRuleStatus' },
+        { toggle: 'keywordsEnabled', body: 'keywordsRuleBody', status: 'keywordsRuleStatus' }
+    ];
+
+    const sync = rule => {
+        const toggle = document.getElementById(rule.toggle);
+        const body = document.getElementById(rule.body);
+        const status = document.getElementById(rule.status);
+        if (!toggle) return;
+        const enabled = !!toggle.checked;
+        if (body) body.hidden = !enabled;
+        if (status) {
+            status.textContent = enabled ? 'Включено' : 'Выключено';
+            status.classList.toggle('is-enabled', enabled);
+        }
+    };
+
+    rules.forEach(rule => {
+        const toggle = document.getElementById(rule.toggle);
+        if (!toggle) return;
+        toggle.addEventListener('change', () => sync(rule));
+        sync(rule);
+    });
+}
+
 function setupAutoReplyUI(page, settings) {
     setAutoReplyCheckbox('greetingEnabled', settings.greetingEnabled);
     setAutoReplyValue('greetingText', settings.greetingText || 'Здравствуйте! Чем могу помочь?');
@@ -104,6 +136,7 @@ function setupAutoReplyUI(page, settings) {
     setAutoReplyCheckbox('typingDelay', settings.typingDelay);
     renderKeywordsList(settings.keywords);
     attachAutoReplyImageHandler(page);
+    setupAutoReplyRuleDisclosure(page);
 
     let editingKeywordIndex = -1;
     let editingKeywordOriginal = null;
@@ -315,32 +348,39 @@ async function saveAutoReplyListChange(patch, field, renderer) {
 function renderKeywordsList(keywords) {
     const listContainer = document.getElementById('keywords-list-container');
     if (!listContainer) return;
-    if (keywords.length === 0) {
-        listContainer.innerHTML = '<p class="template-info" style="text-align:center;">Нет правил для ключевых слов.</p>';
+    if (!keywords.length) {
+        listContainer.innerHTML =
+            '<div class="fpt-ui-state fp-ar-keywords-empty">' +
+                '<p class="fpt-ui-state-title">Правил пока нет</p>' +
+                '<p class="fpt-ui-state-text">Добавьте ключевую фразу и ответ ниже.</p>' +
+            '</div>';
         return;
     }
 
-    const esc = (value) => String(value == null ? '' : value)
+    const esc = value => String(value == null ? '' : value)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
     listContainer.innerHTML = keywords.map((item, index) => {
-        const modeBadge = item.matchMode === 'contains'
-            ? '<span style="font-size:10px;background:var(--fpt-bg, #ffffff);padding:1px 5px;border-radius:3px;color:#7a7f9a;margin-left:4px;">содержит</span>'
-            : '<span style="font-size:10px;background:var(--fpt-bg, #ffffff);padding:1px 5px;border-radius:3px;color:#7a7f9a;margin-left:4px;">точно</span>';
-        const imgMarker = (Array.isArray(item.images) && item.images.length)
-            ? '<span class="material-symbols-rounded fpt-kw-img-marker" title="К правилу прикреплено изображение">image</span>'
+        const modeLabel = item.matchMode === 'contains' ? 'содержит' : 'точно';
+        const imageBadge = Array.isArray(item.images) && item.images.length
+            ? '<span class="fp-ar-keyword-image-badge">есть изображение</span>'
             : '';
         return `
-        <div class="keyword-item" data-index="${index}" data-rule="${esc(JSON.stringify(item))}">
-            <div class="keyword-pair">
-                <span class="keyword-key">${esc(item.keyword)}</span>${modeBadge}
-                <span class="keyword-arrow">→</span>
-                <span class="keyword-value">${esc(item.response)}</span>${imgMarker}
+        <div class="keyword-item fp-ar-keyword-item" data-index="${index}" data-rule="${esc(JSON.stringify(item))}">
+            <div class="keyword-pair fp-ar-keyword-pair">
+                <div class="fp-ar-keyword-main">
+                    <span class="keyword-key">${esc(item.keyword)}</span>
+                    <span class="fp-ar-keyword-mode">${modeLabel}</span>
+                    ${imageBadge}
+                </div>
+                <span class="keyword-value fp-ar-keyword-response">${esc(item.response || 'Только изображение')}</span>
             </div>
-            <div class="fpt-kw-actions">
-                <button class="fpt-edit-keyword-btn" data-index="${index}" title="Редактировать"><span class="material-symbols-rounded">edit</span></button>
-                <button class="btn btn-default delete-keyword-btn" data-index="${index}">Удалить</button>
+            <div class="fpt-kw-actions fp-ar-keyword-actions">
+                <button type="button" class="fpt-ui-button fpt-ui-button--tertiary fpt-ui-icon-button fpt-edit-keyword-btn" data-index="${index}" title="Редактировать" aria-label="Редактировать правило">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="m14.7 5.3 4 4M5 19l3.4-.8 10.1-10.1a1.4 1.4 0 0 0 0-2l-.6-.6a1.4 1.4 0 0 0-2 0L5.8 15.6 5 19Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button type="button" class="fpt-ui-button fpt-ui-button--tertiary fp-ar-keyword-delete delete-keyword-btn" data-index="${index}">Удалить</button>
             </div>
         </div>`;
     }).join('');

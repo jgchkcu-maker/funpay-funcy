@@ -649,60 +649,151 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content" data-page="auto_reply">
-                    <h3>Автоответчик</h3>
-                     <div class="template-container">
-                        <div class="checkbox-label-inline">
-                            <input type="checkbox" id="greetingEnabled">
-                            <label for="greetingEnabled" style="margin-bottom:0;"><span>Авто-приветствие для новых покупателей</span></label>
+                    <header class="fpt-ui-page-header fp-ar-page-header">
+                        <div class="fp-ar-page-header-copy">
+                            <h3 class="fpt-ui-page-title fp-ar-page-title">Автоответчик</h3>
+                            <p class="fpt-ui-helper fp-ar-page-description">Настройте сообщения для ключевых событий. Выключенные сценарии остаются компактными и не занимают место настройками.</p>
                         </div>
-                        <textarea id="greetingText" class="template-input" placeholder="Текст приветствия... Переменные: {buyername}, $chat_name"></textarea>
+                    </header>
 
-                        <div style="margin-top:10px;">
-                            <div class="checkbox-label-inline">
-                                <input type="checkbox" id="onlyNewChats">
-                                <label for="onlyNewChats" style="margin-bottom:0;"><span>Только совсем новые чаты</span></label>
-                            </div>
-                            <div class="checkbox-label-inline">
-                                <input type="checkbox" id="ignoreSystemMessages">
-                                <label for="ignoreSystemMessages" style="margin-bottom:0;"><span>Не приветствовать при системных сообщениях (заказы, отзывы)</span></label>
-                            </div>
-                            <label style="font-size:12px;color:var(--fptm-faint, #5a5f7a);margin-top:6px;display:block;">Кулдаун повторного приветствия (дней, 0 = без кулдауна):</label>
-                            <input type="number" id="greetingCooldownDays" min="0" max="365" value="0" class="template-input" style="width:80px;" placeholder="0">
+                    <details class="fp-ar-variables">
+                        <summary class="fp-ar-variables-summary">
+                            <span>Доступные переменные</span>
+                            <span class="fp-ar-variables-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="fp-ar-variable-grid">
+                            <div class="fp-ar-variable"><code>{buyername}</code><span>имя покупателя</span></div>
+                            <div class="fp-ar-variable"><code>{orderid}</code><span>ID заказа</span></div>
+                            <div class="fp-ar-variable"><code>{orderlink}</code><span>ссылка на заказ</span></div>
+                            <div class="fp-ar-variable"><code>{lotname}</code><span>название лота</span></div>
+                            <div class="fp-ar-variable"><code>$chat_name</code><span>имя чата, legacy</span></div>
                         </div>
-                    </div>
-                    <h3>Ответ на новый заказ</h3>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="newOrderReplyEnabled">
-                        <label for="newOrderReplyEnabled" style="margin-bottom:0;"><span>Отправлять сообщение при новом заказе</span></label>
-                    </div>
-                    <p class="template-info">Отправляется когда покупатель оплачивает заказ. Переменные: <code>{buyername}</code>, <code>{orderid}</code>, <code>{orderlink}</code>.</p>
-                    <textarea id="newOrderReplyText" class="template-input" placeholder="Спасибо за заказ, {buyername}! Ваш заказ: {orderlink}"></textarea>
+                    </details>
 
-                    <h3 style="margin-top:20px;">Ответ при подтверждении заказа</h3>
-                    <div class="checkbox-label-inline">
-                        <input type="checkbox" id="orderConfirmReplyEnabled">
-                        <label for="orderConfirmReplyEnabled" style="margin-bottom:0;"><span>Отправлять сообщение при подтверждении заказа покупателем</span></label>
-                    </div>
-                    <p class="template-info">Переменные: <code>{buyername}</code>, <code>{orderid}</code>, <code>{lotname}</code>, <code>{orderlink}</code>.</p>
-                    <textarea id="orderConfirmReplyText" class="template-input" placeholder="{buyername}, спасибо за подтверждение заказа {orderid}! Если не сложно, оставь, пожалуйста, отзыв!"></textarea>
-
-                    <h3 style="margin-top:20px;">Дополнительно</h3>
-                    <div class="template-container">
-                        <div class="checkbox-label-inline">
-                            <input type="checkbox" id="keywordsEnabled">
-                            <label for="keywordsEnabled" style="margin-bottom:0;"><span>Авто-ответы по ключевым словам</span></label>
-                        </div>
-                        <div id="keywords-list-container" class="keywords-list"></div>
-                        <div class="keyword-add-form">
-                            <input type="text" id="newKeyword" placeholder="Ключевое слово или фраза">
-                            <div class="fp-tools-radio-group" style="margin: 6px 0;">
-                                <label class="fp-tools-radio-option"><input type="radio" name="newKeywordMatchMode" value="exact" checked><span>Точное совпадение</span></label>
-                                <label class="fp-tools-radio-option"><input type="radio" name="newKeywordMatchMode" value="contains"><span>Содержит</span></label>
+                    <section class="fpt-ui-surface fp-ar-rule" data-fpt-ar-rule="greeting" aria-labelledby="fp-ar-greeting-title">
+                        <div class="fp-ar-rule-header">
+                            <label class="fp-ar-rule-copy" for="greetingEnabled">
+                                <span id="fp-ar-greeting-title" class="fp-ar-rule-title">Приветствие новых покупателей</span>
+                                <span class="fpt-ui-helper fp-ar-rule-description">Отправляется при первом подходящем сообщении покупателя.</span>
+                            </label>
+                            <div class="fp-ar-rule-control">
+                                <span id="greetingRuleStatus" class="fp-ar-rule-status">Выключено</span>
+                                <input type="checkbox" id="greetingEnabled" class="fp-ar-rule-toggle">
                             </div>
-                            <textarea id="newKeywordResponse" placeholder="Текст ответа (можно использовать {buyername})"></textarea>
-                            <button id="addKeywordBtn" class="btn btn-default">Добавить правило</button>
                         </div>
-                    </div>
+                        <div id="greetingRuleBody" class="fp-ar-rule-body" hidden>
+                            <div class="fp-ar-editor-field">
+                                <label class="fp-ar-field-label" for="greetingText">Текст приветствия</label>
+                                <textarea id="greetingText" class="template-input fp-ar-textarea" placeholder="Здравствуйте, {buyername}! Чем могу помочь?"></textarea>
+                                <div class="fp-ar-editor-actions" data-editor-actions-for="greetingText"></div>
+                            </div>
+                            <div class="fp-ar-subsettings">
+                                <div class="fpt-ui-setting-row fp-ar-setting-row">
+                                    <label class="fp-ar-setting-copy" for="onlyNewChats">
+                                        <span class="fp-ar-setting-title">Только совсем новые чаты</span>
+                                        <span class="fpt-ui-helper">Не отправлять приветствие в уже существующем диалоге.</span>
+                                    </label>
+                                    <input type="checkbox" id="onlyNewChats" class="fp-ar-setting-checkbox">
+                                </div>
+                                <div class="fpt-ui-setting-row fp-ar-setting-row">
+                                    <label class="fp-ar-setting-copy" for="ignoreSystemMessages">
+                                        <span class="fp-ar-setting-title">Игнорировать системные события</span>
+                                        <span class="fpt-ui-helper">Не приветствовать из-за уведомлений о заказах и отзывах.</span>
+                                    </label>
+                                    <input type="checkbox" id="ignoreSystemMessages" class="fp-ar-setting-checkbox">
+                                </div>
+                                <div class="fpt-ui-setting-row fp-ar-setting-row fp-ar-cooldown-row">
+                                    <label class="fp-ar-setting-copy" for="greetingCooldownDays">
+                                        <span class="fp-ar-setting-title">Повторное приветствие</span>
+                                        <span class="fpt-ui-helper">Через сколько дней можно поприветствовать покупателя снова. 0 — без кулдауна.</span>
+                                    </label>
+                                    <div class="fp-ar-number-field">
+                                        <input type="number" id="greetingCooldownDays" min="0" max="365" value="0" class="fpt-ui-control fp-ar-number-input" inputmode="numeric" aria-label="Кулдаун приветствия в днях">
+                                        <span>дн.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="fpt-ui-surface fp-ar-rule" data-fpt-ar-rule="new-order" aria-labelledby="fp-ar-new-order-title">
+                        <div class="fp-ar-rule-header">
+                            <label class="fp-ar-rule-copy" for="newOrderReplyEnabled">
+                                <span id="fp-ar-new-order-title" class="fp-ar-rule-title">Ответ на новый заказ</span>
+                                <span class="fpt-ui-helper fp-ar-rule-description">Сообщение после оплаты нового заказа.</span>
+                            </label>
+                            <div class="fp-ar-rule-control">
+                                <span id="newOrderRuleStatus" class="fp-ar-rule-status">Выключено</span>
+                                <input type="checkbox" id="newOrderReplyEnabled" class="fp-ar-rule-toggle">
+                            </div>
+                        </div>
+                        <div id="newOrderRuleBody" class="fp-ar-rule-body" hidden>
+                            <div class="fp-ar-editor-field">
+                                <label class="fp-ar-field-label" for="newOrderReplyText">Сообщение покупателю</label>
+                                <textarea id="newOrderReplyText" class="template-input fp-ar-textarea" placeholder="Спасибо за заказ, {buyername}! Ваш заказ: {orderlink}"></textarea>
+                                <div class="fp-ar-editor-actions" data-editor-actions-for="newOrderReplyText"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="fpt-ui-surface fp-ar-rule" data-fpt-ar-rule="order-confirm" aria-labelledby="fp-ar-confirm-title">
+                        <div class="fp-ar-rule-header">
+                            <label class="fp-ar-rule-copy" for="orderConfirmReplyEnabled">
+                                <span id="fp-ar-confirm-title" class="fp-ar-rule-title">Ответ при подтверждении заказа</span>
+                                <span class="fpt-ui-helper fp-ar-rule-description">Сообщение после подтверждения заказа покупателем.</span>
+                            </label>
+                            <div class="fp-ar-rule-control">
+                                <span id="orderConfirmRuleStatus" class="fp-ar-rule-status">Выключено</span>
+                                <input type="checkbox" id="orderConfirmReplyEnabled" class="fp-ar-rule-toggle">
+                            </div>
+                        </div>
+                        <div id="orderConfirmRuleBody" class="fp-ar-rule-body" hidden>
+                            <div class="fp-ar-editor-field">
+                                <label class="fp-ar-field-label" for="orderConfirmReplyText">Сообщение покупателю</label>
+                                <textarea id="orderConfirmReplyText" class="template-input fp-ar-textarea" placeholder="{buyername}, спасибо за подтверждение заказа {orderid}!"></textarea>
+                                <div class="fp-ar-editor-actions" data-editor-actions-for="orderConfirmReplyText"></div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="fpt-ui-surface fp-ar-rule" data-fpt-ar-rule="keywords" aria-labelledby="fp-ar-keywords-title">
+                        <div class="fp-ar-rule-header">
+                            <label class="fp-ar-rule-copy" for="keywordsEnabled">
+                                <span id="fp-ar-keywords-title" class="fp-ar-rule-title">Ответы по ключевым словам</span>
+                                <span class="fpt-ui-helper fp-ar-rule-description">Отвечать, когда сообщение точно совпадает с фразой или содержит её.</span>
+                            </label>
+                            <div class="fp-ar-rule-control">
+                                <span id="keywordsRuleStatus" class="fp-ar-rule-status">Выключено</span>
+                                <input type="checkbox" id="keywordsEnabled" class="fp-ar-rule-toggle">
+                            </div>
+                        </div>
+                        <div id="keywordsRuleBody" class="fp-ar-rule-body" hidden>
+                            <div id="keywords-list-container" class="keywords-list fp-ar-keywords-list"></div>
+                            <div class="keyword-add-form fp-ar-keyword-form">
+                                <div class="fp-ar-field-grid">
+                                    <div class="fp-ar-field">
+                                        <label class="fp-ar-field-label" for="newKeyword">Ключевое слово или фраза</label>
+                                        <input type="text" id="newKeyword" class="fpt-ui-control fp-ar-keyword-input" placeholder="Например: когда доставка?">
+                                    </div>
+                                    <div class="fp-ar-field">
+                                        <span class="fp-ar-field-label">Совпадение</span>
+                                        <div class="fp-tools-radio-group fp-ar-match-modes">
+                                            <label class="fp-tools-radio-option"><input type="radio" name="newKeywordMatchMode" value="exact" checked><span>Точное</span></label>
+                                            <label class="fp-tools-radio-option"><input type="radio" name="newKeywordMatchMode" value="contains"><span>Содержит</span></label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="fp-ar-editor-field">
+                                    <label class="fp-ar-field-label" for="newKeywordResponse">Ответ</label>
+                                    <textarea id="newKeywordResponse" class="template-input fp-ar-textarea" placeholder="Текст ответа. Можно использовать {buyername}."></textarea>
+                                    <div class="fp-ar-editor-actions" data-editor-actions-for="newKeywordResponse"></div>
+                                </div>
+                                <div class="fp-ar-keyword-form-actions">
+                                    <button type="button" id="addKeywordBtn" class="fpt-ui-button fpt-ui-button--primary fp-ar-add-keyword-btn">Добавить правило</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="fp-tools-page-content active" data-page="lot_io">
@@ -4342,15 +4433,28 @@ function attachAutoReplyImageButtons(toolsPopup) {
         ta.dataset.fptImgBtn = '1';
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'btn fpt-img-btn fpt-autoreply-img-btn';
-        btn.title = 'Вставить изображение';
-        btn.innerHTML = '<span class="material-symbols-rounded">image</span>';
+        const autoReplyPage = typeof ta.closest === 'function'
+            ? ta.closest('.fp-tools-page-content[data-page="auto_reply"]')
+            : null;
+        if (autoReplyPage) {
+            btn.className = 'fpt-ui-button fpt-ui-button--secondary fpt-ui-icon-button fp-ar-image-btn fpt-autoreply-img-btn';
+            btn.title = 'Добавить изображение';
+            btn.setAttribute('aria-label', 'Добавить изображение');
+            btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><rect x="4" y="5" width="16" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><path d="m6.5 17 4.2-4.2 2.8 2.8 1.7-1.7L19 17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        } else {
+            btn.className = 'btn fpt-img-btn fpt-autoreply-img-btn';
+            btn.title = 'Вставить изображение';
+            btn.innerHTML = '<span class="material-symbols-rounded">image</span>';
+        }
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             if (typeof handleImageAddClick === 'function') handleImageAddClick(ta);
         });
-        // place the button right after the textarea
-        if (ta.parentNode) {
+        if (autoReplyPage) {
+            const actionHost = autoReplyPage.querySelector('[data-editor-actions-for="' + id + '"]');
+            if (actionHost) actionHost.appendChild(btn);
+            else ta.insertAdjacentElement('afterend', btn);
+        } else if (ta.parentNode) {
             ta.insertAdjacentElement('afterend', btn);
         }
     });
