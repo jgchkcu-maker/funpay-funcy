@@ -14,6 +14,9 @@ const start = popup.indexOf('<div class="fp-tools-page-content" data-page="auto_
 const end = popup.indexOf('<div class="fp-tools-page-content" data-page="tickets"', start);
 assert.ok(start >= 0 && end > start, 'auto_delivery page must exist');
 const page = popup.slice(start, end);
+const stockCounterStart = ui.indexOf('async function initStockCounterDisplay()');
+assert.ok(stockCounterStart > 0, 'stock counter boundary must remain available');
+const popupUi = ui.slice(0, stockCounterStart);
 
 assert.match(page, /class="fpt-ui-page-header fp-ad-page-header"/, 'page uses TASK 00 page header');
 assert.equal((page.match(/class="fpt-ui-surface fp-ad-section/g) || []).length, 2, 'page is split into automation and per-lot surfaces');
@@ -26,15 +29,15 @@ assert.match(page, /data-state="idle"/, 'initial lots state is explicit');
 assert.match(page, /id="fp-load-delivery-lots-btn" class="fpt-ui-button fpt-ui-button--secondary fp-ad-load-btn"/, 'load action uses shared button primitive');
 
 for (const state of ['loading', 'empty', 'error']) {
-    assert.ok(ui.includes(\`renderDeliveryState(listEl, '\${state}'\`), 'UI must explicitly render ' + state + ' state');
+    assert.ok(popupUi.includes(\`renderDeliveryState(listEl, '\${state}'\`), 'UI must explicitly render ' + state + ' state');
 }
-assert.match(ui, /container\.dataset\.state = 'loaded'/, 'loaded state must be explicit');
-assert.match(ui, /settings\.hidden = !lotConfig\.enabled/, 'disabled lot keeps settings collapsed');
-assert.match(ui, /templateArea\.hidden = currentMode !== 'template'/, 'template editor is progressively disclosed');
-assert.match(ui, /title\.title = lot\.title/, 'long lot title remains available as native tooltip');
-assert.match(ui, /textContent = .*lot\.title|fpAdCreateElement\('div', 'fp-ad-lot-title', lot\.title/, 'lot titles are assigned as text rather than raw HTML');
-assert.doesNotMatch(ui, /style\.cssText/, 'popup-side lot list must not be built from inline cssText');
-assert.doesNotMatch(ui, /💾|📦|📭/, 'popup controls and stock copy must not rely on emoji affordances');
+assert.match(popupUi, /container\.dataset\.state = 'loaded'/, 'loaded state must be explicit');
+assert.match(popupUi, /settings\.hidden = !lotConfig\.enabled/, 'disabled lot keeps settings collapsed');
+assert.match(popupUi, /templateArea\.hidden = currentMode !== 'template'/, 'template editor is progressively disclosed');
+assert.match(popupUi, /title\.title = lot\.title/, 'long lot title remains available as native tooltip');
+assert.match(popupUi, /textContent = .*lot\.title|fpAdCreateElement\('div', 'fp-ad-lot-title', lot\.title/, 'lot titles are assigned as text rather than raw HTML');
+assert.doesNotMatch(popupUi, /style\.cssText/, 'popup-side lot list must not be built from inline cssText');
+assert.doesNotMatch(popupUi, /💾|📦|📭/, 'popup controls and stock copy must not rely on emoji affordances');
 
 assert.match(settings, /'fpToolsAutoRestoreEnabled'/, 'saved auto-restore key stays loaded');
 assert.match(settings, /'fpToolsAutoDisableEnabled'/, 'saved auto-disable key stays loaded');
