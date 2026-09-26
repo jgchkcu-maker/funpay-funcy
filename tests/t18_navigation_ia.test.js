@@ -59,7 +59,7 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
 function testSixIndependentAccordionSections() {
     const { schema, sections } = extractSchema();
     const expected = [
-        { id: 'sales', pages: ['lot_io', 'auto_delivery', 'autobump', 'ai_audit'] },
+        { id: 'sales', pages: ['lot_io', 'auto_delivery', 'autobump'] },
         { id: 'customers', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
         { id: 'finance', pages: ['finance_hub', 'piggy_banks', 'calculator'] },
         { id: 'interface', pages: ['theme', 'effects', 'epic_nicks', 'needs'] },
@@ -139,7 +139,7 @@ function testFinalLabelsAndRatingRoute() {
             id + ' must use the approved section title');
     }
     const pageLabels = [
-        ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['autobump', 'Автоподнятие'], ['ai_audit', 'Аудит магазина'],
+        ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['autobump', 'Автоподнятие'],
         ['auto_reply', 'Автоответчик'], ['auto_review', 'Отзывы и бонусы'], ['templates', 'Быстрые ответы'], ['blacklist', 'Чёрный список'],
         ['finance_hub', 'Обзор и аналитика'], ['piggy_banks', 'Копилки'], ['calculator', 'Калькуляторы'],
         ['theme', 'Темы'], ['effects', 'Эффекты'], ['epic_nicks', 'Оформление ника'], ['needs', 'Элементы интерфейса'],
