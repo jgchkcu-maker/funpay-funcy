@@ -2065,14 +2065,49 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content" data-page="blacklist">
-                    <h3>Чёрный список покупателей</h3>
-                    <p class="template-info">Добавьте ненадёжных покупателей. Вы сможете заблокировать на них автоматизаию и уведомления.</p>
-                    <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px;">
-                        <input type="text" id="fp-bl-name-input" placeholder="Имя пользователя FunPay" style="background:var(--fptm-surface-2, #0e0f16);border:1px solid var(--fptm-border, #22253a);border-radius:6px;padding:8px;color:var(--fptm-text, #d8dae8);font-size:13px;outline:none;">
-                        <input type="text" id="fp-bl-note-input" placeholder="Причина (необязательно)" style="background:var(--fptm-surface-2, #0e0f16);border:1px solid var(--fptm-border, #22253a);border-radius:6px;padding:8px;color:var(--fptm-text, #d8dae8);font-size:13px;outline:none;">
-                        <button id="fp-bl-add-btn" class="btn btn-default">+ Добавить в ЧС</button>
-                    </div>
-                    <div id="fp-bl-list"></div>
+                    <header class="fpt-ui-page-header fp-bl-page-header">
+                        <div class="fp-bl-page-header-copy">
+                            <h3 class="fpt-ui-page-title fp-bl-page-title">Чёрный список покупателей</h3>
+                            <p class="fpt-ui-helper fp-bl-page-description">Ограничьте автоматизации и уведомления для ненадёжных покупателей.</p>
+                        </div>
+                    </header>
+
+                    <section class="fpt-ui-surface fp-bl-section fp-bl-composer-section" aria-labelledby="fp-bl-composer-title">
+                        <div class="fpt-ui-section-header fp-bl-section-header">
+                            <div>
+                                <h4 id="fp-bl-composer-title" class="fpt-ui-section-title">Добавить покупателя</h4>
+                                <p class="fpt-ui-helper fp-bl-section-description">Укажите ник FunPay и при необходимости короткую причину.</p>
+                            </div>
+                        </div>
+                        <div class="fp-bl-composer-grid">
+                            <label class="fp-bl-field" for="fp-bl-name-input">
+                                <span class="fp-bl-field-label">Пользователь</span>
+                                <input type="text" id="fp-bl-name-input" class="fpt-ui-control fp-bl-input" placeholder="Имя пользователя FunPay" autocomplete="off" spellcheck="false">
+                            </label>
+                            <label class="fp-bl-field" for="fp-bl-note-input">
+                                <span class="fp-bl-field-label">Причина</span>
+                                <input type="text" id="fp-bl-note-input" class="fpt-ui-control fp-bl-input" placeholder="Необязательно" autocomplete="off">
+                            </label>
+                            <button type="button" id="fp-bl-add-btn" class="fpt-ui-button fpt-ui-button--primary fp-bl-add-btn">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                <span>Добавить</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="fpt-ui-surface fp-bl-section fp-bl-list-section" aria-labelledby="fp-bl-list-title">
+                        <div class="fpt-ui-section-header fp-bl-section-header fp-bl-list-header">
+                            <div>
+                                <h4 id="fp-bl-list-title" class="fpt-ui-section-title">Покупатели в списке <span id="fp-bl-count" class="fp-bl-count">0</span></h4>
+                                <p class="fpt-ui-helper fp-bl-section-description">Для каждого покупателя отдельно выберите, какие действия блокировать.</p>
+                            </div>
+                            <label class="fp-bl-search" for="fp-bl-search-input">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><circle cx="10.5" cy="10.5" r="5.5" stroke="currentColor" stroke-width="1.7"/><path d="m15 15 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                                <input type="search" id="fp-bl-search-input" class="fpt-ui-control fp-bl-search-input" placeholder="Поиск" autocomplete="off">
+                            </label>
+                        </div>
+                        <div id="fp-bl-list" class="fp-bl-list" aria-live="polite"></div>
+                    </section>
                 </div>
 
                 <div class="fp-tools-page-content" data-page="auto_delivery">
