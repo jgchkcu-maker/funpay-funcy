@@ -133,7 +133,6 @@
         "content/ui/main_popup.js",
         "content/ui/header_button_styler.js",
         "content/features/lot_context_menu.js",
-        "content/features/ai_lot_audit.js",
         "content/features/settings_io.js",
         "content/features/bulk_lot_editor.js",
         "content/features/buyer_history.js",
