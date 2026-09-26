@@ -1036,31 +1036,30 @@ function createMainPopup() {
                     </section>
                 </div>
                 <div class="fp-tools-page-content" data-page="finance_hub">
-                    <div class="fpt-fin-header">
+                    <header class="fpt-ui-page-header fpt-fin-header">
                         <div class="fpt-fin-header-left">
-                            <div class="fpt-fin-title-row">
-                                <h3 class="fpt-fin-title">Обзор и аналитика</h3>
-                                <span class="fpt-fin-badge">Hub</span>
-                            </div>
-                            <div class="fpt-fin-last-updated" id="fptFinLastUpdated">
-                                <span class="material-symbols-rounded">schedule</span>
+                            <h3 class="fpt-ui-page-title fpt-fin-title">Обзор и аналитика</h3>
+                            <div class="fpt-fin-last-updated" id="fptFinLastUpdated" role="status" aria-live="polite">
+                                <svg class="fpt-fin-freshness-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                                    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.7"/>
+                                    <path d="M12 7.5V12l3 1.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
                                 <span id="fptFinLastUpdatedText">Не обновлялось</span>
                             </div>
                         </div>
                         <div class="fpt-fin-header-actions">
-                            <button type="button" id="fptFinRefreshBtn" class="btn btn-default fpt-fin-btn" title="Обновить финансовые данные" aria-label="Обновить">
-                                <span class="material-symbols-rounded">refresh</span>
-                                <span>Обновить</span>
+                            <button type="button" id="fptFinRefreshBtn" class="fpt-ui-button fpt-ui-button--secondary fpt-ui-icon-button fpt-fin-refresh-btn" title="Обновить финансовые данные" aria-label="Обновить финансовые данные">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M18.5 8A7 7 0 1 0 19 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M18.5 4.5V8h-3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                             </button>
-                            <button type="button" id="fptFinExportBtn" class="btn btn-default fpt-fin-btn" disabled title="Экспорт станет доступен в следующем обновлении" aria-label="Экспорт (недоступно)">
-                                <span class="material-symbols-rounded">download</span>
+                            <button type="button" id="fptFinExportBtn" class="fpt-ui-button fpt-ui-button--tertiary fpt-fin-export-btn" disabled title="Экспорт станет доступен после загрузки данных" aria-label="Экспорт финансовых данных">
+                                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 18.5h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                 <span>Экспорт</span>
                             </button>
                         </div>
-                    </div>
+                    </header>
 
                     <div class="fpt-fin-subtabs-wrap">
-                        <div class="fpt-fin-subtabs" id="fptFinSubtabs" role="tablist">
+                        <div class="fpt-ui-segmented fpt-fin-subtabs" id="fptFinSubtabs" role="tablist">
                             <span class="fpt-fin-subtabs-indicator" id="fptFinSubtabsIndicator" aria-hidden="true"></span>
                             <button type="button" class="fpt-fin-subtab active" data-subtab="overview" role="tab" aria-selected="true">
                                 <span class="material-symbols-rounded">dashboard</span>
@@ -1103,6 +1102,13 @@ function createMainPopup() {
                                     <option value="all">Всё время</option>
                                     <option value="custom">Произвольный период…</option>
                                 </select>
+                            </div>
+                            <div class="fpt-fin-filter-control fpt-fin-snapshot-control fpt-fin-control-hidden" data-fin-control="snapshot" aria-hidden="true">
+                                <span class="fpt-fin-filter-label">Период</span>
+                                <div id="fptFinPeriodSnapshotBadge" class="fpt-fin-snapshot-badge" role="status" aria-label="Текущий снимок инвентаря">
+                                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path d="M5 7.5h14v11H5v-11Zm3-3h8v3H8v-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.5 11h7M8.5 14.5h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                                    <span>Текущий снимок</span>
+                                </div>
                             </div>
                             <div class="fpt-fin-filter-control" data-fin-control="currency">
                                 <label class="fpt-fin-filter-label" for="fptFinCurrencySelect">Валюта</label>
@@ -1149,11 +1155,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--revenue" aria-hidden="true">payments</span>
                                         <h5 class="fpt-fin-card-title">Выручка <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewRevenue"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewRevenueSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--revenue" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1161,11 +1165,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--profit" aria-hidden="true">account_balance_wallet</span>
                                         <h5 class="fpt-fin-card-title">Чистая прибыль <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewProfit"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewProfitSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--profit" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1173,11 +1175,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--orders" aria-hidden="true">shopping_cart</span>
                                         <h5 class="fpt-fin-card-title">Заказы <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewOrders"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewOrdersSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--orders" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1185,11 +1185,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--average" aria-hidden="true">receipt</span>
                                         <h5 class="fpt-fin-card-title">Средний чек <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewAvgCheck"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewAvgCheckSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--average" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
 
@@ -1199,11 +1197,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--potential-revenue" aria-hidden="true">trending_up</span>
                                         <h5 class="fpt-fin-card-title">Потенциальная выручка <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotRevenue"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotRevenueSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--potential-revenue" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1211,11 +1207,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--potential-profit" aria-hidden="true">insights</span>
                                         <h5 class="fpt-fin-card-title">Потенциал прибыли <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotProfit"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotProfitSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--potential-profit" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1223,11 +1217,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--cost" aria-hidden="true">warehouse</span>
                                         <h5 class="fpt-fin-card-title">Стоимость склада <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotCost"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotCostSub"><div class="fpt-fin-skeleton fpt-fin-skeleton-text"></div></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--cost" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
                             <div class="fpt-fin-col-3">
@@ -1235,11 +1227,9 @@ function createMainPopup() {
                                     <div class="fpt-fin-card-header">
                                         <span class="material-symbols-rounded fpt-fin-kpi-icon fpt-fin-kpi-icon--offers" aria-hidden="true">inventory_2</span>
                                         <h5 class="fpt-fin-card-title">Активные лоты <span class="material-symbols-rounded fpt-fin-kpi-chevron" aria-hidden="true">chevron_right</span></h5>
-                                        <span class="material-symbols-rounded fpt-fin-kpi-more" aria-hidden="true">more_vert</span>
                                     </div>
                                     <div class="fpt-fin-card-value" id="fptFinOverviewPotOffers"><div class="fpt-fin-skeleton fpt-fin-skeleton-value"></div></div>
                                     <div class="fpt-fin-card-sub" id="fptFinOverviewPotOffersSub"><span class="fpt-fin-mini-badge">+ 0 без остатка</span></div>
-                                    <span class="material-symbols-rounded fpt-fin-kpi-sparkline fpt-fin-kpi-sparkline--offers" aria-hidden="true">show_chart</span>
                                 </div>
                             </div>
 
@@ -1248,7 +1238,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Динамика</h5>
-                                        <div class="fpt-fin-chart-toggles" id="fptFinOverviewChartToggles" role="group" aria-label="Метрика графика">
+                                        <div class="fpt-ui-segmented fpt-fin-chart-toggles" id="fptFinOverviewChartToggles" role="group" aria-label="Метрика графика">
                                             <button type="button" class="fpt-fin-chart-toggle active" data-metric="revenue">Выручка</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-metric="profit">Прибыль</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-metric="orders">Заказы</button>
@@ -1359,7 +1349,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Динамика продаж</h5>
-                                        <div class="fpt-fin-chart-toggles" role="group" aria-label="Интервал продаж">
+                                        <div class="fpt-ui-segmented fpt-fin-chart-toggles" role="group" aria-label="Интервал продаж">
                                             <button type="button" class="fpt-fin-chart-toggle active" data-period-step="day">По дням</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-period-step="week">По неделям</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-period-step="month">По месяцам</button>
@@ -1381,7 +1371,7 @@ function createMainPopup() {
                                 <div class="fpt-fin-card">
                                     <div class="fpt-fin-card-header">
                                         <h5 class="fpt-fin-card-title">Детализация продаж</h5>
-                                        <div class="fpt-fin-chart-toggles" role="group" aria-label="Вид детализации">
+                                        <div class="fpt-ui-segmented fpt-fin-chart-toggles" role="group" aria-label="Вид детализации">
                                             <button type="button" class="fpt-fin-chart-toggle active" data-sales-view="orders">Заказы</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-sales-view="buyers">Топ покупателей</button>
                                             <button type="button" class="fpt-fin-chart-toggle" data-sales-view="products">Топ товаров</button>
@@ -1595,7 +1585,7 @@ function createMainPopup() {
                             </div>
 
                             <div class="fpt-fin-col-12">
-                                <div class="fpt-fin-filter-group" id="fptFinProfitFilterGroup" role="group" aria-label="Фильтры заказов прибыли">
+                                <div class="fpt-ui-segmented fpt-fin-filter-group" id="fptFinProfitFilterGroup" role="group" aria-label="Фильтры заказов прибыли">
                                     <button type="button" class="fpt-fin-filter-chip active" data-filter="all">Все заказы</button>
                                     <button type="button" class="fpt-fin-filter-chip" data-filter="with-cost">С себестоимостью</button>
                                     <button type="button" class="fpt-fin-filter-chip" data-filter="without-cost">Без себестоимости</button>
@@ -1683,7 +1673,7 @@ function createMainPopup() {
                             </div>
 
                             <div class="fpt-fin-col-12">
-                                <div class="fpt-fin-filter-group" id="fptFinPotFilterGroup" role="group" aria-label="Фильтры лотов">
+                                <div class="fpt-ui-segmented fpt-fin-filter-group" id="fptFinPotFilterGroup" role="group" aria-label="Фильтры лотов">
                                     <button type="button" class="fpt-fin-filter-chip active" data-filter="all">Все</button>
                                     <button type="button" class="fpt-fin-filter-chip" data-filter="with-cost">С себестоимостью</button>
                                     <button type="button" class="fpt-fin-filter-chip" data-filter="without-cost">Без себестоимости</button>
@@ -1830,18 +1820,31 @@ function createMainPopup() {
                             </div>
                         </div>
                     </div>
-                    <section class="fpt-fin-additional-settings" aria-labelledby="fptFinAdditionalSettingsHeading">
-                        <h4 id="fptFinAdditionalSettingsHeading">Дополнительные настройки финансов</h4>
-                        <p class="template-info">Управление прежними отчётами в старом интерфейсе FunPay.</p>
-                        <div class="checkbox-label-inline">
-                            <input type="checkbox" id="showSalesStatsCheckbox">
-                            <label for="showSalesStatsCheckbox" style="margin-bottom:0;"><span>Статистика покупок и продаж на вкладках</span></label>
+                    <details class="fpt-ui-surface fpt-fin-additional-settings">
+                        <summary class="fpt-fin-additional-settings-summary">
+                            <span>
+                                <strong>Настройки финансов</strong>
+                                <small>Совместимость со старыми отчётами FunPay</small>
+                            </span>
+                            <span class="fpt-fin-settings-chevron" aria-hidden="true"></span>
+                        </summary>
+                        <div class="fpt-fin-additional-settings-body">
+                            <div class="fpt-ui-setting-row fpt-fin-setting-row">
+                                <label class="fpt-ui-setting-row-copy fpt-fin-setting-copy" for="showSalesStatsCheckbox">
+                                    <span class="fpt-fin-setting-title">Статистика покупок и продаж</span>
+                                    <span class="fpt-ui-helper">Показывать прежние отчёты на вкладках покупок и продаж.</span>
+                                </label>
+                                <input type="checkbox" id="showSalesStatsCheckbox" class="fpt-fin-setting-checkbox">
+                            </div>
+                            <div class="fpt-ui-setting-row fpt-fin-setting-row">
+                                <label class="fpt-ui-setting-row-copy fpt-fin-setting-copy" for="showFinanceStatsCheckbox">
+                                    <span class="fpt-fin-setting-title">Статистика на странице «Финансы»</span>
+                                    <span class="fpt-ui-helper">Оставить старый финансовый блок FunPay вместе с Finance Hub.</span>
+                                </label>
+                                <input type="checkbox" id="showFinanceStatsCheckbox" class="fpt-fin-setting-checkbox">
+                            </div>
                         </div>
-                        <div class="checkbox-label-inline">
-                            <input type="checkbox" id="showFinanceStatsCheckbox">
-                            <label for="showFinanceStatsCheckbox" style="margin-bottom:0;"><span>Статистика финансов на странице «Финансы»</span></label>
-                        </div>
-                    </section>
+                    </details>
                 </div>
 
                 <div class="fp-tools-page-content" data-page="piggy_banks">
