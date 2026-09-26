@@ -1764,26 +1764,78 @@ function createMainPopup() {
                 </div>
 
                 <div class="fp-tools-page-content" data-page="auto_delivery">
-                    <h3>Автовыдача товаров</h3>
-                    <p class="template-info">При новом заказе расширение автоматически отправит покупателю товар. Укажите что именно отправлять для каждого лота, или используйте поле «Секреты» лота как источник.</p>
-                    <div class="support-promo" style="background:rgba(27,117,187,0.07);border-color:rgba(27,117,187,0.2);margin-bottom:16px;">
-                        <span class="material-symbols-rounded" style="font-size:16px;color:#f4c84a;vertical-align:-3px;">lightbulb</span>
-                        <span>Используйте переменные: <code>{buyername}</code>, <code>{orderid}</code>, <code>{orderlink}</code>, <code>$username</code>, <code>$order_link</code>, <code>$order_id</code>, <code>$sleep=3</code> (пауза в секундах).</span>
-                    </div>
+                    <header class="fpt-ui-page-header fp-ad-page-header">
+                        <div class="fp-ad-page-header-copy">
+                            <h3 class="fpt-ui-page-title fp-ad-page-title">Автовыдача товаров</h3>
+                            <p class="fpt-ui-helper fp-ad-page-description">Настройте автоматическую отправку товара покупателю и поведение лотов при изменении остатков.</p>
+                        </div>
+                    </header>
 
-                    <div class="checkbox-label-inline" style="margin-bottom:12px;">
-                        <input type="checkbox" id="fpAutoRestoreEnabled">
-                        <label for="fpAutoRestoreEnabled" style="margin-bottom:0;"><span>Авто-восстановление лотов после деактивации</span></label>
-                    </div>
-                    <div class="checkbox-label-inline" style="margin-bottom:16px;">
-                        <input type="checkbox" id="fpAutoDisableEnabled">
-                        <label for="fpAutoDisableEnabled" style="margin-bottom:0;"><span>Авто-деактивация лотов при пустом складе</span></label>
-                    </div>
+                    <section class="fpt-ui-surface fp-ad-section fp-ad-automation-section" aria-labelledby="fp-ad-automation-title">
+                        <div class="fpt-ui-section-header fp-ad-section-header">
+                            <div>
+                                <h4 id="fp-ad-automation-title" class="fpt-ui-section-title">Автоматизация склада</h4>
+                                <p class="fpt-ui-helper fp-ad-section-description">Глобальные правила для восстановления и деактивации лотов.</p>
+                            </div>
+                        </div>
+                        <div class="fp-ad-settings-list">
+                            <div class="fpt-ui-setting-row fp-ad-setting-row">
+                                <label class="fp-ad-setting-copy" for="fpAutoRestoreEnabled">
+                                    <span class="fp-ad-setting-title">Автовосстановление лотов</span>
+                                    <span class="fpt-ui-helper fp-ad-setting-description">Возвращать деактивированный лот, когда товар снова появился на складе.</span>
+                                </label>
+                                <input type="checkbox" id="fpAutoRestoreEnabled" class="fp-ad-setting-checkbox">
+                            </div>
+                            <div class="fpt-ui-setting-row fp-ad-setting-row">
+                                <label class="fp-ad-setting-copy" for="fpAutoDisableEnabled">
+                                    <span class="fp-ad-setting-title">Автодеактивация при пустом складе</span>
+                                    <span class="fpt-ui-helper fp-ad-setting-description">Скрывать настроенный лот, когда остаток товара становится равен нулю.</span>
+                                </label>
+                                <input type="checkbox" id="fpAutoDisableEnabled" class="fp-ad-setting-checkbox">
+                            </div>
+                        </div>
+                    </section>
 
-                    <h4>Настройка авто-выдачи по лотам</h4>
-                    <p class="template-info">Выберите лот для настройки авто-выдачи. Если лот не настроен - отправляется содержимое поля «Секреты» автоматически.</p>
-                    <button id="fp-load-delivery-lots-btn" class="btn btn-default" style="margin-bottom:12px;">Загрузить список лотов</button>
-                    <div id="fp-delivery-lots-list"></div>
+                    <section class="fpt-ui-surface fp-ad-section fp-ad-lots-section" aria-labelledby="fp-ad-lots-title">
+                        <div class="fpt-ui-section-header fp-ad-section-header fp-ad-lots-header">
+                            <div class="fp-ad-lots-heading">
+                                <h4 id="fp-ad-lots-title" class="fpt-ui-section-title">Автовыдача по лотам</h4>
+                                <p class="fpt-ui-helper fp-ad-section-description">Выберите лот и источник выдачи. Без отдельной настройки используется содержимое поля «Секреты» лота.</p>
+                            </div>
+                            <button type="button" id="fp-load-delivery-lots-btn" class="fpt-ui-button fpt-ui-button--secondary fp-ad-load-btn">
+                                <svg class="fp-ad-button-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                                    <path d="M5 7.5h14M7.5 4.5h9A1.5 1.5 0 0 1 18 6v12a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18V6a1.5 1.5 0 0 1 1.5-1.5ZM9 11h6M9 14.5h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span class="fp-ad-load-label">Загрузить лоты</span>
+                            </button>
+                        </div>
+
+                        <details class="fp-ad-variables">
+                            <summary class="fp-ad-variables-summary">
+                                <span>Доступные переменные</span>
+                                <span class="fp-ad-variables-chevron" aria-hidden="true"></span>
+                            </summary>
+                            <div class="fp-ad-variable-list">
+                                <div class="fp-ad-variable"><code>{buyername}</code><span>имя покупателя</span></div>
+                                <div class="fp-ad-variable"><code>{orderid}</code><span>ID заказа</span></div>
+                                <div class="fp-ad-variable"><code>{orderlink}</code><span>ссылка на заказ</span></div>
+                                <div class="fp-ad-variable"><code>$username</code><span>имя покупателя, legacy</span></div>
+                                <div class="fp-ad-variable"><code>$order_link</code><span>ссылка на заказ, legacy</span></div>
+                                <div class="fp-ad-variable"><code>$order_id</code><span>ID заказа, legacy</span></div>
+                                <div class="fp-ad-variable"><code>$sleep=3</code><span>пауза в секундах</span></div>
+                            </div>
+                        </details>
+
+                        <div id="fp-delivery-lots-list" class="fp-ad-lots-list" aria-live="polite" aria-busy="false">
+                            <div class="fpt-ui-state fp-ad-list-state fp-ad-list-state--idle" data-state="idle">
+                                <svg class="fp-ad-state-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+                                    <path d="M5 7.5h14M7.5 4.5h9A1.5 1.5 0 0 1 18 6v12a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18V6a1.5 1.5 0 0 1 1.5-1.5ZM9 11h6M9 14.5h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <p class="fpt-ui-state-title">Список ещё не загружен</p>
+                                <p class="fpt-ui-state-text">Загрузите свои лоты, чтобы включить автовыдачу и настроить источник товара.</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
 
                 <div class="fp-tools-page-content" data-page="tickets" style="position:relative;">

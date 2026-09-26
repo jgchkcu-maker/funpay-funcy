@@ -1,21 +1,62 @@
+function fpAdCreateElement(tag, className, text) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined && text !== null) el.textContent = String(text);
+    return el;
+}
+
+function fpAdCreateStateIcon(kind) {
+    const wrapper = document.createElement('span');
+    wrapper.className = 'fp-ad-state-icon-slot';
+    const paths = {
+        loading: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7" opacity=".25"/><path d="M20.5 12A8.5 8.5 0 0 0 12 3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+        empty: '<path d="M5 7.5h14M7.5 4.5h9A1.5 1.5 0 0 1 18 6v12a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 18V6a1.5 1.5 0 0 1 1.5-1.5ZM9 11h6M9 14.5h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>',
+        error: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7"/><path d="M12 7.8v5.1M12 16.4h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>'
+    };
+    wrapper.innerHTML = `<svg viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">${paths[kind] || paths.empty}</svg>`;
+    return wrapper;
+}
+
+function renderDeliveryState(container, kind, title, message) {
+    container.replaceChildren();
+    container.dataset.state = kind;
+    container.setAttribute('aria-busy', kind === 'loading' ? 'true' : 'false');
+
+    const state = fpAdCreateElement('div', `fpt-ui-state fp-ad-list-state fp-ad-list-state--${kind}`);
+    state.dataset.state = kind;
+    state.appendChild(fpAdCreateStateIcon(kind));
+    state.appendChild(fpAdCreateElement('p', 'fpt-ui-state-title', title));
+    state.appendChild(fpAdCreateElement('p', 'fpt-ui-state-text', message));
+    container.appendChild(state);
+}
+
+function setAutoDeliveryLoadState(button, loading) {
+    if (!button) return;
+    button.disabled = loading;
+    button.setAttribute('aria-busy', loading ? 'true' : 'false');
+    button.classList.toggle('is-loading', loading);
+    const label = button.querySelector('.fp-ad-load-label');
+    if (label) label.textContent = loading ? 'Загружаем…' : 'Загрузить лоты';
+}
+
 function initAutoDeliveryUI() {
     const page = document.querySelector('.fp-tools-page-content[data-page="auto_delivery"]');
     if (!page || page.dataset.initialized) return;
     page.dataset.initialized = 'true';
 
     const loadBtn = document.getElementById('fp-load-delivery-lots-btn');
-    const listEl  = document.getElementById('fp-delivery-lots-list');
+    const listEl = document.getElementById('fp-delivery-lots-list');
     if (!loadBtn || !listEl) return;
 
     loadBtn.addEventListener('click', async () => {
-        loadBtn.disabled = true;
-        loadBtn.textContent = 'Загружаем...';
+        setAutoDeliveryLoadState(loadBtn, true);
+        renderDeliveryState(listEl, 'loading', 'Загружаем лоты', 'Получаем список ваших лотов и сохранённые настройки автовыдачи.');
 
         try {
             const appData = JSON.parse(document.body.dataset.appData || '{}');
             const d = Array.isArray(appData) ? appData[0] : appData;
             const userId = d.userId;
-            if (!userId) throw new Error('Нет userId');
+            if (!userId) throw new Error('Не удалось определить пользователя FunPay');
 
             const lots = await new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage({ action: 'getUserLotsList', userId }, res => {
@@ -25,103 +66,158 @@ function initAutoDeliveryUI() {
             });
 
             if (!lots.length) {
-                listEl.innerHTML = '<p class="template-info" style="text-align:center;">Лоты не найдены</p>';
+                renderDeliveryState(listEl, 'empty', 'Лоты не найдены', 'На аккаунте нет доступных лотов для настройки автовыдачи.');
                 return;
             }
 
             const { fpToolsAutoDeliveryLots = {} } = await chrome.storage.local.get('fpToolsAutoDeliveryLots');
             renderDeliveryLots(lots, fpToolsAutoDeliveryLots, listEl);
-
-        } catch (e) {
-            showNotification(`Ошибка: ${e.message}`, true);
+        } catch (error) {
+            renderDeliveryState(listEl, 'error', 'Не удалось загрузить лоты', error.message || 'Попробуйте повторить загрузку.');
+            if (typeof showNotification === 'function') showNotification(`Ошибка: ${error.message}`, true);
         } finally {
-            loadBtn.disabled = false;
-            loadBtn.textContent = 'Загрузить список лотов';
+            setAutoDeliveryLoadState(loadBtn, false);
         }
     });
 }
 
+function createDeliveryCheckbox(className, lotId, checked, labelText) {
+    const label = fpAdCreateElement('label', `fpt-ui-checkbox-row fp-ad-inline-option ${className}-row`);
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.className = className;
+    input.dataset.lotId = lotId;
+    input.checked = !!checked;
+    label.appendChild(input);
+    label.appendChild(fpAdCreateElement('span', '', labelText));
+    return { label, input };
+}
+
+function createDeliveryRadio(name, value, checked, labelText) {
+    const label = fpAdCreateElement('label', 'fp-tools-radio-option fp-ad-mode-option');
+    const input = document.createElement('input');
+    input.type = 'radio';
+    input.name = name;
+    input.value = value;
+    input.checked = !!checked;
+    label.appendChild(input);
+    label.appendChild(fpAdCreateElement('span', '', labelText));
+    return label;
+}
+
+function createDeliveryLotCard(lot, lotConfig) {
+    const lotId = String(lot.id);
+    const item = fpAdCreateElement('article', 'fp-ad-lot-card');
+    item.dataset.lotId = lotId;
+
+    const summary = fpAdCreateElement('div', 'fp-ad-lot-summary');
+    const titleWrap = fpAdCreateElement('div', 'fp-ad-lot-title-wrap');
+    const title = fpAdCreateElement('div', 'fp-ad-lot-title', lot.title || `Лот #${lotId}`);
+    title.title = lot.title || `Лот #${lotId}`;
+
+    const meta = fpAdCreateElement('div', 'fp-ad-lot-meta');
+    const count = lotConfig.productCount;
+    const countBadge = fpAdCreateElement('span', 'fp-ad-product-count');
+    countBadge.dataset.lotId = lotId;
+    if (count === undefined) {
+        countBadge.classList.add('is-unknown');
+        countBadge.textContent = 'Остаток не отслеживается';
+    } else if (count === 0) {
+        countBadge.classList.add('is-empty');
+        countBadge.textContent = 'Склад пуст';
+    } else {
+        countBadge.classList.add('is-stocked');
+        countBadge.textContent = `На складе: ${count} шт.`;
+    }
+    meta.appendChild(countBadge);
+    titleWrap.append(title, meta);
+
+    const enabled = createDeliveryCheckbox('fp-ad-enabled', lotId, lotConfig.enabled, 'Автовыдача');
+    enabled.label.classList.add('fp-ad-enabled-control');
+    summary.append(titleWrap, enabled.label);
+    item.appendChild(summary);
+
+    const settings = fpAdCreateElement('div', 'fp-ad-settings');
+    settings.dataset.lotId = lotId;
+    settings.hidden = !lotConfig.enabled;
+
+    const modeBlock = fpAdCreateElement('div', 'fp-ad-mode-block');
+    const modeLabel = fpAdCreateElement('div', 'fp-ad-field-label', 'Источник выдачи');
+    const modeGroup = fpAdCreateElement('div', 'fp-tools-radio-group fp-ad-mode-group');
+    const modeName = `fp-ad-mode-${lotId}`;
+    const currentMode = lotConfig.mode || 'secrets';
+    modeGroup.append(
+        createDeliveryRadio(modeName, 'secrets', currentMode === 'secrets', 'Секреты лота'),
+        createDeliveryRadio(modeName, 'template', currentMode === 'template', 'Свой шаблон')
+    );
+    modeBlock.append(modeLabel, modeGroup);
+    settings.appendChild(modeBlock);
+
+    const templateArea = fpAdCreateElement('div', 'fp-ad-template-area');
+    templateArea.dataset.lotId = lotId;
+    templateArea.hidden = currentMode !== 'template';
+    const templateLabel = fpAdCreateElement('label', 'fp-ad-field-label', 'Шаблон выдачи');
+    templateLabel.htmlFor = `fp-ad-template-${lotId}`;
+    const textarea = fpAdCreateElement('textarea', 'template-input fp-ad-template-text');
+    textarea.id = `fp-ad-template-${lotId}`;
+    textarea.dataset.lotId = lotId;
+    textarea.placeholder = 'Текст выдачи. Переменные доступны в подсказке над списком.';
+    textarea.value = lotConfig.text || '';
+    templateArea.append(templateLabel, textarea);
+    settings.appendChild(templateArea);
+
+    const automation = fpAdCreateElement('div', 'fp-ad-lot-automation');
+    automation.append(
+        createDeliveryCheckbox('fp-ad-auto-restore', lotId, lotConfig.autoRestoreEnabled !== false, 'Автовосстановление').label,
+        createDeliveryCheckbox('fp-ad-auto-disable', lotId, lotConfig.autoDisableEnabled !== false, 'Деактивация при пустом складе').label
+    );
+    settings.appendChild(automation);
+
+    const actions = fpAdCreateElement('div', 'fp-ad-lot-actions');
+    const save = fpAdCreateElement('button', 'fpt-ui-button fpt-ui-button--secondary fp-ad-save-btn', 'Сохранить');
+    save.type = 'button';
+    save.dataset.lotId = lotId;
+    actions.appendChild(save);
+    settings.appendChild(actions);
+
+    item.appendChild(settings);
+    return item;
+}
+
 function renderDeliveryLots(lots, config, container) {
-    container.innerHTML = '';
+    container.replaceChildren();
+    container.dataset.state = 'loaded';
+    container.setAttribute('aria-busy', 'false');
 
-    
-    const byCategory = {};
+    const byCategory = new Map();
     lots.forEach(lot => {
-        if (!byCategory[lot.categoryName]) byCategory[lot.categoryName] = [];
-        byCategory[lot.categoryName].push(lot);
+        const categoryName = lot.categoryName || 'Без категории';
+        if (!byCategory.has(categoryName)) byCategory.set(categoryName, []);
+        byCategory.get(categoryName).push(lot);
     });
 
-    Object.entries(byCategory).forEach(([cat, catLots]) => {
-        const catEl = document.createElement('div');
-        catEl.style.cssText = 'margin-bottom:16px;';
-        catEl.innerHTML = `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#4a4f68;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #1e2030;">${cat}</div>`;
+    for (const [categoryName, categoryLots] of byCategory.entries()) {
+        const category = fpAdCreateElement('section', 'fp-ad-category');
+        const heading = fpAdCreateElement('div', 'fp-ad-category-header');
+        heading.append(
+            fpAdCreateElement('h5', 'fp-ad-category-title', categoryName),
+            fpAdCreateElement('span', 'fp-ad-category-count', `${categoryLots.length} ${categoryLots.length === 1 ? 'лот' : 'лотов'}`)
+        );
+        category.appendChild(heading);
 
-        catLots.forEach(lot => {
-            const lotConfig = config[String(lot.id)] || {};
-            const item = document.createElement('div');
-            item.style.cssText = `
-                background:var(--fpt-surface, #f5f7fa);border:1px solid #1e2030;border-radius:8px;
-                padding:12px;margin-bottom:8px;
-            `;
-
-            item.innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <span style="font-size:13px;font-weight:600;color:var(--fpt-text, #16181d);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:70%;">${lot.title}</span>
-                    <div style="display:flex;gap:6px;align-items:center;">
-                        <span class="fp-ad-product-count" data-lot-id="${lot.id}" style="font-size:11px;color:var(--fpt-text-muted, #8a90a6);">
-                            ${lotConfig.productCount !== undefined ? `📦 ${lotConfig.productCount} шт.` : ''}
-                        </span>
-                        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--fpt-text-muted, #8a90a6);cursor:pointer;">
-                            <input type="checkbox" class="fp-ad-enabled" data-lot-id="${lot.id}" ${lotConfig.enabled ? 'checked' : ''} style="accent-color:#1b75bb;">
-                            Авто-выдача
-                        </label>
-                    </div>
-                </div>
-                <div class="fp-ad-settings" data-lot-id="${lot.id}" style="display:${lotConfig.enabled ? 'block' : 'none'};">
-                    <div class="fp-tools-radio-group" style="margin-bottom:8px;flex-wrap:wrap;">
-                        <label class="fp-tools-radio-option">
-                            <input type="radio" name="fp-ad-mode-${lot.id}" value="secrets" ${(lotConfig.mode || 'secrets') === 'secrets' ? 'checked' : ''}>
-                            <span>Секреты лота (автоматически)</span>
-                        </label>
-                        <label class="fp-tools-radio-option">
-                            <input type="radio" name="fp-ad-mode-${lot.id}" value="template" ${lotConfig.mode === 'template' ? 'checked' : ''}>
-                            <span>Свой шаблон</span>
-                        </label>
-                    </div>
-                    <div class="fp-ad-template-area" data-lot-id="${lot.id}" style="display:${lotConfig.mode === 'template' ? 'block' : 'none'};">
-                        <textarea class="template-input fp-ad-template-text" data-lot-id="${lot.id}"
-                            placeholder="Текст выдачи. Переменные: {buyername}, {orderid}, {orderlink}, $sleep=3&#10;Для нескольких товаров используйте $sleep=2 между ними."
-                            style="height:80px;">${lotConfig.text || ''}</textarea>
-                    </div>
-                    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-                        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--fpt-text-muted, #8a90a6);cursor:pointer;">
-                            <input type="checkbox" class="fp-ad-auto-restore" data-lot-id="${lot.id}" ${lotConfig.autoRestoreEnabled !== false ? 'checked' : ''} style="accent-color:#4caf82;">
-                            Авто-восстановление
-                        </label>
-                        <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--fpt-text-muted, #8a90a6);cursor:pointer;">
-                            <input type="checkbox" class="fp-ad-auto-disable" data-lot-id="${lot.id}" ${lotConfig.autoDisableEnabled !== false ? 'checked' : ''} style="accent-color:#e05252;">
-                            Авто-деактивация при пустом складе
-                        </label>
-                    </div>
-                    <button class="btn btn-default fp-ad-save-btn" data-lot-id="${lot.id}"
-                        style="padding:5px 12px;font-size:12px;margin-top:8px;">
-                        💾 Сохранить
-                    </button>
-                </div>
-            `;
-
-            catEl.appendChild(item);
+        const cards = fpAdCreateElement('div', 'fp-ad-category-list');
+        categoryLots.forEach(lot => {
+            cards.appendChild(createDeliveryLotCard(lot, config[String(lot.id)] || {}));
         });
+        category.appendChild(cards);
+        container.appendChild(category);
+    }
 
-        container.appendChild(catEl);
-    });
-
-    
     container.querySelectorAll('.fp-ad-enabled').forEach(cb => {
         cb.addEventListener('change', () => {
             const lotId = cb.dataset.lotId;
             const settingsArea = container.querySelector(`.fp-ad-settings[data-lot-id="${lotId}"]`);
-            if (settingsArea) settingsArea.style.display = cb.checked ? 'block' : 'none';
+            if (settingsArea) settingsArea.hidden = !cb.checked;
             autoSaveDeliveryLot(lotId, container);
         });
     });
@@ -129,18 +225,31 @@ function renderDeliveryLots(lots, config, container) {
     container.querySelectorAll('input[name^="fp-ad-mode-"]').forEach(radio => {
         radio.addEventListener('change', () => {
             const lotId = radio.name.replace('fp-ad-mode-', '');
-            const tplArea = container.querySelector(`.fp-ad-template-area[data-lot-id="${lotId}"]`);
-            if (tplArea) tplArea.style.display = radio.value === 'template' ? 'block' : 'none';
+            const templateArea = container.querySelector(`.fp-ad-template-area[data-lot-id="${lotId}"]`);
+            if (templateArea) templateArea.hidden = radio.value !== 'template';
         });
     });
 
-    container.querySelectorAll('.fp-ad-save-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const lotId = btn.dataset.lotId;
-            btn.textContent = '✓ Сохранено';
-            btn.style.color = '#4caf82';
-            await autoSaveDeliveryLot(lotId, container);
-            setTimeout(() => { btn.textContent = '💾 Сохранить'; btn.style.color = ''; }, 1500);
+    container.querySelectorAll('.fp-ad-save-btn').forEach(button => {
+        button.addEventListener('click', async () => {
+            const lotId = button.dataset.lotId;
+            button.disabled = true;
+            button.textContent = 'Сохраняем…';
+            try {
+                await autoSaveDeliveryLot(lotId, container);
+                button.textContent = 'Сохранено';
+                button.classList.add('is-saved');
+                setTimeout(() => {
+                    button.textContent = 'Сохранить';
+                    button.classList.remove('is-saved');
+                    button.disabled = false;
+                }, 1200);
+            } catch (error) {
+                button.textContent = 'Ошибка сохранения';
+                button.classList.add('is-error');
+                button.disabled = false;
+                if (typeof showNotification === 'function') showNotification(`Ошибка: ${error.message}`, true);
+            }
         });
     });
 }
@@ -149,19 +258,19 @@ async function autoSaveDeliveryLot(lotId, container) {
     const { fpToolsAutoDeliveryLots = {} } = await chrome.storage.local.get('fpToolsAutoDeliveryLots');
 
     const enabledEl = container.querySelector(`.fp-ad-enabled[data-lot-id="${lotId}"]`);
-    const modeEl    = container.querySelector(`input[name="fp-ad-mode-${lotId}"]:checked`);
-    const textEl    = container.querySelector(`.fp-ad-template-text[data-lot-id="${lotId}"]`);
+    const modeEl = container.querySelector(`input[name="fp-ad-mode-${lotId}"]:checked`);
+    const textEl = container.querySelector(`.fp-ad-template-text[data-lot-id="${lotId}"]`);
     const restoreEl = container.querySelector(`.fp-ad-auto-restore[data-lot-id="${lotId}"]`);
     const disableEl = container.querySelector(`.fp-ad-auto-disable[data-lot-id="${lotId}"]`);
 
     fpToolsAutoDeliveryLots[String(lotId)] = {
-        enabled:           enabledEl?.checked ?? false,
-        mode:              modeEl?.value || 'secrets',
-        text:              textEl?.value || '',
+        enabled: enabledEl?.checked ?? false,
+        mode: modeEl?.value || 'secrets',
+        text: textEl?.value || '',
         autoRestoreEnabled: restoreEl?.checked !== false,
         autoDisableEnabled: disableEl?.checked !== false,
-        productCount:      fpToolsAutoDeliveryLots[String(lotId)]?.productCount ?? 0,
-        updatedAt:         Date.now()
+        productCount: fpToolsAutoDeliveryLots[String(lotId)]?.productCount ?? 0,
+        updatedAt: Date.now()
     };
 
     await chrome.storage.local.set({ fpToolsAutoDeliveryLots });
