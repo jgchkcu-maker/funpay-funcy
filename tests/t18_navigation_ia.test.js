@@ -48,11 +48,11 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
     assert.equal(new Set(navPages).size, navPages.length, 'flat nav must not contain duplicate data-page ids');
     assert.equal(new Set(pages).size, pages.length, 'navigation schema must not duplicate page ids');
     const quickActions = extractQuickActionIds();
-    assert.equal(pages.length, 22, 'accordion groups must own exactly 22 pages');
+    assert.equal(pages.length, 19, 'accordion groups must own exactly 19 pages');
     assert.equal(quickActions.length, 1, 'the footer must own exactly one quick route');
     assert.equal(new Set(quickActions).size, quickActions.length, 'footer routes must not duplicate each other');
     assert.deepEqual([...pages, ...quickActions].sort(), [...navPages].sort(),
-        'six groups and the footer action must cover all 23 canonical nav routes exactly once');
+        'six groups and the footer action must cover all 20 canonical nav routes exactly once');
     assert.deepEqual(quickActions, ['support'], 'support must remain the footer route');
 }
 
@@ -62,9 +62,9 @@ function testSixIndependentAccordionSections() {
         { id: 'sales', pages: ['lot_io', 'auto_delivery', 'autobump'] },
         { id: 'customers', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
         { id: 'finance', pages: ['finance_hub', 'piggy_banks', 'calculator'] },
-        { id: 'interface', pages: ['theme', 'effects', 'epic_nicks', 'needs'] },
+        { id: 'interface', pages: ['theme', 'effects', 'needs'] },
         { id: 'settings', pages: ['accounts', 'general', 'telegram', 'settings_io'] },
-        { id: 'help', pages: ['overview', 'tickets', 'global_chat'] }
+        { id: 'help', pages: ['tickets', 'global_chat'] }
     ];
     assert.deepEqual(sections, expected, 'the six navigation groups must use the final order and exact page sets');
     assert.equal(new Set(sections.map(section => section.id)).size, sections.length, 'accordion section IDs must be unique');
@@ -142,9 +142,9 @@ function testFinalLabelsAndRatingRoute() {
         ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['autobump', 'Автоподнятие'],
         ['auto_reply', 'Автоответчик'], ['auto_review', 'Отзывы и бонусы'], ['templates', 'Быстрые ответы'], ['blacklist', 'Чёрный список'],
         ['finance_hub', 'Обзор и аналитика'], ['piggy_banks', 'Копилки'], ['calculator', 'Калькуляторы'],
-        ['theme', 'Темы'], ['effects', 'Эффекты'], ['epic_nicks', 'Оформление ника'], ['needs', 'Элементы интерфейса'],
+        ['theme', 'Темы'], ['effects', 'Эффекты'], ['needs', 'Элементы интерфейса'],
         ['accounts', 'Аккаунты'], ['general', 'Отображение FunPay'], ['telegram', 'Уведомления и интеграции'], ['settings_io', 'Перенос настроек'],
-        ['overview', 'Справочник функций'], ['tickets', 'Поддержка FunPay'], ['global_chat', 'Чат сообщества'],
+        ['tickets', 'Поддержка FunPay'], ['global_chat', 'Чат сообщества'],
         ['support', 'Оценить расширение']
     ];
     for (const [id, label] of pageLabels) {
@@ -154,8 +154,6 @@ function testFinalLabelsAndRatingRoute() {
         'the FunPay ticket page heading must remain distinct from extension ratings');
     assert.match(source, /<h3>Оценить расширение[\s\S]*?star/,
         'the extension rating page must have a matching heading');
-    assert.match(source, /<div class="fp-tools-page-content" data-page="overview">\s*<h3>Справочник функций<\/h3>/,
-        'the handbook route must have the new page heading');
     const setupStart = source.indexOf('function setupPopupNavigation()');
     const setupEnd = source.indexOf('function selectQuickRepliesMode(', setupStart);
     const setupBlock = source.slice(setupStart, setupEnd);

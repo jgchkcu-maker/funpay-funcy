@@ -29,7 +29,7 @@ test('primary visible surfaces use the canonical brand and omit old public links
     const contentScript = read('content/content_script.js');
     const identifier = read('content/features/fpt_identifier.js');
     const converter = read('background/remake.html');
-    const tour = read('content/features/overview_tour.js');
+
 
     assert.match(popup, /<h1>FunPay Funcy<\/h1>/);
     assert.doesNotMatch(popup, /\b(?:FP Tools|FunPay Tools)\b/);
@@ -46,8 +46,8 @@ test('primary visible surfaces use the canonical brand and omit old public links
     assert.match(identifier, /lbl\.textContent\s*=\s*['"]· FunPay Funcy['"]/);
     assert.match(converter, /Конвертер лотов → FunPay Funcy/);
     assert.doesNotMatch(converter, /\b(?:FP Tools|FunPay Tools)\b/);
-    assert.match(tour, /FunPay Funcy/);
-    assert.doesNotMatch(tour, /t\.me\/FPTools/);
+
+
 });
 
 test('identifier keeps the invisible protocol signature while changing only its label', () => {
@@ -75,7 +75,6 @@ test('legacy settings, config protocols, and resource dependencies remain intact
     assert.equal(config.profileDesc.verifyTitle, 'FPT Verify');
     assert.equal(config.themeGallery.baseUrl, 'https://raw.githubusercontent.com/XaviersDev/fpt-themes/main/');
     assert.match(background, /https:\/\/fptools-ai-server\.vercel\.app\/api/);
-    assert.match(background, /https:\/\/raw\.githubusercontent\.com\/XaviersDev\/FunPay-Tools\/main\/donaters\.json/);
     assert.match(readme, /FunPay Funcy/);
     assert.doesNotMatch(readme, /\b(?:FP Tools|FunPay Tools)\b/);
     assert.doesNotMatch(readme, /t\.me\/FPTools|github\.com\/XaviersDev\/FunPay-Tools/);

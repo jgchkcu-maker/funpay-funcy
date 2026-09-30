@@ -46,7 +46,7 @@ for (const rating of ['5','4','3','2','1']) {
 }
 
 const attachmentStart = popup.indexOf('function attachAutoReplyImageButtons(');
-const attachmentEnd = popup.indexOf('\nfunction setupAccentPicker', attachmentStart);
+const attachmentEnd = popup.indexOf('\nfunction setupNavSearch', attachmentStart);
 const attachmentBlock = popup.slice(attachmentStart, attachmentEnd);
 assert.match(attachmentBlock, /fp-review-image-btn fpt-autoreply-img-btn/, 'review attachment actions use dedicated shared geometry');
 assert.match(attachmentBlock, /const pageHost = autoReplyPage \|\| autoReviewPage;[\s\S]*?pageHost\.querySelector\('\[data-editor-actions-for="/, 'review attachment actions are placed beside their editors');

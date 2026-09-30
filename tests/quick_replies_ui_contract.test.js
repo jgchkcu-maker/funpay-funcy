@@ -20,15 +20,6 @@ assert.match(page, /data-quick-replies-mode="templates"/);
 assert.match(page, /data-quick-replies-mode="commands"/);
 assert.match(page, /data-quick-replies-pane="templates"/);
 assert.match(page, /data-quick-replies-pane="commands"/);
-assert.match(page, /id="fpt-popover-hint" style="display:none;"/, 'popover hint remains compatible with existing style.display synchronisation');
-assert.match(page, /id="fpt-appearance-preview" class="chat-buttons-container fp-qr-live-preview"/, 'there is one live preview');
-assert.equal((page.match(/id="fpt-appearance-preview"/g) || []).length, 1, 'only one live preview is rendered');
-for (const opt of ['shape','size','fill','align','sidebarDensity','sidebarLayout']) {
-    assert.match(page, new RegExp('data-fpt-opt="' + opt + '"'), 'appearance option preserved: ' + opt);
-}
-for (const toggle of ['fullWidth','compact','uppercase','showPreview']) {
-    assert.match(page, new RegExp('data-fpt-toggle="' + toggle + '"'), 'appearance toggle preserved: ' + toggle);
-}
 for (const id of ['templatesEnabled','sendTemplatesImmediately','template-settings-container','addCustomTemplateBtn','fptSlashEnabled','fptSlashAutocomplete','fptSlashAddBtn','fptSlashList']) {
     assert.match(page, new RegExp('id="' + id + '"'), 'functional id preserved: ' + id);
 }
@@ -55,8 +46,6 @@ assert.match(slash, /configEl\.hidden = !enabledEl\.checked/, 'slash config resp
 assert.match(templates, /fpToolsTemplateSettings/, 'template storage key remains unchanged');
 assert.match(slash, /const FPT_SLASH_KEY = 'fpToolsSlashCommands'/, 'slash command storage key remains unchanged');
 assert.match(css, /QUICK REPLIES UI — TASK 06/, 'TASK 06 CSS exists');
-assert.match(css, /\.fp-qr-position-grid[\s\S]*?grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/, 'position choices use a compact desktop grid');
-assert.match(css, /\.fp-qr-appearance-layout[\s\S]*?grid-template-columns:minmax\(0,1\.25fr\) minmax\(230px,\.75fr\)/, 'controls and preview share a deliberate layout');
 assert.match(css, /\.fp-qr-slash-delete[\s\S]*?width:40px;[\s\S]*?height:40px;/, 'slash delete has a stable hit area');
 
 new Function(loader);

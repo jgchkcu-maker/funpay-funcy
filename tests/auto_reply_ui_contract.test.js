@@ -41,7 +41,7 @@ assert.match(feature, /class="fpt-ui-state fp-ar-keywords-empty"/, 'empty keywor
 assert.match(feature, /fpt-ui-icon-button fpt-edit-keyword-btn/, 'keyword edit action uses shared icon geometry');
 assert.match(feature, /fp-ar-keyword-delete delete-keyword-btn/, 'keyword delete hook is preserved');
 
-const attachmentBlock = popup.slice(popup.indexOf('function attachAutoReplyImageButtons('), popup.indexOf('\nfunction setupAccentPicker', popup.indexOf('function attachAutoReplyImageButtons(')));
+const attachmentBlock = popup.slice(popup.indexOf('function attachAutoReplyImageButtons('), popup.indexOf('\nfunction setupNavSearch', popup.indexOf('function attachAutoReplyImageButtons(')));
 assert.match(attachmentBlock, /fpt-ui-button fpt-ui-button--secondary fpt-ui-icon-button fp-ar-image-btn/, 'auto_reply attachment button uses shared button geometry');
 assert.match(attachmentBlock, /setAttribute\('aria-label', 'Добавить изображение'\)/, 'attachment icon has an accessible name');
 assert.match(attachmentBlock, /data-editor-actions-for="/, 'attachment control is inserted into the editor action host');

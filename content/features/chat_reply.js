@@ -53,8 +53,7 @@
         for (let i = 0; el && i < 80; i++) {
             const link = el.querySelector && el.querySelector('.chat-msg-author-link');
             if (link) {
-                const txt = link.querySelector('.fpt-epic-text');
-                return (txt ? txt.textContent : link.textContent).trim();
+                return link.textContent.trim();
             }
             el = el.previousElementSibling;
         }

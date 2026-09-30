@@ -21,7 +21,6 @@ async function renderTemplateSettings(targetPanel = getTemplateSettingsPanel()) 
         const escapeHtml = value => String(value == null ? '' : value)
             .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-        const colorPickerHtml = `<input type="color" class="template-color-picker" value="${escapeHtml(config.color || '#1b75bb')}" data-key="${escapeHtml(key)}" data-custom="${isCustom}" aria-label="Цвет шаблона">`;
         const deleteBtnHtml = isCustom ? `
             <button type="button" class="fpt-ui-button fpt-ui-button--tertiary fpt-ui-icon-button delete-custom-template-btn fp-qr-template-delete" data-id="${escapeHtml(config.id)}" title="Удалить шаблон" aria-label="Удалить шаблон">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M8 7h8m-7 0 .5 11h5L15 7m-5-2h4l.5 2h-5L10 5Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -30,7 +29,6 @@ async function renderTemplateSettings(targetPanel = getTemplateSettingsPanel()) 
         item.innerHTML = `
             <div class="template-item-header">
                 <input type="checkbox" class="template-toggle fp-qr-template-toggle" data-key="${escapeHtml(key)}" data-custom="${isCustom}" ${config.enabled ? 'checked' : ''}>
-                ${colorPickerHtml}
                 <span class="template-label" contenteditable="true" role="textbox" aria-label="Название шаблона" data-key="${escapeHtml(key)}" data-custom="${isCustom}">${escapeHtml(config.label)}</span>
                 ${deleteBtnHtml}
             </div>
@@ -78,46 +76,24 @@ async function setupTemplateSettingsHandlers() {
     const container = getTemplateControl('template-settings-container');
     if (!container || !templatesPage || !templatesPanel) return;
     
-    const posRadio = templatesPanel.querySelector(`input[name="templatePos"][value="${templateSettings.buttonPosition}"]`);
-    if(posRadio) posRadio.checked = true;
-
-    // Popover hint visible only when the «popover» layout is selected.
-    const popoverHint = getTemplateControl('fpt-popover-hint');
-    const isSidebarPos = () => templateSettings.buttonPosition === 'sidebar_top' || templateSettings.buttonPosition === 'sidebar_bottom';
-    const syncPopoverHint = () => {
-        if (popoverHint) popoverHint.style.display = (templateSettings.buttonPosition === 'popover') ? 'block' : 'none';
-    };
-    // Sidebar-only settings block appears (not just dims) when a sidebar position is chosen.
-    const sidebarExtra = getTemplateControl('fpt-sidebar-extra');
-    const syncSidebarExtra = () => {
-        if (sidebarExtra) sidebarExtra.style.display = isSidebarPos() ? '' : 'none';
-    };
-    syncPopoverHint();
-    syncSidebarExtra();
-
-    // Master enable toggle - hides the whole config block when off.
+    // The master switch only controls the composer trigger; template editing stays available.
     const enabledChk = getTemplateControl('templatesEnabled');
-    const configBlock = getTemplateControl('fpt-templates-config');
-    const syncEnabled = () => {
-        if (configBlock) configBlock.style.display = (templateSettings.enabled === false) ? 'none' : '';
-    };
     if (enabledChk) {
         enabledChk.checked = templateSettings.enabled !== false;
         enabledChk.onchange = async (e) => {
             templateSettings.enabled = e.target.checked;
-            syncEnabled();
             await saveTemplateSettings();
             await addChatTemplateButtons();
         };
     }
-    syncEnabled();
 
-    getTemplateControl('sendTemplatesImmediately').checked = templateSettings.sendTemplatesImmediately;
+    const sendImmediatelyChk = getTemplateControl('sendTemplatesImmediately');
+    if (sendImmediatelyChk) sendImmediatelyChk.checked = templateSettings.sendTemplatesImmediately;
 
     // 3.0: debounce to stop per-keystroke lag. Previously every character typed triggered a
-    // full settings save AND a full rebuild of all chat template buttons in the DOM, which made
-    // editing names/colors extremely laggy. Now we update the in-memory model instantly, but
-    // defer the expensive save + button rebuild until typing pauses.
+    // full settings save AND a full rebuild of the chat template menu in the DOM, which made
+    // editing names/text extremely laggy. Now we update the in-memory model instantly, but
+    // defer the expensive save + popover refresh until typing pauses.
     let saveDebounce = null;
     const scheduleSave = () => {
         if (saveDebounce) clearTimeout(saveDebounce);
@@ -136,7 +112,6 @@ async function setupTemplateSettingsHandlers() {
             const template = templateSettings.custom.find(t => t.id === key);
             if (!template) return;
             if (target.classList.contains('template-toggle')) template.enabled = target.checked;
-            if (target.classList.contains('template-color-picker')) template.color = target.value;
             if (target.classList.contains('template-label')) template.label = target.textContent;
             if (target.classList.contains('template-text')) {
                 template.text = target.value;
@@ -150,7 +125,6 @@ async function setupTemplateSettingsHandlers() {
             const template = templateSettings.standard[key];
             if (!template) return;
             if (target.classList.contains('template-toggle')) template.enabled = target.checked;
-            if (target.classList.contains('template-color-picker')) template.color = target.value;
             if (target.classList.contains('template-label')) template.label = target.textContent;
             if (target.classList.contains('template-text')) {
                 template.text = target.value;
@@ -207,88 +181,18 @@ async function setupTemplateSettingsHandlers() {
             id: Date.now().toString(),
             label: 'Новый шаблон',
             text: '',
-            color: '#A21CAF',
             enabled: true
         });
         await saveTemplateSettings();
         await renderTemplateSettings(); // Re-render to add the new item (delegation handles events)
     };
 
-    templatesPanel.querySelectorAll('input[name="templatePos"]').forEach(radio => {
-        radio.onchange = async (e) => {
-            templateSettings.buttonPosition = e.target.value;
-            syncPopoverHint();
-            syncSidebarExtra();
+    if (sendImmediatelyChk) {
+        sendImmediatelyChk.onchange = async (e) => {
+            templateSettings.sendTemplatesImmediately = e.target.checked;
             await saveTemplateSettings();
-            await addChatTemplateButtons();
         };
-    });
-
-    getTemplateControl('sendTemplatesImmediately').onchange = async (e) => {
-        templateSettings.sendTemplatesImmediately = e.target.checked;
-        await saveTemplateSettings();
-    };
-
-    // ── Button appearance ─────────────────────────────────────────────────────
-    const appx = templatesPanel.querySelector('.fpt-appx');
-    const dispRef = () => (templateSettings.display = templateSettings.display || { ...DEFAULT_TEMPLATE_DISPLAY });
-
-    const writePreviewAttrs = () => {
-        const preview = getTemplateControl('fpt-appearance-preview');
-        if (!preview) return;
-        const disp = dispRef();
-        preview.setAttribute('data-fpt-shape', disp.shape);
-        preview.setAttribute('data-fpt-size', disp.size);
-        preview.setAttribute('data-fpt-fill', disp.fill);
-        preview.setAttribute('data-fpt-align', disp.align);
-        preview.setAttribute('data-fpt-fullwidth', disp.fullWidth ? '1' : '0');
-        preview.setAttribute('data-fpt-uppercase', disp.uppercase ? '1' : '0');
-        preview.setAttribute('data-fpt-compact', disp.compact ? '1' : '0');
-    };
-
-    const syncAppxUI = () => {
-        if (!appx) return;
-        const disp = dispRef();
-        appx.querySelectorAll('.fpt-seg').forEach(seg => {
-            const opt = seg.dataset.fptOpt;
-            seg.querySelectorAll('button').forEach(b =>
-                b.classList.toggle('active', b.dataset.val === String(disp[opt])));
-        });
-        appx.querySelectorAll('.fpt-chip-toggle').forEach(chip =>
-            chip.classList.toggle('active', !!disp[chip.dataset.fptToggle]));
-        // Alignment only matters when buttons span the full width - otherwise they're
-        // content-sized and alignment is invisible. Hide the control unless fullWidth.
-        const alignBlock = getTemplateControl('fpt-align-block');
-        if (alignBlock) alignBlock.classList.toggle('fpt-disabled', !disp.fullWidth);
-        writePreviewAttrs();
-    };
-
-    if (appx && !appx.dataset.fptBound) {
-        appx.dataset.fptBound = '1';
-        const persist = async () => {
-            await saveTemplateSettings();
-            await addChatTemplateButtons();
-        };
-        appx.querySelectorAll('.fpt-seg').forEach(seg => {
-            const opt = seg.dataset.fptOpt;
-            seg.addEventListener('click', async (e) => {
-                const btn = e.target.closest('button[data-val]');
-                if (!btn) return;
-                dispRef()[opt] = btn.dataset.val;
-                syncAppxUI();
-                await persist();
-            });
-        });
-        appx.querySelectorAll('.fpt-chip-toggle').forEach(chip => {
-            chip.addEventListener('click', async () => {
-                const key = chip.dataset.fptToggle;
-                dispRef()[key] = !dispRef()[key];
-                syncAppxUI();
-                await persist();
-            });
-        });
     }
-    syncAppxUI();
 }
 
 
@@ -477,7 +381,7 @@ async function loadSavedSettings() {
     const settings = await chrome.storage.local.get([
         'fpToolsTemplateSettings', 'enableCustomTheme', 'fpToolsTheme', 'aiModeActive',
         'autoBumpEnabled', 'fpToolsCursorFx', 'fpToolsCustomCursor',
-        'fpToolsPopupPosition', 'fpToolsPopupSize', 'fpToolsPopupDragged', 'fpToolsAccentColor',
+        'fpToolsPopupPosition', 'fpToolsPopupSize', 'fpToolsPopupDragged',
         'fpToolsAccounts', 'showSalesStats', 'showFinanceStats', 'hideBalance', 'viewSellersPromo', 'notificationSound', 'notificationVolume',
         'fpToolsDiscord',
         'fpToolsSelectiveBumpEnabled', 'fpToolsSelectedBumpCategories', 'fpToolsBumpOnlyAutoDelivery',
@@ -495,8 +399,6 @@ async function loadSavedSettings() {
     
     fpToolsAccounts = settings.fpToolsAccounts || [];
     renderAccountsList();
-
-    if (settings.fpToolsAccentColor) window.__fptUserAccent = settings.fpToolsAccentColor;
 
     const logoutLink = document.querySelector('.menu-item-logout');
     if(logoutLink && !document.querySelector('.fp-tools-logout-clean')) {

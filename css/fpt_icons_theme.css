@@ -565,16 +565,6 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup .template-item-header .template-label:focus {
     background: var(--fptm-hover, rgba(255,255,255,0.05));
 }
-.fp-tools-popup .template-color-picker {
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    border: 1px solid var(--fptm-border, #2a2a36);
-    border-radius: 6px;
-    background: none;
-    cursor: pointer;
-    flex: 0 0 26px;
-}
 .fp-tools-popup .delete-custom-template-btn {
     background: none !important;
     border: none !important;
@@ -804,33 +794,7 @@ button.add-image-btn .material-symbols-rounded {
     margin-bottom: 12px !important;
     min-height: 30px;
 }
-/* color swatch: same height as the title, vertically centered, framed */
-.fp-tools-popup .template-color-picker {
-    -webkit-appearance: none !important;
-    -moz-appearance: none !important;
-    appearance: none !important;
-    width: 28px !important;
-    height: 28px !important;
-    flex: 0 0 28px !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    border: 1px solid var(--fptm-border, #33333f) !important;
-    border-radius: 7px !important;
-    background: transparent !important;
-    cursor: pointer !important;
-    overflow: hidden !important;
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.4) inset;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
-    vertical-align: middle;
-}
-.fp-tools-popup .template-color-picker:hover {
-    border-color: rgba(27,117,187,0.6) !important;
-    box-shadow: 0 0 0 2px rgba(27,117,187,0.25) !important;
-}
-.fp-tools-popup .template-color-picker::-webkit-color-swatch-wrapper { padding: 0 !important; }
-.fp-tools-popup .template-color-picker::-webkit-color-swatch { border: none !important; border-radius: 6px !important; }
-.fp-tools-popup .template-color-picker::-moz-color-swatch { border: none !important; border-radius: 6px !important; }
-/* title sits on the same baseline as the swatch */
+/* title fills the template header */
 .fp-tools-popup .template-item-header .template-label {
     flex: 1 1 auto !important;
     font-size: 14px !important;
@@ -1450,36 +1414,29 @@ button.add-image-btn .material-symbols-rounded {
 
 /* Декоративные «карточки», обводящие настройки/шаблоны/фичи — делаем плоскими.
    Поля ввода, textarea, select и кнопки НЕ трогаем (им фон нужен для читаемости). */
-.fp-tools-popup .feature-item,
 .fp-tools-popup .template-item,
 .fp-tools-popup .template-settings-list .template-item,
 .fp-tools-popup .template-container,
 .fp-tools-popup .fpt-smart-bump-card,
-.fp-tools-popup .setting-group,
-.fp-tools-popup .overview-container {
+.fp-tools-popup .setting-group {
     background: none !important;
     border-color: transparent !important;
     box-shadow: none !important;
 }
 
-/* ---------- 9. Контрастный текст на акцентном фоне ----------
-   Если акцент светлый (например, пользователь выбрал белый), белый текст на нём
-   сливается. --fpt-on-accent автоматически чёрный на светлом акценте и белый на
-   тёмном (задаётся в fptApplyMenuTheme). Применяем к элементам меню, у которых
-   фон = акцент (кнопки .btn, apply, шаблоны, «Понять и подобрать»). btn-default и
-   прочие НЕ-акцентные кнопки не трогаем. */
+/* ---------- 9. Белый текст на акцентных кнопках ----------
+   Кнопки с лавандовой заливкой, включая новые fpt-ui-button, и их содержимое
+   всегда остаются белыми даже при явном цвете текста у вложенных элементов.
+   Нейтральные btn-default не трогаем. */
 .fp-tools-popup .btn:not(.btn-default),
+.fp-tools-popup .btn:not(.btn-default) *,
+.fp-tools-popup .fpt-ui-button--primary,
+.fp-tools-popup .fpt-ui-button--primary *,
 .fp-tools-popup #fp-bulk-apply-btn,
-.fp-tools-popup .chat-template-btn,
-.fp-tools-popup .custom-chat-template-btn,
-.fp-tools-popup #fptNeedsAskBtn {
-    color: var(--fpt-on-accent, #fff) !important;
-}
-.fp-tools-popup .btn:not(.btn-default) .material-symbols-rounded,
-.fp-tools-popup .btn:not(.btn-default) .material-icons,
-.fp-tools-popup #fptNeedsAskBtn .material-symbols-rounded,
-.fp-tools-popup #fptNeedsAskBtn .material-icons {
-    color: var(--fpt-on-accent, #fff) !important;
+.fp-tools-popup #fp-bulk-apply-btn *,
+.fp-tools-popup #fptNeedsAskBtn,
+.fp-tools-popup #fptNeedsAskBtn * {
+    color: #fff !important;
 }
 
 
@@ -1520,8 +1477,7 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-nav .fpt-nav-collapse svg { width: 18px; height: 18px; display: block; transition: transform .38s cubic-bezier(.4,0,.2,1); }
 .fp-tools-nav .fpt-nav-collapse:hover { background: var(--fptm-nav-field, #f4f3ff); }
 .fp-tools-nav .fpt-nav-collapse:focus-visible,
-.fp-tools-nav .fpt-nav-search-ico:focus-visible,
-.fp-tools-nav .fpt-accent-btn:focus-visible { outline: 2px solid #7663f6; outline-offset: 2px; }
+.fp-tools-nav .fpt-nav-search-ico:focus-visible { outline: 2px solid #7663f6; outline-offset: 2px; }
 
 .fp-tools-nav .fpt-nav-group-toggle {
     box-sizing: border-box; width: 100%; min-width: 0; height: 54px; min-height: 54px; display: flex; align-items: center; gap: 12px;
@@ -1656,16 +1612,6 @@ button.add-image-btn .material-symbols-rounded {
     min-width: 0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .fp-tools-nav .fpt-nav-quick-action.active a { color: var(--fptm-text, #141b2e) !important; font-weight: 600; }
-.fp-tools-nav .fpt-accent-btn {
-    position: relative; width: 48px; height: 48px; min-width: 48px; display: inline-flex; align-items: center;
-    justify-content: center; margin: 0; padding: 0; border: 0; border-radius: 16px; background: #7663f6;
-    color: #fff; box-shadow: 0 5px 14px rgba(118,99,246,.20); cursor: pointer;
-}
-.fp-tools-nav .fpt-accent-btn svg { width: 20px; height: 20px; display: block; pointer-events: none; }
-.fp-tools-nav .fpt-accent-btn:hover { background: #6d59ed; box-shadow: 0 5px 14px rgba(118,99,246,.22); }
-.fp-tools-nav .fpt-accent-btn::before,
-.fp-tools-nav .fpt-accent-btn::after { content: none !important; display: none !important; }
-
 .fp-tools-nav.is-nav-collapsed { box-sizing: border-box; width: 104px; flex: 0 0 104px; padding-right: 10px; padding-left: 10px; }
 .fp-tools-nav.is-nav-collapsed .fpt-nav-brand { gap: 0; }
 .fp-tools-nav.is-nav-collapsed .fpt-nav-brand-title,

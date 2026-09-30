@@ -113,7 +113,6 @@
     "openLotButton": true,
     "hideBalance": true,
     "autoBump": true,
-    "epicNicks": true,
     "stats": true,
     "globalChat": true,
     "chatSearch": true,
@@ -155,16 +154,6 @@
     "financeHub": true
   },
   "message": null,
-  "epicNicks": {
-    "enabled": true,
-    "url": "https://raw.githubusercontent.com/XaviersDev/FunPayTools-Site/main/donaters.json",
-    "fallbackUrls": [
-      "https://raw.githubusercontent.com/XaviersDev/FunPay-Tools/main/donaters.json",
-      "https://cdn.jsdelivr.net/gh/XaviersDev/FunPayTools-Site@main/donaters.json",
-      "https://cdn.jsdelivr.net/gh/XaviersDev/FunPay-Tools@main/donaters.json"
-    ],
-    "ttl": 60
-  },
   "announcements": [],
   "autoRaise": {
     "url": "https://funpay.com/lots/raise",

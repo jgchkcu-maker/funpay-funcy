@@ -13,16 +13,16 @@ const sections = [
     { id: 'sales', label: 'Лоты и продажи', pages: ['lot_io', 'auto_delivery', 'autobump'] },
     { id: 'customers', label: 'Покупатели', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
     { id: 'finance', label: 'Финансы', pages: ['finance_hub', 'piggy_banks', 'calculator'] },
-    { id: 'interface', label: 'Интерфейс', pages: ['theme', 'effects', 'epic_nicks', 'needs'] },
+    { id: 'interface', label: 'Интерфейс', pages: ['theme', 'effects', 'needs'] },
     { id: 'settings', label: 'Настройки', pages: ['accounts', 'general', 'telegram', 'settings_io'] },
-    { id: 'help', label: 'Справка', pages: ['overview', 'tickets', 'global_chat'] }
+    { id: 'help', label: 'Справка', pages: ['tickets', 'global_chat'] }
 ];
 const labels = {
     lot_io: 'Управление лотами', auto_delivery: 'Автовыдача', autobump: 'Автоподнятие',
     auto_reply: 'Автоответчик', auto_review: 'Отзывы и бонусы', templates: 'Быстрые ответы', blacklist: 'Чёрный список',
     finance_hub: 'Обзор и аналитика', piggy_banks: 'Копилки', calculator: 'Калькуляторы', theme: 'Темы', effects: 'Эффекты',
-    epic_nicks: 'Оформление ника', needs: 'Элементы интерфейса', accounts: 'Аккаунты', general: 'Отображение FunPay',
-    telegram: 'Уведомления и интеграции', settings_io: 'Перенос настроек', overview: 'Справочник функций',
+    needs: 'Элементы интерфейса', accounts: 'Аккаунты', general: 'Отображение FunPay',
+    telegram: 'Уведомления и интеграции', settings_io: 'Перенос настроек',
     tickets: 'Поддержка FunPay', global_chat: 'Чат сообщества', support: 'Оценить расширение'
 };
 
@@ -94,7 +94,7 @@ class FakeElement {
         return null;
     }
     querySelectorAll(selector) {
-        if (selector === 'h3, h4, h5, label > span, .feature-title, .setting-group > h4') return this.headings || [];
+        if (selector === 'h3, h4, h5, label > span, .setting-group > h4') return this.headings || [];
         if (selector === '[data-quick-replies-pane], .fpt-fin-tab-pane[data-subtab], [data-calc-pane], [data-notification-pane], [data-route-mode]') return this.panes || [];
         if (selector === '.fpt-nav-search-result') return this.children.filter(child => child.classList.contains('fpt-nav-search-result'));
         if (selector === '.fpt-search-flash') return [];
@@ -242,7 +242,7 @@ function testIndexContractAndAliases() {
     for (const [pageId, mode, alias] of [
         ['templates', 'commands', 'Слэш-команды'], ['templates', 'templates', 'Шаблоны'], ['calculator', 'currency', 'Валюты'],
         ['theme', null, 'Кастомизация'], ['tickets', null, 'Тикеты'],
-        ['overview', null, 'Функции'], ['overview', null, 'Видео-обзор'], ['lot_io', null, 'Импорт / экспорт'],
+        ['lot_io', null, 'Импорт / экспорт'],
         ['settings_io', null, 'Импорт / экспорт']
     ]) assert.ok(find(pageId, mode, alias), `${alias} targets ${pageId}${mode ? `/${mode}` : ''}`);
     assert.ok(index.some(item => item.pageId === 'support' && item.text === 'Оценить расширение'), 'footer rating action is indexed with its human label');
@@ -304,7 +304,6 @@ async function testLegacyAliasesActivateCanonicalPageAndMode() {
         ['Слэш-команды', 'templates', 'commands'], ['Шаблоны', 'templates', 'templates'],
         ['Валюты', 'calculator', 'currency'], ['Кастомизация', 'theme', undefined],
         ['Тикеты', 'tickets', undefined],
-        ['Функции', 'overview', undefined], ['Видео-обзор', 'overview', undefined]
     ];
     for (const [query, pageId, mode] of cases) {
         const h = createHarness();

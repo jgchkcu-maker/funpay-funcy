@@ -184,15 +184,9 @@ function setupAIChatFeature() {
 
         let profanityWarning = document.getElementById('fpToolsProfanityWarning');
         if (!profanityWarning) {
-            let buttonsContainer = document.querySelector('.chat-buttons-container');
-            if(!buttonsContainer) {
-                 buttonsContainer = document.createElement('div');
-                 buttonsContainer.className = 'chat-buttons-container';
-                 chatTextarea.parentElement.insertBefore(buttonsContainer, chatTextarea);
-            }
             profanityWarning = createElement('div', { id: 'fpToolsProfanityWarning' });
             profanityWarning.textContent = "Обнаружена грубость! Хотите это исправить с помощью AI? Нажмите сюда, чтобы включить AI-режим.";
-            chatTextarea.parentElement.insertBefore(profanityWarning, buttonsContainer);
+            chatTextarea.parentElement.insertBefore(profanityWarning, chatTextarea);
             setupProfanityChecker(chatTextarea, profanityWarning);
         }
     }

@@ -1,55 +1,37 @@
 let templateSettings = {
     enabled: true,
-    buttonPosition: "bottom",
     sendTemplatesImmediately: true,
-    // Minimalist look/feel of the chat template buttons. Mirrors what competitor
-    // extensions expose so users switching over don't feel anything is missing.
-    display: {
-        shape: 'rounded',   // rounded | pill | square
-        size: 'm',          // s | m | l
-        fill: 'solid',      // solid | soft | outline | ghost
-        align: 'center',    // left | center | right
-        fullWidth: false,   // stretch each button to full row width
-        showPreview: true,  // show the text preview tooltip on hover
-        uppercase: false,   // UPPERCASE labels
-        compact: false,     // tighter gaps between buttons
-        sidebarDensity: 'normal', // cozy | normal | dense  (only for sidebar)
-        sidebarLayout: 'flow'     // flow (auto-grid) | list (only for sidebar)
-    },
     standard: {},
     custom: []
 };
 
-const DEFAULT_TEMPLATE_DISPLAY = {
-    shape: 'rounded', size: 'm', fill: 'solid', align: 'center',
-    fullWidth: false, showPreview: true, uppercase: false, compact: false,
-    sidebarDensity: 'normal', sidebarLayout: 'flow'
+const DEFAULT_STANDARD_TEMPLATES = {
+    greeting: { enabled: true, label: 'Приветствие', text: '{welcome}, {buyername}! Чем могу помочь?' },
+    completed: { enabled: true, label: 'Заказ выполнен', text: 'Заказ выполнен. Пожалуйста, зайдите в раздел «Покупки», выберите его в списке и нажмите кнопку «Подтвердить выполнение заказа».' },
+    review: { enabled: true, label: 'Попросить отзыв', text: 'Спасибо за покупку! Буду очень благодарен, если вы оставите отзыв о сделке.' },
+    thanks: { enabled: true, label: 'Спасибо за заказ', text: 'Спасибо за заказ, {buyername}! Обращайтесь еще. {date}' }
 };
 
-const DEFAULT_STANDARD_TEMPLATES = {
-    greeting: { enabled: true, label: 'Приветствие', color: '#1b75bb', text: '{welcome}, {buyername}! Чем могу помочь?' },
-    completed: { enabled: true, label: 'Заказ выполнен', color: '#1b75bb', text: 'Заказ выполнен. Пожалуйста, зайдите в раздел «Покупки», выберите его в списке и нажмите кнопку «Подтвердить выполнение заказа».' },
-    review: { enabled: true, label: 'Попросить отзыв', color: '#FF6B6B', text: 'Спасибо за покупку! Буду очень благодарен, если вы оставите отзыв о сделке.' },
-    thanks: { enabled: true, label: 'Спасибо за заказ', color: '#FF6B6B', text: 'Спасибо за заказ, {buyername}! Обращайтесь еще. {date}' }
-};
+function withoutTemplateColor(config) {
+    const normalized = { ...(config || {}) };
+    delete normalized.color;
+    return normalized;
+}
 
 async function loadTemplateSettings() {
     const data = await chrome.storage.local.get(['fpToolsTemplateSettings']);
     const saved = data.fpToolsTemplateSettings || {};
     
     templateSettings.enabled = saved.enabled !== false;
-    let pos = saved.buttonPosition || 'bottom';
-    if (pos === 'sidebar') pos = 'sidebar_top'; // migrate old single sidebar option
-    templateSettings.buttonPosition = pos;
     templateSettings.sendTemplatesImmediately = saved.sendTemplatesImmediately !== false;
-    templateSettings.custom = saved.custom || [];
-    templateSettings.display = { ...DEFAULT_TEMPLATE_DISPLAY, ...(saved.display || {}) };
+    templateSettings.custom = Array.isArray(saved.custom) ? saved.custom.map(withoutTemplateColor) : [];
     
     templateSettings.standard = {};
     for (const key in DEFAULT_STANDARD_TEMPLATES) {
+        const savedTemplate = saved.standard && saved.standard[key];
         templateSettings.standard[key] = {
             ...DEFAULT_STANDARD_TEMPLATES[key],
-            ...(saved.standard ? saved.standard[key] : {})
+            ...withoutTemplateColor(savedTemplate)
         };
     }
 }
@@ -293,251 +275,29 @@ async function useTemplate(templateConfig) {
     }
 }
 
-function createTemplateButton(config) {
-    const pos = templateSettings.buttonPosition;
-    const isSidebar = pos === 'sidebar_top' || pos === 'sidebar_bottom';
-    const d = { ...DEFAULT_TEMPLATE_DISPLAY, ...(templateSettings.display || {}) };
-    const btn = createElement('button', {
-        type: 'button',
-        class: isSidebar ? 'sidebar-template-btn' : (config.isCustom ? 'custom-chat-template-btn' : 'chat-template-btn')
-    });
-
-    btn.style.setProperty('--btn-color', config.color);
-    if (isSidebar) {
-        btn.style.setProperty('--template-color', config.color);
-    } else {
-        btn.style.backgroundColor = config.color;
-    }
-
-    const labelEl = createElement('span', { class: 'fpt-btn-label' });
-    labelEl.textContent = config.label;
-    btn.appendChild(labelEl);
-
-    btn.addEventListener('click', () => useTemplate(config));
-
-    // Preview tooltip on hover - can be turned off entirely in display settings.
-    if (d.showPreview !== false) {
-        const cleanText = (config.text || '')
-            .replace(/\[image:data:image\/[^;]+;base64,[^\]]+\]/g, '[фото]')
-            .replace(/\{img:[a-z0-9]+\}/gi, '[фото]')
-            .trim() || '(Пусто)';
-
-        // Both the sidebar (inside the scrollable .chat-detail-list) and the in-chat
-        // strip (inside .chat-buttons-container / the composer) sit in containers that
-        // clip an absolutely-positioned tooltip - that's what cut off the preview's
-        // rounded background. So for EVERY layout we render the preview as a FIXED
-        // element on <body> on hover: it escapes all clipping and always sits on top.
-        // Render the preview as a free-floating fixed box. We set the critical
-        // styles INLINE so no site/theme CSS can clip the background or skew the
-        // text, append to <html> (never has a transform that would trap `fixed`),
-        // and measure AFTER layout so the box wraps the full text before we place it.
-        let tip = null;
-        const show = () => {
-            tip = document.createElement('div');
-            tip.className = 'fp-tools-template-preview fpt-preview-fixed';
-            tip.textContent = cleanText;
-            tip.style.cssText = [
-                'position:fixed', 'left:0', 'top:0', 'margin:0',
-                'z-index:2147483647', 'box-sizing:border-box',
-                'display:block', 'width:max-content', 'max-width:300px',
-                'height:auto', 'max-height:none', 'min-height:0',
-                'padding:10px 12px', 'border:1px solid var(--fpt-border, rgba(22,24,29,0.12))', 'border-radius:8px',
-                'background:var(--fpt-surface, #f5f7fa)', 'color:var(--fpt-text, #16181d)',
-                'font-size:12.5px', 'line-height:1.45', 'text-align:left',
-                'white-space:pre-wrap', 'word-break:break-word', 'overflow:visible',
-                'box-shadow:0 10px 30px rgba(0,0,0,.5)', 'pointer-events:none',
-                'opacity:0', 'transition:opacity .12s ease'
-            ].join(';') + ';';
-            document.documentElement.appendChild(tip);
-
-            // Measure on the NEXT frame, once the box has laid out and wrapped text.
-            requestAnimationFrame(() => {
-                if (!tip) return;
-                const r = btn.getBoundingClientRect();
-                const tr = tip.getBoundingClientRect();
-                let left = Math.max(8, Math.min(r.left, window.innerWidth - tr.width - 8));
-                let top;
-                if (pos === 'sidebar_bottom') {
-                    top = r.bottom + 8;
-                    if (top + tr.height > window.innerHeight - 8) top = r.top - tr.height - 8;
-                } else {
-                    top = r.top - tr.height - 8;
-                    if (top < 8) top = r.bottom + 8;
-                }
-                tip.style.left = `${Math.round(left)}px`;
-                tip.style.top = `${Math.round(top)}px`;
-                tip.style.opacity = '1';
-            });
-        };
-        const hide = () => { if (tip) { tip.remove(); tip = null; } };
-        btn.addEventListener('mouseenter', show);
-        btn.addEventListener('mouseleave', hide);
-        btn.addEventListener('click', hide);
-    }
-
-    return btn;
-}
-
-function applyTemplateDisplayAttrs(container) {
-    const d = { ...DEFAULT_TEMPLATE_DISPLAY, ...(templateSettings.display || {}) };
-    container.setAttribute('data-fpt-shape', d.shape);
-    container.setAttribute('data-fpt-size', d.size);
-    container.setAttribute('data-fpt-fill', d.fill);
-    container.setAttribute('data-fpt-fullwidth', d.fullWidth ? '1' : '0');
-    container.setAttribute('data-fpt-uppercase', d.uppercase ? '1' : '0');
-    container.setAttribute('data-fpt-compact', d.compact ? '1' : '0');
-    const isSidebar = container.classList.contains('fp-tools-template-sidebar');
-    if (isSidebar) {
-        container.setAttribute('data-fpt-density', d.sidebarDensity || 'normal');
-        container.setAttribute('data-fpt-layout', d.sidebarLayout || 'flow');
-    }
-    // Alignment only has a visible effect on full-width buttons (otherwise buttons are
-    // content-sized). The sidebar "list" layout is full-width so it always gets it.
-    if (d.fullWidth || (isSidebar && (d.sidebarLayout || 'flow') === 'list')) {
-        container.setAttribute('data-fpt-align', d.align);
-    } else {
-        container.removeAttribute('data-fpt-align');
-    }
-}
-
-function fillTemplateContainer(container) {
-    for (const key in templateSettings.standard) {
-        const config = templateSettings.standard[key];
-        if (config.enabled) {
-            container.appendChild(createTemplateButton({ ...config, key, isCustom: false }));
-        }
-    }
-    templateSettings.custom.forEach(config => {
-        if (config.enabled) {
-            container.appendChild(createTemplateButton({ ...config, isCustom: true }));
-        }
-    });
-}
-
 async function addChatTemplateButtons() {
     await loadTemplateSettings();
     const chatInput = document.querySelector('.chat-form-input .form-control');
-    if (!chatInput) return;
-    // Don't show buttons when no conversation is selected (placeholder state)
-    if (document.querySelector('.chat-not-selected') ||
-        document.querySelector('.chat-empty-message') ||
-        !document.querySelector('.chat-header, .chat-full-header, .chat-message-list')) return;
+    const hasChat = chatInput &&
+        !document.querySelector('.chat-not-selected, .chat-empty-message') &&
+        document.querySelector('.chat-header, .chat-full-header, .chat-message-list');
 
-    document.querySelectorAll('.chat-buttons-container, .fp-tools-template-sidebar').forEach(el => el.remove());
-    // Remove any orphaned fixed preview tooltips left over from a previous render.
-    document.querySelectorAll('.fp-tools-template-preview.fpt-preview-fixed').forEach(el => el.remove());
-    // Clean up any popover trigger/panel/cell from a previous render or position.
-    document.querySelectorAll('.fpt-tpl-popover-cell').forEach(el => el.remove());
-    document.getElementById('fpt-tpl-popover-btn')?.remove();
-    document.getElementById('fpt-tpl-popover')?.remove();
-    // Reset any bottom-pin padding we previously added to the right panel.
-    document.querySelectorAll('.chat-detail-list.fpt-has-bottom-binds').forEach(el => {
-        el.classList.remove('fpt-has-bottom-binds');
-        el.style.paddingBottom = '';
-    });
-
-    // Master switch: templates fully off → leave the chat untouched.
-    if (templateSettings.enabled === false) return;
-
-    const position = templateSettings.buttonPosition;
-
-    // ── 4th layout: popover button to the LEFT of the attach (paperclip) button ──
-    if (position === 'popover') {
-        setupTemplatePopover();
+    if (!hasChat || templateSettings.enabled === false) {
+        removeTemplatePopover();
         return;
     }
 
-    let buttonsContainer;
-
-    if (position === 'sidebar_top' || position === 'sidebar_bottom') {
-        // On the orders page (/orders/), when one of the "в панели" layouts is active,
-        // ALSO drop the paperclip popover trigger into the composer so the quick
-        // templates "скрепка" button is reachable right next to the message box.
-        if (window.location.pathname.includes('/orders/')) {
-            setupTemplatePopover();
-        }
-        let chatDetail = document.querySelector('.chat-detail-list');
-        if (!chatDetail) {
-             const detailContainer = document.querySelector('.chat-detail');
-             if(detailContainer) {
-                chatDetail = createElement('div', {class: 'chat-detail-list custom-scroll'});
-                detailContainer.appendChild(chatDetail);
-             } else {
-                return;
-             }
-        }
-        buttonsContainer = createElement('div', { class: 'fp-tools-template-sidebar' });
-        applyTemplateDisplayAttrs(buttonsContainer);
-        const head = createElement('div', { class: 'fpt-sidebar-head' });
-        head.textContent = 'Быстрые ответы';
-        buttonsContainer.appendChild(head);
-        fillTemplateContainer(buttonsContainer);
-
-        if (position === 'sidebar_top') {
-            buttonsContainer.setAttribute('data-fpt-pin', 'top');
-            chatDetail.prepend(buttonsContainer);
-        } else {
-            // "В панели снизу" - pin to the very FLOOR of the right panel (like the
-            // competitor's #bind-right: panel becomes position:relative and the strip is
-            // absolutely anchored to bottom:0). Borderless/transparent per the screenshot.
-            buttonsContainer.setAttribute('data-fpt-pin', 'bottom');
-            chatDetail.style.position = 'relative';
-            // ensure the panel reserves room so pinned buttons don't overlap content
-            chatDetail.classList.add('fpt-has-bottom-binds');
-            chatDetail.appendChild(buttonsContainer);
-            // reserve bottom padding equal to the strip height so info isn't covered
-            requestAnimationFrame(() => {
-                const h = buttonsContainer.offsetHeight;
-                if (h) chatDetail.style.paddingBottom = (h + 12) + 'px';
-            });
-        }
-        return;
-    }
-
-    buttonsContainer = createElement('div', { class: 'chat-buttons-container' });
-    applyTemplateDisplayAttrs(buttonsContainer);
-
-    // FunPay chat form structure:
-    //   .chat-form > form > (.chat-form-input, .chat-form-attach, .chat-form-btn)
-    // The three cells are a flex row. To avoid breaking that row, we place our strip
-    // as a full-width block OUTSIDE the flex: right before the <form> (above) or right
-    // after it (below). This is robust regardless of FunPay's flex settings.
-    const formEl   = chatInput.closest('form');
-    const chatForm = chatInput.closest('.chat-form') || formEl;
-    if (!chatForm || !chatForm.parentNode) {
-        chatInput.parentElement.insertBefore(buttonsContainer, chatInput);
-        fillTemplateContainer(buttonsContainer);
-        return;
-    }
-
-    if (position === 'above') {
-        buttonsContainer.setAttribute('data-fpt-pos', 'above');
-        // Insert as a sibling directly BEFORE the whole composer (.chat-form), exactly
-        // mirroring how "below" inserts after it. This keeps it outside the composer's
-        // inner padding so there's no phantom left gap.
-        chatForm.parentNode.insertBefore(buttonsContainer, chatForm);
-    } else {
-        buttonsContainer.setAttribute('data-fpt-pos', 'bottom');
-        // Below the whole composer.
-        chatForm.parentNode.insertBefore(buttonsContainer, chatForm.nextSibling);
-    }
-
-    fillTemplateContainer(buttonsContainer);
-
-    // Let the mouse wheel scroll the horizontal strip (only when it actually overflows
-    // and we're not in full-width/column mode).
-    buttonsContainer.addEventListener('wheel', (e) => {
-        if (buttonsContainer.getAttribute('data-fpt-fullwidth') === '1') return;
-        if (buttonsContainer.scrollWidth <= buttonsContainer.clientWidth) return;
-        if (e.deltaY === 0) return;
-        e.preventDefault();
-        buttonsContainer.scrollLeft += e.deltaY;
-    }, { passive: false });
+    setupTemplatePopover();
 }
-function setupTemplatePopover() {
+
+function removeTemplatePopover() {
     document.querySelectorAll('.fpt-tpl-popover-cell').forEach(el => el.remove());
     document.getElementById('fpt-tpl-popover-btn')?.remove();
     document.getElementById('fpt-tpl-popover')?.remove();
+}
+
+function setupTemplatePopover() {
+    removeTemplatePopover();
 
     const attachBtn = document.querySelector('.chat-btn-image:not(.fpt-tpl-popover-btn)');
     const attachWrap = attachBtn ? (attachBtn.closest('.chat-form-attach') || attachBtn.parentElement) : null;
@@ -593,11 +353,8 @@ function toggleTemplatePopover(trigger) {
     const list = createElement('div', { class: 'fpt-tpl-popover-list custom-scroll' });
     const addItem = (config) => {
         const item = createElement('button', { type: 'button', class: 'fpt-tpl-popover-item' });
-        const dot = createElement('span', { class: 'fpt-tpl-popover-dot' });
-        dot.style.backgroundColor = config.color;
         const lbl = createElement('span', { class: 'fpt-tpl-popover-label' });
         lbl.textContent = config.label;
-        item.appendChild(dot);
         item.appendChild(lbl);
         item.addEventListener('click', () => {
             pop.remove();

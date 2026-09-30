@@ -103,11 +103,8 @@ function fptGcApplyVisibility() {
 // =============================================================================
 function _fptGcDetectSelf() {
     try {
-        // Ник: внутри .user-link-name может быть обёртка декорированного ника
-        // (.fpt-epic-text) + canvas с частицами. Берём именно текстовый узел,
-        // а не весь контейнер, иначе ник окажется пустым/кривым.
-        let nameEl = document.querySelector('.user-link-name .fpt-epic-text');
-        if (!nameEl) nameEl = document.querySelector('.user-link-name');
+        // Ник, аватар и ссылка на профиль берутся со страницы.
+        const nameEl = document.querySelector('.user-link-name');
         if (nameEl && nameEl.textContent.trim()) _fptGcSelfName = nameEl.textContent.trim();
 
         // Ссылка на свой профиль: пункт меню "Профиль".

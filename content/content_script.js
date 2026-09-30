@@ -228,7 +228,7 @@
     function initializeDynamicFeatures() {
         document.body.addEventListener('focusin', (event) => {
             if (event.target.matches('.chat-form-input .form-control')) {
-                if (!document.querySelector('.chat-buttons-container') && !document.querySelector('.fp-tools-template-sidebar')) {
+                if (!document.getElementById('fpt-tpl-popover-btn')) {
                     addChatTemplateButtons();
                 }
                 if (!document.getElementById('aiModeToggleBtn')) {
@@ -382,7 +382,6 @@
                 initAutoDeliveryUI();
                 initializeResetButtons();
                 initSalesChart();
-                if (typeof initializeOverviewTour === 'function') initializeOverviewTour();
 
                 // Общий чат: опрашиваем public-chat.json раз в 16 минут.
                 // Так active/display/url меняются на лету без обновления расширения.
@@ -439,7 +438,7 @@
         initializeBlacklist();
         initializeUnconfirmedBalanceDisplay();
         initializeSalesFilters();
-        // Apply saved FunPay Funcy button colour/size at load (panel itself builds with popup).
+        // Apply saved FunPay Funcy button size/opacity at load (panel itself builds with popup).
         if (typeof applyHeaderButtonStylesEarly === 'function') applyHeaderButtonStylesEarly();
         // order_page_enhancements.js, lot_context_menu.js, auto_restore_lots.js self-initialize
         // New 3.0 features (self-initializing modules loaded separately)

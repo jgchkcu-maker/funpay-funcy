@@ -132,8 +132,6 @@ function createMainPopup() {
                     <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>
                     <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>
                     <li data-page="telegram"><a><span class="nav-icon material-symbols-rounded">send</span><span>Уведомления и интеграции</span></a></li>
-                    <li class="fp-nav-divider">Эксклюзив</li>
-                    <li data-page="epic_nicks"><a><span class="nav-icon material-symbols-rounded">diamond</span><span>Оформление ника</span></a></li>
                     <li class="fp-nav-divider">Интерфейс</li>
                     <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>
                     <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>
@@ -152,7 +150,7 @@ function createMainPopup() {
                     <li data-page="piggy_banks"><a><span class="nav-icon material-symbols-rounded">savings</span><span>Копилки</span></a></li>
                     <li data-page="calculator"><a><span class="nav-icon material-symbols-rounded">calculate</span><span>Калькуляторы</span></a></li>
                     <li class="fp-nav-divider">Прочее</li>
-                    <li data-page="overview"><a><span class="nav-icon material-symbols-rounded">movie</span><span>Справочник функций</span></a></li>
+
                     <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>
                     <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>
                     <li data-page="support"><a><span class="nav-icon material-symbols-rounded">favorite</span><span>Оценить расширение</span></a></li>
@@ -160,7 +158,6 @@ function createMainPopup() {
                 <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>
                 <div class="fpt-nav-footer">
                     <ul class="fpt-nav-quick-actions" aria-label="Быстрые действия"></ul>
-                    <button type="button" id="fptAccentBtn" class="fpt-accent-btn" title="Цвет акцента" aria-label="Цвет акцента"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 3a9 9 0 0 0 0 18c.83 0 1.5-.67 1.5-1.5 0-.39-.15-.74-.39-1.01-.23-.26-.36-.6-.36-.99 0-.83.67-1.5 1.5-1.5H16a5 5 0 0 0 5-5c0-4.42-4.03-8-9-8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="7.5" cy="11.5" r="1.1" fill="currentColor"/><circle cx="10.5" cy="7.5" r="1.1" fill="currentColor"/><circle cx="15" cy="8" r="1.1" fill="currentColor"/><circle cx="16.8" cy="12" r="1.1" fill="currentColor"/></svg><input type="color" id="fptAccentInput" class="fpt-accent-input" value="#1b75bb" aria-hidden="true" tabindex="-1"></button>
                 </div>
             </nav>
             <main class="fp-tools-content">
@@ -214,26 +211,6 @@ function createMainPopup() {
                         <span>Для корректной работы расширения рекомендуется использовать FunPay на <strong>русском языке</strong>, так как большинство функций не будут работать на других языках.</span>
                     </div>
                 </div> <!-- КОНЕЦ ВКЛАДКИ "ОБЩИЕ" -->
-
-                <!-- НАЧАЛО ВКЛАДКИ "ЭПИЧЕСКИЕ НИКИ" -->
-                <div class="fp-tools-page-content" data-page="epic_nicks">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3>Оформление ника <span class="material-symbols-rounded" style="vertical-align:-3px;color:var(--fptm-accent, #4a9fd4);">diamond</span></h3>
-                    </div>
-                    <p class="template-info" style="font-size: 14px; line-height: 1.5;">
-                        Выделитесь среди конкурентов! Ваш никнейм будет светиться, переливаться и излучать частицы <b>у всех пользователей расширения FunPay Funcy</b> (более 15 000 человек).
-                    </p>
-
-                    <div style="background: var(--fptm-accent-soft, rgba(27,117,187,0.1)); border: 1px solid var(--fptm-accent-border, rgba(27,117,187,0.3)); border-radius: 12px; padding: 18px; margin-bottom: 25px; box-shadow: 0 4px 15px var(--fptm-shadow, rgba(0,0,0,0.2));">
-                        <div style="font-size: 15px; margin-bottom: 12px; color: var(--fptm-text, #16181d);">Приобрести уникальный стиль можно навсегда по очень низкой цене.</div>
-                        <div style="font-size: 13px; color: var(--fptm-muted, #a0a0a0); margin-bottom: 15px;">Сервис оформления уникального ника будет доступен после публикации нового официального адреса FunPay Funcy.</div>
-                    </div>
-
-                    <h4 style="margin-bottom: 15px;">Вот несколько примеров для того, чтобы вы посмотрели, как это будет выглядеть у всех пользователей расширения:</h4>
-                    <div id="fpt-epic-previews-container" style="display: flex; flex-direction: column; gap: 30px; margin-top: 10px; background:var(--fptm-surface-2, #0e0f16); border: 1px solid var(--fptm-border, #1e2030); border-radius: 8px; padding: 20px;">
-                        <div style="text-align: center; color: var(--fptm-faint, #5a5f7a); font-size: 12px;">Загрузка движка частиц...</div>
-                    </div>
-                </div> <!-- КОНЕЦ ВКЛАДКИ "ЭПИЧЕСКИЕ НИКИ" -->
 
                 <!-- НАЧАЛО ВКЛАДКИ "АККАУНТЫ" -->
                 <div class="fp-tools-page-content" data-page="accounts">
@@ -433,8 +410,8 @@ function createMainPopup() {
                         <section class="fpt-ui-surface fp-qr-card fp-qr-template-settings" aria-labelledby="fp-qr-template-settings-title">
                             <div class="fpt-ui-section-header fp-qr-section-header">
                                 <div>
-                                    <h4 id="fp-qr-template-settings-title" class="fpt-ui-section-title">Шаблоны в чате</h4>
-                                    <p class="fpt-ui-helper fp-qr-section-description">Показывайте готовые ответы рядом с полем сообщения и выбирайте, как они выглядят.</p>
+                                    <h4 id="fp-qr-template-settings-title" class="fpt-ui-section-title">Шаблоны у скрепки</h4>
+                                    <p class="fpt-ui-helper fp-qr-section-description">Управляйте меню шаблонов в чате и способом отправки ответа.</p>
                                 </div>
                             </div>
 
@@ -442,7 +419,7 @@ function createMainPopup() {
                                 <div class="fpt-ui-setting-row fp-qr-setting-row">
                                     <label class="fp-qr-setting-copy" for="templatesEnabled">
                                         <span class="fp-qr-setting-title">Включить шаблоны</span>
-                                        <span class="fpt-ui-helper">Показывать быстрые кнопки ответов в чате.</span>
+                                        <span class="fpt-ui-helper">Показывать кнопку меню шаблонов рядом со скрепкой.</span>
                                     </label>
                                     <input type="checkbox" id="templatesEnabled" class="fp-qr-setting-checkbox" checked>
                                 </div>
@@ -454,113 +431,13 @@ function createMainPopup() {
                                     <input type="checkbox" id="sendTemplatesImmediately" class="fp-qr-setting-checkbox">
                                 </div>
                             </div>
-
-                            <div id="fpt-templates-config" class="fp-qr-template-config">
-                                <div class="fp-qr-config-section">
-                                    <div class="fp-qr-config-heading">
-                                        <span class="fp-qr-config-title">Расположение</span>
-                                        <span class="fpt-ui-helper">Выберите место для быстрых кнопок.</span>
-                                    </div>
-                                    <div class="fpt-pos-grid fp-qr-position-grid">
-                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="above"><span class="fpt-pos-ico"><span class="fpt-pos-row"></span><span class="fpt-pos-field"></span></span><span class="fpt-pos-name">Над полем</span></label>
-                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="bottom" checked><span class="fpt-pos-ico"><span class="fpt-pos-field"></span><span class="fpt-pos-row"></span></span><span class="fpt-pos-name">Под полем</span></label>
-                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_top"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-top"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">Панель сверху</span></label>
-                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="sidebar_bottom"><span class="fpt-pos-ico fpt-pos-ico-side"><span class="fpt-pos-panel fpt-pos-panel-bottom"><span class="fpt-pos-srow"></span><span class="fpt-pos-srow"></span></span><span class="fpt-pos-sfield"></span></span><span class="fpt-pos-name">Панель снизу</span></label>
-                                        <label class="fpt-pos-card"><input type="radio" name="templatePos" value="popover"><span class="fpt-pos-ico fpt-pos-ico-pop"><span class="fpt-pos-field"></span><span class="fpt-pos-pop-btn"></span></span><span class="fpt-pos-name">У скрепки</span></label>
-                                    </div>
-                                    <p class="fpt-ui-helper fp-qr-inline-hint" id="fpt-popover-hint" style="display:none;">Возле кнопки прикрепления файла появится отдельная кнопка шаблонов с компактным меню.</p>
-                                </div>
-
-                                <div class="fp-qr-config-section fp-qr-appearance-section">
-                                    <div class="fp-qr-config-heading">
-                                        <span class="fp-qr-config-title">Внешний вид</span>
-                                        <span class="fpt-ui-helper">Все параметры сразу отображаются в одном предпросмотре.</span>
-                                    </div>
-
-                                    <div class="fpt-appx fp-qr-appearance-layout">
-                                        <div class="fp-qr-controls-column">
-                                            <div class="fp-qr-control-group">
-                                                <span class="fpt-appx-cap">Форма</span>
-                                                <div class="fpt-seg" data-fpt-opt="shape">
-                                                    <button type="button" data-val="rounded" title="Скруглённые"><span class="fpt-shape-prev fp-qr-shape-rounded"></span><span class="fp-qr-sr-only">Скруглённые</span></button>
-                                                    <button type="button" data-val="pill" title="Капсула"><span class="fpt-shape-prev fp-qr-shape-pill"></span><span class="fp-qr-sr-only">Капсула</span></button>
-                                                    <button type="button" data-val="square" title="Прямые углы"><span class="fpt-shape-prev fp-qr-shape-square"></span><span class="fp-qr-sr-only">Прямые углы</span></button>
-                                                </div>
-                                            </div>
-
-                                            <div class="fp-qr-control-group">
-                                                <span class="fpt-appx-cap">Размер</span>
-                                                <div class="fpt-seg" data-fpt-opt="size">
-                                                    <button type="button" data-val="s" title="Маленький"><span class="fpt-az fp-qr-size-s">S</span></button>
-                                                    <button type="button" data-val="m" title="Средний"><span class="fpt-az fp-qr-size-m">M</span></button>
-                                                    <button type="button" data-val="l" title="Большой"><span class="fpt-az fp-qr-size-l">L</span></button>
-                                                </div>
-                                            </div>
-
-                                            <div class="fp-qr-control-group fp-qr-fill-group">
-                                                <span class="fpt-appx-cap">Заливка</span>
-                                                <div class="fpt-seg fpt-seg-fill" data-fpt-opt="fill">
-                                                    <button type="button" data-val="solid" title="Сплошная"><span class="fpt-fill-prev fp-qr-fill-solid"></span><span class="fpt-fill-name">Сплошная</span></button>
-                                                    <button type="button" data-val="soft" title="Мягкая"><span class="fpt-fill-prev fp-qr-fill-soft"></span><span class="fpt-fill-name">Мягкая</span></button>
-                                                    <button type="button" data-val="outline" title="Контур"><span class="fpt-fill-prev fp-qr-fill-outline"></span><span class="fpt-fill-name">Контур</span></button>
-                                                    <button type="button" data-val="ghost" title="Призрачная"><span class="fpt-fill-prev fp-qr-fill-ghost"></span><span class="fpt-fill-name">Призрак</span></button>
-                                                </div>
-                                            </div>
-
-                                            <div class="fp-qr-control-group fpt-align-block" id="fpt-align-block">
-                                                <span class="fpt-appx-cap">Выравнивание</span>
-                                                <div class="fpt-seg fp-qr-align-segment" data-fpt-opt="align">
-                                                    <button type="button" data-val="left" title="Слева" aria-label="Слева"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 5h9M4 8h12M4 11h8M4 14h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-                                                    <button type="button" data-val="center" title="По центру" aria-label="По центру"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.5 5h9M4 8h12M6 11h8M4.5 14h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-                                                    <button type="button" data-val="right" title="Справа" aria-label="Справа"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M7 5h9M4 8h12M8 11h8M5 14h11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></button>
-                                                </div>
-                                                <span class="fpt-align-hint">Доступно при «На всю ширину»</span>
-                                            </div>
-
-                                            <div class="fp-qr-control-group">
-                                                <span class="fpt-appx-cap">Дополнительно</span>
-                                                <div class="fpt-appx-toggles fp-qr-toggle-row">
-                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="fullWidth"><span>На всю ширину</span></button>
-                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="compact"><span>Компактно</span></button>
-                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="uppercase"><span>ЗАГЛАВНЫЕ</span></button>
-                                                    <button type="button" class="fpt-chip-toggle" data-fpt-toggle="showPreview"><span>Превью при наведении</span></button>
-                                                </div>
-                                            </div>
-
-                                            <div class="fp-qr-control-group fpt-sidebar-only" id="fpt-sidebar-extra">
-                                                <span class="fpt-appx-cap">Панель</span>
-                                                <div class="fp-qr-sidebar-controls">
-                                                    <div class="fpt-seg" data-fpt-opt="sidebarDensity">
-                                                        <button type="button" data-val="cozy">Просторно</button>
-                                                        <button type="button" data-val="normal">Обычно</button>
-                                                        <button type="button" data-val="dense">Плотно</button>
-                                                    </div>
-                                                    <div class="fpt-seg" data-fpt-opt="sidebarLayout">
-                                                        <button type="button" data-val="flow">Авто-сетка</button>
-                                                        <button type="button" data-val="list">Список</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="fp-qr-preview-panel">
-                                            <span class="fpt-appx-cap">Живой предпросмотр</span>
-                                            <div id="fpt-appearance-preview" class="chat-buttons-container fp-qr-live-preview" data-fpt-shape="rounded" data-fpt-size="m" data-fpt-fill="solid" data-fpt-align="center" data-fpt-fullwidth="0" data-fpt-uppercase="0" data-fpt-compact="0">
-                                                <button type="button" class="chat-template-btn fp-qr-preview-primary">Приветствие</button>
-                                                <button type="button" class="chat-template-btn fp-qr-preview-secondary">Спасибо за заказ</button>
-                                                <button type="button" class="custom-chat-template-btn fp-qr-preview-primary">Свой шаблон</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </section>
 
                         <section class="fpt-ui-surface fp-qr-card fp-qr-editor-card" aria-labelledby="fp-qr-editor-title">
                             <div class="fpt-ui-section-header fp-qr-section-header fp-qr-editor-header">
                                 <div>
                                     <h4 id="fp-qr-editor-title" class="fpt-ui-section-title">Редактор шаблонов</h4>
-                                    <p class="fpt-ui-helper fp-qr-section-description">Название, цвет и текст сохраняются автоматически.</p>
+                                    <p class="fpt-ui-helper fp-qr-section-description">Названия, тексты и изображения шаблонов сохраняются автоматически.</p>
                                 </div>
                                 <button id="addCustomTemplateBtn" type="button" class="fpt-ui-button fpt-ui-button--secondary fp-qr-add-template-btn">Добавить шаблон</button>
                             </div>
@@ -2039,11 +1916,6 @@ function createMainPopup() {
                     <div class="checkbox-label-inline"><input type="checkbox" id="customCursorEnabled"><label for="customCursorEnabled" style="margin-bottom:0;"><span>Включить свой курсор</span></label></div>
                     <div id="customCursorControls" style="display: none;"><div class="template-container"><label>Изображение курсора:</label><div id="cursor-image-preview" style="width:64px; height:64px; background-color:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:8px; margin-bottom:10px; background-size:contain; background-position:center; background-repeat: no-repeat; display:flex; align-items:center; justify-content:center; color: var(--fptm-muted, #888); font-size:12px;">Нет</div><button id="uploadCursorImageBtn" class="btn">Загрузить</button><button id="removeCursorImageBtn" class="btn btn-default" style="margin-left: 10px;">Удалить</button><input type="file" id="cursorImageInput" accept="image/*" style="display: none;"></div><div class="checkbox-label-inline"><input type="checkbox" id="hideSystemCursor" checked><label for="hideSystemCursor" style="margin-bottom:0;"><span>Скрыть системный курсор</span></label></div><div class="template-container"><div class="range-label"><label for="customCursorSize">Размер:</label><span id="customCursorSizeValue">32px</span></div><input type="range" id="customCursorSize" min="16" max="128" step="1" value="32"></div><div class="template-container"><div class="range-label"><label for="customCursorOpacity">Прозрачность:</label><span id="customCursorOpacityValue">100%</span></div><input type="range" id="customCursorOpacity" min="0" max="100" step="1" value="100"></div></div>
                 </div>
-                <div class="fp-tools-page-content" data-page="overview">
-                    <h3>Справочник функций</h3>
-                    <div class="overview-container"><h3 style="border:none">Видео-обзор функций</h3><p class="template-info">Посмотрите короткий кинематографический ролик, демонстрирующий все возможности FunPay Funcy в действии. Откройте для себя инструменты, о которых вы могли не знать!</p><div class="overview-promo-art"></div><button id="start-overview-tour-btn" class="btn">▶️ Начать обзор</button></div>
-                    <div class="feature-list-container"><h3>Справочник по функциям</h3><div class="feature-item"><div class="feature-title"><span class="material-icons">smart_toy</span>ИИ-Ассистент в чате</div><div class="feature-location"><strong>Где найти:</strong> В любом чате, кнопка "AI" рядом с полем ввода.</div><div class="feature-desc">Улучшает ваш текст, делая его вежливым и профессиональным. Активируйте режим и нажмите Enter для обработки. Также предупреждает о грубости.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_high</span>AI-Генератор лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота.</div><div class="feature-desc">Создает название и описание для лота на основе ваших идей, анализируя и копируя стиль ваших существующих предложений.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">add_photo_alternate</span>AI-Генератор изображений</div><div class="feature-location"><strong>Где найти:</strong> На странице создания/редактирования лота, в разделе "Изображения".</div><div class="feature-desc">Создавайте уникальные и стильные превью для ваших предложений с помощью встроенного генератора, в том числе по текстовому запросу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">palette</span>Полная кастомизация</div><div class="feature-location"><strong>Где найти:</strong> Страница «Темы».</div><div class="feature-desc">Измените внешний вид FunPay: установите анимированный фон, настройте цвета, шрифты, прозрачность блоков и даже расположение верхней панели.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">auto_fix_normal</span>"Кастомизатор (режим редактора)</div><div class="feature-location"><strong>Где найти:</strong> Страница «Темы».</div><div class="feature-desc">Редактируйте любой элемент сайта в реальном времени. Меняйте цвета, размеры или скрывайте ненужное, сохраняя стили навсегда.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">description</span>Шаблоны и AI-переменные</div><div class="feature-location"><strong>Где найти:</strong> Под полем ввода в чате. Настраиваются на странице «Быстрые ответы», во вкладке «Шаблоны».</div><div class="feature-desc">Быстрая вставка готовых сообщений. Поддерживают переменные {buyername}, {date} и даже генерацию текста через {ai:ваш запрос}.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">checklist</span>Управление лотами и ценами</div><div class="feature-location"><strong>Где найти:</strong> На странице вашего профиля (funpay.com/users/...).</div><div class="feature-desc">Кнопка "Выбрать" позволяет выделить несколько лотов для массового удаления, дублирования, отключения или редактирования цен.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">control_point_duplicate</span>Клонирование лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования любого вашего лота.</div><div class="feature-desc">Кнопка "Копировать" позволяет создать точную копию лота или массово размножить его по разным категориям (например, по разным серверам).</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">content_copy</span>Копировать лот со страницы заказа</div><div class="feature-location"><strong>Где найти:</strong> На странице купленного заказа (funpay.com/orders/...), кнопка под блоком "Оплаченный товар".</div><div class="feature-desc">Создаёт копию купленного лота через тот же мастер, что и обычное клонирование: подтягивает описание, автоматически переводит его на английский и, если у лота была автовыдача, сразу вставляет выданный товар в поле автовыдачи.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">public</span>Глобальный импорт лотов</div><div class="feature-location"><strong>Где найти:</strong> На странице редактирования лота, кнопка "Импорт".</div><div class="feature-desc">Импортируйте название и описание любого лота с FunPay, чтобы анализировать конкурентов или использовать как основу.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">sort_by_alpha</span>Сортировка по отзывам</div><div class="feature-location"><strong>Где найти:</strong> На любой странице со списком лотов.</div><div class="feature-desc">Кликните на заголовок "Продавец" в таблице, чтобы отсортировать все предложения по количеству отзывов у продавцов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">label</span>Пометки для пользователей</div><div class="feature-location"><strong>Где найти:</strong> В выпадающем меню в заголовке чата с человеком.</div><div class="feature-desc">Устанавливайте настраиваемые цветные метки для пользователей, которые будут видны в вашем списке контактов.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">rocket_launch</span>Автоподнятие лотов</div><div class="feature-location"><strong>Где найти:</strong> Страница «Автоподнятие».</div><div class="feature-desc">Настройте автоматическое поднятие лотов по таймеру. Можно выбрать для поднятия только определенные категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">monitoring</span>Статистика</div><div class="feature-location"><strong>Где найти:</strong> В FunPay: страница «Продажи» для статистики и кнопка «Аналитика рынка» на странице игры.</div><div class="feature-desc">Получайте детальную статистику по своим продажам и анализируйте рыночную ситуацию в любой категории.</div></div><div class="feature-item"><div class="feature-title"><span class="material-icons">savings</span>Финансовые копилки</div><div class="feature-location"><strong>Где найти:</strong> Страница «Копилки» и иконка в шапке сайта.</div><div class="feature-desc">Устанавливайте финансовые цели и отслеживайте их достижение. Копилка синхронизируется с балансом FunPay.</div></div></div>
-                </div>
                 <div class="fp-tools-page-content" data-page="settings_io">
                     <h3>Перенос настроек</h3>
                     <p class="template-info">Сохраните все настройки FunPay Funcy в файл и восстановите на другом устройстве или аккаунте.</p>
@@ -2577,8 +2449,7 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse svg{ width:18px; height:18px; display:block; transition:transform .38s cubic-bezier(.4,0,.2,1); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse:hover{ background:var(--fptm-nav-field) !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse:focus-visible,
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico:focus-visible,
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn:focus-visible{ outline:2px solid #7663f6; outline-offset:2px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search-ico:focus-visible{ outline:2px solid #7663f6; outline-offset:2px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-search{
     position:relative; width:100%; height:44px; flex:0 0 auto; margin:0 0 18px; padding:0;
     transition:width .38s cubic-bezier(.4,0,.2,1), height .38s cubic-bezier(.4,0,.2,1);
@@ -2696,16 +2567,6 @@ const FPT_MENU_THEME_CSS = `
     min-width:0; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-action.active a{ color:var(--fptm-text) !important; font-weight:600; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn{
-    position:relative; width:48px !important; height:48px !important; min-width:48px !important; display:inline-flex !important;
-    align-items:center !important; justify-content:center !important; margin:0 !important; padding:0 !important;
-    border:0 !important; border-radius:16px !important; background:#7663f6 !important; color:#fff !important;
-    box-shadow:0 5px 14px rgba(118,99,246,.20) !important; cursor:pointer;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn svg{ width:20px; height:20px; display:block; pointer-events:none; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn:hover{ background:#6d59ed !important; box-shadow:0 5px 14px rgba(118,99,246,.22) !important; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn::before,
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-accent-btn::after{ content:none !important; display:none !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed{ width:104px; flex:0 0 104px; padding-right:10px; padding-left:10px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-brand{ gap:0; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-brand-title,
@@ -2892,26 +2753,6 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .template-settings-list .template-label[contenteditable]:hover{
     background:var(--fptm-surface-2) !important;
 }
-.fp-tools-popup.fptm-themed .template-settings-list .template-color-picker::-webkit-color-swatch{
-    border:1px solid var(--fptm-border) !important;
-}
-.fp-tools-popup.fptm-themed .fpt-pos-card{
-    background:var(--fptm-surface) !important; border:1.5px solid var(--fptm-border) !important;
-}
-.fp-tools-popup.fptm-themed .fpt-pos-card:hover{ border-color:var(--fptm-accent-border) !important; }
-.fp-tools-popup.fptm-themed .fpt-pos-card:has(input:checked){
-    border-color:var(--fptm-accent) !important; background:var(--fptm-accent-soft) !important;
-}
-.fp-tools-popup.fptm-themed .fpt-pos-name{ color:var(--fptm-muted) !important; }
-.fp-tools-popup.fptm-themed .fpt-pos-card:has(input:checked) .fpt-pos-name{ color:var(--fptm-accent) !important; }
-.fp-tools-popup.fptm-themed .fpt-pos-ico,
-.fp-tools-popup.fptm-themed .fpt-pos-panel{ background:var(--fptm-surface-2) !important; }
-.fp-tools-popup.fptm-themed .fpt-pos-row,
-.fp-tools-popup.fptm-themed .fpt-pos-srow,
-.fp-tools-popup.fptm-themed .fpt-pos-ico-pop .fpt-pos-pop-btn{ background:var(--fptm-accent) !important; }
-.fp-tools-popup.fptm-themed .fpt-pos-field,
-.fp-tools-popup.fptm-themed .fpt-pos-sfield{ background:var(--fptm-border) !important; }
-
 /* ─── страница «Аккаунты» ────────────────────────────────────────────────── */
 .fp-tools-popup.fptm-themed .fpt-acc-item{
     background:var(--fptm-surface) !important; border:1px solid var(--fptm-border) !important;
@@ -3003,19 +2844,7 @@ function fptParseMenuColors() {
         }
     } catch (_) {}
 
-    // Акцент: фирменная голубая кнопка FunPay, иначе фирменный голубой #1b75bb.
-    let accent = '';
-    const btn = document.querySelector('.btn-primary');
-    if (btn) {
-        const bc = getComputedStyle(btn).backgroundColor;
-        if (bc && bc !== 'rgba(0, 0, 0, 0)' && bc !== 'transparent') {
-            const arr = (bc.match(/\d+/g) || []).map(Number);
-            // отбрасываем слишком тёмный/серый «акцент»
-            if (arr.length >= 3 && (arr[0] + arr[1] + arr[2]) > 90 && !(Math.abs(arr[0]-arr[1])<12 && Math.abs(arr[1]-arr[2])<12)) accent = bc;
-        }
-    }
-    if (!accent) accent = '#1b75bb';
-    return { isLight, accent };
+    return { isLight };
 }
 
 function fptInjectMenuThemeCSS() {
@@ -3026,41 +2855,12 @@ function fptInjectMenuThemeCSS() {
     document.head.appendChild(s);
 }
 
-// Белый или почти белый цвет? Принимает hex (#fff/#ffffff) и rgb(...) строки.
-function fptIsWhitish(color) {
-    if (!color) return false;
-    let r, g, b;
-    const hx = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
-    const hx3 = /^#?([a-f\d])([a-f\d])([a-f\d])$/i.exec(color);
-    if (hx) {
-        r = parseInt(hx[1], 16); g = parseInt(hx[2], 16); b = parseInt(hx[3], 16);
-    } else if (hx3) {
-        r = parseInt(hx3[1] + hx3[1], 16); g = parseInt(hx3[2] + hx3[2], 16); b = parseInt(hx3[3] + hx3[3], 16);
-    } else {
-        const arr = (String(color).match(/\d+/g) || []).map(Number);
-        if (arr.length < 3) return false;
-        [r, g, b] = arr;
-    }
-    // «Похож на белый»: все каналы высокие и цвет близок к серому (низкая насыщенность).
-    const minC = Math.min(r, g, b);
-    const maxC = Math.max(r, g, b);
-    return minC >= 225 && (maxC - minC) <= 20;
-}
-
 function fptApplyMenuTheme(root) {
     if (!root) return;
     try {
         const parsed = fptParseMenuColors();
         const isLight = parsed.isLight;
-        let accent = window.__fptUserAccent || parsed.accent;
-
-        // Если кастомная тема ВЫКЛЮЧЕНА, а акцент белый/почти белый — он был бы
-        // невидим на светлом меню. Подменяем его мягким синим.
-        const SOFT_BLUE = '#4a9fd4';
-        const customThemeOff = document.documentElement.classList.contains('fpt-custom-theme-off');
-        if (customThemeOff && fptIsWhitish(accent)) {
-            accent = SOFT_BLUE;
-        }
+        const accent = '#7663f6';
         let vars;
         if (isLight) {
             vars = {
@@ -3078,7 +2878,7 @@ function fptApplyMenuTheme(root) {
                 muted:'rgba(231,232,236,0.76)', faint:'rgba(231,232,236,0.56)', border:'rgba(255,255,255,0.10)',
                 surface:'#26272d', surface2:'#2c2e35', hover:'rgba(255,255,255,0.07)', field:'#26272d',
                 shadow:'rgba(0,0,0,0.55)', navFade:'rgba(0,0,0,0.30)',
-                navSurface:'#24262d', navRow:'#2b2e36', navExpanded:'rgba(89,146,220,0.22)', navChildSurface:'rgba(19,22,28,0.72)',
+                navSurface:'#24262d', navRow:'#2b2e36', navExpanded:'rgba(118,99,246,0.22)', navChildSurface:'rgba(19,22,28,0.72)',
                 navField:'#2a2e37', navFieldFocus:'#313640', navBorder:'rgba(255,255,255,0.10)',
                 navRowShadow:'rgba(0,0,0,0.20)', navDot:'rgba(231,232,236,0.40)'
             };
@@ -3093,11 +2893,7 @@ function fptApplyMenuTheme(root) {
         const accentSoft = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${isLight ? 0.12 : 0.22})`;
         const accentBorder = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${isLight ? 0.35 : 0.5})`;
 
-        // Контрастный текст для элементов, где фон = акцент. Если акцент светлый
-        // (например, пользователь выбрал белый), белый текст на нём сливается — тогда
-        // делаем текст тёмным. Порог по воспринимаемой яркости.
-        const accentLuma = (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]);
-        const onAccent = accentLuma > 150 ? '#14161c' : '#ffffff';
+        const onAccent = '#ffffff';
 
         const st = root.style;
         st.setProperty('--fptm-color-scheme', isLight ? 'light' : 'dark');
@@ -3128,9 +2924,8 @@ function fptApplyMenuTheme(root) {
         st.setProperty('--fptm-nav-row-shadow', vars.navRowShadow);
         st.setProperty('--fptm-nav-dot', vars.navDot);
 
-        // Множество старых правил используют var(--fpt-accent, #1b75bb) и прочие
-        // фиолетовые фолбэки. Задаём эти переменные прямо на окне — и весь легаси
-        // фиолетовый мгновенно становится голубым, а поверхности/текст — тематичными.
+        // Множество старых правил используют эти переменные; фиксируем единый
+        // лавандовый акцент, сохраняя тематические цвета поверхностей и текста.
         st.setProperty('--fpt-accent', accent);
         st.setProperty('--fpt-accent-soft', accentSoft);
         st.setProperty('--fpt-accent-border', accentBorder);
@@ -3459,9 +3254,9 @@ const FPT_NAV_SECTIONS = Object.freeze([
     { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump']) },
     { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist']) },
     { id: 'finance', label: 'Финансы', icon: 'analytics', pages: Object.freeze(['finance_hub', 'piggy_banks', 'calculator']) },
-    { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'epic_nicks', 'needs']) },
+    { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'needs']) },
     { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['accounts', 'general', 'telegram', 'settings_io']) },
-    { id: 'help', label: 'Справка', icon: 'help', pages: Object.freeze(['overview', 'tickets', 'global_chat']) }
+    { id: 'help', label: 'Справка', icon: 'help', pages: Object.freeze(['tickets', 'global_chat']) }
 ]);
 
 const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
@@ -3477,13 +3272,11 @@ const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     calculator: 'Калькуляторы',
     theme: 'Темы',
     effects: 'Эффекты',
-    epic_nicks: 'Оформление ника',
     needs: 'Элементы интерфейса',
     accounts: 'Аккаунты',
     general: 'Отображение FunPay',
     telegram: 'Уведомления и интеграции',
     settings_io: 'Перенос настроек',
-    overview: 'Справочник функций',
     tickets: 'Поддержка FunPay',
     global_chat: 'Чат сообщества',
     support: 'Оценить расширение'
@@ -4056,7 +3849,6 @@ async function openPopupPage(pageId, options = {}) {
                 if (result && typeof result.catch === 'function') result.catch(() => {});
             } catch (_) {}
         };
-        if (targetPageId === 'epic_nicks') initialize('renderEpicPreviews');
         if (targetPageId === 'finance_hub') initialize('initializeFinanceHub');
         if (targetPageId === 'global_chat') initialize('initializeGlobalChat');
         if (targetPageId === 'templates') {
@@ -4167,7 +3959,6 @@ function setupPopupNavigation() {
     }
 
     setupNavSearch(toolsPopup);
-    setupAccentPicker(toolsPopup);
     setupQuickRepliesUI(toolsPopup);
     setupCalculatorUI(toolsPopup);
     setupNotificationCenterUI(toolsPopup);
@@ -4683,51 +4474,6 @@ function attachAutoReplyImageButtons(toolsPopup) {
     }
 }
 
-function setupAccentPicker(toolsPopup) {
-    const btn = toolsPopup.querySelector('#fptAccentBtn');
-    const input = toolsPopup.querySelector('#fptAccentInput');
-    if (!btn || !input) return;
-
-    const DEFAULT_ACCENT = '#1b75bb';
-
-    // Применяем акцент через ЕДИНУЮ функцию темизации меню — так обновляются ВСЕ
-    // акцентные места (кнопка «Применить», галочки, иконка активной вкладки и т.д.),
-    // и повторный запуск fptApplyMenuTheme (наблюдатель при перемещении/смене темы)
-    // уже не сбрасывает цвет, т.к. читает window.__fptUserAccent.
-    function applyAccent(hex) {
-        window.__fptUserAccent = hex;
-        try { if (typeof fptApplyMenuTheme === 'function') fptApplyMenuTheme(toolsPopup); } catch (_) {}
-    }
-
-    let lastApply = 0;
-    let pending = null;
-    function throttledApply(hex) {
-        const now = Date.now();
-        if (now - lastApply >= 120) {
-            lastApply = now;
-            applyAccent(hex);
-        } else {
-            if (pending) clearTimeout(pending);
-            pending = setTimeout(() => { lastApply = Date.now(); applyAccent(hex); pending = null; }, 120 - (now - lastApply));
-        }
-    }
-
-    chrome.storage.local.get('fpToolsAccentColor').then(({ fpToolsAccentColor }) => {
-        if (fpToolsAccentColor) {
-            input.value = fpToolsAccentColor;
-            applyAccent(fpToolsAccentColor);
-        } else {
-            input.value = DEFAULT_ACCENT;
-        }
-    }).catch(() => {});
-
-    input.addEventListener('input', () => throttledApply(input.value));
-    input.addEventListener('change', () => {
-        applyAccent(input.value);
-        try { chrome.storage.local.set({ fpToolsAccentColor: input.value }); } catch (_) {}
-    });
-}
-
 function setupNavSearch(toolsPopup) {
     const input = toolsPopup.querySelector('#fptNavSearch');
     const clearBtn = toolsPopup.querySelector('#fptNavSearchClear');
@@ -4781,7 +4527,7 @@ function setupNavSearch(toolsPopup) {
         }
     }
 
-    const searchableFeatureSelector = 'h3, h4, h5, label > span, .feature-title, .setting-group > h4';
+    const searchableFeatureSelector = 'h3, h4, h5, label > span, .setting-group > h4';
     const searchableModePaneSelector = '[data-quick-replies-pane], .fpt-fin-tab-pane[data-subtab], [data-calc-pane], [data-notification-pane], [data-route-mode]';
     const legacySearchAliases = Object.freeze({
         lot_io: [{ mode: null, aliases: ['Импорт / экспорт'] }],
@@ -4792,7 +4538,6 @@ function setupNavSearch(toolsPopup) {
         calculator: [{ mode: 'currency', aliases: ['Валюты'] }],
         theme: [{ mode: null, aliases: ['Кастомизация'] }],
         tickets: [{ mode: null, aliases: ['Тикеты'] }],
-        overview: [{ mode: null, aliases: ['Функции', 'Видео-обзор'] }],
         settings_io: [{ mode: null, aliases: ['Импорт / экспорт'] }],
         support: [{ mode: null, aliases: ['оценить', 'отзыв о расширении', 'поддержать разработчика'] }]
     });

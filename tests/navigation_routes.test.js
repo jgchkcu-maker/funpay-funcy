@@ -92,7 +92,7 @@ class FakeElement {
             const result = this._customQuerySelectorAll(selector);
             if (result !== undefined) return result;
         }
-        if (selector === 'h3, h4, h5, label > span, .feature-title, .setting-group > h4') return this.headings || [];
+        if (selector === 'h3, h4, h5, label > span, .setting-group > h4') return this.headings || [];
         if (selector === '.fpt-search-flash') return [];
         if (selector === '.fpt-nav-search-result') return this.children.filter(child => child.classList.contains('fpt-nav-search-result'));
         return [];
