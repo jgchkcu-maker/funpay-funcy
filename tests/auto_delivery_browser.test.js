@@ -199,8 +199,8 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
 
         const helpButton = page.locator('.fp-tools-page-content.active .fpt-category-help');
         await helpButton.click();
-        await page.locator('.fpt-ad-help').evaluate(panel => Promise.all(panel.getAnimations().map(animation => animation.finished.catch(() => undefined))));
-        const helpGeometry = await page.locator('.fpt-ad-help').evaluate(panel => {
+        await page.locator('#fpt-ad-help').evaluate(panel => Promise.all(panel.getAnimations().map(animation => animation.finished.catch(() => undefined))));
+        const helpGeometry = await page.locator('#fpt-ad-help').evaluate(panel => {
             const button = document.querySelector('.fp-tools-page-content.active .fpt-category-help').getBoundingClientRect();
             const bounds = panel.getBoundingClientRect();
             return { top: bounds.top, buttonBottom: button.bottom, right: bounds.right, buttonRight: button.right, left: bounds.left, width: bounds.width };

@@ -80,9 +80,10 @@
         helpPanel.appendChild(node('h2', '', 'Управление лотами'));
         const helpList = node('ul');
         [
-            'Экспорт сохраняет выбранные категории в файл JSON.',
-            'Импорт загружает резервную копию лотов и сохраняет ход выполнения.',
-            'Массовое редактирование меняет выбранные лоты за один запуск.'
+            'Экспорт сохраняет лоты выбранных категорий в файл JSON — это резервная копия и способ перенести лоты.',
+            'Импорт создаёт лоты из такого файла. Ход сохраняется: импорт можно отложить, продолжить или пропустить проблемный лот.',
+            'Файл можно перетащить прямо на карточку «Импорт из файла».',
+            'Массовое редактирование меняет название, описание, цену или активирует выбранные лоты за один запуск.'
         ].forEach(text => helpList.appendChild(node('li', '', text)));
         helpPanel.appendChild(helpList);
 
@@ -95,33 +96,77 @@
         });
         view.append(helpPanel);
 
+        const metric = (iconName, label) => {
+            const element = node('div', 'fpt-qr-metric fpt-lot-metric');
+            const badge = node('span', 'fpt-qr-metric-icon');
+            badge.appendChild(icon(iconName));
+            const copy = node('div', 'fpt-qr-metric-copy');
+            const value = node('strong', 'fpt-qr-metric-value', '—');
+            copy.append(node('span', 'fpt-qr-metric-label', label), value);
+            element.append(badge, copy);
+            return { element, value };
+        };
+        const hero = node('section', 'fpt-qr-hero fpt-lot-hero');
+        hero.setAttribute('aria-labelledby', 'fpt-lot-hero-title');
+        const heroMain = node('div', 'fpt-qr-hero-main');
+        const heroIcon = node('span', 'fpt-qr-hero-icon');
+        heroIcon.appendChild(icon('inventory_2'));
+        const heroCopy = node('div', 'fpt-qr-hero-copy');
+        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
+        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Лоты под контролем');
+        heroTitle.id = 'fpt-lot-hero-title';
+        const heroPill = node('span', 'fpt-qr-pill fpt-lot-hero-pill', 'Проверяем импорт…');
+        heroPill.setAttribute('role', 'status');
+        heroTitleRow.append(heroTitle, heroPill);
+        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
+            'Резервная копия в JSON, перенос лотов из файла и правка многих лотов за один запуск.'));
+        heroMain.append(heroIcon, heroCopy);
+        const metricImport = metric('description', 'Импорт');
+        const metricDone = metric('task_alt', 'Обработано');
+        const metricProblems = metric('report', 'Ошибки и пропуски');
+        const metrics = node('div', 'fpt-qr-metrics fpt-lot-metrics');
+        metrics.append(metricImport.element, metricDone.element, metricProblems.element);
+        hero.append(heroMain, metrics);
+        view.appendChild(hero);
+
+        const tool = (modifier, iconName, title, description) => {
+            const card = node('article', `fpt-lot-tool fpt-lot-tool--${modifier}`);
+            const head = node('div', 'fpt-lot-tool-head');
+            const emblem = node('span', 'fpt-qr-emblem fpt-lot-tool-emblem');
+            emblem.appendChild(icon(iconName));
+            const copy = node('div', 'fpt-lot-tool-copy');
+            copy.append(node('h3', '', title), node('p', '', description));
+            head.append(emblem, copy);
+            card.appendChild(head);
+            return card;
+        };
         const actionBand = node('section', 'fpt-lot-action-band');
         actionBand.setAttribute('aria-label', 'Действия с лотами');
-        const exportButton = button('Экспорт', 'fpt-lot-action-button fpt-lot-action-button--primary', 'download', 'lot-io-export-btn');
-        const importButton = button('Импорт', 'fpt-lot-action-button fpt-lot-action-button--import', 'upload', 'lot-io-import-btn');
+        const exportButton = button('Экспорт в JSON', 'fpt-lot-action-button fpt-lot-action-button--primary', 'download', 'lot-io-export-btn');
+        const importButton = button('Выбрать файл', 'fpt-lot-action-button fpt-lot-action-button--import', 'upload_file', 'lot-io-import-btn');
         importButton.setAttribute('aria-describedby', 'fpt-lot-import-status');
         const importControl = node('div', 'fpt-lot-import-control');
         const importStatus = node('span', 'fpt-lot-import-status');
         importStatus.id = 'fpt-lot-import-status';
         importStatus.setAttribute('aria-live', 'polite');
         importControl.append(importButton, importStatus);
-        const bulkButton = button('Массовое редактирование', 'fpt-lot-action-button fpt-lot-action-button--bulk', 'edit', 'fp-bulk-edit-btn');
-        const backupGroup = node('div', 'fpt-lot-action-group fpt-lot-action-group--backup');
-        const backupHeader = node('div', 'fpt-lot-action-group-copy');
-        backupHeader.append(node('h2', '', 'Резервная копия'), node('p', '', 'Сохраните лоты в JSON или восстановите их из файла.'));
-        const backupActions = node('div', 'fpt-lot-action-group-actions');
-        backupActions.append(exportButton, importControl);
-        backupGroup.append(backupHeader, backupActions);
-        const bulkGroup = node('div', 'fpt-lot-action-group fpt-lot-action-group--bulk');
-        const bulkHeader = node('div', 'fpt-lot-action-group-copy');
-        bulkHeader.append(node('h2', '', 'Массовые действия'), node('p', '', 'Обновите поля или активируйте выбранные лоты.'));
-        bulkGroup.append(bulkHeader, bulkButton);
+        const bulkButton = button('Открыть редактор', 'fpt-lot-action-button fpt-lot-action-button--bulk', 'edit_note', 'fp-bulk-edit-btn');
+        const exportTool = tool('export', 'cloud_download', 'Резервная копия', 'Сохраните лоты выбранных категорий в JSON-файл.');
+        exportTool.appendChild(exportButton);
+        const importTool = tool('import', 'upload', 'Импорт из файла', 'Перетащите JSON сюда или выберите файл резервной копии.');
+        importTool.appendChild(importControl);
+        const dropHint = node('div', 'fpt-lot-drop-hint');
+        dropHint.setAttribute('aria-hidden', 'true');
+        dropHint.append(icon('file_download'), node('span', '', 'Отпустите, чтобы начать импорт'));
+        importTool.appendChild(dropHint);
+        const bulkTool = tool('bulk', 'edit_note', 'Массовое редактирование', 'Название, описание, цена и активация сразу для многих лотов.');
+        bulkTool.appendChild(bulkButton);
         const fileInput = node('input', 'fpt-lot-file-input');
         fileInput.type = 'file';
         fileInput.accept = '.json,application/json';
         fileInput.id = 'lot-io-import-file';
         fileInput.setAttribute('aria-label', 'Файл резервной копии лотов');
-        actionBand.append(backupGroup, bulkGroup, fileInput);
+        actionBand.append(exportTool, importTool, bulkTool, fileInput);
         view.appendChild(actionBand);
 
         const section = node('section', 'fpt-lot-import-section');
@@ -129,17 +174,42 @@
         const sectionHeading = node('div', 'fpt-lot-section-heading');
         const sectionTitle = node('h2', '', 'Текущий импорт');
         sectionTitle.id = 'fpt-lot-import-title';
-        const taskCount = node('span', 'fpt-lot-task-count', '0 задач');
+        const taskCount = node('span', 'fpt-qr-pill fpt-lot-task-count', '0 задач');
         taskCount.setAttribute('aria-live', 'polite');
         sectionHeading.append(sectionTitle, taskCount);
         const taskContent = node('div', 'fpt-lot-task-content');
         section.append(sectionHeading, taskContent);
 
-        const separator = node('hr', 'fpt-lot-separator');
-        separator.setAttribute('aria-hidden', 'true');
-        view.append(separator, section);
+        view.append(section);
         page.replaceChildren(view);
         page.prepend(header.element);
+
+        // Hero summary of the import that is running, paused or just finished.
+        function updateHero({ state = 'idle', name = '', done = 0, total = 0, errors = 0, skipped = 0 } = {}) {
+            const pill = {
+                loading: ['Проверяем импорт…', ''],
+                idle: ['Готово к работе', 'success'],
+                running: [`Импорт идёт · ${done} из ${total}`, ''],
+                postponed: [`Приостановлен · ${done} из ${total}`, 'warning'],
+                error: ['Ошибка импорта', 'error'],
+                finished: ['Импорт завершён', errors ? 'warning' : 'success']
+            }[state] || ['Готово к работе', 'success'];
+            heroPill.textContent = pill[0];
+            if (pill[1]) heroPill.dataset.kind = pill[1];
+            else delete heroPill.dataset.kind;
+            hero.dataset.state = ['running', 'postponed', 'error'].includes(state) ? 'on' : 'off';
+            const hasResult = ['running', 'postponed', 'error', 'finished'].includes(state);
+            metricImport.value.textContent = hasResult ? shortenFileName(name || 'Импорт лотов', 28) : state === 'loading' ? '…' : 'Нет активного';
+            metricImport.value.title = hasResult ? name || '' : '';
+            metricDone.value.textContent = hasResult ? `${done} из ${total}` : '—';
+            const problems = [
+                errors ? `${errors} ${root.FPTPopupUI.pluralize(errors, ['ошибка', 'ошибки', 'ошибок'])}` : '',
+                skipped ? `${skipped} ${root.FPTPopupUI.pluralize(skipped, ['пропуск', 'пропуска', 'пропусков'])}` : ''
+            ].filter(Boolean).join(' · ');
+            metricProblems.value.textContent = hasResult ? problems || 'Нет' : '—';
+            metricProblems.value.title = hasResult ? `Ошибок: ${errors}, пропущено: ${skipped}` : '';
+            metricProblems.element.dataset.tone = hasResult && errors ? 'error' : '';
+        }
 
         const shortenFileName = (name, maxLength = 44) => {
             const value = String(name || 'Импорт лотов');
@@ -197,6 +267,7 @@
         const showTaskEmpty = (loading = false) => {
             currentTask = null;
             updateImportStatus(null, loading);
+            updateHero({ state: loading ? 'loading' : 'idle' });
             taskCount.textContent = loading ? 'Загрузка…' : '0 задач';
             if (loading) {
                 taskContent.replaceChildren(createTaskSkeleton());
@@ -204,7 +275,7 @@
             }
             const empty = node('div', 'fpt-lot-empty');
             empty.appendChild(icon('inbox'));
-            empty.appendChild(node('span', '', 'Нет незавершённых импортов. Запустите импорт из JSON в группе «Резервная копия».'));
+            empty.appendChild(node('span', '', 'Нет незавершённых импортов. Выберите или перетащите JSON-файл в карточку «Импорт из файла».'));
             taskContent.replaceChildren(empty);
         };
 
@@ -262,7 +333,7 @@
                 showTaskEmpty(false);
                 return;
             }
-            taskCount.textContent = '1 задача';
+            taskCount.textContent = 'Активный импорт';
             const total = task.lots.length;
             const currentIndex = Math.max(0, Math.min(total, Number(task.currentIndex) || 0));
             const currentLot = task.lots[currentIndex] || null;
@@ -271,6 +342,7 @@
             const isPostponed = task.state === 'postponed';
             const hasError = currentLot?.status === 'error';
             const card = node('article', 'fpt-lot-import-card');
+            card.dataset.state = hasError ? 'error' : isPostponed ? 'postponed' : 'running';
             card.setAttribute('aria-label', `Импорт ${task.name || 'лотов'}`);
 
             const fileTile = node('span', 'fpt-lot-file-icon');
@@ -289,8 +361,17 @@
             status.append(dot, node('span', '', statusText));
             fileCopy.append(fileName, status);
             const counts = importCounts(task.lots);
-            const outcomeSummary = node('p', 'fpt-lot-task-outcomes', `✓ ${counts.success} · ⚠ ${counts.errors} · пропущено ${counts.skipped}`);
+            updateHero({
+                state: hasError ? 'error' : isPostponed ? 'postponed' : 'running',
+                name: task.name, done: completed, total, errors: counts.errors, skipped: counts.skipped
+            });
+            const outcomeSummary = node('p', 'fpt-lot-task-outcomes');
             outcomeSummary.setAttribute('aria-live', 'polite');
+            for (const [kind, label, value] of [['success', 'Добавлено', counts.success], ['error', 'Ошибки', counts.errors], ['skipped', 'Пропущено', counts.skipped]]) {
+                const chip = node('span', `fpt-lot-outcome fpt-lot-outcome--${kind}`);
+                chip.append(node('span', '', label), node('strong', '', String(value)));
+                outcomeSummary.appendChild(chip);
+            }
             fileCopy.appendChild(outcomeSummary);
             if (hasError) {
                 const errorText = node('p', 'fpt-lot-task-error', currentLot.error || 'Не удалось обработать этот лот.');
@@ -304,14 +385,24 @@
             progress.setAttribute('aria-valuemin', '0');
             progress.setAttribute('aria-valuemax', '100');
             progress.setAttribute('aria-valuenow', String(percent));
+            // One segment per outcome, in the order the lots were processed.
             const track = node('div', 'fpt-lot-progress-track');
-            const fill = node('div', 'fpt-lot-progress-fill');
-            fill.style.width = `${percent}%`;
-            track.appendChild(fill);
+            const share = value => `${Math.max(0, Math.min(100, value / total * 100))}%`;
+            const pending = Math.max(0, completed - counts.success - counts.errors - counts.skipped);
+            for (const [kind, value] of [['success', counts.success + pending], ['skipped', counts.skipped], ['error', counts.errors]]) {
+                if (!value) continue;
+                const segment = node('div', `fpt-lot-progress-fill fpt-lot-progress-fill--${kind}`);
+                segment.style.width = share(value);
+                track.appendChild(segment);
+            }
             progress.append(track, node('span', 'fpt-lot-progress-value', `${percent}%`));
 
-            const continueButton = node('button', 'fpt-lot-continue', isPostponed || hasError ? 'Продолжить' : 'Импорт идёт');
+            const continueButton = node('button', 'fpt-lot-continue');
             continueButton.type = 'button';
+            continueButton.append(
+                icon(isPostponed || hasError ? 'play_arrow' : 'progress_activity'),
+                node('span', '', isPostponed || hasError ? 'Продолжить' : 'Импорт идёт')
+            );
             continueButton.id = 'lot-io-continue-btn';
             continueButton.disabled = !(isPostponed || hasError);
             continueButton.addEventListener('click', async () => {
@@ -336,10 +427,16 @@
             const counts = importCounts(lots);
             const total = Array.isArray(lots) ? lots.length : 0;
             taskCount.textContent = 'Последний импорт';
+            updateHero({ state: 'finished', name: 'Последний импорт', done: total, total, errors: counts.errors, skipped: counts.skipped });
             const report = node('article', 'fpt-lot-import-report');
+            report.dataset.state = counts.errors ? 'warning' : 'success';
             report.setAttribute('aria-live', 'polite');
-            report.appendChild(node('strong', '', `Импорт завершён: ${counts.success} ${root.FPTPopupUI.pluralize(counts.success, ['лот добавлен', 'лота добавлено', 'лотов добавлено'])}`));
-            report.appendChild(node('p', '', `Ошибок: ${counts.errors} · пропущено: ${counts.skipped} · всего: ${total} ${root.FPTPopupUI.pluralize(total, ['лот', 'лота', 'лотов'])}.`));
+            const reportIcon = node('span', 'fpt-lot-report-icon');
+            reportIcon.appendChild(icon(counts.errors ? 'warning' : 'task_alt'));
+            const reportCopy = node('div', 'fpt-lot-report-copy');
+            reportCopy.appendChild(node('strong', '', `Импорт завершён: ${counts.success} ${root.FPTPopupUI.pluralize(counts.success, ['лот добавлен', 'лота добавлено', 'лотов добавлено'])}`));
+            reportCopy.appendChild(node('p', '', `Ошибок: ${counts.errors} · пропущено: ${counts.skipped} · всего: ${total} ${root.FPTPopupUI.pluralize(total, ['лот', 'лота', 'лотов'])}.`));
+            report.append(reportIcon, reportCopy);
             const problems = (Array.isArray(lots) ? lots : []).filter(lot => ['error', 'skipped'].includes(lot?.status));
             if (problems.length) {
                 const details = document.createElement('details');
@@ -353,7 +450,7 @@
                     list.appendChild(row);
                 });
                 details.append(summary, list);
-                report.appendChild(details);
+                reportCopy.appendChild(details);
             }
             taskContent.replaceChildren(report);
         }
@@ -413,6 +510,19 @@
                     list.appendChild(label);
                     checkboxByIndex.push(input);
                 });
+                if (categories.length > 8) {
+                    const filter = node('input', 'fpt-lot-category-search');
+                    filter.type = 'search';
+                    filter.placeholder = 'Найти категорию…';
+                    filter.setAttribute('aria-label', 'Поиск категории');
+                    filter.addEventListener('input', () => {
+                        const query = filter.value.trim().toLocaleLowerCase('ru');
+                        list.querySelectorAll('.fpt-lot-category-row').forEach(row => {
+                            row.hidden = Boolean(query) && !row.textContent.toLocaleLowerCase('ru').includes(query);
+                        });
+                    });
+                    selectTools.prepend(filter);
+                }
                 dialog.body.appendChild(list);
                 const selectionSummary = node('p', 'fpt-lot-export-summary', 'Выберите категории для экспорта.');
                 selectionSummary.setAttribute('aria-live', 'polite');
@@ -895,8 +1005,7 @@
             fileInput.click();
         });
         bulkButton.addEventListener('click', openBulkEditor);
-        fileInput.addEventListener('change', async () => {
-            const file = fileInput.files?.[0];
+        const startImport = async file => {
             if (!file) return;
             if (currentTask) {
                 showToast(popup, 'Сначала завершите текущий импорт.', 'warning');
@@ -922,6 +1031,38 @@
                 if (!currentTask) updateImportStatus(null, false);
                 fileInput.value = '';
             }
+        };
+        fileInput.addEventListener('change', () => startImport(fileInput.files?.[0]));
+        let dragDepth = 0;
+        const hasFiles = event => Array.from(event.dataTransfer?.types || []).includes('Files');
+        const setDragOver = active => importTool.classList.toggle('is-dragover', active);
+        importTool.addEventListener('dragenter', event => {
+            if (!hasFiles(event)) return;
+            event.preventDefault();
+            dragDepth += 1;
+            setDragOver(!importButton.disabled);
+        });
+        importTool.addEventListener('dragover', event => {
+            if (!hasFiles(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = importButton.disabled ? 'none' : 'copy';
+        });
+        importTool.addEventListener('dragleave', () => {
+            dragDepth = Math.max(0, dragDepth - 1);
+            if (!dragDepth) setDragOver(false);
+        });
+        importTool.addEventListener('drop', event => {
+            if (!hasFiles(event)) return;
+            event.preventDefault();
+            dragDepth = 0;
+            setDragOver(false);
+            if (importButton.disabled && !currentTask) return;
+            const file = event.dataTransfer.files?.[0];
+            if (file && !/\.json$/i.test(file.name) && file.type !== 'application/json') {
+                showToast(popup, 'Нужен файл резервной копии в формате JSON.', 'error');
+                return;
+            }
+            startImport(file);
         });
 
         const onProgress = event => {

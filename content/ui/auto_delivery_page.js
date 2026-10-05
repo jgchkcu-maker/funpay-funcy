@@ -40,6 +40,64 @@
         return root.FPTPopupUI.pluralize(count, ['лот', 'лота', 'лотов']);
     }
 
+    const PREVIEW_DEMO = Object.freeze({ buyername: 'Алексей', orderid: 'AB12CD34' });
+
+    function greeting(date = new Date()) {
+        const hour = date.getHours();
+        return hour >= 5 && hour < 12 ? 'Доброе утро!' : hour >= 12 && hour < 18 ? 'Добрый день!' : 'Добрый вечер!';
+    }
+
+    function formatDateTime(date) {
+        const pad = value => String(value).padStart(2, '0');
+        return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    // Mirrors applyVariables and the $sleep split in background/autoresponder.js.
+    function previewDeliveryParts(text, lotName, now = new Date()) {
+        const values = {
+            buyername: PREVIEW_DEMO.buyername,
+            lotname: lotName,
+            orderid: PREVIEW_DEMO.orderid,
+            orderlink: `https://funpay.com/orders/${PREVIEW_DEMO.orderid}/`,
+            welcome: greeting(now),
+            date: formatDateTime(now)
+        };
+        const parts = [];
+        String(text || '').split(/\$sleep=(\d+\.?\d*)/i).forEach((part, index) => {
+            if (index % 2 === 1) {
+                parts.push({ type: 'pause', seconds: Number.parseFloat(part) });
+                return;
+            }
+            const message = part.replace(/\{(buyername|lotname|orderid|orderlink|welcome|date)\}/gi, (_, key) => values[key.toLowerCase()]).trim();
+            if (message) parts.push({ type: 'message', text: message });
+        });
+        while (parts.length && parts[parts.length - 1].type === 'pause') parts.pop();
+        while (parts.length && parts[0].type === 'pause') parts.shift();
+        return parts;
+    }
+
+    function formatCheckedAt(timestamp, now = Date.now()) {
+        if (!Number.isFinite(timestamp) || timestamp <= 0) return 'Ещё не проверялись';
+        const date = new Date(timestamp);
+        const today = new Date(now);
+        const pad = value => String(value).padStart(2, '0');
+        const time = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        if (date.toDateString() === today.toDateString()) return `Сегодня, ${time}`;
+        return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}, ${time}`;
+    }
+
+    function metric(iconName, label, tone = '') {
+        const element = node('div', 'fpt-qr-metric fpt-ad-metric');
+        if (tone) element.dataset.tone = tone;
+        const badge = node('span', 'fpt-qr-metric-icon');
+        badge.appendChild(icon(iconName));
+        const copy = node('div', 'fpt-qr-metric-copy');
+        const value = node('strong', 'fpt-qr-metric-value', '—');
+        copy.append(node('span', 'fpt-qr-metric-label', label), value);
+        element.append(badge, copy);
+        return { element, value };
+    }
+
     function setStatus(element, text, kind) {
         element.replaceChildren();
         delete element.dataset.kind;
@@ -81,14 +139,16 @@
 
     function makeHelpPanel() {
         const panel = node('aside', 'fpt-ad-help fpt-lot-help-popover');
+        panel.id = 'fpt-ad-help';
         panel.hidden = true;
         panel.setAttribute('role', 'region');
         panel.setAttribute('aria-label', 'Справка по автовыдаче');
         panel.appendChild(node('h2', '', 'Автовыдача'));
         const list = node('ul');
         [
-            'Автовыдача отправляет покупателю секреты лота или ваш шаблон через чат расширения.',
-            'Остаток секретов обновляется при загрузке списка и после успешной выдачи.',
+            'После оплаты расширение отправляет покупателю в чат товар со склада FunPay или ваш шаблон.',
+            'В шаблоне работают переменные {buyername}, {lotname}, {orderid}, {orderlink}, {welcome}, {date}; $sleep=5 делит текст на сообщения с паузой.',
+            'Остатки обновляются кнопкой «Обновить лоты» и после каждой успешной выдачи.',
             'Правила склада учитывают только лоты с включённой автовыдачей и сохранёнными настройками.'
         ].forEach(text => list.appendChild(node('li', '', text)));
         panel.appendChild(list);
@@ -193,12 +253,15 @@
         const categoryName = typeof lot.categoryName === 'string' && lot.categoryName.trim()
             ? lot.categoryName.trim()
             : 'Без категории';
-        const category = node('p', 'fpt-ad-lot-category', categoryName);
+        const category = node('span', 'fpt-ad-lot-category', categoryName);
+        category.title = categoryName;
         const stockState = formatLotStock(draft);
-        const stock = node('p', `fpt-ad-lot-stock fpt-ad-lot-stock--${stockState.kind}`, stockState.text);
+        const stock = node('span', `fpt-ad-lot-stock fpt-ad-lot-stock--${stockState.kind}`, stockState.text);
         stock.dataset.stockState = stockState.kind;
         if (stockState.title) stock.title = stockState.title;
-        copy.append(title, category, stock);
+        const meta = node('div', 'fpt-ad-lot-meta');
+        meta.append(category, stock);
+        copy.append(title, meta);
         summary.append(imageWrap, copy);
 
         const delivery = node('div', 'fpt-ad-lot-delivery');
@@ -220,7 +283,7 @@
         select.id = `fpt-ad-source-${id}`;
         select.dataset.lotControl = 'mode';
         select.dataset.lotId = id;
-        for (const [value, label] of [['secrets', 'Секреты со склада FunPay'], ['template', 'Свой шаблон']]) {
+        for (const [value, label] of [['secrets', 'Склад FunPay'], ['template', 'Свой шаблон']]) {
             const option = node('option', '', label);
             option.value = value;
             option.selected = draft.mode === value;
@@ -244,17 +307,19 @@
         templateError.id = `fpt-ad-template-error-${id}`;
         templateError.setAttribute('role', 'alert');
         templateError.hidden = true;
-        const variableHelp = node('p', 'fpt-ad-template-help', 'Нажмите на переменную, чтобы вставить её в текст. $sleep=5 добавит паузу 5 секунд перед следующей частью сообщения.');
+        const variableHelp = node('p', 'fpt-ad-template-help', 'Нажмите на переменную, чтобы вставить её в текст. $sleep=5 отправит следующую часть отдельным сообщением через 5 секунд.');
         variableHelp.id = `fpt-ad-template-help-${id}`;
         const variableChips = node('div', 'fpt-ad-variable-chips');
+        variableChips.setAttribute('role', 'group');
         variableChips.setAttribute('aria-label', 'Переменные шаблона');
         for (const [token, label] of [
             ['{buyername}', 'Имя покупателя'], ['{lotname}', 'Название лота'],
             ['{orderid}', 'Номер заказа'], ['{orderlink}', 'Ссылка на заказ'],
             ['{welcome}', 'Приветствие'], ['{date}', 'Дата и время'], ['$sleep=5', 'Пауза 5 сек']
         ]) {
-            const chip = node('button', 'fpt-ad-variable-chip', label);
+            const chip = node('button', 'fpt-ad-variable-chip');
             chip.type = 'button';
+            chip.append(icon(token === '$sleep=5' ? 'timer' : 'add'), node('span', '', label));
             chip.dataset.templateToken = token;
             chip.title = token === '$sleep=5' ? 'Пауза перед отправкой следующей части сообщения ($sleep=5)' : token;
             chip.addEventListener('click', () => {
@@ -268,11 +333,47 @@
         }
         const characterCount = node('span', 'fpt-ad-template-count', `${textarea.value.length} символов`);
         characterCount.setAttribute('aria-live', 'polite');
+        textarea.setAttribute('aria-describedby', variableHelp.id);
+        const editor = node('div', 'fpt-ad-template-editor');
+        const editorHead = node('div', 'fpt-ad-template-head');
+        editorHead.append(templateLabel, characterCount);
+        editor.append(editorHead, textarea, templateError, variableChips, variableHelp);
+
+        const preview = node('div', 'fpt-ad-preview');
+        preview.setAttribute('aria-label', `Предпросмотр выдачи для ${titleText}`);
+        const previewHead = node('div', 'fpt-ad-template-head');
+        previewHead.append(node('span', 'fpt-ad-field-label', 'Так увидит покупатель'), node('span', 'fpt-ad-preview-count'));
+        const previewChat = node('div', 'fpt-ad-preview-chat');
+        preview.append(previewHead, previewChat);
+        const renderPreview = () => {
+            const parts = previewDeliveryParts(textarea.value, titleText);
+            const messages = parts.filter(part => part.type === 'message').length;
+            previewHead.querySelector('.fpt-ad-preview-count').textContent = messages > 1
+                ? `${messages} ${root.FPTPopupUI.pluralize(messages, ['сообщение', 'сообщения', 'сообщений'])}`
+                : '';
+            previewChat.replaceChildren();
+            if (!messages) {
+                const empty = node('p', 'fpt-ad-preview-empty');
+                empty.append(icon('chat_bubble'), node('span', '', 'Напишите текст — здесь появится сообщение покупателю.'));
+                previewChat.appendChild(empty);
+                return;
+            }
+            for (const part of parts) {
+                if (part.type === 'pause') {
+                    const pause = node('span', 'fpt-ad-preview-pause');
+                    pause.append(icon('schedule'), node('span', '', `пауза ${String(part.seconds).replace('.', ',')} с`));
+                    previewChat.appendChild(pause);
+                } else {
+                    previewChat.appendChild(node('div', 'fpt-ad-preview-bubble', part.text));
+                }
+            }
+        };
         textarea.addEventListener('input', () => {
             characterCount.textContent = `${textarea.value.length} символов`;
+            renderPreview();
         });
-        textarea.setAttribute('aria-describedby', variableHelp.id);
-        template.append(templateLabel, textarea, variableHelp, variableChips, characterCount, templateError);
+        renderPreview();
+        template.append(editor, preview);
 
         const saveArea = node('div', 'fpt-ad-lot-save-area');
         const unsavedBadge = node('span', 'fpt-ad-unsaved-badge', 'Не сохранено');
@@ -342,6 +443,7 @@
         if (templateError) templateError.hidden = !invalidTemplate;
         if (stock) {
             const state = formatLotStock(draft);
+            row.dataset.stock = state.kind;
             stock.className = `fpt-ad-lot-stock fpt-ad-lot-stock--${state.kind}`;
             stock.dataset.stockState = state.kind;
             stock.textContent = state.text;
@@ -393,11 +495,42 @@
             view.appendChild(helpPanel);
         }
 
-        const rules = node('section', 'fpt-ad-rules');
+        // Hero: overall state and the numbers a seller checks first.
+        const hero = node('section', 'fpt-qr-hero fpt-ad-hero');
+        hero.setAttribute('aria-labelledby', 'fpt-ad-hero-title');
+        hero.dataset.state = 'off';
+        const heroMain = node('div', 'fpt-qr-hero-main');
+        const heroIcon = node('span', 'fpt-qr-hero-icon');
+        heroIcon.appendChild(icon('bolt'));
+        const heroCopy = node('div', 'fpt-qr-hero-copy');
+        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
+        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Выдача сразу после оплаты');
+        heroTitle.id = 'fpt-ad-hero-title';
+        const heroPill = node('span', 'fpt-qr-pill fpt-ad-hero-pill', 'Лоты не загружены');
+        heroPill.setAttribute('role', 'status');
+        heroTitleRow.append(heroTitle, heroPill);
+        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
+            'Покупатель получает товар со склада FunPay или ваш шаблон в чате, даже когда вас нет онлайн.'));
+        heroMain.append(heroIcon, heroCopy);
+        const metricActive = metric('bolt', 'С автовыдачей');
+        const metricStock = metric('inventory_2', 'Товаров на складе');
+        const metricAttention = metric('error', 'Требуют внимания');
+        const metricChecked = metric('schedule', 'Остатки проверены');
+        const metrics = node('div', 'fpt-qr-metrics fpt-ad-metrics');
+        metrics.append(metricActive.element, metricStock.element, metricAttention.element, metricChecked.element);
+        hero.append(heroMain, metrics);
+
+        const rules = node('section', 'fpt-ad-rules fpt-qr-card fpt-ad-rules-card');
         rules.setAttribute('aria-labelledby', 'fpt-ad-rules-title');
-        const rulesHeading = node('h2', 'fpt-ad-section-title', 'Правила склада');
+        const rulesHead = node('div', 'fpt-qr-card-head');
+        const rulesEmblem = node('span', 'fpt-qr-emblem');
+        rulesEmblem.appendChild(icon('warehouse'));
+        const rulesCopy = node('div', 'fpt-qr-card-copy');
+        const rulesHeading = node('h3', '', 'Правила склада');
         rulesHeading.id = 'fpt-ad-rules-title';
-        rules.append(rulesHeading, node('p', 'fpt-ad-section-description', 'Правила применяются к сохранённым лотам с включённой автовыдачей.'));
+        rulesCopy.append(rulesHeading, node('p', '', 'Применяются к сохранённым лотам с включённой автовыдачей.'));
+        rulesHead.append(rulesEmblem, rulesCopy);
+        rules.appendChild(rulesHead);
         const storageKeys = [GLOBAL_SETTINGS.restore, GLOBAL_SETTINGS.disable, 'fpToolsAutoDeliveryLots', 'fpToolsAutoDeliveryLotsCache'];
         let initialSettings = {};
         try {
@@ -407,12 +540,12 @@
         rulePanel.append(
             createRule({
                 id: 'fpToolsAutoRestoreEnabled', iconName: 'sync', title: 'Автовосстановление лотов',
-                description: 'Автоматически восстанавливать лот, когда на складе снова появляются товары.',
+                description: 'Снова активировать лот, когда на складе появились товары.',
                 settingKey: 'restore', checked: initialSettings[GLOBAL_SETTINGS.restore] === true
             }),
             createRule({
-                id: 'fpToolsAutoDisableEnabled', iconName: 'inventory_2', title: 'Деактивация при пустом складе',
-                description: 'Автоматически скрывать лот, когда на складе не осталось товаров.',
+                id: 'fpToolsAutoDisableEnabled', iconName: 'visibility_off', title: 'Деактивация при пустом складе',
+                description: 'Скрывать лот, когда товары на складе закончились.',
                 settingKey: 'disable', checked: initialSettings[GLOBAL_SETTINGS.disable] === true
             })
         );
@@ -421,16 +554,17 @@
         rulesStatus.setAttribute('aria-live', 'polite');
         rules.appendChild(rulesStatus);
 
-        const divider = node('hr', 'fpt-ad-divider');
-        divider.setAttribute('aria-hidden', 'true');
-
         const lotsSection = node('section', 'fpt-ad-lots');
         lotsSection.setAttribute('aria-labelledby', 'fpt-ad-lots-title');
         const lotsHeading = node('div', 'fpt-ad-lots-heading');
         const lotsCopy = node('div', 'fpt-ad-lots-heading-copy');
+        const lotsTitleRow = node('div', 'fpt-ad-lots-title-row');
         const lotsTitle = node('h2', 'fpt-ad-section-title', 'Настройки по лотам');
         lotsTitle.id = 'fpt-ad-lots-title';
-        lotsCopy.append(lotsTitle, node('p', 'fpt-ad-section-description', 'Настраивайте выдачу для каждого лота и сохраняйте изменения по одному или сразу все.'));
+        const lotsCount = node('span', 'fpt-qr-pill fpt-ad-lots-count', '0');
+        lotsCount.setAttribute('aria-label', 'Количество лотов');
+        lotsTitleRow.append(lotsTitle, lotsCount);
+        lotsCopy.append(lotsTitleRow, node('p', 'fpt-ad-section-description', 'Выберите источник товара для каждого лота и сохраните изменения по одному или сразу все.'));
         const loadButton = node('button', 'fpt-ad-load-button');
         loadButton.type = 'button';
         loadButton.id = 'fp-load-delivery-lots-btn';
@@ -438,12 +572,15 @@
         lotsHeading.append(lotsCopy, loadButton);
 
         const toolbar = node('div', 'fpt-ad-toolbar');
+        const searchWrap = node('label', 'fpt-ad-search-wrap');
+        searchWrap.appendChild(icon('search'));
         const search = node('input', 'fpt-ad-search');
         search.type = 'search';
         search.placeholder = 'Название, категория или ID';
         search.setAttribute('aria-label', 'Поиск по лотам');
+        searchWrap.appendChild(search);
         const sortLabel = node('label', 'fpt-ad-sort-control');
-        sortLabel.appendChild(node('span', '', 'Сортировка'));
+        sortLabel.appendChild(icon('sort'));
         const sort = node('select', 'fpt-ad-sort');
         sort.setAttribute('aria-label', 'Сортировка лотов');
         for (const [value, label] of [['default', 'По порядку'], ['problematic', 'Проблемные сверху'], ['title', 'По названию']]) {
@@ -452,10 +589,7 @@
             sort.appendChild(option);
         }
         sortLabel.appendChild(sort);
-        const saveAll = node('button', 'fpt-ad-save-all', 'Сохранить все (0)');
-        saveAll.type = 'button';
-        saveAll.disabled = true;
-        toolbar.append(search, sortLabel, saveAll);
+        toolbar.append(searchWrap, sortLabel);
 
         const summary = node('div', 'fpt-ad-summary-chips');
         summary.setAttribute('role', 'group');
@@ -487,8 +621,24 @@
         const list = node('div', 'fpt-ad-lot-list');
         list.setAttribute('aria-label', 'Настройки автовыдачи по лотам');
         list.appendChild(createEmptyState());
-        lotsSection.append(lotsHeading, toolbar, summary, cacheStatus, progressWrap, loadStatus, list);
-        view.append(rules, divider, lotsSection);
+
+        // Appears only while drafts are unsaved and stays in reach while the list scrolls.
+        const saveBar = node('div', 'fpt-ad-savebar');
+        saveBar.hidden = true;
+        saveBar.setAttribute('role', 'region');
+        saveBar.setAttribute('aria-label', 'Несохранённые изменения');
+        const saveBarIcon = node('span', 'fpt-ad-savebar-icon');
+        saveBarIcon.appendChild(icon('edit_note'));
+        const saveBarText = node('span', 'fpt-ad-savebar-text', '');
+        const saveBarShow = node('button', 'fpt-ad-savebar-show', 'Показать');
+        saveBarShow.type = 'button';
+        const saveAll = node('button', 'fpt-ad-save-all', 'Сохранить все (0)');
+        saveAll.type = 'button';
+        saveAll.disabled = true;
+        saveBar.append(saveBarIcon, saveBarText, saveBarShow, saveAll);
+
+        lotsSection.append(lotsHeading, toolbar, summary, cacheStatus, progressWrap, loadStatus, list, saveBar);
+        view.append(hero, rules, lotsSection);
 
         page.appendChild(view);
 
@@ -500,6 +650,7 @@
         let currentSort = 'default';
         let savingAll = false;
         let hasLoadedLots = false;
+        let checkedAt = null;
         const updateLoadButton = loading => {
             loadButton.querySelector('.fpt-ad-load-label').textContent = loading
                 ? 'Загружаем…'
@@ -510,6 +661,36 @@
         };
 
         const stockKind = draft => formatLotStock(draft).kind;
+        const updateHero = counts => {
+            let stockTotal = 0;
+            let tracked = 0;
+            for (const lot of currentLots) {
+                const draft = drafts.get(String(lot.id));
+                if (!draft?.enabled || draft.mode === 'template' || !Number.isInteger(draft.productCount)) continue;
+                stockTotal += draft.productCount;
+                tracked += 1;
+            }
+            const attention = counts.empty + counts.errors;
+            metricActive.value.textContent = counts.all ? `${counts.active} из ${counts.all}` : '—';
+            metricStock.value.textContent = tracked ? `${stockTotal} шт.` : '—';
+            metricAttention.value.textContent = counts.all ? String(attention) : '—';
+            metricAttention.element.dataset.tone = attention ? 'warning' : '';
+            metricChecked.value.textContent = formatCheckedAt(checkedAt);
+            hero.dataset.state = counts.active ? 'on' : 'off';
+            if (!counts.all) {
+                heroPill.textContent = 'Лоты не загружены';
+                delete heroPill.dataset.kind;
+            } else if (!counts.active) {
+                heroPill.textContent = 'Выключена';
+                delete heroPill.dataset.kind;
+            } else if (attention) {
+                heroPill.textContent = `Требуют внимания: ${attention}`;
+                heroPill.dataset.kind = 'warning';
+            } else {
+                heroPill.textContent = `Работает на ${counts.active} ${pluralLots(counts.active)}`;
+                heroPill.dataset.kind = 'success';
+            }
+        };
         const updateListView = () => {
             const counts = {
                 all: currentLots.length,
@@ -533,6 +714,13 @@
             saveAll.textContent = savingAll ? 'Сохраняем…' : `Сохранить все (${counts.unsaved})`;
             saveAll.disabled = savingAll || counts.unsaved === 0;
             saveAll.setAttribute('aria-busy', String(savingAll));
+            saveBar.hidden = !savingAll && counts.unsaved === 0;
+            saveBarText.textContent = savingAll
+                ? 'Сохраняем изменения…'
+                : `${counts.unsaved} ${root.FPTPopupUI.pluralize(counts.unsaved, ['лот не сохранён', 'лота не сохранено', 'лотов не сохранено'])}`;
+            saveBarShow.hidden = savingAll || currentFilter === 'unsaved';
+            lotsCount.textContent = String(counts.all);
+            updateHero(counts);
 
             const search = currentSearch.trim().toLocaleLowerCase('ru');
             for (const [id, row] of rowsById) {
@@ -573,6 +761,11 @@
             }
         };
 
+        saveBarShow.addEventListener('click', () => {
+            currentFilter = 'unsaved';
+            updateListView();
+            list.querySelector('.fpt-ad-lot-row:not([hidden])')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
         summary.addEventListener('click', event => {
             const chip = event.target.closest('.fpt-ad-summary-chip');
             if (!chip) return;
@@ -731,6 +924,7 @@
         const cachedRecord = Array.isArray(cachedValue) ? { lots: cachedValue }
             : cachedValue && typeof cachedValue === 'object' ? cachedValue : {};
         const cachedLots = Array.isArray(cachedRecord.lots) ? cachedRecord.lots : [];
+        checkedAt = Number.isFinite(cachedRecord.updatedAt) ? cachedRecord.updatedAt : null;
         const initialLots = cachedLots.length ? cachedLots : Object.keys(cachedConfig).map(id => ({ id, title: `Лот #${id}` }));
         if (initialLots.length) {
             renderLots({
@@ -741,6 +935,8 @@
             }, { cached: true });
             hasLoadedLots = cachedLots.length > 0;
             updateLoadButton(false);
+        } else {
+            updateListView();
         }
 
         loadButton.addEventListener('click', async () => {
@@ -768,6 +964,7 @@
                 });
                 if (result?.success === false) throw new Error(result.error || 'Не удалось загрузить лоты.');
                 if (!Array.isArray(result?.lots)) throw new Error('FunPay не вернул список лотов.');
+                checkedAt = Date.now();
                 renderLots(result);
                 hasLoadedLots = true;
                 try {
@@ -777,7 +974,7 @@
                                 lots: result.lots,
                                 stockCounts: result.stockCounts || {},
                                 stockErrors: result.stockErrors || [],
-                                updatedAt: Date.now()
+                                updatedAt: checkedAt
                             }
                         }
                     });
@@ -805,5 +1002,5 @@
         });
     }
 
-    root.FPTAutoDeliveryPage = Object.freeze({ mount, formatStock });
+    root.FPTAutoDeliveryPage = Object.freeze({ mount, formatStock, previewDeliveryParts });
 })(window);

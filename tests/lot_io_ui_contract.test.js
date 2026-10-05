@@ -28,14 +28,22 @@ test('lot_io reuses the shell category header and keeps the shared title track',
     assert.match(styles, /width:\s*36px;\s*height:\s*36px/);
 });
 
-test('lot management view defines compact controls, import card, empty state and narrow layouts', () => {
-    assert.match(styles, /grid-template-columns:\s*minmax\(0,\s*1\.25fr\)\s+minmax\(220px,\s*\.85fr\)/);
-    assert.match(styles, /height:\s*48px/);
-    assert.match(styles, /border-radius:\s*16px/);
-    assert.match(styles, /fpt-lot-action-group-copy/);
-    assert.match(styles, /min-height:\s*40px/);
-    assert.match(styles, /min-height:\s*96px/);
-    assert.match(styles, /min-height:\s*68px/);
+test('lot management view defines the hero, tool tiles, import card, empty state and narrow layouts', () => {
+    assert.match(page, /fpt-qr-hero fpt-lot-hero/);
+    for (const label of ['Резервная копия', 'Импорт из файла', 'Массовое редактирование']) assert.ok(page.includes(`'${label}'`), `missing tool ${label}`);
+    assert.match(styles, /\.fpt-lot-action-band \{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/s);
+    assert.match(styles, /\.fpt-lot-tool--import\.is-dragover/);
+    assert.match(styles, /\.fpt-lot-progress-fill--error/);
+    assert.match(styles, /\.fpt-lot-import-card \{[^}]*min-height:\s*96px/s);
+    assert.match(styles, /\.fpt-lot-empty \{[^}]*min-height:\s*68px/s);
     assert.match(styles, /@container fpt-category \(max-width:\s*760px\)/);
     assert.match(styles, /@container fpt-category \(max-width:\s*520px\)/);
+    assert.match(styles, /@container fpt-lot-io \(max-width:\s*600px\)/);
+    assert.doesNotMatch(styles, /fpt-lot-action-group|fpt-lot-separator/, 'the old grouped action band is gone');
+});
+
+test('lot import accepts a JSON file dropped on the import tile through the same path as the file picker', () => {
+    assert.match(page, /fileInput\.addEventListener\('change', \(\) => startImport\(fileInput\.files\?\.\[0\]\)\)/);
+    assert.match(page, /importTool\.addEventListener\('drop'/);
+    assert.match(page, /startImport\(file\)/);
 });
