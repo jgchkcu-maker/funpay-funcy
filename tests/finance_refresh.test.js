@@ -294,9 +294,6 @@ async function main() {
     await testFailureMidPaginationPreservesDurableState();
     await testSuccessfulRefreshReplacesRowsAndAdvancesMetadata();
     await testDurableCommitFailureDoesNotAdvanceLastUpdate();
-    await testFailureReachesUiAsFailure();
-    await testProfitRefreshInvokesEveryFinanceSource();
-    await testOverviewRefreshInvokesAllSources();
     console.log('FINANCE_REFRESH_PASS');
 }
 

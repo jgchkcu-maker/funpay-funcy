@@ -4,74 +4,6 @@
     'use strict';
     
     // --- НОВЫЙ БЛОК: ФУНКЦИОНАЛ ОБЪЯВЛЕНИЙ ---
-    function initializeAnnouncementsFeature() {
-        const announcementsTab = document.getElementById('announcementsNavTab');
-        if (!announcementsTab) return;
-
-        const displayAnnouncements = (announcements) => {
-            const contentArea = document.getElementById('announcements-content-area');
-            if (!contentArea) return;
-
-            if (!announcements || announcements.length === 0) {
-                contentArea.innerHTML = '<p class="announcement-empty">Пока нет никаких объявлений.</p>';
-                return;
-            }
-
-            contentArea.innerHTML = announcements.map(a => {
-                const date = new Date(a.id).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-                return `
-                    <div class="announcement-item">
-                        <div class="announcement-item-header">
-                            <h4>${a.title}</h4>
-                            <span class="announcement-date">${date}</span>
-                        </div>
-                        <p>${a.content.replace(/\n/g, '<br>')}</p>
-                    </div>
-                `;
-            }).join('');
-        };
-
-        announcementsTab.addEventListener('click', async () => {
-            const popup = document.querySelector('.fp-tools-popup');
-            const navItems = popup.querySelectorAll('.fp-tools-nav li, .fp-tools-header-tab');
-            const contentPages = popup.querySelectorAll('.fp-tools-page-content');
-
-            navItems.forEach(item => item.classList.remove('active'));
-            announcementsTab.classList.add('active');
-            
-            contentPages.forEach(page => page.classList.remove('active'));
-            popup.querySelector('.fp-tools-page-content[data-page="announcements"]').classList.add('active');
-
-            chrome.runtime.sendMessage({ action: 'markAnnouncementsAsRead' });
-            
-            const { fpToolsAnnouncements } = await chrome.storage.local.get('fpToolsAnnouncements');
-            displayAnnouncements(fpToolsAnnouncements);
-        });
-
-        const refreshBtn = document.getElementById('refresh-announcements-btn');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', () => {
-                refreshBtn.disabled = true;
-                refreshBtn.querySelector('.material-icons').classList.add('spinning');
-                
-                chrome.runtime.sendMessage({ action: 'forceCheckAnnouncements' }, (response) => {
-                    if (response && response.success) {
-                        showNotification('Объявления обновлены!', false);
-                    }
-                });
-
-                setTimeout(() => {
-                    refreshBtn.disabled = false;
-                    refreshBtn.querySelector('.material-icons').classList.remove('spinning');
-                }, 5000);
-            });
-        }
-
-        chrome.storage.local.get('fpToolsUnreadCount', ({ fpToolsUnreadCount }) => {
-            updateAnnouncementsBadgeUI(fpToolsUnreadCount || 0);
-        });
-    }
-
     function updateAnnouncementsBadgeUI(unreadCount) {
         const announcementsTab = document.getElementById('announcementsNavTab');
         if (!announcementsTab) return;
@@ -117,8 +49,14 @@
             }
             const popup = document.querySelector('.fp-tools-popup');
             if (popup) {
+                if (popup.classList.contains('active') && !popup.classList.contains('is-closing')) {
+                    popup._fptClose?.();
+                    return;
+                }
                 await resetPopupStartState();
-                popup.classList.add('active');
+                await loadLastActivePage();
+                if (typeof popup._fptOpen === 'function') popup._fptOpen();
+                else popup.classList.add('active');
                 if (typeof applyFptMenuTransparency === 'function') applyFptMenuTransparency();
                 if (typeof syncFptMenuControls === 'function') syncFptMenuControls();
             }
@@ -238,6 +176,7 @@
             if (event.target.matches('textarea.textarea-lot-secrets')) {
                 if (!document.getElementById('ad-manager-placeholder')) {
                     initializeAutoDeliveryManager();
+        initializeAutoReview();
                 }
             }
         });
@@ -337,14 +276,7 @@
         initializeDynamicFeatures();
         initializeQuickGamesMenu();
 
-        // ── LAZY POPUP BUILD (perf) ────────────────────────────────────────────
-        // The settings popup is a ~120KB DOM subtree with live animations, a sales
-        // canvas, theme previews and backdrop effects. Previously it was built and
-        // appended to <body> on every page load and merely hidden with
-        // visibility:hidden - so the browser kept laying out and compositing the whole
-        // thing forever, which made the site lag. Now we build it (and its modal
-        // overlays) + run all popup-bound initializers exactly once, on the first time
-        // the user opens it. After that it's cached and reused.
+        // Create the navigation shell once; feature services do not mount category views.
         let __fpPopupReady = false;
         let __fpPopupBuilding = null;
         async function ensureFpToolsPopup() {
@@ -354,34 +286,66 @@
             __fpPopupBuilding = (async () => {
                 const toolsPopup = createMainPopup();
                 document.body.appendChild(toolsPopup);
-
-                if (typeof getModalOverlaysHTML === 'function') {
-                    const modalsHTML = getModalOverlaysHTML();
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = modalsHTML;
-                    while (tempDiv.firstChild) {
-                        document.body.appendChild(tempDiv.firstChild);
-                    }
+                if (window.FPTPopupUI && typeof window.FPTPopupUI.observePopupControls === 'function') {
+                    window.FPTPopupUI.observePopupControls(toolsPopup);
                 }
 
-                // All initializers that operate on popup-internal elements / settings UI.
+                // The shell has no category controls. Runtime services remain independent of views.
                 await loadSavedSettings();
                 initializeToolsPopup();
-                makePopupInteractive(toolsPopup);
-                initializeImageGenerator();
+                makePopupResponsive(toolsPopup);
                 initializeCustomSound();
-                if (typeof initializeCustomSoundEditor === 'function') initializeCustomSoundEditor();
-                initializeMagicStickStyler();
-                initializePiggyBank();
-                initializeHeaderButtonStyler();
-                initializeAnnouncementsFeature();
-                initializeLotIO();
                 initializeAutoReview();
-                initializeSettingsIO();
-                initBulkLotEditor();
-                initAutoDeliveryUI();
-                initializeResetButtons();
-                initSalesChart();
+                initializeLotIO();
+                if (window.FPTLotIOPage && typeof window.FPTLotIOPage.mount === 'function') {
+                    try {
+                        await window.FPTLotIOPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел управления лотами:', error);
+                    }
+                }
+                if (window.FPTAutoDeliveryPage && typeof window.FPTAutoDeliveryPage.mount === 'function') {
+                    try {
+                        await window.FPTAutoDeliveryPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел автовыдачи:', error);
+                    }
+                }
+                if (window.FPTAutoBumpPage && typeof window.FPTAutoBumpPage.mount === 'function') {
+                    try {
+                        await window.FPTAutoBumpPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел автоподнятия:', error);
+                    }
+                }
+                if (window.FPTAutoReplyPage && typeof window.FPTAutoReplyPage.mount === 'function') {
+                    try {
+                        await window.FPTAutoReplyPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел автоответчика:', error);
+                    }
+                }
+                if (window.FPTAutoReviewPage && typeof window.FPTAutoReviewPage.mount === 'function') {
+                    try {
+                        await window.FPTAutoReviewPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел отзывов и бонусов:', error);
+                    }
+                }
+                if (window.FPTFinanceHubPage && typeof window.FPTFinanceHubPage.mount === 'function') {
+                    try {
+                        await window.FPTFinanceHubPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел финансов:', error);
+                    }
+                }
+                if (window.FPTThemePage && typeof window.FPTThemePage.mount === 'function') {
+                    try {
+                        await window.FPTThemePage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел тем:', error);
+                    }
+                }
 
                 // Общий чат: опрашиваем public-chat.json раз в 16 минут.
                 // Так active/display/url меняются на лету без обновления расширения.
@@ -429,6 +393,7 @@
         applyHeaderPosition();
         initializeUserNotes();
         initializeAutoDeliveryManager();
+        initializeAutoReview();
         initializeLotCloning();
         initializeLotManagement();
         initializeReviewSorter();
@@ -472,29 +437,7 @@
                 return true;
             }
             if (request.action === 'announcementsUpdated') {
-                const announcementsArea = document.getElementById('announcements-content-area');
-                if (announcementsArea && document.querySelector('.fp-tools-page-content[data-page="announcements"]').classList.contains('active')) {
-                    const displayAnnouncements = (announcements) => {
-                        if (!announcementsArea) return;
-                        if (!announcements || announcements.length === 0) {
-                            announcementsArea.innerHTML = '<p class="announcement-empty">Пока нет никаких объявлений.</p>';
-                            return;
-                        }
-                        announcementsArea.innerHTML = announcements.map(a => {
-                            const date = new Date(a.id).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-                            return `
-                                <div class="announcement-item">
-                                    <div class="announcement-item-header">
-                                        <h4>${a.title}</h4>
-                                        <span class="announcement-date">${date}</span>
-                                    </div>
-                                    <p>${a.content.replace(/\n/g, '<br>')}</p>
-                                </div>
-                            `;
-                        }).join('');
-                    };
-                    displayAnnouncements(request.announcements);
-                }
+                window.dispatchEvent(new CustomEvent('fpt:announcements-updated', { detail: request.announcements }));
                 return true;
             }
         });
@@ -595,61 +538,6 @@
 
     // ── 2.9: Reset buttons in settings_io page ────────────────────────────────
     // Helper: visually confirm a reset button action
-    function _resetBtnFeedback(btn, successText) {
-        if (!btn) return;
-        const orig = btn.textContent;
-        btn.disabled = true;
-        btn.textContent = '⏳ Сброс...';
-        setTimeout(() => {
-            btn.textContent = '✅ ' + successText;
-            btn.style.color = '#4caf82';
-            setTimeout(() => {
-                btn.textContent = orig;
-                btn.style.color = '';
-                btn.disabled = false;
-            }, 2000);
-        }, 400);
-    }
-
-    function initializeResetButtons() {
-        const arBtn = document.getElementById('fp-reset-autoresponder-btn');
-        arBtn?.addEventListener('click', async () => {
-            await chrome.storage.local.remove(['fpToolsAutoResponderTag']);
-            await window.fptPatchAutoReplies({ set: { processedMessageIds: [] } });
-            _resetBtnFeedback(arBtn, 'Сброшено');
-        });
-
-        const pinBtn = document.getElementById('fp-reset-pinned-btn');
-        pinBtn?.addEventListener('click', async () => {
-            await chrome.storage.local.remove('fpToolsPinnedLots');
-            _resetBtnFeedback(pinBtn, 'Очищено');
-        });
-
-        const greetBtn = document.getElementById('fp-reset-greeted-btn');
-        greetBtn?.addEventListener('click', async () => {
-            await window.fptPatchAutoReplies({ set: { greetedUsers: [] } });
-            _resetBtnFeedback(greetBtn, 'Сброшено');
-        });
-
-        // 3.0: Reset April Fools date counter
-        const aprBtn = document.getElementById('fp-reset-april-btn');
-        aprBtn?.addEventListener('click', async () => {
-            const year = new Date().getFullYear();
-            try { localStorage.removeItem(`fpApril_${year}_done`); } catch(e) {}
-            try { localStorage.removeItem(`fpApril_${year - 1}_done`); } catch(e) {}
-            try { sessionStorage.removeItem('fpAprilReloads'); } catch(e) {}
-            try { sessionStorage.removeItem('fpAprilActive'); } catch(e) {}
-            await chrome.storage.local.remove([
-                `fpApril_${year}_done`,
-                `fpApril_${year - 1}_done`,
-                `fpApril_${year + 1}_done`,
-                'fpAprilReloads',
-                'fpAprilActive',
-            ]);
-            _resetBtnFeedback(aprBtn, 'Сброшено');
-        });
-    }
-
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeFpTools);
     } else {

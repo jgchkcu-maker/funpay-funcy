@@ -80,6 +80,9 @@ async function applyHeaderPosition() {
 
 const GOOGLE_FONTS = ['Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Source Sans Pro'];
 const DEFAULT_THEME = {
+    // 'custom' - полное оформление темы, 'original' - родной вид FunPay (без обоев и перекраски),
+    // но с формой, шрифтом, скроллбаром и прочими деталями.
+    baseStyle: 'custom',
     bgColor1: '#ff6d15',
     bgColor2: '#f4cf78',
     containerBgColor: '#0b0b0b',
@@ -250,7 +253,66 @@ function fptSanitizeThemeColors(theme) {
     return res;
 }
 
+// Сохранённой темы нет вовсе (первый запуск или сброс) - это родной вид FunPay.
+// Старые темы без поля baseStyle остаются полным оформлением.
+function fptResolveThemeBaseStyle(saved) {
+    if (saved && (saved.baseStyle === 'original' || saved.baseStyle === 'custom')) return saved.baseStyle;
+    return saved && Object.keys(saved).length ? 'custom' : 'original';
+}
+
+// Правила темы написаны для страницы FunPay и задевают голые теги (header, p, a, h5, label...).
+// Без защиты они красят и наше меню: серая «подложка» под заголовком, тени у ссылок, белый текст
+// в абзацах. :where() не добавляет специфичности, так что остальные правила работают как раньше.
+const FPT_THEME_POPUP_GUARD = ':not(:where(.fp-tools-popup, .fp-tools-popup *))';
+function fptScopeOutsidePopup(css) {
+    return css.replace(/([^{}]+)\{([^{}]*)\}/g, (_, selectors, body) => {
+        const scoped = selectors.split(',').map(selector => {
+            const s = selector.trim();
+            if (!s) return s;
+            const pseudo = s.search(/::|:(?:before|after|first-line|first-letter)\b/);
+            return pseudo === -1 ? s + FPT_THEME_POPUP_GUARD : s.slice(0, pseudo) + FPT_THEME_POPUP_GUARD + s.slice(pseudo);
+        }).join(', ');
+        return `${scoped} {${body}}`;
+    });
+}
+
+function getOriginalThemeCss(settings) {
+    const radius = `${settings.borderRadius}px`;
+    let css = `
+        body { font-family: '${settings.font}', Helvetica Neue, Helvetica, Arial, sans-serif; }
+        .offer, .tc, .modal-content, .chat, .chat-contacts, .chat-detail, .dropdown-menu, .panel, .payment-card, .details, .form-narrow, .counter-item, .content-with-cd-wide, .btn, .form-control, .alert, .ajax-alert { border-radius: ${radius}; }
+    `;
+    if (settings.enableCircleCustomization) {
+        css += `.cd-container .cd, .corner-cd, .profile-cover-img {
+            transition: transform 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
+            transform: scale(${settings.circleSize / 100});
+            filter: blur(${settings.circleBlur}px);
+            opacity: ${settings.circleOpacity / 100};
+        }`;
+        if (!settings.showCircles) css += ` .cd-container { display: none !important; }`;
+    }
+    if (settings.enableImprovedSeparators) {
+        css += `
+            .tc:not(.tc-selling):not(.tc-finance) .tc-item > div { position: relative; border-top: none !important; }
+            .tc:not(.tc-selling):not(.tc-finance) .tc-item > div::before {
+                content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 1px;
+                background: rgba(0, 0, 0, 0.14); filter: blur(2px); pointer-events: none;
+            }
+        `;
+    }
+    if (settings.enableCustomScrollbar) {
+        css += `
+            ::-webkit-scrollbar { width: ${settings.scrollbarWidth}px; }
+            ::-webkit-scrollbar-track { background: ${settings.scrollbarTrackColor}; }
+            ::-webkit-scrollbar-thumb { background: ${settings.scrollbarThumbColor}; border-radius: ${settings.scrollbarWidth}px; }
+            ::-webkit-scrollbar-thumb:hover { background: ${settings.scrollbarThumbColor}CC; }
+        `;
+    }
+    return css;
+}
+
 function getCustomThemeCss(settings) {
+    if (settings.baseStyle === 'original') return getOriginalThemeCss(settings);
     const bgImageUrl = settings.bgImage ? `url(${settings.bgImage})` : 'url(https://i.ibb.co/ZpS0d56R/PH6-UEvp-Kn-KI.jpg)';
     const containerBgRgba = hexToRgba(settings.containerBgColor, settings.containerBgOpacity);
 
@@ -294,6 +356,7 @@ function getCustomThemeCss(settings) {
         .replace(/#LINK_COLOR#/gi, safeLinkColor);
 
     themedCss = themedCss.replace(/border-radius: \d+px/g, `border-radius: ${settings.borderRadius}px`);
+    themedCss = fptScopeOutsidePopup(themedCss);
 
     if (settings.enableCircleCustomization) {
         let circleCss = `.cd-container .cd, .corner-cd, .profile-cover-img {
@@ -371,6 +434,7 @@ async function applyCustomTheme() {
     applyFptTextOutline({ ...DEFAULT_THEME, ...fpToolsTheme });
 
     if (!enableCustomTheme) {
+        delete document.documentElement.dataset.fptThemeBg;
         document.documentElement.classList.remove('fpt-custom-theme-on');
         document.documentElement.classList.add('fpt-custom-theme-off');
         if (styleEl) styleEl.remove();
@@ -397,11 +461,23 @@ async function applyCustomTheme() {
         return;
     }
     
-    if (overrideStyleEl) {
-        overrideStyleEl.remove();
+    const settings = { ...DEFAULT_THEME, ...fpToolsTheme, baseStyle: fptResolveThemeBaseStyle(fpToolsTheme) };
+    const original = settings.baseStyle === 'original';
+
+    // Обои лежат на body::before, поэтому реального «фона страницы» в DOM нет. Палитре меню и
+    // фич (fptResolveBg) нужен цвет блоков темы, чтобы понять, тёмная страница или светлая.
+    if (original) delete document.documentElement.dataset.fptThemeBg;
+    else document.documentElement.dataset.fptThemeBg = settings.containerBgColor || DEFAULT_THEME.containerBgColor;
+
+    if (original) {
+        // Родной вид FunPay: страница светлая, поэтому остаёмся в состоянии «тема выключена».
+        document.documentElement.classList.remove('fpt-custom-theme-on');
+        document.documentElement.classList.add('fpt-custom-theme-off');
+    } else {
+        if (overrideStyleEl) overrideStyleEl.remove();
+        document.documentElement.classList.add('fpt-custom-theme-on');
+        document.documentElement.classList.remove('fpt-custom-theme-off');
     }
-    document.documentElement.classList.add('fpt-custom-theme-on');
-    document.documentElement.classList.remove('fpt-custom-theme-off');
 
     if (!styleEl) {
         styleEl = document.createElement('style');
@@ -409,11 +485,9 @@ async function applyCustomTheme() {
         document.head.appendChild(styleEl);
     }
 
-    const settings = { ...DEFAULT_THEME, ...fpToolsTheme };
-
     manageFontImports(settings);
     let themeCss = getCustomThemeCss(settings);
-    themeCss += ` body { visibility: visible !important; } `; 
+    if (!original) themeCss += ` body { visibility: visible !important; } `;
     styleEl.textContent = themeCss;
     // фон становится тёмным не мгновенно - пересчитываем палитру на след. кадрах
     if (typeof fptApplyThemeVars === 'function') {
@@ -423,160 +497,14 @@ async function applyCustomTheme() {
     }
 }
 
-function updateCirclePreview() {
-    const previewContainer = document.getElementById('circlePreviewContainer');
-    const previewEl = document.getElementById('circlePreview');
-    if (!previewEl || !previewContainer) return;
-
-    const show = document.getElementById('showCircles').checked;
-    const size = document.getElementById('circleSize').value;
-    const opacity = document.getElementById('circleOpacity').value;
-    const blur = document.getElementById('circleBlur').value;
-
-    previewContainer.style.opacity = show ? '1' : '0.3';
-    previewEl.style.transform = `scale(${size / 100})`;
-    previewEl.style.opacity = opacity / 100;
-    previewEl.style.filter = `blur(${blur}px)`;
-}
-
-async function updateThemePreview() {
-    const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-    const settings = { ...DEFAULT_THEME, ...fpToolsTheme };
-
-    const elements = {
-        previewDiv: document.getElementById('bg-image-preview'),
-        color1Input: document.getElementById('themeColor1'),
-        color2Input: document.getElementById('themeColor2'),
-        containerBgColorInput: document.getElementById('themeContainerBgColor'),
-        textColorInput: document.getElementById('themeTextColor'),
-        linkColorInput: document.getElementById('themeLinkColor'),
-        fontSelect: document.getElementById('themeFontSelect'),
-        bgBlurSlider: document.getElementById('themeBgBlur'),
-        bgBlurValue: document.getElementById('themeBgBlurValue'),
-        bgBrightnessSlider: document.getElementById('themeBgBrightness'),
-        bgBrightnessValue: document.getElementById('themeBgBrightnessValue'),
-        containerBgOpacitySlider: document.getElementById('themeContainerBgOpacity'),
-        containerBgOpacityValue: document.getElementById('themeContainerBgOpacityValue'),
-        borderRadiusSlider: document.getElementById('themeBorderRadius'),
-        borderRadiusValue: document.getElementById('themeBorderRadiusValue'),
-        enableCircleCustomization: document.getElementById('enableCircleCustomization'),
-        circleCustomizationControls: document.getElementById('circleCustomizationControls'),
-        showCircles: document.getElementById('showCircles'),
-        circleSize: document.getElementById('circleSize'),
-        circleSizeValue: document.getElementById('circleSizeValue'),
-        circleOpacity: document.getElementById('circleOpacity'),
-        circleOpacityValue: document.getElementById('circleOpacityValue'),
-        circleBlur: document.getElementById('circleBlur'),
-        circleBlurValue: document.getElementById('circleBlurValue'),
-        enableImprovedSeparators: document.getElementById('enableImprovedSeparators'),
-        headerPositionSelect: document.getElementById('headerPositionSelect'),
-        enableGlassmorphism: document.getElementById('enableGlassmorphism'),
-        glassmorphismControls: document.getElementById('glassmorphismControls'),
-        glassmorphismBlur: document.getElementById('glassmorphismBlur'),
-        glassmorphismBlurValue: document.getElementById('glassmorphismBlurValue'),
-        enableCustomScrollbar: document.getElementById('enableCustomScrollbar'),
-        customScrollbarControls: document.getElementById('customScrollbarControls'),
-        scrollbarThumbColor: document.getElementById('scrollbarThumbColor'),
-        scrollbarTrackColor: document.getElementById('scrollbarTrackColor'),
-        scrollbarWidth: document.getElementById('scrollbarWidth'),
-        scrollbarWidthValue: document.getElementById('scrollbarWidthValue'),
-        generatePaletteBtn: document.getElementById('generatePaletteBtn'),
-    };
-
-    if(elements.previewDiv) {
-        if (settings.bgImage) {
-            elements.previewDiv.style.backgroundImage = `url(${settings.bgImage})`;
-            elements.previewDiv.textContent = '';
-            if (elements.generatePaletteBtn) elements.generatePaletteBtn.disabled = false;
-        } else {
-            elements.previewDiv.style.backgroundImage = 'none';
-            elements.previewDiv.textContent = 'Нет изображения';
-            if (elements.generatePaletteBtn) elements.generatePaletteBtn.disabled = true;
-        }
-    }
-    if(elements.color1Input) elements.color1Input.value = settings.bgColor1;
-    if(elements.color2Input) elements.color2Input.value = settings.bgColor2;
-    if(elements.containerBgColorInput) elements.containerBgColorInput.value = settings.containerBgColor;
-    if(elements.textColorInput) elements.textColorInput.value = settings.textColor;
-    if(elements.linkColorInput) elements.linkColorInput.value = settings.linkColor;
-    if(elements.fontSelect) elements.fontSelect.value = settings.font;
-    if(elements.bgBlurSlider) elements.bgBlurSlider.value = settings.bgBlur;
-    if(elements.bgBlurValue) elements.bgBlurValue.textContent = `${settings.bgBlur}px`;
-    if(elements.bgBrightnessSlider) elements.bgBrightnessSlider.value = settings.bgBrightness;
-    if(elements.bgBrightnessValue) elements.bgBrightnessValue.textContent = `${settings.bgBrightness}%`;
-    if(elements.containerBgOpacitySlider) elements.containerBgOpacitySlider.value = settings.containerBgOpacity * 100;
-    if(elements.containerBgOpacityValue) elements.containerBgOpacityValue.textContent = `${Math.round(settings.containerBgOpacity * 100)}%`;
-    if(elements.borderRadiusSlider) elements.borderRadiusSlider.value = settings.borderRadius;
-    if(elements.borderRadiusValue) elements.borderRadiusValue.textContent = `${settings.borderRadius}px`;
-
-    if (elements.enableCircleCustomization) elements.enableCircleCustomization.checked = settings.enableCircleCustomization;
-    if (elements.circleCustomizationControls) elements.circleCustomizationControls.style.display = settings.enableCircleCustomization ? 'block' : 'none';
-    if (elements.showCircles) elements.showCircles.checked = settings.showCircles;
-    if (elements.circleSize) elements.circleSize.value = settings.circleSize;
-    if (elements.circleSizeValue) elements.circleSizeValue.textContent = `${settings.circleSize}%`;
-    if (elements.circleOpacity) elements.circleOpacity.value = settings.circleOpacity;
-    if (elements.circleOpacityValue) elements.circleOpacityValue.textContent = `${settings.circleOpacity}%`;
-    if (elements.circleBlur) elements.circleBlur.value = settings.circleBlur;
-    if (elements.circleBlurValue) elements.circleBlurValue.textContent = `${settings.circleBlur}px`;
-    if (elements.enableImprovedSeparators) elements.enableImprovedSeparators.checked = settings.enableImprovedSeparators;
-    if(elements.headerPositionSelect) elements.headerPositionSelect.value = settings.headerPosition || 'top';
-
-    if (elements.enableGlassmorphism) elements.enableGlassmorphism.checked = settings.enableGlassmorphism;
-    if (elements.glassmorphismControls) elements.glassmorphismControls.style.display = settings.enableGlassmorphism ? 'block' : 'none';
-    if (elements.glassmorphismBlur) elements.glassmorphismBlur.value = settings.glassmorphismBlur;
-    if (elements.glassmorphismBlurValue) elements.glassmorphismBlurValue.textContent = `${settings.glassmorphismBlur}px`;
-
-    if (elements.enableCustomScrollbar) elements.enableCustomScrollbar.checked = settings.enableCustomScrollbar;
-    if (elements.customScrollbarControls) elements.customScrollbarControls.style.display = settings.enableCustomScrollbar ? 'block' : 'none';
-    if (elements.scrollbarThumbColor) elements.scrollbarThumbColor.value = settings.scrollbarThumbColor;
-    if (elements.scrollbarTrackColor) elements.scrollbarTrackColor.value = settings.scrollbarTrackColor;
-    if (elements.scrollbarWidth) elements.scrollbarWidth.value = settings.scrollbarWidth;
-    if (elements.scrollbarWidthValue) elements.scrollbarWidthValue.textContent = `${settings.scrollbarWidth}px`;
-
-    updateCirclePreview();
-}
-
-function toggleThemeControls(disabled) {
-    const controls = [
-        'uploadBgImageBtn', 'removeBgImageBtn', 'bgImageInput',
-        'themeColor1', 'themeColor2', 'themeContainerBgColor', 'themeTextColor', 'themeLinkColor',
-        'themeFontSelect', 'themeBgBlur', 'themeBgBrightness', 'themeContainerBgOpacity', 'themeBorderRadius',
-        'resetThemeBtn',
-        'enableCircleCustomization', 'showCircles', 'circleSize', 'circleOpacity', 'circleBlur',
-        'enableImprovedSeparators', 'headerPositionSelect',
-        'enableGlassmorphism', 'glassmorphismBlur',
-        'enableCustomScrollbar', 'scrollbarThumbColor', 'scrollbarTrackColor', 'scrollbarWidth',
-        'generatePaletteBtn', 'randomizeThemeBtn', 'exportThemeBtn', 'importThemeBtn'
-    ];
-    controls.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.disabled = disabled;
-    });
-
-    const circleControlsContainer = document.getElementById('circleCustomizationControls');
-    if (circleControlsContainer) {
-        if (disabled) {
-            circleControlsContainer.style.display = 'none';
-        } else {
-            const enableCirclesCheckbox = document.getElementById('enableCircleCustomization');
-            circleControlsContainer.style.display = enableCirclesCheckbox.checked ? 'block' : 'none';
-        }
-    }
-    const glassControls = document.getElementById('glassmorphismControls');
-    if (glassControls) glassControls.style.display = (!disabled && document.getElementById('enableGlassmorphism').checked) ? 'block' : 'none';
-    
-    const scrollbarControls = document.getElementById('customScrollbarControls');
-    if (scrollbarControls) scrollbarControls.style.display = (!disabled && document.getElementById('enableCustomScrollbar').checked) ? 'block' : 'none';
-}
-
-async function randomizeTheme() {
-    const { fpToolsTheme: currentTheme = {} } = await chrome.storage.local.get(['fpToolsTheme']);
+async function randomizeTheme(payload = {}) {
     const randomHex = () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
     const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
     const fontsWithDefault = ['Helvetica Neue', ...GOOGLE_FONTS];
 
     const randomTheme = {
+        baseStyle: 'custom',
         bgColor1: randomHex(),
         bgColor2: randomHex(),
         containerBgColor: randomHex(),
@@ -602,87 +530,21 @@ async function randomizeTheme() {
         scrollbarWidth: randomInt(4, 12)
     };
 
-    if (currentTheme.bgImage) {
-        randomTheme.bgImage = currentTheme.bgImage;
-    }
-
-    try {
-        await chrome.storage.local.set({ fpToolsTheme: randomTheme });
-        await applyCustomTheme();
-        await applyHeaderPosition();
-        await updateThemePreview();
-        showNotification('Тема рандомизирована! ✨');
-    } catch (error) {
-        console.error('FunPay Funcy: Error randomizing theme:', error);
-        showNotification('Ошибка при рандомизации темы.', true);
-    }
+    // draftOnly: the replacement view keeps unapplied edits itself, so it only needs the values.
+    if (payload && payload.draftOnly) return randomTheme;
+    return setPopupTheme(randomTheme);
 }
 
-async function exportTheme() {
-    const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-    const settingsToExport = { ...DEFAULT_THEME, ...fpToolsTheme };
-
-    const themeName = prompt("Введите название темы:", "Моя тема");
-    if (!themeName || themeName.trim() === "") {
-        return;
+async function generatePaletteFromImage(payload = {}) {
+    const draftOnly = !!(payload && payload.draftOnly);
+    let bgImage = payload && typeof payload.dataUrl === 'string' ? payload.dataUrl : null;
+    if (!bgImage) {
+        const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
+        bgImage = fpToolsTheme.bgImage;
     }
-
-    const fileName = `${themeName.trim().replace(/[^\p{L}\p{N}\s-]/gu, '').replace(/\s+/g, '_')}.fptheme`;
-    const fileContent = JSON.stringify(settingsToExport, null, 2);
-    const blob = new Blob([fileContent], { type: 'application/json' });
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-
-    showNotification(`Тема "${themeName}" экспортирована!`);
-}
-
-function importTheme(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const importedTheme = JSON.parse(e.target.result);
-            if (importedTheme && importedTheme.bgColor1 && importedTheme.font) {
-                const sanitizedTheme = fptSanitizeThemeColors(importedTheme);
-                await chrome.storage.local.set({ fpToolsTheme: sanitizedTheme });
-                await applyCustomTheme();
-                await applyHeaderPosition();
-                await updateThemePreview();
-                showNotification('Тема успешно импортирована!');
-            } else {
-                throw new Error("Неверный формат файла темы.");
-            }
-        } catch (err) {
-            showNotification(`Ошибка импорта: ${err.message}`, true);
-        }
-    };
-    reader.readAsText(file);
-    event.target.value = ''; 
-}
-
-async function generatePaletteFromImage() {
-    const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-    if (!fpToolsTheme.bgImage) {
-        showNotification('Сначала загрузите фоновое изображение.', true);
-        return;
+    if (!bgImage) {
+        throw new Error('Сначала загрузите фоновое изображение.');
     }
-
-    const btn = document.getElementById('generatePaletteBtn');
-    if (!btn) return;
-    
-    const btnTextSpan = btn.querySelector('span:not(.material-icons)');
-    const originalText = btnTextSpan ? btnTextSpan.textContent : 'Создать палитру';
-    
-    btn.disabled = true;
-    if (btnTextSpan) btnTextSpan.textContent = 'Анализ...';
 
     try {
         const img = new Image();
@@ -692,6 +554,7 @@ async function generatePaletteFromImage() {
         
         const promise = new Promise((resolve, reject) => {
             img.onload = async () => {
+                try {
                 const size = 100;
                 canvas.width = size;
                 canvas.height = size;
@@ -728,223 +591,20 @@ async function generatePaletteFromImage() {
                 
                 if (newPalette.containerBgColor) newPalette.textColor = getContrastColor(newPalette.containerBgColor);
                 
-                const finalTheme = { ...fpToolsTheme, ...newPalette };
-
-                await chrome.storage.local.set({ fpToolsTheme: finalTheme });
-                await applyCustomTheme();
-                await updateThemePreview();
-                showNotification('Палитра успешно сгенерирована!');
-                resolve();
+                resolve(draftOnly ? newPalette : await setPopupTheme(newPalette));
+                } catch (error) { reject(error); }
             };
             img.onerror = () => { reject(new Error('Не удалось загрузить изображение для анализа.')); };
         });
         
-        img.src = fpToolsTheme.bgImage;
-        await promise;
+        img.src = bgImage;
+        return await promise;
 
     } catch (error) {
-        showNotification(`Ошибка: ${error.message}`, true);
-    } finally {
-        btn.disabled = false;
-        if (btnTextSpan) btnTextSpan.textContent = originalText;
+        throw error;
     }
 }
 
-function createShareThemeModal() {
-    if (document.getElementById('fp-tools-share-theme-modal')) return;
-
-    const modalOverlay = createElement('div', { id: 'fp-tools-share-theme-modal', class: 'fp-tools-share-modal-overlay' });
-    modalOverlay.innerHTML = `
-        <div class="fp-tools-share-modal-content">
-            <div class="fp-tools-share-modal-header">
-                <h3>Поделиться темой</h3>
-                <button class="fp-tools-share-modal-close">&times;</button>
-            </div>
-            <div class="fp-tools-share-modal-body">
-                <p>Для того, чтобы поделиться темой, вы можете нажать кнопку "ЭКСПОРТ" и поделиться темой с телеграм-ботом <a href="https://t.me/FunPayThemesBot" target="_blank">@FunPayThemesBot</a>.</p>
-                <p>Там вы сможете кинуть файл темы и поделиться темой по ссылке либо выложить в боте в публичный доступ чтобы другие люди тоже могли скачивать.</p>
-            </div>
-            <div class="fp-tools-share-modal-footer">
-                <a href="https://t.me/FunPayThemesBot" target="_blank" class="btn">Перейти к боту</a>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modalOverlay);
-
-    const closeModal = () => modalOverlay.style.display = 'none';
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
-    });
-    modalOverlay.querySelector('.fp-tools-share-modal-close').addEventListener('click', closeModal);
-}
-
-function setupThemeCustomizationHandlers() {
-    const fontSelect = document.getElementById('themeFontSelect');
-    if(fontSelect && fontSelect.options.length === 0) {
-        const allFonts = ['Системный (Helvetica Neue)', ...GOOGLE_FONTS];
-        allFonts.forEach(font => {
-            const option = document.createElement('option');
-            option.value = font === 'Системный (Helvetica Neue)' ? 'Helvetica Neue' : font;
-            option.textContent = font;
-            fontSelect.appendChild(option);
-        });
-    }
-
-    const liveUpdate = async (event) => {
-        const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-        const newSettings = { ...DEFAULT_THEME, ...fpToolsTheme };
-        const el = event.target;
-
-        switch(el.id) {
-            case 'themeColor1': newSettings.bgColor1 = el.value; break;
-            case 'themeColor2': newSettings.bgColor2 = el.value; break;
-            case 'themeContainerBgColor': newSettings.containerBgColor = el.value; break;
-            case 'themeTextColor': newSettings.textColor = el.value; break;
-            case 'themeLinkColor': newSettings.linkColor = el.value; break;
-            case 'themeBgBlur': newSettings.bgBlur = el.value; break;
-            case 'themeBgBrightness': newSettings.bgBrightness = el.value; break;
-            case 'themeContainerBgOpacity': newSettings.containerBgOpacity = el.value / 100; break;
-            case 'themeBorderRadius': newSettings.borderRadius = el.value; break;
-            case 'circleSize': newSettings.circleSize = el.value; break;
-            case 'circleOpacity': newSettings.circleOpacity = el.value; break;
-            case 'circleBlur': newSettings.circleBlur = el.value; break;
-            case 'glassmorphismBlur': newSettings.glassmorphismBlur = el.value; break;
-            case 'scrollbarThumbColor': newSettings.scrollbarThumbColor = el.value; break;
-            case 'scrollbarTrackColor': newSettings.scrollbarTrackColor = el.value; break;
-            case 'scrollbarWidth': newSettings.scrollbarWidth = el.value; break;
-        }
-
-        await chrome.storage.local.set({ fpToolsTheme: newSettings });
-        applyCustomTheme();
-    };
-
-    const throttledLiveUpdate = throttle(liveUpdate, 100);
-
-    const liveControls = [
-        'themeColor1', 'themeColor2', 'themeContainerBgColor', 'themeTextColor', 'themeLinkColor',
-        'themeBgBlur', 'themeBgBrightness', 'themeContainerBgOpacity', 'themeBorderRadius',
-        'circleSize', 'circleOpacity', 'circleBlur', 'glassmorphismBlur',
-        'scrollbarThumbColor', 'scrollbarTrackColor', 'scrollbarWidth'
-    ];
-    liveControls.forEach(id => {
-        document.getElementById(id)?.addEventListener('input', throttledLiveUpdate);
-    });
-
-    const changeControls = [
-        'themeFontSelect', 'enableCustomThemeCheckbox', 'bgImageInput',
-        'enableCircleCustomization', 'showCircles', 'enableImprovedSeparators',
-        'headerPositionSelect', 'enableGlassmorphism', 'enableCustomScrollbar'
-    ];
-    changeControls.forEach(id => {
-        document.getElementById(id)?.addEventListener('change', async (event) => {
-            const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-            const newSettings = { ...DEFAULT_THEME, ...fpToolsTheme };
-            let applyAll = true;
-
-            if (id === 'enableCustomThemeCheckbox') {
-                await chrome.storage.local.set({ enableCustomTheme: event.target.checked });
-                toggleThemeControls(!event.target.checked);
-            } else if (id === 'bgImageInput') {
-                 const file = event.target.files[0];
-                 if (!file) return;
-                 const reader = new FileReader();
-                 reader.onload = async (readEvent) => {
-                     newSettings.bgImage = readEvent.target.result;
-                     await chrome.storage.local.set({ fpToolsTheme: newSettings });
-                     applyCustomTheme();
-                     updateThemePreview();
-                 };
-                 reader.readAsDataURL(file);
-                 applyAll = false;
-            } else {
-                if (id === 'enableCircleCustomization') {
-                    document.getElementById('circleCustomizationControls').style.display = event.target.checked ? 'block' : 'none';
-                    newSettings.enableCircleCustomization = event.target.checked;
-                } else if (id === 'showCircles') {
-                    newSettings.showCircles = event.target.checked;
-                } else if (id === 'enableImprovedSeparators') {
-                    newSettings.enableImprovedSeparators = event.target.checked;
-                } else if (id === 'themeFontSelect') {
-                     newSettings.font = event.target.value;
-                } else if (id === 'headerPositionSelect') {
-                     newSettings.headerPosition = event.target.value;
-                } else if (id === 'enableGlassmorphism') {
-                     document.getElementById('glassmorphismControls').style.display = event.target.checked ? 'block' : 'none';
-                     newSettings.enableGlassmorphism = event.target.checked;
-                } else if (id === 'enableCustomScrollbar') {
-                     document.getElementById('customScrollbarControls').style.display = event.target.checked ? 'block' : 'none';
-                     newSettings.enableCustomScrollbar = event.target.checked;
-                }
-                await chrome.storage.local.set({ fpToolsTheme: newSettings });
-            }
-
-            if(applyAll) {
-                applyCustomTheme();
-                applyHeaderPosition();
-                updateCirclePreview();
-            }
-        });
-    });
-
-    ['themeBgBlur', 'themeBgBrightness', 'themeContainerBgOpacity', 'themeBorderRadius', 'circleSize', 'circleOpacity', 'circleBlur', 'glassmorphismBlur', 'scrollbarWidth'].forEach(id => {
-        document.getElementById(id)?.addEventListener('input', (e) => {
-             const valueLabel = document.getElementById(`${id}Value`);
-             if (!valueLabel) return;
-             if (id === 'themeBgBlur' || id === 'themeBorderRadius' || id === 'circleBlur' || id === 'glassmorphismBlur' || id === 'scrollbarWidth') valueLabel.textContent = `${e.target.value}px`;
-             else if (id === 'themeBgBrightness' || id === 'themeContainerBgOpacity' || id === 'circleSize' || id === 'circleOpacity') valueLabel.textContent = `${e.target.value}%`;
-             updateCirclePreview();
-        });
-    });
-
-    document.getElementById('uploadBgImageBtn')?.addEventListener('click', () => document.getElementById('bgImageInput').click());
-
-    document.getElementById('removeBgImageBtn')?.addEventListener('click', async () => {
-         const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-         if (!fpToolsTheme.bgImage) return; 
-         delete fpToolsTheme.bgImage;
-         await chrome.storage.local.set({ fpToolsTheme: fpToolsTheme });
-         applyCustomTheme();
-         updateThemePreview();
-         showNotification('Фоновое изображение удалено.');
-    });
-
-    document.getElementById('resetThemeBtn')?.addEventListener('click', async () => {
-        if (!confirm('Вы уверены, что хотите сбросить все настройки темы и оформления?')) return;
-        await chrome.storage.local.remove('fpToolsTheme');
-        applyCustomTheme();
-        applyHeaderPosition();
-        updateThemePreview();
-        showNotification('Настройки темы сброшены. Страница будет перезагружена для применения.');
-        setTimeout(() => window.location.reload(), 1500);
-    });
-
-    createShareThemeModal();
-    document.getElementById('shareThemeBtn')?.addEventListener('click', () => {
-        const modal = document.getElementById('fp-tools-share-theme-modal');
-        if (modal) modal.style.display = 'flex';
-    });
-    document.getElementById('randomizeThemeBtn')?.addEventListener('click', randomizeTheme);
-    document.getElementById('exportThemeBtn')?.addEventListener('click', exportTheme);
-    document.getElementById('importThemeBtn')?.addEventListener('click', () => {
-        document.getElementById('importThemeInput').click();
-    });
-    document.getElementById('importThemeInput')?.addEventListener('change', importTheme);
-    document.getElementById('generatePaletteBtn')?.addEventListener('click', generatePaletteFromImage);
-
-    setupFptMenuTransparency();
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-// Прозрачное меню FunPay Funcy
-// ════════════════════════════════════════════════════════════════════════════
-
-// Применяет настройки прозрачности к окну .fp-tools-popup.
-// Может принять явные значения (из контролов) - иначе читает из storage.
-//
-// FunPay Funcy: по просьбе пользователя меню больше НЕ делается прозрачным поверх
-// темы (это давало нечитаемый результат и артефакты). Теперь меню всегда
-// сплошное и красится авто-темой (fptm-themed): светлая тема сайта → белое меню,
-// тёмная → тёмно-серое. Поэтому здесь мы принудительно снимаем режим прозрачности.
 async function applyFptMenuTransparency(override) {
     const popup = document.querySelector('.fp-tools-popup');
     if (!popup) return;
@@ -1005,90 +665,6 @@ async function applyFptMenuTransparency(override) {
 
 // Загружает значения в контролы и навешивает обработчики.
 // Из UI настраивается только ЦВЕТ; прозрачность и размытие фиксированы (дефолты).
-async function setupFptMenuTransparency() {
-    const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-    const s = { ...DEFAULT_THEME, ...fpToolsTheme };
-
-    const enabled    = document.getElementById('fptMenuTransparentEnabled');
-    const controls   = document.getElementById('fptMenuTransparentControls');
-    const tint       = document.getElementById('fptMenuTintColor');
-    if (!enabled) return;
-
-    enabled.checked = !!s.menuTransparent;
-    if (controls) controls.style.display = s.menuTransparent ? 'block' : 'none';
-    if (tint) tint.value = s.menuTintColor || DEFAULT_THEME.menuTintColor;
-    // «Контур тексту» имеет смысл только при прозрачном меню - иначе скрываем весь блок.
-    const outlineGroup0 = document.getElementById('fptTextOutlineGroup');
-    if (outlineGroup0) outlineGroup0.style.display = s.menuTransparent ? '' : 'none';
-
-    applyFptMenuTransparency(s);
-
-    const save = async (patch) => {
-        const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-        const next = { ...DEFAULT_THEME, ...fpToolsTheme, ...patch };
-        await chrome.storage.local.set({ fpToolsTheme: next });
-    };
-
-    enabled.addEventListener('change', (e) => {
-        if (controls) controls.style.display = e.target.checked ? 'block' : 'none';
-        const outlineGroup = document.getElementById('fptTextOutlineGroup');
-        if (outlineGroup) outlineGroup.style.display = e.target.checked ? '' : 'none';
-        applyFptMenuTransparency({ ...DEFAULT_THEME, ...s,
-            menuTransparent: e.target.checked,
-            menuTintColor: (tint && tint.value) || DEFAULT_THEME.menuTintColor });
-        save({ menuTransparent: e.target.checked });
-        // контур зависит от прозрачного меню - пересчитываем с актуальным состоянием
-        const oEnabled = document.getElementById('fptTextOutlineEnabled');
-        const oColor = document.getElementById('fptTextOutlineColor');
-        const oWidth = document.getElementById('fptTextOutlineWidth');
-        applyFptTextOutline({ ...DEFAULT_THEME, ...s,
-            menuTransparent: e.target.checked,
-            textOutlineEnabled: !!(oEnabled && oEnabled.checked),
-            textOutlineColor: (oColor && oColor.value) || '#000000',
-            textOutlineWidth: oWidth ? parseFloat(oWidth.value) : 1 });
-    });
-    tint?.addEventListener('input', () => {
-        applyFptMenuTransparency({ ...DEFAULT_THEME, ...s,
-            menuTransparent: enabled.checked, menuTintColor: tint.value });
-    });
-    tint?.addEventListener('change', () => save({ menuTintColor: tint.value }));
-
-    setupFptTextOutline();
-}
-
-// Пере-синхронизирует контролы из storage (вызывается при КАЖДОМ открытии меню),
-// чтобы галочки/цвета всегда отражали сохранённое состояние, даже если что-то
-// перетёрло DOM ранее.
-async function syncFptMenuControls() {
-    const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-    const s = { ...DEFAULT_THEME, ...fpToolsTheme };
-
-    const enabled  = document.getElementById('fptMenuTransparentEnabled');
-    const controls = document.getElementById('fptMenuTransparentControls');
-    const tint     = document.getElementById('fptMenuTintColor');
-    if (enabled) enabled.checked = !!s.menuTransparent;
-    if (controls) controls.style.display = s.menuTransparent ? 'block' : 'none';
-    if (tint) tint.value = s.menuTintColor || DEFAULT_THEME.menuTintColor;
-    const outlineGroupSync = document.getElementById('fptTextOutlineGroup');
-    if (outlineGroupSync) outlineGroupSync.style.display = s.menuTransparent ? '' : 'none';
-
-    const oEn  = document.getElementById('fptTextOutlineEnabled');
-    const oCtl = document.getElementById('fptTextOutlineControls');
-    const oCol = document.getElementById('fptTextOutlineColor');
-    const oW   = document.getElementById('fptTextOutlineWidth');
-    const oWV  = document.getElementById('fptTextOutlineWidthValue');
-    if (oEn) oEn.checked = !!s.textOutlineEnabled;
-    if (oCtl) oCtl.style.display = s.textOutlineEnabled ? 'block' : 'none';
-    if (oCol) oCol.value = s.textOutlineColor || '#000000';
-    if (oW) oW.value = s.textOutlineWidth;
-    if (oWV) oWV.textContent = `${s.textOutlineWidth}px`;
-
-    applyFptMenuTransparency(s);
-}
-
-// ── Контур тексту ───────────────────────────────────────────────────────────
-// Обводит все буквы на странице контуром заданного цвета/толщины (text-shadow в
-// 4 стороны - надёжнее, чем -webkit-text-stroke, и не «съедает» сам глиф).
 async function applyFptTextOutline(override) {
     let s = override;
     if (!s) {
@@ -1098,10 +674,7 @@ async function applyFptTextOutline(override) {
     const STYLE_ID = 'fpt-text-outline-style';
     let styleEl = document.getElementById(STYLE_ID);
 
-    // menuTransparent в override может быть устаревшим (снимок на момент инициализации).
-    // Берём актуальное состояние из живого чекбокса, если он есть.
-    const liveTranspEl = document.getElementById('fptMenuTransparentEnabled');
-    const menuTransparent = liveTranspEl ? liveTranspEl.checked : !!s.menuTransparent;
+    const menuTransparent = !!s.menuTransparent;
 
     // Контур работает ТОЛЬКО в меню FunPay Funcy и ТОЛЬКО когда включено прозрачное меню.
     if (!s.textOutlineEnabled || !menuTransparent) {
@@ -1139,44 +712,57 @@ async function applyFptTextOutline(override) {
     `;
 }
 
-async function setupFptTextOutline() {
-    const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-    const s = { ...DEFAULT_THEME, ...fpToolsTheme };
-
-    const enabled  = document.getElementById('fptTextOutlineEnabled');
-    const controls = document.getElementById('fptTextOutlineControls');
-    const color    = document.getElementById('fptTextOutlineColor');
-    const width    = document.getElementById('fptTextOutlineWidth');
-    const widthVal = document.getElementById('fptTextOutlineWidthValue');
-    if (!enabled) return;
-
-    enabled.checked = !!s.textOutlineEnabled;
-    if (controls) controls.style.display = s.textOutlineEnabled ? 'block' : 'none';
-    if (color) color.value = s.textOutlineColor || '#000000';
-    if (width) width.value = s.textOutlineWidth;
-    if (widthVal) widthVal.textContent = `${s.textOutlineWidth}px`;
-
-    applyFptTextOutline(s);
-
-    const read = () => ({
-        textOutlineEnabled: !!enabled.checked,
-        textOutlineColor: (color && color.value) || '#000000',
-        textOutlineWidth: width ? parseFloat(width.value) : 1
-    });
-    const save = async () => {
-        const { fpToolsTheme = {} } = await chrome.storage.local.get('fpToolsTheme');
-        await chrome.storage.local.set({ fpToolsTheme: { ...DEFAULT_THEME, ...fpToolsTheme, ...read() } });
-    };
-
-    enabled.addEventListener('change', (e) => {
-        if (controls) controls.style.display = e.target.checked ? 'block' : 'none';
-        applyFptTextOutline({ ...DEFAULT_THEME, ...s, ...read() }); save();
-    });
-    color?.addEventListener('input', () => applyFptTextOutline({ ...DEFAULT_THEME, ...s, ...read() }));
-    color?.addEventListener('change', save);
-    width?.addEventListener('input', (e) => {
-        if (widthVal) widthVal.textContent = `${e.target.value}px`;
-        applyFptTextOutline({ ...DEFAULT_THEME, ...s, ...read() });
-    });
-    width?.addEventListener('change', save);
+async function setPopupTheme(patch, additionalSettings = {}) {
+    const result = await window.fptPopupActions.updateSettings(['fpToolsTheme', ...Object.keys(additionalSettings)], ({ fpToolsTheme = {} }) => ({
+        fpToolsTheme: { ...fpToolsTheme, ...patch }, ...additionalSettings
+    }), async () => { await applyCustomTheme(); await applyHeaderPosition(); });
+    return result.fpToolsTheme;
 }
+if (typeof window !== 'undefined' && window.fptPopupActions) {
+    const register = (id, fn) => window.fptPopupActions.register('theme', id, fn);
+    register('uploadBgImageBtn', p => setPopupTheme({ bgImage: p.dataUrl }));
+    register('removeBgImageBtn', async () => {
+        const result = await window.fptPopupActions.updateSettings('fpToolsTheme', ({ fpToolsTheme = {} }) => {
+        delete fpToolsTheme.bgImage;
+        return { fpToolsTheme };
+        }, applyCustomTheme);
+        return result.fpToolsTheme;
+    });
+    const savedTheme = async () => {
+        const saved = (await chrome.storage.local.get('fpToolsTheme')).fpToolsTheme;
+        return { ...DEFAULT_THEME, ...saved, baseStyle: fptResolveThemeBaseStyle(saved) };
+    };
+    register('getThemeDefaults', () => ({ ...DEFAULT_THEME, baseStyle: 'original' }));
+    register('randomizeThemeBtn', randomizeTheme);
+    register('generatePaletteBtn', generatePaletteFromImage);
+    register('exportThemeBtn', savedTheme);
+    register('shareThemeBtn', savedTheme);
+    register('importThemeBtn', async p => {
+        const theme = p.theme || JSON.parse(await p.file.text());
+        if (!theme?.bgColor1 || !theme.font) throw new Error('Неверный формат файла темы.');
+        const sanitized = fptSanitizeThemeColors(theme);
+        sanitized.baseStyle = theme.baseStyle === 'original' ? 'original' : 'custom';
+        if (p.draftOnly) return sanitized;
+        await window.fptPopupActions.updateSettings('fpToolsTheme', () => ({ fpToolsTheme: sanitized }),
+            async () => { await applyCustomTheme(); await applyHeaderPosition(); });
+        return sanitized;
+    });
+    register('resetThemeBtn', async () => {
+        await window.fptPopupActions.removeSettings('fpToolsTheme',
+            async () => { await applyCustomTheme(); await applyHeaderPosition(); });
+        return { ...DEFAULT_THEME, baseStyle: 'original' };
+    });
+    register('enableMagicStickBtn', () => {
+        initializeMagicStickStyler();
+        window.fpToolsMagicStickInstance.toggle();
+    });
+    register('fp-apply-dark-preset', async (p = {}) => {
+        const canvas = document.createElement('canvas'); canvas.width = 2; canvas.height = 2;
+        const context = canvas.getContext('2d'); context.fillStyle = '#1a1a1a'; context.fillRect(0, 0, 2, 2);
+        const preset = { baseStyle: 'custom', bgImage: canvas.toDataURL('image/png'),
+            bgColor1: '#0a0a0a', bgColor2: '#222222', containerBgColor: '#111111', textColor: '#cccccc', linkColor: '#888888' };
+        if (p.draftOnly) return preset;
+        return setPopupTheme(preset, { enableCustomTheme: true });
+    });
+}
+

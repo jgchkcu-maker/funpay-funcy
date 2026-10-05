@@ -11,8 +11,11 @@
     // вспышки «белое→серое» при перезагрузке.
     let isThemeOn = false;
     try {
-        const tData = await chrome.storage.local.get('enableCustomTheme');
-        isThemeOn = tData.enableCustomTheme === true;
+        const tData = await chrome.storage.local.get(['enableCustomTheme', 'fpToolsTheme']);
+        const saved = tData.fpToolsTheme || {};
+        const baseStyle = saved.baseStyle === 'original' || saved.baseStyle === 'custom'
+            ? saved.baseStyle : (Object.keys(saved).length ? 'custom' : 'original');
+        isThemeOn = tData.enableCustomTheme === true && baseStyle === 'custom';
         document.documentElement.classList.toggle('fpt-custom-theme-on', isThemeOn);
         document.documentElement.classList.toggle('fpt-custom-theme-off', !isThemeOn);
     } catch (_) { /* storage not ready - applyCustomTheme выставит позже */ }
@@ -338,6 +341,10 @@
     try {
         const data = await chrome.storage.local.get(['enableCustomTheme', 'fpToolsTheme']);
         if (!data.enableCustomTheme) return;
+        // Original FunPay styling is applied by theme.js. Never inject the legacy
+        // wallpaper here: this async script can finish after the main theme loader.
+        const saved = data.fpToolsTheme || {};
+        if (saved.baseStyle === 'original' || !Object.keys(saved).length) return;
         
         const settings = { ...DEFAULT_THEME, ...(data.fpToolsTheme || {}) };
 

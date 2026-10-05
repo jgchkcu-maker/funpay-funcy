@@ -39,7 +39,13 @@ async function checkAndRestoreLots() {
                              !lotEl.style.opacity?.includes('0.5');
 
             if (deliveryConfig) {
-                const productCount = deliveryConfig.productCount ?? Infinity;
+                const productCount = deliveryConfig.mode === 'template'
+                    ? null
+                    : Number.isInteger(deliveryConfig.productCount) && deliveryConfig.productCount >= 0
+                        ? deliveryConfig.productCount
+                        : null;
+
+                if (productCount === null) continue;
 
                 
                 if (fpToolsAutoDisableEnabled && productCount === 0 && isActive &&
@@ -56,10 +62,6 @@ async function checkAndRestoreLots() {
                     showNotification(`Лот "${lot.title}" восстановлен: товары пополнены`, false);
                     console.log(`FunPay Funcy AutoRestore: восстановлен лот ${lot.id}`);
                 }
-            } else if (fpToolsAutoRestoreEnabled && !isActive) {
-                
-                await toggleLotActive(lot.id, lot.nodeId, true, d['csrf-token']);
-                console.log(`FunPay Funcy AutoRestore: глобальное восстановление лота ${lot.id}`);
             }
         }
     } catch (e) {

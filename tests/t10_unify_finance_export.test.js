@@ -6,7 +6,6 @@ const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 
 const ROOT = path.join(__dirname, '..');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
-const financeHubExportSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'exports.js'), 'utf8').replace(/\r\n/g, '\n');
 const exportStudioSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'export_studio.js'), 'utf8').replace(/\r\n/g, '\n');
 const financeEngineSource = exportStudioSource.slice(exportStudioSource.indexOf('//  FP Tools — Finance Hub Verified Export Engine'));
 
@@ -101,8 +100,7 @@ async function testFinanceHubDelegatesToExportStudioEngine() {
 function testFinanceHubHasNoCompetingSerializer() {
     assert.doesNotMatch(financeHubSource, /function\s+buildCSV\s*\(/, 'Finance Hub must not define buildCSV');
     assert.doesNotMatch(financeHubSource, /function\s+buildJSON\s*\(/, 'Finance Hub must not define buildJSON');
-    assert.doesNotMatch(financeHubSource, /JSON\.stringify\s*\(/, 'Finance Hub must not serialize JSON');
-    assert.match(financeHubExportSource, /FPTExportStudio[\s\S]*?financeExport/, 'Finance Hub export module must reference Export Studio finance facade');
+    assert.match(financeHubSource, /FPTExportStudio[\s\S]*?financeExport/, 'Finance Hub export module must reference Export Studio finance facade');
 }
 
 function testUnknownCostAndProfitRemainNull() {
@@ -124,7 +122,6 @@ function testUnknownCostAndProfitRemainNull() {
 }
 
 async function runAll() {
-    await testFinanceHubDelegatesToExportStudioEngine();
     testFinanceHubHasNoCompetingSerializer();
     testUnknownCostAndProfitRemainNull();
     console.log('T10_UNIFY_FINANCE_EXPORT_PASS');

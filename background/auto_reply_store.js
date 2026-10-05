@@ -76,6 +76,25 @@ function applyArrayOperations(target, arrayOps) {
 function applyPatch(target, patch = {}) {
     if (!isRecord(patch)) throw new TypeError('Auto-reply patch must be an object.');
 
+    // Optional compare-and-set guard, evaluated inside the serialized read/write transaction.
+    // Old callers omit it; the stored schema and background processing remain unchanged.
+    if (patch.expected !== undefined) {
+        const expected = patch.expected;
+        if (!isRecord(expected) || !isRecord(expected.values) || !Array.isArray(expected.absent) ||
+            expected.absent.some(field => typeof field !== 'string')) {
+            throw new TypeError('expected must contain values and absent field names.');
+        }
+        const mismatch = Object.entries(expected.values).some(([field, value]) =>
+            !Object.hasOwn(target, field) || !sameValue(target[field], value)) ||
+            expected.absent.some(field => Object.hasOwn(target, field));
+        if (mismatch) {
+            const error = new Error('Auto-reply settings changed. Reload them before saving this edit.');
+            error.name = 'StaleAutoReplyEditError';
+            error.code = 'STALE_AUTO_REPLY_EDIT';
+            throw error;
+        }
+    }
+
     if (patch.set !== undefined) {
         if (!isRecord(patch.set)) throw new TypeError('set must be an object of field values.');
         for (const [field, value] of Object.entries(patch.set)) target[field] = clone(value);

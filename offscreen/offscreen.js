@@ -825,18 +825,27 @@ function parseUserLotsList(html) {
             const offerBlock = row.closest('.offer');
             if (!offerBlock) return;
             const categoryLink = offerBlock.querySelector('.offer-list-title a');
-            const categoryName = categoryLink?.textContent.trim() || "Без категории";
+            const parsedCategoryName = categoryLink?.textContent?.trim() || "";
+            const categoryName = parsedCategoryName || "Без категории";
             const nodeIdMatch = categoryLink?.getAttribute('href')?.match(/\/(?:lots|chips)\/(\d+)/);
             const nodeId = nodeIdMatch ? nodeIdMatch[1] : null;
 
             if (!nodeId) return;
 
-            const title = row.querySelector(".tc-desc-text")?.textContent?.trim() || "Без названия";
             const idMatch = row.getAttribute('href')?.match(/(?:offer=|id=)(\d+)/);
             const id = idMatch ? idMatch[1] : null;
+            const descriptionText = row.querySelector(".tc-desc-text")?.textContent?.trim();
+            const description = row.querySelector('.tc-desc')?.textContent?.trim();
+            const server = row.querySelector('.tc-server')?.textContent?.trim();
+            const side = row.querySelector('.tc-side')?.textContent?.trim();
+            const details = [server, side].filter(Boolean).join(' · ');
+            const categoryTitle = parsedCategoryName ? `${parsedCategoryName}${details ? ` — ${details}` : ''}` : '';
+            const title = descriptionText || description || categoryTitle || (id ? `Лот #${id}` : '');
+            const image = row.querySelector('.tc-icon img, img');
+            const imageUrl = image?.getAttribute('src') || image?.getAttribute('data-src') || image?.dataset?.src || null;
 
             if (id) {
-                allLots.push({ id, title, nodeId, categoryName });
+                allLots.push({ id, title, nodeId, categoryName, imageUrl });
             }
         });
         

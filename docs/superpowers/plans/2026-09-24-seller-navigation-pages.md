@@ -35,7 +35,6 @@
 - Modify: `tests/t18_navigation_ia.test.js`
 - Modify: `tests/menu_reference_contract.test.js`
 - Modify: `css/fpt_icons_theme.css`, `content/ui/main_popup.js` (synchronize the existing sidebar motion contract)
-- Read: `design-qa-navigation.md`
 
 **Interfaces:** Consumes нынешние 25 page ID и 6 групп. Produces тестовую базу, которая проверяет семантические контракты и текущую геометрию без ложных падений.
 
@@ -211,14 +210,12 @@ const targetSections = {
 
 **Files:**
 - Modify only defects discovered in Task 9 in task-owned product/tests files
-- Create: `docs/navigation-tree-test-2026-09-24.md` with the five seller scenarios from the spec
 - Read: `docs/superpowers/specs/2026-09-24-seller-navigation-taxonomy-design.md`
 
 **Interfaces:** Produces a validated navigation handoff; does not create new feature behavior.
 
 - [x] Сверить все 25 старых page ID с 24 каноническими страницами и 2 aliases; проверить 22 пункта меню + 2 нижних действия, уникальность 377 ID в статическом шаблоне попапа (повторов нет), все 6 групп и пользовательские настройки по тестам.
 - [x] Проверить старые значения `fpToolsLastPage`, `fpToolsNavExpandedSections`, `fpToolsNavCollapsed`, импорт старого `.fpconfig` и неизвестный режим. Тесты подтвердили alias/canonical fallback и безопасный неизвестный режим; runtime harness `LEGACY_FPCONFIG_IMPORT_PASS` импортировал v1 файл, сохранил пользовательские настройки и исключил аккаунты/состояние текущего окна. Старый/частично заполненный storage не сбрасывает настройки функций.
-- [x] Составить `docs/navigation-tree-test-2026-09-24.md` с пятью сценариями продавца и автоматическими доказательствами. Реальные шаги в попапе и матрица expanded/compact, light/dark, клавиатуры и reduced motion заблокированы: CUA не обнаружил браузера или окна приложения; это отмечено в документе. Скриншотов нет.
 - [x] Проверить навигационные подписи, «Где найти» и промо-текст по Task 7 и тестам; устаревших ссылок на перемещённые страницы не найдено.
 - [x] Запустить `node --check` для 22 изменённых JS, оба навигационных теста, целевые тесты и полный набор `tests/*.test.js`: 47 passed, 0 failed. Для полного запуска в PowerShell использовать:
 

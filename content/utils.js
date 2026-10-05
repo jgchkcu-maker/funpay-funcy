@@ -91,146 +91,38 @@ function waitForElementToBeEnabled(element, timeout = 2000) {
     });
 }
 
-/**
- * --- НОВАЯ ВЕРСИЯ УВЕДОМЛЕНИЙ V4 (Более масштабная анимация) ---
- * Показывает уведомление с предварительной анимацией частиц.
- * @param {string} message - Текст для отображения.
- * @param {boolean} isError - Если true, уведомление будет в стиле ошибки.
- */
+/** Show a viewport-fixed toast without changing the page layout. */
 function showNotification(message, isError = false) {
-    const NOTIFICATION_DURATION = 7000;
-    const PARTICLE_ANIMATION_DURATION = 1000;
-    const NOTIFICATION_APPEAR_DELAY = 500;
-    const PARTICLE_COUNT = 25;
-
-    const particleContainer = createElement('div', { 'aria-hidden': 'true' });
-    const animationId = `fpToolsParticleAnimation-${Date.now()}`;
-    const styleTagId = `fp-tools-particle-style-${Date.now()}`;
-
-    const startX = window.innerWidth / 2;
-    const startY = window.innerHeight / 2;
-    const targetX = window.innerWidth - 150;
-    const targetY = window.innerHeight - 60;
-
-    const keyframes = `
-        @keyframes ${animationId} {
-            0% {
-                transform: translate(var(--startX), var(--startY)) scale(var(--startScale));
-                opacity: 1;
-            }
-            70% {
-                opacity: 1;
-            }
-            100% {
-                transform: translate(${targetX - startX}px, ${targetY - startY}px) scale(0);
-                opacity: 0;
-            }
-        }
-    `;
-
-    const styleTag = createElement('style', { id: styleTagId }, {}, keyframes);
-    document.head.appendChild(styleTag);
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const radius = Math.random() * 150 + 50;
-        const particleSize = Math.random() * 8 + 6;
-
-        const particle = createElement('div', {}, {
-            '--startX': `${Math.cos(angle) * radius}px`,
-            '--startY': `${Math.sin(angle) * radius}px`,
-            '--startScale': `${Math.random() * 0.5 + 0.8}`,
-            position: 'fixed',
-            top: `${startY}px`,
-            left: `${startX}px`,
-            width: `${particleSize}px`,
-            height: `${particleSize}px`,
-            background: isError ? '#FF8A80' : '#A259FF',
-            borderRadius: '50%',
-            zIndex: '20001',
-            pointerEvents: 'none',
-            opacity: '0',
-            transform: `translate(var(--startX), var(--startY)) scale(0)`,
-            animation: `${animationId} ${PARTICLE_ANIMATION_DURATION}ms cubic-bezier(0.5, 0.05, 0.6, 1) forwards`,
-            animationDelay: `${Math.random() * 200}ms`,
-        });
-        
-        const tail = createElement('div', {}, {
-             width: '150%', height: '150%', position: 'absolute', top: '-25%', left: '-25%',
-             borderRadius: '50%', background: isError ? '#FF8A80' : '#A259FF',
-             filter: 'blur(8px)', opacity: '0.7'
-        });
-        particle.appendChild(tail);
-
-        particleContainer.appendChild(particle);
+    const DURATION = 5200;
+    const DOCK_ID = 'fpt-global-notification-dock';
+    let dock = document.getElementById(DOCK_ID);
+    if (!dock) {
+        dock = document.createElement('div');
+        dock.id = DOCK_ID;
+        dock.className = 'fpt-global-notification-dock';
+        dock.setAttribute('aria-live', 'polite');
+        dock.setAttribute('aria-relevant', 'additions');
+        document.body.appendChild(dock);
     }
-    document.body.appendChild(particleContainer);
-    
-    requestAnimationFrame(() => {
-        Array.from(particleContainer.children).forEach(p => {
-            p.style.transition = 'transform 0.4s cubic-bezier(0.1, 0.8, 0.7, 1), opacity 0.3s ease';
-            p.style.transform = `translate(var(--startX), var(--startY)) scale(var(--startScale))`;
-            p.style.opacity = '1';
-        });
-    });
 
-    setTimeout(() => {
-        const FADE_OUT_DELAY = NOTIFICATION_DURATION - 500;
+    const toast = document.createElement('div');
+    toast.className = 'fpt-global-notification';
+    toast.dataset.kind = isError ? 'error' : 'success';
+    toast.setAttribute('role', isError ? 'alert' : 'status');
+    toast.textContent = String(message ?? '');
+    dock.appendChild(toast);
 
-        const notification = createElement('div', {}, {
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            background: isError ? 'rgba(194, 57, 42, 0.92)' : 'var(--fpt-surface-2, rgba(44, 47, 51, 0.9))',
-            color: isError ? '#fff' : 'var(--fpt-text, #A259FF)',
-            padding: '14px 22px',
-            borderRadius: '8px',
-            fontSize: '15px',
-            fontWeight: '500',
-            boxShadow: '0 5px 25px var(--fpt-shadow, rgba(0, 0, 0, 0.3))',
-            border: '1px solid var(--fpt-border, rgba(255, 255, 255, 0.1))',
-            backdropFilter: 'blur(8px)',
-            webkitBackdropFilter: 'blur(8px)',
-            zIndex: '20000',
-            transform: 'scale(0.8)',
-            opacity: '0',
-            animation: `fpToolsEmerge 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards, fpToolsFadeOut 0.5s ${FADE_OUT_DELAY / 1000}s forwards`
-        }, message);
+    while (dock.children.length > 4) dock.firstElementChild.remove();
 
-        if (!document.querySelector('style[data-fp-tools-notify-keyframes]')) {
-            const keyframesStyle = `
-                @keyframes fpToolsEmerge {
-                    from { opacity: 0; transform: scale(0.8); }
-                    to { opacity: 1; transform: scale(1); }
-                }
-                @keyframes fpToolsFadeOut {
-                    from { opacity: 1; transform: scale(1); } 
-                    to { opacity: 0; transform: scale(0.9); }
-                }
-            `;
-            const keyframesStyleSheet = createElement("style", { 'data-fp-tools-notify-keyframes': 'true' }, {}, keyframesStyle);
-            document.head.appendChild(keyframesStyleSheet);
-        }
-
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-            if (document.body.contains(notification)) {
-                document.body.removeChild(notification);
-            }
-        }, NOTIFICATION_DURATION);
-
-    }, NOTIFICATION_APPEAR_DELAY);
-
-
-    setTimeout(() => {
-        if (document.body.contains(particleContainer)) {
-            document.body.removeChild(particleContainer);
-        }
-        if (document.head.contains(styleTag)) {
-            document.head.removeChild(styleTag);
-        }
-    }, PARTICLE_ANIMATION_DURATION + 300);
+    const remove = () => {
+        if (!toast.isConnected) return;
+        toast.classList.add('is-leaving');
+        window.setTimeout(() => {
+            toast.remove();
+            if (!dock.childElementCount) dock.remove();
+        }, 220);
+    };
+    window.setTimeout(remove, DURATION);
 }
 
 // === ВЛОЖЕНИЯ ИЗОБРАЖЕНИЙ (отдельно от текста) ===
@@ -461,6 +353,13 @@ function fptMix(rgb, toward, t) {
 // фон через родителей. Это критично: на белой теме фон часто покрашен на .content/html,
 // а не на body, и раньше детект ошибочно считал тему тёмной.
 function fptResolveBg() {
+    // Кастомная тема красит фон картинкой на body::before, у элементов страницы фон прозрачный.
+    // Тогда берём цвет блоков темы (его пишет applyCustomTheme), иначе палитра ошибочно светлая.
+    const themeRoot = document.documentElement;
+    if (themeRoot.classList.contains('fpt-custom-theme-on') && themeRoot.dataset.fptThemeBg) {
+        const themed = fptParseRGB(themeRoot.dataset.fptThemeBg);
+        if (themed) return [themed[0], themed[1], themed[2], 1];
+    }
     const sel = [
         '.content-with-cd-wide', '.content-with-cd', '.content',
         '.page-content', '.chat-contacts', '.chat',
@@ -587,7 +486,7 @@ function fptInitThemeEngine() {
             clearTimeout(window.__fptThemeT);
             window.__fptThemeT = setTimeout(fptApplyThemeVars, 80);
         });
-        mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style'] });
+        mo.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'style', 'data-fpt-theme-bg'] });
         mo.observe(document.body, { attributes: true, attributeFilter: ['class', 'style'] });
     } catch (_) {}
 }

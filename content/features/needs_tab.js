@@ -1,45 +1,6 @@
-// content/features/needs_tab.js
-// =============================================================================
-// Вкладка «Что тебе нужно».
-//  • Свободный ввод → ИИ сопоставляет с реестром форс-элементов → карточки с галочками.
-//  • Полный список форс-элементов с галочками (вкл/выкл) и встроенным предпросмотром.
-//  • Чекбоксы → АВТОСОХРАНЕНИЕ в fpToolsDisabledFeatures при каждом изменении (скрытие живое).
-// Заблокированные (locked) элементы выключать нельзя.
-// =============================================================================
-
-let __fptNeedsInited = false;
-
 function fptNeedsRegistry() {
     return (typeof FPT_FEATURE_REGISTRY !== 'undefined' && FPT_FEATURE_REGISTRY) ||
            (typeof window !== 'undefined' && window.FPT_FEATURE_REGISTRY) || [];
-}
-
-function fptEscapeHtml(s) {
-    return String(s == null ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-}
-
-// Inline preview markup - a faithful mini visual copy of the real element.
-// Not escaped: the registry author controls this html (trusted, no user input).
-// {{MAGIC_ICON}} is replaced with the real path to icons/magic.png so the AI
-// button preview uses the exact same icon as the live button.
-function fptNeedsPreviewHtml(entry) {
-    const p = entry.preview;
-    if (p && p.kind === 'html') {
-        let html = p.html;
-        if (html.indexOf('{{MAGIC_ICON}}') !== -1) {
-            let url = 'icons/magic.png';
-            try {
-                if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
-                    url = chrome.runtime.getURL('icons/magic.png');
-                }
-            } catch (_) {}
-            html = html.split('{{MAGIC_ICON}}').join(url);
-        }
-        return `<div class="fpt-pv-stage">${html}</div>`;
-    }
-    return `<div class="fpt-pv-stage fpt-pv-none">Нет предпросмотра</div>`;
 }
 
 function fptNeedsNormalizeSearchText(value) {
@@ -58,335 +19,39 @@ function fptNeedsEntryMatches(entry, query) {
     return fptNeedsNormalizeSearchText(searchable).includes(query);
 }
 
-function fptNeedsEntryHtml(entry, options) {
-    const { disabled, contextOnly } = options;
-    const on = !disabled.has(entry.id);
-    const locked = !!entry.locked;
-    const dependentDisabled = entry.id === 'lot_keyboard_btn' && disabled.has('lot_font_controls');
-    const itemClasses = [
-        'fpt-needs-item',
-        locked ? 'fpt-needs-locked' : '',
-        contextOnly ? 'fpt-needs-context' : '',
-        dependentDisabled ? 'fpt-needs-dependent-disabled' : ''
-    ].filter(Boolean).join(' ');
-    const control = locked
-        ? `<span class="fpt-needs-lock" title="Эту функцию нельзя отключить - иначе пропадёт доступ к расширению"><span class="material-symbols-rounded">lock</span></span>`
-        : `<input type="checkbox" class="fpt-needs-cb" data-id="${entry.id}" ${on ? 'checked' : ''}${contextOnly ? ' disabled aria-disabled="true"' : ''}>`;
-    const previewDisabled = contextOnly ? ' disabled aria-disabled="true"' : '';
-    const dependencyNote = entry.id === 'lot_keyboard_btn'
-        ? `<span class="fpt-needs-dependent-note"${dependentDisabled ? '' : ' hidden'}>Включите блок шрифта и спецсимволов, чтобы использовать клавиатуру.</span>`
-        : '';
-
-    return `
-        <div class="${itemClasses}" data-id="${entry.id}"${contextOnly ? ' aria-label="Контекст элемента"' : ''}>
-            <label class="fpt-needs-check">
-                ${control}
-                <span class="fpt-needs-item-text">
-                    <span class="fpt-needs-item-label">${fptEscapeHtml(entry.label)}</span>
-                    <span class="fpt-needs-item-desc">${fptEscapeHtml(entry.desc)}</span>
-                    ${dependencyNote}
-                </span>
-            </label>
-            <button type="button" class="fpt-needs-preview-btn" data-id="${entry.id}" title="Показать предпросмотр"${previewDisabled}><span class="material-symbols-rounded">visibility</span></button>
-        </div>
-        <div class="fpt-needs-preview-row" data-id="${entry.id}" style="display:none;">
-            <span class="fpt-needs-preview-caption">Так выглядит элемент:</span>
-            ${fptNeedsPreviewHtml(entry)}
-        </div>`;
-}
-
-// Render the full feature list in an explicit taxonomy order.
-async function fptRenderNeedsList(filterText) {
-    const list = document.getElementById('fptNeedsList');
-    if (!list) return;
-    const reg = fptNeedsRegistry();
-    const { fpToolsDisabledFeatures = [] } = await chrome.storage.local.get('fpToolsDisabledFeatures');
-    const disabled = new Set(Array.isArray(fpToolsDisabledFeatures) ? fpToolsDisabledFeatures : []);
-
-    const q = fptNeedsNormalizeSearchText(filterText);
-    const matchingEntries = reg.filter(entry => fptNeedsEntryMatches(entry, q));
-    const matchingIds = new Set(matchingEntries.map(entry => entry.id));
-    const contextIds = new Set();
-    if (q && matchingIds.has('lot_keyboard_btn') && !matchingIds.has('lot_font_controls')) {
-        contextIds.add('lot_font_controls');
-    }
-    const visibleIds = new Set([...matchingIds, ...contextIds]);
-    const entriesToRender = reg.filter(entry => visibleIds.has(entry.id));
-    if (!entriesToRender.length) {
-        list.innerHTML = `<p class="template-info" style="text-align:center;">Ничего не найдено.</p>`;
-        return;
-    }
-
-    const groupOrder = typeof FPT_NEEDS_GROUP_ORDER !== 'undefined' ? FPT_NEEDS_GROUP_ORDER : [];
-    const subgroupOrder = typeof FPT_NEEDS_CHAT_SUBGROUP_ORDER !== 'undefined' ? FPT_NEEDS_CHAT_SUBGROUP_ORDER : [];
-    list.innerHTML = groupOrder.map(group => {
-        const groupEntries = entriesToRender.filter(entry => entry.group === group);
-        if (!groupEntries.length) return '';
-        const renderEntry = entry => fptNeedsEntryHtml(entry, {
-            disabled,
-            contextOnly: contextIds.has(entry.id)
-        });
-        const renderEntries = entries => {
-            const parentByChildId = { lot_keyboard_btn: 'lot_font_controls' };
-            return entries.map(entry => {
-                const parentId = parentByChildId[entry.id];
-                if (parentId && entries.some(candidate => candidate.id === parentId)) return '';
-
-                const children = entries.filter(candidate => parentByChildId[candidate.id] === entry.id);
-                if (!children.length) return renderEntry(entry);
-
-                return `
-                    <div class="fpt-needs-entry-branch" data-parent-id="${fptEscapeHtml(entry.id)}">
-                        ${renderEntry(entry)}
-                        <div class="fpt-needs-child-items" data-parent-id="${fptEscapeHtml(entry.id)}">
-                            ${children.map(renderEntry).join('')}
-                        </div>
-                    </div>`;
-            }).join('');
-        };
-        let contents = '';
-        if (group === 'Чат') {
-            contents = subgroupOrder.map(subgroup => {
-                const subgroupEntries = groupEntries.filter(entry => entry.subgroup === subgroup);
-                if (!subgroupEntries.length) return '';
-                return `
-                    <section class="fpt-needs-subgroup" data-subgroup="${fptEscapeHtml(subgroup)}">
-                        <h5 class="fpt-needs-subgroup-title">${fptEscapeHtml(subgroup)}</h5>
-                        ${renderEntries(subgroupEntries)}
-                    </section>`;
-            }).join('');
-            const uncategorized = groupEntries.filter(entry => !subgroupOrder.includes(entry.subgroup));
-            if (uncategorized.length) contents += renderEntries(uncategorized);
-        } else {
-            contents = renderEntries(groupEntries);
-        }
-        return `
-            <section class="fpt-needs-group" data-group="${fptEscapeHtml(group)}">
-                <h4 class="fpt-needs-group-title">${fptEscapeHtml(group)}</h4>
-                ${contents}
-            </section>`;
-    }).join('');
-}
-
-function fptUpdateNeedsDependencyState() {
-    const list = document.getElementById('fptNeedsList');
-    if (!list) return;
-    const checkboxes = Array.from(list.querySelectorAll('.fpt-needs-cb'));
-    const rows = Array.from(list.querySelectorAll('.fpt-needs-item'));
-    const parentCheckbox = checkboxes.find(checkbox => checkbox.dataset.id === 'lot_font_controls');
-    const childRow = rows.find(row => row.dataset.id === 'lot_keyboard_btn');
-    if (!parentCheckbox || !childRow) return;
-    const disabled = !parentCheckbox.checked;
-    childRow.classList.toggle('fpt-needs-dependent-disabled', disabled);
-    const note = childRow.querySelector('.fpt-needs-dependent-note');
-    if (note) note.hidden = !disabled;
-}
-
-// Save the current checkbox state immediately (autosave). Called on every
-// checkbox change - there is no separate "apply" button anymore.
-async function fptApplyNeedsSelection(additionalDisabledIds = []) {
-    const list = document.getElementById('fptNeedsList');
-    const status = document.getElementById('fptNeedsStatus');
-    if (!list) return;
-    const reg = fptNeedsRegistry();
-    const lockedIds = new Set(reg.filter(e => e.locked).map(e => e.id));
-    // Only ids that exist in the CURRENT registry are valid. Anything else in
-    // storage is stale (left over from an old version / removed feature) and must
-    // never be counted or kept - that was the cause of the bogus "Отключено: 10".
-    const knownIds = new Set(reg.map(e => e.id));
-
-    // Start from the previously-saved set so features filtered out of the current
-    // view (by search) keep their state, then update from visible checkboxes.
-    let prev = [];
-    try {
-        const data = await chrome.storage.local.get('fpToolsDisabledFeatures');
-        prev = Array.isArray(data.fpToolsDisabledFeatures) ? data.fpToolsDisabledFeatures : [];
-    } catch (_) { prev = []; }
-    // keep only valid, non-locked, currently-known ids → prunes stale garbage
-    const disabledSet = new Set(prev.filter(id => knownIds.has(id) && !lockedIds.has(id)));
-
-    list.querySelectorAll('.fpt-needs-cb').forEach(cb => {
-        if (lockedIds.has(cb.dataset.id) || !knownIds.has(cb.dataset.id)) return;
-        if (cb.checked) disabledSet.delete(cb.dataset.id);
-        else disabledSet.add(cb.dataset.id);
+if (typeof window !== 'undefined' && window.fptPopupActions) {
+    window.fptPopupActions.register('needs', 'getFeatureRegistry', () => fptNeedsRegistry());
+    window.fptPopupActions.register('needs', 'fptNeedsAskBtn', async p => {
+        const text = String(p.text || '').trim();
+        if (!text) throw new Error('Опишите нужные элементы.');
+        const registry = fptNeedsRegistry().filter(entry => !entry.locked);
+        const response = await chrome.runtime.sendMessage({ action: 'getAIProcessedText', text, myUsername: '',
+            type: 'feature_match', context: JSON.stringify(registry.map(({ id, label, desc }) => ({ id, label, desc }))) });
+        if (!response?.success) throw new Error(response?.error || 'Не удалось подобрать элементы.');
+        const matches = JSON.parse(String(response.data).replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim());
+        const allowed = new Set(registry.map(entry => entry.id));
+        return matches.filter(match => allowed.has(match.id));
     });
-    for (const id of additionalDisabledIds) {
-        if (knownIds.has(id) && !lockedIds.has(id)) disabledSet.add(id);
-    }
-
-    const disabled = Array.from(disabledSet);
-
-    try {
-        await chrome.storage.local.set({ fpToolsDisabledFeatures: disabled });
-        fptUpdateNeedsDependencyState();
-        // refresh live CSS hiding immediately
-        if (typeof window !== 'undefined' && typeof window.fptApplyDisabledFeatures === 'function') {
-            await window.fptApplyDisabledFeatures(disabled);
-        }
-        if (status) {
-            status.textContent = disabled.length
-                ? `Сохранено · отключено: ${disabled.length}`
-                : 'Сохранено · все элементы включены';
-            status.classList.remove('fpt-needs-status-err');
-            status.classList.add('fpt-needs-status-ok');
-            clearTimeout(fptApplyNeedsSelection._t);
-            fptApplyNeedsSelection._t = setTimeout(() => {
-                if (status) status.classList.remove('fpt-needs-status-ok');
-            }, 1400);
-        }
-    } catch (e) {
-        console.error('FunPay Funcy: ошибка автосохранения needs', e);
-        if (status) {
-            status.textContent = 'Ошибка сохранения: ' + (e && e.message ? e.message : 'неизвестно');
-            status.classList.remove('fpt-needs-status-ok');
-            status.classList.add('fpt-needs-status-err');
-        }
-        if (typeof showNotification === 'function') showNotification('Не удалось сохранить настройки.', true);
-    }
-}
-
-// Ask the AI which features the user wants to disable, then show confirm cards.
-async function fptNeedsAskAI() {
-    const input = document.getElementById('fptNeedsInput');
-    const resultBox = document.getElementById('fptNeedsAiResult');
-    const askBtn = document.getElementById('fptNeedsAskBtn');
-    if (!input || !resultBox) return;
-
-    const text = input.value.trim();
-    if (!text) {
-        if (typeof showNotification === 'function') showNotification('Напишите, что вы хотите отключить.', true);
-        return;
-    }
-
-    const reg = fptNeedsRegistry();
-    // exclude locked entries from what the AI may suggest
-    const offerable = reg.filter(e => !e.locked);
-    const compact = JSON.stringify(offerable.map(e => ({ id: e.id, label: e.label, desc: e.desc })));
-
-    askBtn.disabled = true;
-    askBtn.classList.add('fpt-needs-loading');
-    resultBox.style.display = 'block';
-    resultBox.innerHTML = `<div class="fpt-needs-ai-loading"><span class="material-symbols-rounded fpt-spin">progress_activity</span> ИИ анализирует ваш запрос…</div>`;
-
-    let matches = [];
-    try {
-        const resp = await chrome.runtime.sendMessage({
-            action: 'getAIProcessedText',
-            text: text,
-            context: compact,
-            myUsername: '',
-            type: 'feature_match'
-        });
-        if (resp && resp.success) {
-            let raw = (resp.data || '').trim();
-            raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/, '').replace(/```$/, '').trim();
-            matches = JSON.parse(raw);
-            if (!Array.isArray(matches)) matches = [];
-        } else {
-            throw new Error(resp ? resp.error : 'нет ответа');
-        }
-    } catch (e) {
-        console.error('FunPay Funcy needs AI error:', e);
-        resultBox.innerHTML = `<div class="fpt-needs-ai-error"><span class="material-symbols-rounded">error</span> Не удалось разобрать ответ ИИ. Переформулируйте запрос или отметьте элементы вручную ниже.</div>`;
-        askBtn.disabled = false;
-        askBtn.classList.remove('fpt-needs-loading');
-        return;
-    }
-
-    const byId = {};
-    offerable.forEach(e => { byId[e.id] = e; });
-    matches = matches.filter(m => m && byId[m.id]);
-
-    if (!matches.length) {
-        resultBox.innerHTML = `<div class="fpt-needs-ai-empty"><span class="material-symbols-rounded">info</span> ИИ не нашёл подходящих элементов. Опишите иначе или отметьте вручную ниже.</div>`;
-        askBtn.disabled = false;
-        askBtn.classList.remove('fpt-needs-loading');
-        return;
-    }
-
-    resultBox.innerHTML = `
-        <div class="fpt-needs-ai-head">
-            <span class="material-symbols-rounded">auto_awesome</span>
-            ИИ предлагает отключить это. Отметьте, что действительно выключить:
-        </div>
-        <div class="fpt-needs-ai-cards">
-            ${matches.map(m => {
-                const e = byId[m.id];
-                const conf = Math.round((m.confidence || 0) * 100);
-                return `
-                <div class="fpt-needs-ai-card">
-                    <label class="fpt-needs-ai-card-main">
-                        <input type="checkbox" class="fpt-needs-ai-pick" data-id="${e.id}" checked>
-                        <span>
-                            <span class="fpt-needs-ai-card-label">${fptEscapeHtml(e.label)}</span>
-                            <span class="fpt-needs-ai-card-reason">${fptEscapeHtml(m.reason || e.desc)}</span>
-                        </span>
-                    </label>
-                    <span class="fpt-needs-ai-conf" title="Уверенность ИИ">${conf}%</span>
-                </div>`;
-            }).join('')}
-        </div>
-        <button id="fptNeedsAiConfirm" class="btn">Отключить выбранное</button>`;
-
-    askBtn.disabled = false;
-    askBtn.classList.remove('fpt-needs-loading');
-}
-
-// Wire all event handlers (idempotent).
-function initializeNeedsTab() {
-    fptRenderNeedsList('');
-
-    if (__fptNeedsInited) return;
-    __fptNeedsInited = true;
-
-    const page = document.querySelector('.fp-tools-page-content[data-page="needs"]');
-    if (!page) return;
-
-    const askBtn = document.getElementById('fptNeedsAskBtn');
-    if (askBtn) askBtn.addEventListener('click', fptNeedsAskAI);
-
-    const filter = document.getElementById('fptNeedsFilter');
-    if (filter) filter.addEventListener('input', () => fptRenderNeedsList(filter.value));
-
-    // AUTOSAVE: every checkbox toggle in the list saves instantly (no apply button).
-    page.addEventListener('change', async (e) => {
-        if (e.target.classList && e.target.classList.contains('fpt-needs-cb')) {
-            fptUpdateNeedsDependencyState();
-            await fptApplyNeedsSelection();
-        }
+    window.fptPopupActions.register('needs', 'fptNeedsAiConfirm', async p => {
+        const allowed = new Set(fptNeedsRegistry().filter(entry => !entry.locked && !entry.contextOnly).map(entry => entry.id));
+        const current = (await chrome.storage.local.get('fpToolsDisabledFeatures')).fpToolsDisabledFeatures || [];
+        const selected = new Set((p.ids || []).filter(id => allowed.has(id)));
+        const ids = Array.from(new Set(current)).filter(id => !selected.has(id));
+        await chrome.storage.local.set({ fpToolsDisabledFeatures: ids });
+        await window.fptApplyDisabledFeatures(ids);
+        return ids;
     });
-
-    // delegated clicks: toggle inline preview + AI confirm
-    page.addEventListener('click', async (e) => {
-        const previewBtn = e.target.closest('.fpt-needs-preview-btn');
-        if (previewBtn) {
-            e.preventDefault();
-            const id = previewBtn.dataset.id;
-            const row = page.querySelector(`.fpt-needs-preview-row[data-id="${CSS.escape(id)}"]`);
-            if (row) {
-                const showing = row.style.display !== 'none';
-                row.style.display = showing ? 'none' : 'flex';
-                previewBtn.classList.toggle('fpt-needs-preview-open', !showing);
-            }
-            return;
+    window.fptPopupActions.register('needs', 'fptApplyNeedsSelection', async p => {
+        const allowed = new Set(fptNeedsRegistry().filter(entry => !entry.locked).map(entry => entry.id));
+        const current = (await chrome.storage.local.get('fpToolsDisabledFeatures')).fpToolsDisabledFeatures || [];
+        const disabled = new Set(current);
+        for (const [id, enabled] of Object.entries(p.enabled || {})) {
+            if (!allowed.has(id)) continue;
+            if (enabled) disabled.delete(id); else disabled.add(id);
         }
-        if (e.target.closest('#fptNeedsAiConfirm')) {
-            const resultBox = document.getElementById('fptNeedsAiResult');
-            const picks = resultBox.querySelectorAll('.fpt-needs-ai-pick');
-            const toDisable = new Set();
-            picks.forEach(cb => { if (cb.checked) toDisable.add(cb.dataset.id); });
-            // reflect into main list checkboxes (uncheck = disable) → autosave
-            document.querySelectorAll('.fpt-needs-cb').forEach(cb => {
-                if (toDisable.has(cb.dataset.id)) cb.checked = false;
-            });
-            fptUpdateNeedsDependencyState();
-            await fptApplyNeedsSelection(toDisable);
-            const confirmBtn = resultBox.querySelector('#fptNeedsAiConfirm');
-            if (confirmBtn) confirmBtn.textContent = 'Отключено ✓';
-        }
+        const ids = Array.from(disabled);
+        await chrome.storage.local.set({ fpToolsDisabledFeatures: ids });
+        await window.fptApplyDisabledFeatures(ids);
+        return ids;
     });
-}
-
-if (typeof window !== 'undefined') {
-    window.initializeNeedsTab = initializeNeedsTab;
 }

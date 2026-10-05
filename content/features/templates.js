@@ -417,3 +417,37 @@ async function openTemplateSettings() {
     await window.fptOpenPopupPage('templates', { mode: 'templates' });
     popup.classList.add('active');
 }
+
+if (typeof window !== 'undefined' && window.fptPopupActions) {
+    window.fptPopupActions.register('templates', 'addCustomTemplateBtn', async p => {
+        let template;
+        await window.fptPopupActions.updateSettings('fpToolsTemplateSettings', current => {
+        const config = current.fpToolsTemplateSettings || {};
+        config.custom = Array.isArray(config.custom) ? config.custom.map(withoutTemplateColor) : [];
+        let id = Date.now(); while (config.custom.some(item => item.id === String(id))) id++;
+        template = { id: String(id), enabled: true, label: p.label || 'Новый шаблон',
+            text: p.text || '', images: p.images || [], sendOrder: p.sendOrder || 'text_first' };
+        config.custom.push(template);
+        return { fpToolsTemplateSettings: config };
+        }, loadTemplateSettings);
+        return template;
+    });
+    window.fptPopupActions.register('templates', 'saveTemplate', async p => {
+        const result = await window.fptPopupActions.updateSettings('fpToolsTemplateSettings', current => {
+        const config = current.fpToolsTemplateSettings || {};
+        if (p.custom) {
+            config.custom = Array.isArray(config.custom) ? config.custom.map(withoutTemplateColor) : [];
+            const index = config.custom.findIndex(template => template.id === p.key);
+            if (index < 0) throw new Error('Шаблон не найден.');
+            if (p.remove) config.custom.splice(index, 1);
+            else config.custom[index] = { ...config.custom[index], ...withoutTemplateColor(p.settings) };
+        } else {
+            if (!Object.hasOwn(DEFAULT_STANDARD_TEMPLATES, p.key)) throw new Error('Шаблон не найден.');
+            config.standard = { ...(config.standard || {}) };
+            config.standard[p.key] = { ...withoutTemplateColor(config.standard[p.key]), ...withoutTemplateColor(p.settings) };
+        }
+        return { fpToolsTemplateSettings: config };
+        }, loadTemplateSettings);
+        return result.fpToolsTemplateSettings;
+    });
+}

@@ -90,6 +90,7 @@ function createButtonStyler() {
 }
 
 function showButtonStyler(x, y) {
+    if (!document.getElementById('fp-tools-button-styler')) createButtonStyler();
     const styler = document.getElementById('fp-tools-button-styler');
     if (!styler) return;
     

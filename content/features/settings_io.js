@@ -52,107 +52,47 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsBuyerViewing',
     // --- Чисто UI-состояние текущей вкладки/окна (per-device) ---
     'fpToolsLastPage',
+    'fpToolsLastPageMode',
     'fpToolsPopupDragged',
+    // Retired feature data must not return through old backups.
+    'fpToolsPiggyBanks',
 ]);
 
-async function exportSettings() {
-    try {
-        // Берём ВСЁ хранилище и фильтруем исключения.
-        const all = await chrome.storage.local.get(null);
-        const data = {};
-        for (const [k, v] of Object.entries(all)) {
-            if (EXCLUDE_KEYS.has(k)) continue;
-            data[k] = v;
-        }
-
-        const exportObj = {
-            _magic:   FP_CONFIG_MAGIC,
-            _version: FP_CONFIG_VERSION,
-            _date:    new Date().toISOString(),
-            _extVer:  chrome.runtime.getManifest().version,
-            settings: data
-        };
-
-        const json     = JSON.stringify(exportObj, null, 2);
-        const blob     = new Blob([json], { type: 'application/json' });
-        const url      = URL.createObjectURL(blob);
-        const dateStr  = new Date().toISOString().slice(0, 10);
-        const a        = document.createElement('a');
-        a.href         = url;
-        a.download     = `FunPay-Funcy_config_${dateStr}.fpconfig`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-
-        const cnt = Object.keys(data).length;
-        showNotification(`Настройки экспортированы (${cnt} разделов) ✓`);
-    } catch (e) {
-        showNotification(`Ошибка экспорта: ${e.message}`, true);
-    }
+async function getPopupSettingsExport() {
+    const all = await chrome.storage.local.get(null);
+    return { _magic: FP_CONFIG_MAGIC, _version: FP_CONFIG_VERSION, _date: new Date().toISOString(),
+        _extVer: chrome.runtime.getManifest().version,
+        settings: Object.fromEntries(Object.entries(all).filter(([key]) => !EXCLUDE_KEYS.has(key))) };
 }
-
-async function importSettings(file) {
-    try {
-        const text = await file.text();
-        const obj  = JSON.parse(text);
-
-        if (obj._magic !== FP_CONFIG_MAGIC) {
-            throw new Error('Неверный формат файла. Выберите файл .fpconfig от FunPay Funcy.');
-        }
-
-        if (!obj.settings || typeof obj.settings !== 'object') {
-            throw new Error('Файл не содержит настроек.');
-        }
-
-        // На всякий случай НЕ применяем исключённые ключи, даже если они попали
-        // в старый файл (например, аккаунты из бэкапа другой версии).
-        const safe = {};
-        let autoRepliesToImport;
-        let hasAutoRepliesToImport = false;
-        for (const [k, v] of Object.entries(obj.settings)) {
-            if (EXCLUDE_KEYS.has(k)) continue;
-            if (k === 'fpToolsAutoReplies') {
-                autoRepliesToImport = v;
-                hasAutoRepliesToImport = true;
-                continue;
-            }
-            safe[k] = v;
-        }
-
-        await chrome.storage.local.set(safe);
-        if (hasAutoRepliesToImport) {
-            if (typeof window.fptImportAutoReplies !== 'function') {
-                throw new Error('Хранилище автоответчика недоступно.');
-            }
-            await window.fptImportAutoReplies(autoRepliesToImport);
-        }
-
-        const cnt = Object.keys(safe).length + (hasAutoRepliesToImport ? 1 : 0);
-        const fromVer = obj._extVer ? ` из v${obj._extVer}` : '';
-        showNotification(`Импортировано ${cnt} разделов${fromVer} — перезагрузите страницу ✓`);
-
-        // Reload after 1.5s
-        setTimeout(() => window.location.reload(), 1500);
-    } catch (e) {
-        showNotification(`Ошибка импорта: ${e.message}`, true);
+async function importPopupSettings(p) {
+    const data = p.data || JSON.parse(await p.file.text());
+    if (data?._magic !== FP_CONFIG_MAGIC || !data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) throw new Error('Неверный формат .fpconfig.');
+    const safe = Object.fromEntries(Object.entries(data.settings).filter(([key]) => !EXCLUDE_KEYS.has(key) && key !== 'fpToolsAutoReplies'));
+    if (safe.fpToolsPageModes && typeof safe.fpToolsPageModes === 'object' && !Array.isArray(safe.fpToolsPageModes)) {
+        const pageModes = { ...safe.fpToolsPageModes };
+        delete pageModes.piggy_banks;
+        delete pageModes.calculator;
+        delete pageModes.currency_calc;
+        safe.fpToolsPageModes = pageModes;
     }
+    await chrome.storage.local.set(safe);
+    if (Object.hasOwn(data.settings, 'fpToolsAutoReplies')) await window.fptImportAutoReplies(data.settings.fpToolsAutoReplies);
+    return { count: Object.keys(safe).length + Number(Object.hasOwn(data.settings, 'fpToolsAutoReplies')) };
 }
-
-function initializeSettingsIO() {
-    const exportBtn = document.getElementById('fp-settings-export-btn');
-    const importBtn = document.getElementById('fp-settings-import-btn');
-    const importInput = document.getElementById('fp-settings-import-input');
-
-    if (!exportBtn) return;
-
-    exportBtn.addEventListener('click', exportSettings);
-
-    importBtn?.addEventListener('click', () => importInput?.click());
-
-    importInput?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) importSettings(file);
-        importInput.value = '';
+if (typeof window !== 'undefined' && window.fptPopupActions) {
+    const register = (id, fn) => window.fptPopupActions.register('settings_io', id, fn);
+    register('fp-settings-export-btn', getPopupSettingsExport);
+    register('fp-settings-import-btn', importPopupSettings);
+    register('fp-reset-autoresponder-btn', async () => {
+        await chrome.storage.local.remove('fpToolsAutoResponderTag');
+        return window.fptPatchAutoReplies({ set: { processedMessageIds: [] } });
+    });
+    register('fp-reset-pinned-btn', () => chrome.storage.local.remove('fpToolsPinnedLots'));
+    register('fp-reset-greeted-btn', () => window.fptPatchAutoReplies({ set: { greetedUsers: [] } }));
+    register('fp-reset-april-btn', async () => {
+        const year = new Date().getFullYear();
+        for (const key of [`fpApril_${year}_done`, `fpApril_${year-1}_done`]) localStorage.removeItem(key);
+        for (const key of ['fpAprilReloads', 'fpAprilActive']) sessionStorage.removeItem(key);
+        return chrome.storage.local.remove([`fpApril_${year}_done`, `fpApril_${year-1}_done`, `fpApril_${year+1}_done`, 'fpAprilReloads', 'fpAprilActive']);
     });
 }

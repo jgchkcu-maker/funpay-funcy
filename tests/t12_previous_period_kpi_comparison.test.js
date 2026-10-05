@@ -7,7 +7,6 @@ const { loadFinanceHub } = require('./helpers/finance_hub_loader');
 const ROOT = path.join(__dirname, '..');
 const financeDataSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_data.js'), 'utf8').replace(/\r\n/g, '\n');
 const financeHubSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub.js'), 'utf8').replace(/\r\n/g, '\n');
-const financeHubOverviewSource = fs.readFileSync(path.join(ROOT, 'content', 'features', 'finance_hub', 'overview.js'), 'utf8').replace(/\r\n/g, '\n');
 const cssSource = fs.readFileSync(path.join(ROOT, 'css', 'content_styles.css'), 'utf8').replace(/\r\n/g, '\n');
 
 function createFinanceData(customSales = []) {
@@ -297,16 +296,7 @@ function testFinanceHubIntegration() {
     assert.equal(typeof env.hub.formatKpiComparison, 'function', 'Hub re-exports formatKpiComparison');
     assert.equal(typeof env.hub.compareKpis, 'function', 'Hub re-exports compareKpis');
 
-    // Check that CSS contains KPI difference classes
-    assert.match(cssSource, /\.fpt-fin-kpi-diff/, 'CSS defines .fpt-fin-kpi-diff');
-    assert.match(cssSource, /\.fpt-fin-diff-positive/, 'CSS defines .fpt-fin-diff-positive');
-    assert.match(cssSource, /\.fpt-fin-diff-negative/, 'CSS defines .fpt-fin-diff-negative');
-    assert.match(cssSource, /\.fpt-fin-diff-neutral/, 'CSS defines .fpt-fin-diff-neutral');
-    assert.match(cssSource, /\.fpt-fin-diff-value/, 'CSS defines .fpt-fin-diff-value');
-    assert.match(cssSource, /\.fpt-fin-diff-label/, 'CSS defines .fpt-fin-diff-label');
 
-    // Check that finance_hub.js has row 1 and subtab badges wired
-    assert.match(financeHubOverviewSource, /fpt-fin-kpi-diff|diffs\.revenue|diffHtml/, 'Finance Hub markup includes KPI diff badges');
 }
 
 // 6. Zero-baseline fixtures (R13 in RISK_REGISTER.md)

@@ -161,3 +161,6 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged)
         }
     });
 }
+if (typeof window !== 'undefined' && window.fptPopupActions) {
+    window.fptPopupActions.register('telegram', 'previewNotificationBtn', p => previewNotificationSound(p.sound, p.volume));
+}

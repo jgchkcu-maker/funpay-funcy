@@ -1,5 +1,7 @@
 
 import { updateAutoReplies } from './auto_reply_store.js';
+import { refreshAutoDeliveryLotStock, isAutoDeliveryLotEnabled } from './auto_delivery_store.js';
+export { countAutoDeliverySecrets, createAutoDeliveryStore, isAutoDeliveryLotEnabled } from './auto_delivery_store.js';
 
 function randomTag() {
     return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
@@ -555,18 +557,19 @@ async function handleAutoDelivery(msg, auth, settings) {
         const orderInfo = await parseViaOffscreen(orderHtml, 'parseOrderPageForDelivery');
         if (!orderInfo) return;
 
-        const { secrets, lotId, nodeId, buyerChatId } = orderInfo;
+        const { secrets, lotId, nodeId, buyerChatId, lotName } = orderInfo;
         const chatId = msg.chatId || buyerChatId;
 
         
         const { fpToolsAutoDeliveryLots = {} } = await chrome.storage.local.get('fpToolsAutoDeliveryLots');
         const deliveryConfig = lotId ? fpToolsAutoDeliveryLots[String(lotId)] : null;
+        if (!isAutoDeliveryLotEnabled(deliveryConfig)) return;
 
         let deliveryText = '';
         let deliveryMode = 'secrets'; 
 
         if (deliveryConfig?.mode === 'template' && deliveryConfig.text) {
-            deliveryText = applyVariables(deliveryConfig.text, { buyerName: msg.buyerName, orderId });
+            deliveryText = applyVariables(deliveryConfig.text, { buyerName: msg.buyerName, orderId, lotName });
             deliveryMode = 'template';
         } else if (deliveryConfig?.mode === 'secrets' && secrets) {
             deliveryText = secrets;
@@ -597,6 +600,14 @@ async function handleAutoDelivery(msg, auth, settings) {
             s.deliveredOrderIds = arr;
         });
         console.log(`FunPay Funcy AR: авто-выдача → заказ #${orderId}, чат ${chatId}`);
+
+        if (deliveryMode === 'secrets' && lotId && nodeId) {
+            try {
+                await refreshAutoDeliveryLotStock(lotId, nodeId);
+            } catch (stockError) {
+                console.warn(`FunPay Funcy AR: не удалось обновить остаток лота ${lotId}`, stockError.message);
+            }
+        }
 
     } catch (e) {
         console.error(`FunPay Funcy AR: ошибка авто-выдачи #${orderId}`, e.message);

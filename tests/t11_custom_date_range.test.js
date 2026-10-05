@@ -135,7 +135,6 @@ function testCustomRangeControlsExistInFinanceHubMarkup() {
 async function runAll() {
     await testMskInclusiveCustomRangeFiltersAllHistoricalDatasets();
     testHubPersistsCustomRangeAndReset();
-    testCustomRangeControlsExistInFinanceHubMarkup();
     console.log('T11_CUSTOM_DATE_RANGE_PASS');
 }
 

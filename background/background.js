@@ -4,9 +4,14 @@ import './sales_db.js'; // FunPay Funcy: IndexedDB-хранилище заказ
 import './purchases_db.js'; // FunPay Funcy: IndexedDB-хранилище покупок (self.FPTPurchasesDB)
 import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище финансов (self.FPTFinanceDB)
 import { fetchAIResponse, fetchAILotGeneration, fetchAITranslation, fetchAIImageGeneration } from './ai.js';
+import { cleanupRetiredFinancialToolData } from './retired_financial_tools.mjs';
 import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump, runBumpCycle } from './autobump.js';
 import { runAutoResponderCycle, resetAutoResponderState } from './autoresponder.js';
 import { patchAutoReplies, importAutoReplies } from './auto_reply_store.js';
+import {
+    configureAutoDeliveryStore, saveAutoDeliveryLot, syncAutoDeliveryStockCounts
+} from './auto_delivery_store.js';
+import { AUTO_RESTORE_ALARM_NAME, syncAutoRestoreAlarm } from './auto_restore_alarm.js';
 import { startEngine, stopEngine, onHeartbeat, onKeepalivePing, ENGINE_HEARTBEAT_ALARM } from './fpt_engine.js';
 import {
     TELEGRAM_ALARM, telegramInit, telegramSyncAlarm, telegramPollOnce,
@@ -45,8 +50,10 @@ const _imgSendInFlight = new Map();
 const _imgSendDone = new Map();
 const DISCORD_LOG_ALARM_NAME = 'fpToolsDiscordCheck';
 const AUTO_RESPONDER_ALARM_NAME = 'fpToolsAutoResponder';
+let _autoRestoreAlarmSyncGeneration = 0;
 let lastDiscordChatTag = null;
 const IMPORT_PROCESS_KEY = 'fpToolsLotImportProcess';
+let _lotImportStartInFlight = false;
 const RETRY_LIMIT = 5;
 const RETRY_DELAY = 5000; // 5 секунд
 
@@ -1011,6 +1018,28 @@ async function parseHtmlViaOffscreen(html, action, extra = {}) {
     });
 }
 
+async function readAutoDeliveryLotForm(lot) {
+    const offerId = String(lot?.id || '');
+    const nodeId = String(lot?.nodeId || '');
+    if (!/^\d+$/.test(offerId) || !/^\d+$/.test(nodeId)) throw new Error('Некорректные данные лота.');
+
+    const params = new URLSearchParams({ node: nodeId, offer: offerId });
+    const { response, seal } = await fptFetchWithSeal(`https://funpay.com/lots/offerEdit?${params}`, {});
+    if (!response.ok) {
+        if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
+        throw new Error(`Ошибка загрузки лота: ${response.status}`);
+    }
+    const html = await response.text();
+    if (/account\/login|name="login"/i.test(html) && !/form-offer-editor/i.test(html)) {
+        throw new Error(GOLDEN_SEAL_ERROR);
+    }
+    const data = await parseHtmlViaOffscreen(html, 'parseLotEditPage');
+    if (!data) throw new Error('Не удалось разобрать форму лота.');
+    return data;
+}
+
+configureAutoDeliveryStore(chrome.storage.local, readAutoDeliveryLotForm);
+
 async function ensureOffscreenDocument() {
     try {
         const existingContexts = await chrome.runtime.getContexts({
@@ -1584,6 +1613,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         stopAutoBump().then(() => sendResponse({ success: true }));
         return true;
     }
+    if (request.action === 'getAutoBumpStatus') {
+        chrome.alarms.get(BUMP_ALARM_NAME)
+            .then(alarm => sendResponse({ success: true, nextRunAt: alarm ? alarm.scheduledTime : null }))
+            .catch(e => sendResponse({ success: false, error: e && e.message }));
+        return true;
+    }
     if (request.action === 'getUserCategories') {
         (async () => {
             try {
@@ -2155,16 +2190,33 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'startLotImport') {
+        if (_lotImportStartInFlight) {
+            sendResponse({ success: false, error: 'Импорт уже запускается.' });
+            return false;
+        }
+        _lotImportStartInFlight = true;
         (async () => {
-            const importProcess = {
-                name: request.fileName || `Импорт от ${new Date().toLocaleString()}`,
-                state: 'running', // 'running', 'postponed'
-                lots: request.lots.map(lot => ({ ...lot, status: 'pending', retries: 0, error: null })),
-                currentIndex: 0
-            };
-            await chrome.storage.local.set({ [IMPORT_PROCESS_KEY]: importProcess });
-            sendResponse({ success: true });
-            processNextLotImport();
+            try {
+                const { [IMPORT_PROCESS_KEY]: currentProcess } = await chrome.storage.local.get(IMPORT_PROCESS_KEY);
+                if (currentProcess) {
+                    sendResponse({ success: false, error: 'Импорт уже выполняется. Сначала завершите текущую задачу.' });
+                    return;
+                }
+                if (!Array.isArray(request.lots) || !request.lots.length) throw new Error('В файле не найдены лоты.');
+                const importProcess = {
+                    name: request.fileName || `Импорт от ${new Date().toLocaleString()}`,
+                    state: 'running', // 'running', 'postponed'
+                    lots: request.lots.map(lot => ({ ...lot, status: 'pending', retries: 0, error: null })),
+                    currentIndex: 0
+                };
+                await chrome.storage.local.set({ [IMPORT_PROCESS_KEY]: importProcess });
+                sendResponse({ success: true });
+                processNextLotImport();
+            } catch (error) {
+                sendResponse({ success: false, error: error?.message || 'Не удалось запустить импорт.' });
+            } finally {
+                _lotImportStartInFlight = false;
+            }
         })();
         return true;
     }
@@ -2511,15 +2563,45 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 
     // IMPORT & GLOBAL SEARCH HANDLERS
+    if (request.action === 'saveAutoDeliveryLot') {
+        (async () => {
+            try {
+                const data = await saveAutoDeliveryLot(request.lotId, request.settings);
+                sendResponse({ success: true, data });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message || 'Не удалось сохранить настройки лота.' });
+            }
+        })();
+        return true;
+    }
+    if (request.action === 'syncAutoDeliveryStockCounts') {
+        (async () => {
+            try {
+                const result = await syncAutoDeliveryStockCounts(request.lots);
+                sendResponse({ success: true, ...result });
+            } catch (error) {
+                sendResponse({ success: false, error: error.message || 'Не удалось обновить остатки.' });
+            }
+        })();
+        return true;
+    }
     if (request.action === 'getUserLotsList') {
         (async () => {
             try {
-                const response = await fetch(`https://funpay.com/users/${request.userId}/`);
+                const { response, seal } = await fptFetchWithSeal(`https://funpay.com/users/${request.userId}/`, {});
+                if (!response.ok) {
+                    if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
+                    throw new Error(`Ошибка загрузки списка лотов: HTTP ${response.status}`);
+                }
                 const html = await response.text();
+                if (/account\/login|name="login"/i.test(html) && !/tc-item|data-app-data/i.test(html)) {
+                    throw new Error(GOLDEN_SEAL_ERROR);
+                }
                 const lots = await parseHtmlViaOffscreen(html, 'parseUserLotsList');
+                if (!Array.isArray(lots)) throw new Error('Не удалось разобрать список лотов.');
                 sendResponse(lots);
             } catch (e) {
-                sendResponse(null);
+                sendResponse({ success: false, error: e.message || 'Не удалось загрузить список лотов.' });
             }
         })();
         return true;
@@ -2779,7 +2861,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     if (alarm.name === ENGINE_HEARTBEAT_ALARM) {
         await onHeartbeat();
     }
-    if (alarm.name === 'fpToolsAutoRestore') {
+    if (alarm.name === AUTO_RESTORE_ALARM_NAME) {
         // Notify all FunPay tabs to check and restore/disable lots
         const tabs = await chrome.tabs.query({ url: "https://funpay.com/*" });
         tabs.forEach(tab => {
@@ -2789,17 +2871,17 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 });
 
 function setupInitialAlarms() {
-    chrome.storage.local.get(['autoBumpEnabled', 'fpToolsDiscord', 'fpToolsAutoReplies'], (settings) => {
+    const autoRestoreRevision = ++_autoRestoreAlarmSyncGeneration;
+    chrome.storage.local.get([
+        'autoBumpEnabled', 'fpToolsDiscord', 'fpToolsAutoReplies',
+        'fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled'
+    ], (settings) => {
         if (settings.autoBumpEnabled) {
             runScheduledBump();
         }
         // 3.0: Periodic lot restore/disable check (every 5 minutes)
-        const AUTO_RESTORE_ALARM = 'fpToolsAutoRestore';
-        if (settings.fpToolsAutoRestoreEnabled || settings.fpToolsAutoDisableEnabled) {
-            chrome.alarms.create(AUTO_RESTORE_ALARM, {
-                delayInMinutes: 1,
-                periodInMinutes: 5
-            });
+        if (autoRestoreRevision === _autoRestoreAlarmSyncGeneration) {
+            syncAutoRestoreAlarm(chrome.alarms, settings.fpToolsAutoRestoreEnabled, settings.fpToolsAutoDisableEnabled);
         }
 
         if (settings.fpToolsDiscord && settings.fpToolsDiscord.enabled && settings.fpToolsDiscord.webhookUrl) {
@@ -2826,7 +2908,12 @@ function setupInitialAlarms() {
 
 chrome.runtime.onStartup.addListener(setupInitialAlarms);
 
-chrome.runtime.onInstalled.addListener((details) => {
+chrome.runtime.onInstalled.addListener(async (details) => {
+    try {
+        await cleanupRetiredFinancialToolData(details.reason, chrome.storage.local);
+    } catch (error) {
+        console.error('FunPay Funcy: retired financial data cleanup failed:', error);
+    }
     if (details.reason === 'install') {
         chrome.storage.local.set({ 
             autoBumpEnabled: false, 
@@ -2846,6 +2933,14 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
+
+    if (changes.fpToolsAutoRestoreEnabled || changes.fpToolsAutoDisableEnabled) {
+        const autoRestoreRevision = ++_autoRestoreAlarmSyncGeneration;
+        chrome.storage.local.get(['fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled'], (settings) => {
+            if (autoRestoreRevision !== _autoRestoreAlarmSyncGeneration) return;
+            syncAutoRestoreAlarm(chrome.alarms, settings.fpToolsAutoRestoreEnabled, settings.fpToolsAutoDisableEnabled);
+        });
+    }
 
     if (changes.fpToolsDiscord) {
         const newValue = changes.fpToolsDiscord.newValue;

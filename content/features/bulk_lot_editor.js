@@ -1,346 +1,72 @@
-// content/features/bulk_lot_editor.js - FunPay Funcy 2.9
-// Массовое редактирование: название, описание, сообщение покупателю
-// Активируется кнопкой "Массово изменить" в разделе Лоты
-
-function initBulkLotEditor() {
-    const page = document.querySelector('.fp-tools-page-content[data-page="lot_io"]');
-    if (!page || page.dataset.bulkEditorInit) return;
-    page.dataset.bulkEditorInit = 'true';
-
-    const btn = document.getElementById('fp-bulk-edit-btn');
-    if (!btn) return;
-
-    btn.addEventListener('click', openBulkEditor);
+// Data operations for the replacement lot editor. Full FunPay fields are preserved.
+function bulkLotAbortError() {
+    const error = new Error('Операция остановлена.');
+    error.name = 'AbortError';
+    return error;
 }
 
-async function openBulkEditor() {
-    const existing = document.getElementById('fp-bulk-editor-overlay');
-    if (existing) { existing.remove(); return; }
+function throwIfBulkLotAborted(signal) {
+    if (signal?.aborted) throw bulkLotAbortError();
+}
 
-    // Show loading
-    showNotification('Загружаем список лотов...');
-
-    let lots = [];
-    try {
-        const appData = JSON.parse(document.body.dataset.appData || '{}');
-        const d = Array.isArray(appData) ? appData[0] : appData;
-        const userId = d.userId;
-        if (!userId) throw new Error('Нет userId');
-
-        lots = await new Promise((resolve, reject) => {
-            chrome.runtime.sendMessage({ action: 'getUserLotsList', userId }, (res) => {
-                if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-                else resolve(res || []);
-            });
-        });
-    } catch (e) {
-        showNotification(`Ошибка: ${e.message}`, true);
-        return;
-    }
-
-    if (!lots.length) {
-        showNotification('Лоты не найдены', true);
-        return;
-    }
-
-    const overlay = document.createElement('div');
-    overlay.id = 'fp-bulk-editor-overlay';
-    overlay.className = 'fp-tools-modal-overlay';
-    overlay.style.display = 'flex';
-
-    overlay.innerHTML = `
-        <div class="fp-tools-modal-content" style="max-width:720px;width:95%;max-height:90vh;display:flex;flex-direction:column;background:var(--fpt-bg, #ffffff);color:var(--fpt-text, #16181d);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:10px;box-shadow:0 16px 40px rgba(0,0,0,0.6);">
-            <div class="fp-tools-modal-header" style="padding:16px 20px;border-bottom:1px solid var(--fpt-border, rgba(0,0,0,0.12));background:var(--fpt-bg, #ffffff);border-radius:10px 10px 0 0;">
-                <h3 style="margin:0;font-size:15px;color:var(--fpt-text, #16181d);">Массовое редактирование лотов</h3>
-                <button class="fp-tools-modal-close" style="background:none;border:none;color:var(--fpt-text-muted, #6b7280);font-size:24px;cursor:pointer;line-height:1;">×</button>
-            </div>
-            <div class="fp-tools-modal-body" style="overflow-y:auto;padding:16px 20px;flex:1;background:var(--fpt-bg, #ffffff);">
-                <p class="template-info">Изменяются только заполненные поля. Переменные: <code>{current}</code> - текущее значение поля, <code>{lotname}</code> - название лота. Изменения применяются к русской версии полей.</p>
-
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
-                    <div>
-                        <label style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);display:block;margin-bottom:4px;">Новое название (пусто - не менять)</label>
-                        <input type="text" id="fp-bulk-new-name" placeholder="{current}" style="width:100%;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;">
-                    </div>
-                    <div>
-                        <label style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);display:block;margin-bottom:4px;">Сообщение покупателю (пусто - не менять)</label>
-                        <input type="text" id="fp-bulk-new-msg" placeholder="Не изменять" style="width:100%;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;">
-                    </div>
-                </div>
-
-                <div style="margin-bottom:12px;">
-                    <label style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);display:block;margin-bottom:4px;">Новое описание (пусто - не менять)</label>
-                    <textarea id="fp-bulk-new-desc" placeholder="Не изменять" rows="3" style="width:100%;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;resize:vertical;"></textarea>
-                </div>
-
-                <div style="border:1px solid #1e2030;border-radius:8px;padding:12px;margin-bottom:16px;">
-                    <label style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);display:block;margin-bottom:8px;font-weight:700;">Найти и заменить (точечно, без перезаписи всего)</label>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-                        <input type="text" id="fp-bulk-find" placeholder="Найти…" style="width:100%;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;">
-                        <input type="text" id="fp-bulk-replace" placeholder="Заменить на…" style="width:100%;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;">
-                    </div>
-                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12px;color:var(--fpt-text-muted, #6b7280);">
-                        <span style="color:var(--fpt-text-muted, #8a90a6);">Применять к:</span>
-                        <label style="display:flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="fp-bulk-fr-name" checked style="accent-color:#1b75bb;"> названию</label>
-                        <label style="display:flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="fp-bulk-fr-desc" checked style="accent-color:#1b75bb;"> описанию</label>
-                        <label style="display:flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="fp-bulk-fr-msg" style="accent-color:#1b75bb;"> сообщению</label>
-                    </div>
-                    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:12px;color:var(--fpt-text-muted, #6b7280);margin-top:8px;">
-                        <label style="display:flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="fp-bulk-fr-regex" style="accent-color:#1b75bb;"> RegEx</label>
-                        <label style="display:flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="fp-bulk-fr-case" style="accent-color:#1b75bb;"> учитывать регистр</label>
-                        <label style="display:flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="fp-bulk-fr-word" style="accent-color:#1b75bb;"> только целые слова</label>
-                        <label style="display:flex;gap:5px;align-items:center;cursor:pointer;"><input type="checkbox" id="fp-bulk-fr-all" checked style="accent-color:#1b75bb;"> все совпадения</label>
-                    </div>
-                    <div style="font-size:11px;color:var(--fpt-text-muted, #8a90a6);margin-top:8px;">Работает вместе с полями выше: сначала «найти-заменить», затем подстановка полных значений (если заданы). При RegEx в «Заменить на» доступны <code>$1</code>, <code>$2</code> и т.д.</div>
-                </div>
-
-                <div style="border:1px solid #1e2030;border-radius:8px;padding:12px;margin-bottom:16px;">
-                    <label style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);display:block;margin-bottom:8px;font-weight:700;">Изменение цены</label>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <select id="fp-bulk-price-mode" style="background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;">
-                            <option value="none">Не менять</option>
-                            <option value="set">Установить = (одна цена на всё)</option>
-                            <option value="buyer_set">Цена покупателя = (с учётом комиссии)</option>
-                            <option value="round_flat">Ровная цена (округлить до…)</option>
-                            <option value="add">Прибавить +</option>
-                            <option value="sub">Вычесть −</option>
-                            <option value="pct_up">Поднять на %</option>
-                            <option value="pct_down">Снизить на %</option>
-                        </select>
-                        <input type="number" id="fp-bulk-price-value" step="0.01" placeholder="0" disabled style="flex:1;min-width:120px;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;">
-                        <select id="fp-bulk-price-flat-step" style="display:none;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:8px;color:var(--fpt-text, #16181d);font-size:13px;">
-                            <option value="1">до 1</option>
-                            <option value="5">до 5</option>
-                            <option value="10" selected>до 10</option>
-                            <option value="50">до 50</option>
-                            <option value="100">до 100</option>
-                            <option value="500">до 500</option>
-                            <option value="1000">до 1000</option>
-                        </select>
-                        <span id="fp-bulk-price-unit" style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);min-width:14px;"></span>
-                    </div>
-                    <div style="display:flex;gap:14px;align-items:center;margin-top:8px;flex-wrap:wrap;">
-                        <label style="font-size:12px;color:var(--fpt-text-muted, #6b7280);display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="checkbox" id="fp-bulk-price-round" style="accent-color:#1b75bb;"> Округлять до целого</label>
-                        <label style="font-size:12px;color:var(--fpt-text-muted, #6b7280);display:flex;align-items:center;gap:5px;cursor:pointer;"><input type="number" id="fp-bulk-price-min" step="0.01" placeholder="мин." style="width:80px;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:5px;color:var(--fpt-text, #16181d);font-size:12px;"> не ниже</label>
-                    </div>
-                </div>
-
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <span style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);">Лоты (<span id="fp-bulk-count">${lots.length}</span> / выбрано <span id="fp-bulk-selected-count">0</span>):</span>
-                    <div style="display:flex;gap:6px;align-items:center;">
-                        <input type="text" id="fp-bulk-filter" placeholder="Фильтр…" style="background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;padding:5px 8px;color:var(--fpt-text, #16181d);font-size:12px;width:130px;">
-                        <button id="fp-bulk-select-all" class="btn btn-default" style="padding:4px 10px;font-size:12px;">Выбрать все</button>
-                    </div>
-                </div>
-
-                <div id="fp-bulk-lots-list" style="border:1px solid #1e2030;border-radius:8px;max-height:240px;overflow-y:auto;">
-                    ${lots.map((lot) => `
-                        <label class="fp-bulk-lot-row" data-title="${(lot.title || '').toLowerCase().replace(/"/g,'&quot;')}" style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--fpt-border, rgba(0,0,0,0.12));cursor:pointer;font-size:13px;color:var(--fpt-text-muted, #6b7280);">
-                            <input type="checkbox" class="fp-bulk-lot-check" data-offer-id="${lot.id}" data-node-id="${lot.nodeId}" style="accent-color:#1b75bb;flex-shrink:0;">
-                            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${lot.title}</span>
-                            <span style="font-size:11px;color:var(--fpt-text-muted, #6b7280);flex-shrink:0;">${lot.categoryName}</span>
-                        </label>
-                    `).join('')}
-                </div>
-
-                <div id="fp-bulk-progress" style="display:none;margin-top:14px;">
-                    <div style="height:4px;background:var(--fpt-bg, #ffffff);border-radius:2px;overflow:hidden;">
-                        <div id="fp-bulk-progress-bar" style="height:100%;background:#1b75bb;width:0;transition:width 0.3s;border-radius:2px;"></div>
-                    </div>
-                    <div id="fp-bulk-progress-text" style="font-size:12px;color:var(--fpt-text-muted, #8a90a6);margin-top:6px;text-align:center;"></div>
-                    <div id="fp-bulk-log" style="font-size:11px;color:var(--fpt-text-muted, #6b7280);margin-top:8px;max-height:90px;overflow-y:auto;font-family:monospace;line-height:1.5;"></div>
-                </div>
-            </div>
-            <div class="fp-tools-modal-footer" style="padding:14px 20px;display:flex;gap:10px;background:var(--fpt-bg, #ffffff);border-top:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:0 0 10px 10px;">
-                <button id="fp-bulk-apply-btn" class="btn" style="flex:1;">Применить изменения</button>
-                <button id="fp-bulk-activate-btn" class="btn btn-default" style="flex:0 0 auto;" title="Активировать выбранные лоты">Активировать</button>
-                <button class="fp-tools-modal-close btn btn-default">Отмена</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelectorAll('.fp-tools-modal-close').forEach(b =>
-        b.addEventListener('click', () => overlay.remove())
-    );
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) overlay.remove();
+function waitForBulkLotDelay(delayMs, signal) {
+    throwIfBulkLotAborted(signal);
+    const delay = Math.max(0, Number(delayMs) || 0);
+    if (!delay) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+        let timer;
+        const finish = callback => {
+            clearTimeout(timer);
+            signal?.removeEventListener('abort', onAbort);
+            callback();
+        };
+        const onAbort = () => finish(() => reject(bulkLotAbortError()));
+        timer = setTimeout(() => finish(resolve), delay);
+        signal?.addEventListener('abort', onAbort, { once: true });
     });
+}
 
-    const $ = (id) => document.getElementById(id);
-
-    // Live "selected" counter
-    const updateSelectedCount = () => {
-        const n = overlay.querySelectorAll('.fp-bulk-lot-check:checked').length;
-        $('fp-bulk-selected-count').textContent = n;
+async function openBulkEditor(p = {}) {
+    const app = JSON.parse(document.body?.dataset.appData || '{}');
+    const userId = p.userId || (Array.isArray(app) ? app[0] : app).userId;
+    if (!userId) throw new Error('Нет userId');
+    return chrome.runtime.sendMessage({ action: 'getUserLotsList', userId });
+}
+async function applyPopupBulkLots(p = {}, activate = false) {
+    if (!Array.isArray(p.lots) || !p.lots.length) throw new Error('Выберите хотя бы один лот.');
+    const change = activate ? {} : (p.changes || {}), price = change.price || {}, fr = change.findReplace || {};
+    const newName = change.name ?? '', newDesc = change.description ?? '', newMsg = change.message ?? '';
+    const nameWanted = Object.hasOwn(change, 'name'), descWanted = Object.hasOwn(change, 'description'), msgWanted = Object.hasOwn(change, 'message');
+    const pMode = price.mode || 'none', pVal = Number(price.value), pRound = price.round === true;
+    const pMin = price.minimum === undefined ? NaN : Number(price.minimum), pFlatStep = Number(price.step ?? 1);
+    const priceWanted = pMode !== 'none', frActive = Boolean(fr.find), frFields = { name: true, desc: true, msg: false, ...fr.fields };
+    if (!['none', 'set', 'buyer_set', 'round_flat', 'add', 'sub', 'pct_up', 'pct_down'].includes(pMode)) throw new Error('Некорректный режим цены.');
+    if (priceWanted && pMode !== 'round_flat' && (!Number.isFinite(pVal) || pVal < 0)) throw new Error('Укажите корректную цену.');
+    if (pMode === 'round_flat' && (!Number.isFinite(pFlatStep) || pFlatStep <= 0)) throw new Error('Некорректный шаг округления.');
+    if (!activate && !nameWanted && !descWanted && !msgWanted && !priceWanted && !frActive) throw new Error('Укажите хотя бы одно изменение.');
+    let pattern = fr.regex ? fr.find : String(fr.find || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (fr.wholeWord) pattern = `\\b${pattern}\\b`;
+    const re = frActive ? new RegExp(pattern, (fr.all !== false ? 'g' : '') + (fr.caseSensitive ? '' : 'i')) : null;
+    const applyFindReplace = text => re ? String(text).replace(re, fr.replace ?? '') : text;
+    const getField = (data, base) => data[`fields[${base}][ru]`] ?? data[`fields[${base}]`] ?? '';
+    const setField = (data, base, value) => {
+        const key = `fields[${base}][ru]` in data ? `fields[${base}][ru]` : `fields[${base}]` in data ? `fields[${base}]` : `fields[${base}][ru]`;
+        data[key] = value;
     };
-    overlay.addEventListener('change', (e) => {
-        if (e.target.classList.contains('fp-bulk-lot-check')) updateSelectedCount();
-    });
-
-    // Filter the visible lot rows
-    $('fp-bulk-filter').addEventListener('input', (e) => {
-        const q = e.target.value.trim().toLowerCase();
-        overlay.querySelectorAll('.fp-bulk-lot-row').forEach(row => {
-            row.style.display = (!q || (row.dataset.title || '').includes(q)) ? '' : 'none';
-        });
-    });
-
-    // Price mode enables/disables the value field and shows the unit
-    const priceMode = $('fp-bulk-price-mode');
-    const priceVal  = $('fp-bulk-price-value');
-    const priceUnit = $('fp-bulk-price-unit');
-    const priceFlatStep = $('fp-bulk-price-flat-step');
-    priceMode.addEventListener('change', () => {
-        const m = priceMode.value;
-        if (m === 'round_flat') {
-            priceVal.disabled = true;
-            priceVal.value = '';
-            priceFlatStep.style.display = '';
-            priceUnit.textContent = '₽';
-            return;
-        }
-        priceFlatStep.style.display = 'none';
-        priceVal.disabled = (m === 'none');
-        if (m === 'none') { priceVal.value = ''; priceUnit.textContent = ''; }
-        else if (m === 'pct_up' || m === 'pct_down') priceUnit.textContent = '%';
-        else priceUnit.textContent = '₽';
-    });
-
-    // Select all toggle (only toggles currently visible rows)
-    let allSelected = false;
-    $('fp-bulk-select-all').addEventListener('click', () => {
-        allSelected = !allSelected;
-        overlay.querySelectorAll('.fp-bulk-lot-row').forEach(row => {
-            if (row.style.display === 'none') return;
-            const cb = row.querySelector('.fp-bulk-lot-check');
-            if (cb) cb.checked = allSelected;
-        });
-        $('fp-bulk-select-all').textContent = allSelected ? 'Снять все' : 'Выбрать все';
-        updateSelectedCount();
-    });
-
-    const log = (msg, isErr = false) => {
-        const el = $('fp-bulk-log');
-        if (!el) return;
-        const line = document.createElement('div');
-        line.textContent = msg;
-        if (isErr) line.style.color = '#e07070';
-        el.appendChild(line);
-        el.scrollTop = el.scrollHeight;
-    };
-
-    // Apply
-    $('fp-bulk-apply-btn').addEventListener('click', async () => {
-        const selected = Array.from(overlay.querySelectorAll('.fp-bulk-lot-check:checked'));
-        if (!selected.length) {
-            showNotification('Выберите хотя бы один лот', true);
-            return;
-        }
-
-        const newName = $('fp-bulk-new-name').value.trim();
-        const newDesc = $('fp-bulk-new-desc').value.trim();
-        const newMsg  = $('fp-bulk-new-msg').value.trim();
-
-        const pMode  = priceMode.value;
-        const pVal   = parseFloat(priceVal.value);
-        const pRound = $('fp-bulk-price-round').checked;
-        const pMin   = parseFloat($('fp-bulk-price-min').value);
-        const pFlatStep = parseFloat(priceFlatStep.value) || 1;
-        const priceWanted = pMode !== 'none';
-
-        // Find & replace settings
-        const frFind    = $('fp-bulk-find').value;
-        const frReplace = $('fp-bulk-replace').value;
-        const frActive  = frFind.length > 0;
-        const frFields  = {
-            name: $('fp-bulk-fr-name').checked,
-            desc: $('fp-bulk-fr-desc').checked,
-            msg:  $('fp-bulk-fr-msg').checked,
-        };
-        const frRegex = $('fp-bulk-fr-regex').checked;
-        const frCase  = $('fp-bulk-fr-case').checked;
-        const frWord  = $('fp-bulk-fr-word').checked;
-        const frAll   = $('fp-bulk-fr-all').checked;
-
-        let frRe = null;
-        if (frActive) {
-            try {
-                let pattern = frRegex ? frFind : frFind.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                if (frWord) pattern = `\\b${pattern}\\b`;
-                let flags = frAll ? 'g' : '';
-                if (!frCase) flags += 'i';
-                frRe = new RegExp(pattern, flags);
-            } catch (e) {
-                showNotification('Ошибка в регулярном выражении: ' + e.message, true);
-                return;
-            }
-        }
-
-        if (priceWanted && pMode !== 'round_flat' && (isNaN(pVal) || pVal < 0)) {
-            showNotification('Укажите корректное значение цены', true);
-            return;
-        }
-        if (!newName && !newDesc && !newMsg && !priceWanted && !frActive) {
-            showNotification('Укажите хотя бы одно изменение', true);
-            return;
-        }
-
-        const applyFindReplace = (text) => {
-            if (!frActive || !frRe || text == null) return text;
-            return text.replace(frRe, frReplace);
-        };
-
-        const applyBtn = $('fp-bulk-apply-btn');
-        applyBtn.disabled = true;
-        applyBtn.textContent = 'Применяем...';
-        $('fp-bulk-progress').style.display = 'block';
-        $('fp-bulk-log').innerHTML = '';
-
-        let ok = 0, fail = 0;
-        const total = selected.length;
-        let processed = 0;
-
-        // FunPay stores localized fields. We edit the RU variants (the primary ones);
-        // we fall back to the non-localized key if the page didn't expose [ru].
-        const setField = (data, base, value) => {
-            if (`fields[${base}][ru]` in data) data[`fields[${base}][ru]`] = value;
-            else if (`fields[${base}]` in data) data[`fields[${base}]`] = value;
-            else data[`fields[${base}][ru]`] = value; // create if absent
-        };
-        const getField = (data, base) =>
-            data[`fields[${base}][ru]`] ?? data[`fields[${base}]`] ?? '';
-
-        const applyTemplate = (tpl, current, lotName) =>
-            tpl.replace(/{current}/gi, current || '').replace(/{lotname}/gi, lotName || '');
-
-        for (const cb of selected) {
-            const offerId = cb.dataset.offerId;
-            const nodeId  = cb.dataset.nodeId;
-            const lotLabel = cb.closest('label')?.querySelector('span')?.textContent || offerId;
-            let lastBuyerInfo = '';
-
-            $('fp-bulk-progress-text').textContent = `Обрабатываем ${processed + 1}/${total}: ${lotLabel}`;
-
-            try {
-                // 1. Load current full lot form (all hidden fields preserved)
-                const editData = await new Promise((resolve, reject) => {
-                    chrome.runtime.sendMessage(
-                        { action: 'getLotForExport', nodeId, offerId },
-                        (res) => {
-                            if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-                            else if (res?.success) resolve(res.data);
-                            else reject(new Error(res?.error || 'Ошибка загрузки лота'));
-                        }
-                    );
-                });
-                if (!editData || typeof editData !== 'object') throw new Error('Нет данных лота');
-
-                // Build the POST body from the FULL form, then override only chosen fields,
-                // using FunPay's real field names. The old version posted summary/desc/secrets
-                // which FunPay ignores - so it reported success while changing nothing.
+    const applyTemplate = (tpl, current, lotName) => String(tpl).replace(/{current}/gi, () => current || '').replace(/{lotname}/gi, () => lotName || '');
+    const results = [];
+    for (const lot of p.lots) {
+        throwIfBulkLotAborted(p.signal);
+        const offerId = lot.offerId ?? lot.id, nodeId = lot.nodeId;
+        let lastBuyerInfo = '';
+        try {
+            if (!offerId || !nodeId) throw new Error('Не указан лот или раздел.');
+            const loaded = await chrome.runtime.sendMessage({ action: 'getLotForExport', nodeId, offerId });
+            throwIfBulkLotAborted(p.signal);
+            if (!loaded?.success || !loaded.data) throw new Error(loaded?.error || 'Ошибка загрузки лота.');
+            const editData = loaded.data;
                 const formData = { ...editData, offer_id: offerId };
+                if (activate) formData.active = 'on';
                 const currentTitle = getField(editData, 'summary');
 
                 // Step 1: find & replace on existing field values (точечно).
@@ -351,9 +77,9 @@ async function openBulkEditor() {
                 }
 
                 // Step 2: full-value overrides (if provided) - applied on top of step 1.
-                if (newName) setField(formData, 'summary', applyTemplate(newName, getField(formData, 'summary'), currentTitle));
-                if (newDesc) setField(formData, 'desc', applyTemplate(newDesc, getField(formData, 'desc'), currentTitle));
-                if (newMsg)  setField(formData, 'payment_msg', applyTemplate(newMsg, getField(formData, 'payment_msg'), currentTitle));
+                if (nameWanted) setField(formData, 'summary', applyTemplate(newName, getField(formData, 'summary'), currentTitle));
+                if (descWanted) setField(formData, 'desc', applyTemplate(newDesc, getField(formData, 'desc'), currentTitle));
+                if (msgWanted) setField(formData, 'payment_msg', applyTemplate(newMsg, getField(formData, 'payment_msg'), currentTitle));
 
                 if (priceWanted) {
                     const cur = parseFloat(editData.price);
@@ -391,102 +117,27 @@ async function openBulkEditor() {
                     }
                 }
 
-                // 2. Save. saveSingleLot now reports real API errors.
-                const saveRes = await new Promise((resolve) => {
-                    chrome.runtime.sendMessage({ action: 'saveSingleLot', data: formData }, (res) => {
-                        if (chrome.runtime.lastError) resolve({ success: false, error: chrome.runtime.lastError.message });
-                        else resolve(res || { success: false, error: 'нет ответа' });
-                    });
-                });
 
-                if (saveRes && saveRes.success) {
-                    ok++;
-                    log(`✓ ${lotLabel}${lastBuyerInfo || ''}`);
-                } else {
-                    fail++;
-                    log(`✗ ${lotLabel}: ${saveRes?.error || 'ошибка сохранения'}`, true);
-                }
-            } catch (e) {
-                fail++;
-                log(`✗ ${lotLabel}: ${e.message}`, true);
-            }
-
-            processed++;
-            $('fp-bulk-progress-bar').style.width = `${(processed / total) * 100}%`;
-            // Rate limit between lots to avoid FunPay throttling
-            await new Promise(r => setTimeout(r, 1200));
+            throwIfBulkLotAborted(p.signal);
+            const saved = await chrome.runtime.sendMessage({ action: 'saveSingleLot', data: formData });
+            if (!saved?.success) throw new Error(saved?.error || 'Ошибка сохранения.');
+            results.push({ offerId, success: true });
+        } catch (error) {
+            if (p.signal?.aborted || error?.name === 'AbortError') throw bulkLotAbortError();
+            results.push({ offerId, success: false, error: error.message });
         }
-
-        $('fp-bulk-progress-bar').style.width = '100%';
-        $('fp-bulk-progress-bar').style.background = fail ? '#d99000' : '#4caf82';
-        $('fp-bulk-progress-text').textContent = `Готово. Успешно: ${ok}, ошибок: ${fail}, всего: ${total}.`;
-        showNotification(`Изменено: ${ok}/${total}${fail ? `, ошибок: ${fail}` : ''}`, fail > 0);
-
-        applyBtn.disabled = false;
-        applyBtn.textContent = 'Применить изменения';
-    });
-
-    // FIX 2.8.2 (№10): массовая активация выбранных (неактивных) лотов.
-    // Грузим полную форму лота, ставим active=on и сохраняем - ровно тем же
-    // путём, что и обычное сохранение, поэтому ничего из полей лота не теряется.
-    $('fp-bulk-activate-btn').addEventListener('click', async () => {
-        const selected = Array.from(overlay.querySelectorAll('.fp-bulk-lot-check:checked'));
-        if (!selected.length) {
-            showNotification('Выберите хотя бы один лот для активации', true);
-            return;
-        }
-        const actBtn = $('fp-bulk-activate-btn');
-        const applyBtn = $('fp-bulk-apply-btn');
-        actBtn.disabled = true; applyBtn.disabled = true;
-        actBtn.textContent = 'Активируем...';
-        $('fp-bulk-progress').style.display = 'block';
-        $('fp-bulk-log').innerHTML = '';
-
-        let ok = 0, fail = 0, processed = 0;
-        const total = selected.length;
-
-        for (const cb of selected) {
-            const offerId = cb.dataset.offerId;
-            const nodeId  = cb.dataset.nodeId;
-            const lotLabel = cb.closest('label')?.querySelector('span')?.textContent || offerId;
-            $('fp-bulk-progress-text').textContent = `Активируем ${processed + 1}/${total}: ${lotLabel}`;
-
-            try {
-                const editData = await new Promise((resolve, reject) => {
-                    chrome.runtime.sendMessage({ action: 'getLotForExport', nodeId, offerId }, (res) => {
-                        if (chrome.runtime.lastError) reject(new Error(chrome.runtime.lastError.message));
-                        else if (res?.success) resolve(res.data);
-                        else reject(new Error(res?.error || 'Ошибка загрузки лота'));
-                    });
-                });
-                if (!editData || typeof editData !== 'object') throw new Error('Нет данных лота');
-
-                const formData = { ...editData, offer_id: offerId, active: 'on' };
-
-                const saveRes = await new Promise((resolve) => {
-                    chrome.runtime.sendMessage({ action: 'saveSingleLot', data: formData }, (res) => {
-                        if (chrome.runtime.lastError) resolve({ success: false, error: chrome.runtime.lastError.message });
-                        else resolve(res || { success: false, error: 'нет ответа' });
-                    });
-                });
-
-                if (saveRes && saveRes.success) { ok++; log(`✓ ${lotLabel} - активирован`); }
-                else { fail++; log(`✗ ${lotLabel}: ${saveRes?.error || 'ошибка'}`, true); }
-            } catch (e) {
-                fail++; log(`✗ ${lotLabel}: ${e.message}`, true);
-            }
-
-            processed++;
-            $('fp-bulk-progress-bar').style.width = `${(processed / total) * 100}%`;
-            await new Promise(r => setTimeout(r, 1200)); // антитроттлинг FunPay
-        }
-
-        $('fp-bulk-progress-bar').style.width = '100%';
-        $('fp-bulk-progress-bar').style.background = fail ? '#d99000' : '#4caf82';
-        $('fp-bulk-progress-text').textContent = `Готово. Активировано: ${ok}, ошибок: ${fail}, всего: ${total}.`;
-        showNotification(`Активировано: ${ok}/${total}${fail ? `, ошибок: ${fail}` : ''}`, fail > 0);
-
-        actBtn.disabled = false; applyBtn.disabled = false;
-        actBtn.textContent = 'Активировать';
-    });
+        p.onProgress?.({ processed: results.length, total: p.lots.length, result: results.at(-1) });
+        throwIfBulkLotAborted(p.signal);
+        if (results.length < p.lots.length) await waitForBulkLotDelay(p.delayMs ?? 1200, p.signal);
+    }
+    return { results, successCount: results.filter(result => result.success).length };
+}
+if (typeof window !== 'undefined' && window.fptPopupActions) {
+    window.fptPopupActions.register('lot_io', 'fp-bulk-edit-btn', openBulkEditor);
+    window.fptPopupActions.register('lot_io', 'openBulkEditor', openBulkEditor);
+    window.fptPopupActions.register('lot_io', 'fp-bulk-apply-btn', p => applyPopupBulkLots(p));
+    window.fptPopupActions.register('lot_io', 'fp-bulk-activate-btn', p => applyPopupBulkLots(p, true));
+    window.fptPopupActions.register('lot_io', 'fp-bulk-select-all', p => window.fptPopupActions.toggleCategorySelection({
+        categories: (p.lots || []).map(lot => ({ id: lot.offerId ?? lot.id })), selectedCategoryIds: p.selectedLotIds
+    }));
 }

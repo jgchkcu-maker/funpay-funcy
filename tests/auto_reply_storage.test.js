@@ -13,6 +13,26 @@ const storeModulePromise = import(pathToFileURL(STORE_PATH).href).catch(error =>
     throw error;
 });
 
+test('checked patches reject concurrent scalar and rating changes inside the storage queue', async () => {
+    const { createAutoReplyStore } = await storeModulePromise;
+    const state = { fpToolsAutoReplies: { reviewTemplates: { 5: 'Original' }, greetingEnabled: true } };
+    const store = createAutoReplyStore({
+        async get() { return structuredClone(state); },
+        async set(next) { Object.assign(state, structuredClone(next)); }
+    });
+    const changed = store.patchAutoReplies({ merge: { reviewTemplates: { 5: 'Other window' } }, set: { autoReviewEnabled: true } });
+    const stale = store.patchAutoReplies({ expected: { values: { reviewTemplates: { 5: 'Original' } }, absent: ['autoReviewEnabled'] },
+        merge: { reviewTemplates: { 5: 'My draft' } } });
+    await changed;
+    await assert.rejects(stale, { code: 'STALE_AUTO_REPLY_EDIT' });
+    assert.equal(state.fpToolsAutoReplies.reviewTemplates[5], 'Other window');
+    await assert.rejects(store.patchAutoReplies({ expected: { values: {}, absent: ['autoReviewEnabled'] }, set: { autoReviewEnabled: false } }), { code: 'STALE_AUTO_REPLY_EDIT' });
+    await store.patchAutoReplies({ expected: { values: { reviewTemplates: { 5: 'Other window' } }, absent: ['bonusMode'] },
+        merge: { reviewTemplates: { 2: 'Help' } } });
+    assert.equal(state.fpToolsAutoReplies.reviewTemplates[2], 'Help');
+    assert.equal(state.fpToolsAutoReplies.greetingEnabled, true);
+});
+
 function createStorage(initial = {}, { beforeSet } = {}) {
     const state = structuredClone(initial);
     const metrics = { activeGets: 0, maxActiveGets: 0, writes: 0 };
@@ -226,18 +246,12 @@ test('repository code outside the store does not write fpToolsAutoReplies direct
     assert.deepEqual(violations, []);
 
     const settingsIo = fs.readFileSync(path.join(ROOT, 'content', 'features', 'settings_io.js'), 'utf8');
-    assert.match(settingsIo, /k === 'fpToolsAutoReplies'[\s\S]*?hasAutoRepliesToImport = true;[\s\S]*?continue;/,
-        '.fpconfig import must remove auto-reply data from the generic storage write');
-    assert.match(settingsIo, /await window\.fptImportAutoReplies\(autoRepliesToImport\)/,
-        '.fpconfig import must pass auto-reply data through the service-worker queue');
-
-    const settingsLoader = fs.readFileSync(path.join(ROOT, 'content', 'ui', 'settings_loader.js'), 'utf8');
-    assert.match(settingsLoader, /'fpToolsAutoReplies'\s*\]\)/,
-        'settings initialization must fetch the complete saved auto-reply object');
-    assert.match(settingsLoader, /await initializeAutoReviewUI\(settings\.fpToolsAutoReplies\s*\|\|\s*\{\}\)/,
-        'review controls must finish initializing from that complete object');
+    const settingsLoader = fs.readFileSync(path.join(ROOT, 'content/ui/settings_loader.js'), 'utf8');
+    assert.match(settingsLoader, /chrome\.storage\.local\.get\(null\)/, 'headless state loading includes the complete auto-reply snapshot');
     assert.match(settingsLoader, /window\.__fptAutoReplySettingsReady\s*=\s*false/);
     assert.match(settingsLoader, /window\.__fptAutoReplySettingsReady\s*=\s*true/);
+    assert.match(settingsIo, /await window\.fptImportAutoReplies\(data.settings.fpToolsAutoReplies\)/);
+
 });
 
 test('content helper waits for the service-worker write and reports storage errors', async () => {
@@ -266,131 +280,15 @@ test('content helper waits for the service-worker write and reports storage erro
     });
 });
 
-test('split auto-reply pages initialize once from the complete saved object before autosave handlers can race', async () => {
-    const reviewPage = { dataset: { page: 'auto_review' }, listeners: {}, addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); } };
-    const replyPage = { dataset: { page: 'auto_reply' }, listeners: {}, addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); } };
-    const elements = new Map();
-    const getElement = id => {
-        if (!elements.has(id)) {
-            elements.set(id, {
-                id, value: '', checked: false, dataset: {}, style: {}, textContent: '',
-                listeners: {},
-                addEventListener(name, listener) { (this.listeners[name] ||= []).push(listener); },
-                focus() {}, scrollIntoView() {},
-                classList: { add() {}, remove() {}, contains() { return false; } },
-                set innerHTML(value) { this._innerHTML = value; },
-                get innerHTML() { return this._innerHTML || ''; }
-            });
-        }
-        return elements.get(id);
-    };
-    const radios = [
-        { name: 'bonusMode', value: 'single', checked: false, addEventListener() {} },
-        { name: 'bonusMode', value: 'random', checked: false, addEventListener() {} }
-    ];
-    const exactMode = { value: 'exact', checked: true };
-    const document = {
-        getElementById: getElement,
-        querySelector(selector) {
-            if (selector === '.fp-tools-page-content[data-page="auto_review"]') return reviewPage;
-            if (selector === '.fp-tools-page-content[data-page="auto_reply"]') return replyPage;
-            if (selector === 'input[name="bonusMode"]:checked') return radios.find(radio => radio.checked) || null;
-            if (selector.startsWith('input[name="bonusMode"][value="')) {
-                const value = selector.includes('[value="random"]') ? 'random' : 'single';
-                return radios.find(radio => radio.value === value) || null;
-            }
-            if (selector.startsWith('input[name="newKeywordMatchMode"]')) return exactMode;
-            return null;
-        },
-        querySelectorAll(selector) {
-            if (selector === 'input[name="bonusMode"]') return radios;
-            return [];
-        }
-    };
-    const context = vm.createContext({
-        document,
-        window: {},
-        chrome: { storage: { local: { async get() { throw new Error('initializer must use its saved snapshot'); } } } },
-        console,
-        Promise,
-        JSON,
-        Math,
-        Array,
-        showNotification() {}
-    });
-    const source = fs.readFileSync(path.join(ROOT, 'content', 'features', 'auto_review.js'), 'utf8');
-    vm.runInContext(source, context, { filename: 'content/features/auto_review.js' });
-    const saved = {
-        autoReviewEnabled: true,
-        reviewTemplates: { '1': 'one', '2': 'two', '3': 'three', '4': 'four', '5': 'five' },
-        greetingEnabled: true,
-        greetingText: 'saved greeting',
-        onlyNewChats: true,
-        ignoreSystemMessages: true,
-        greetingCooldownDays: 7,
-        keywordsEnabled: true,
-        keywords: [{ keyword: 'term', response: 'reply', matchMode: 'contains' }],
-        bonusForReviewEnabled: true,
-        bonusMode: 'random',
-        singleBonusText: 'single gift',
-        randomBonuses: ['first gift', 'second gift'],
-        bonusForReviewDelaySec: 13,
-        newOrderReplyEnabled: true,
-        newOrderReplyText: 'new order',
-        orderConfirmReplyEnabled: true,
-        orderConfirmReplyText: 'confirmed order',
-        typingDelay: true
-    };
-
-    const replyInit = context.initializeAutoReplyUI(saved);
-    const concurrentReplyInit = context.initializeAutoReplyUI({ greetingText: 'should not replace saved value' });
-    const reviewInit = context.initializeAutoReviewUI(saved);
-    const concurrentReviewInit = context.initializeAutoReviewUI({ reviewTemplates: { '5': 'should not replace saved value' } });
-    assert.equal(replyInit, concurrentReplyInit, 'auto_reply calls before initialization completes share one promise');
-    assert.equal(reviewInit, concurrentReviewInit, 'auto_review calls before initialization completes share one promise');
-    await Promise.all([replyInit, reviewInit]);
-    await context.initializeAutoReplyUI({ greetingText: 'should not replace saved value' });
-    await context.initializeAutoReviewUI({ reviewTemplates: { '5': 'should not replace saved value' } });
-
-    assert.equal(replyPage.dataset.initialized, 'true');
-    assert.equal(reviewPage.dataset.initialized, 'true');
-    assert.equal(getElement('fpt-review-1').value, 'one');
-    assert.equal(getElement('fpt-review-5').value, 'five');
-    assert.equal(getElement('greetingText').value, 'saved greeting');
-    assert.equal(getElement('onlyNewChats').checked, true);
-    assert.equal(getElement('ignoreSystemMessages').checked, true);
-    assert.equal(getElement('greetingCooldownDays').value, 7);
-    assert.equal(getElement('newOrderReplyText').value, 'new order');
-    assert.equal(getElement('orderConfirmReplyText').value, 'confirmed order');
-    assert.equal(getElement('bonusForReviewDelaySec').value, 13);
-    assert.equal(getElement('bonus-list-container').innerHTML.includes('second gift'), true);
-    assert.equal(getElement('keywords-list-container').innerHTML.includes('term'), true);
-    assert.equal((replyPage.listeners.click || []).length, 1, 'auto_reply page event handlers should be bound once');
-    assert.equal((reviewPage.listeners.click || []).length, 1, 'auto_review page event handlers should be bound once');
-});
-
-test('autosave builder patches the changed rating and unsets only its cleared image key', () => {
-    const elements = new Map([
-        ['fpt-review-5', { id: 'fpt-review-5', value: 'thank you', dataset: {} }],
-        ['greetingText', { id: 'greetingText', value: 'unchanged', dataset: { fptImages: '["hello.png"]' } }]
-    ]);
-    const context = vm.createContext({
-        document: { getElementById: id => elements.get(id) || null },
-        window: {},
-        Set,
-        Object,
-        Array,
-        Math,
-        JSON,
-        parseFloat
-    });
-    const source = fs.readFileSync(path.join(ROOT, 'content', 'features', 'misc.js'), 'utf8');
-    vm.runInContext(source, context, { filename: 'content/features/misc.js' });
-
-    const patch = context.fptBuildAutoReplyPatch([elements.get('fpt-review-5')]);
+test('rating patches work without any old controls and retain atomic-store semantics', async () => {
+    const { context } = require('./helpers/popup_actions_harness');
+    const h = context();
+    let patch;
+    h.ctx.window.fptPatchAutoReplies = async value => { patch = value; return value; };
+    await h.api.run('auto_review', 'saveSettings', { patch: {
+        set: {}, merge: { reviewTemplates: { '5': 'thank you' } }, unset: { reviewTemplateImages: ['5'] }
+    } });
     assert.deepEqual(JSON.parse(JSON.stringify(patch)), {
-        set: {},
-        merge: { reviewTemplates: { '5': 'thank you' } },
-        unset: { reviewTemplateImages: ['5'] }
+        set: {}, merge: { reviewTemplates: { '5': 'thank you' } }, unset: { reviewTemplateImages: ['5'] }
     });
 });

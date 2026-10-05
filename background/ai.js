@@ -77,11 +77,7 @@ async function makeAIRequest(finalPrompt) {
 export async function fetchAIResponse(textForAI, context, myUsername, type = "rewrite") {
     let finalPrompt;
 
-    if (type === 'time_calc') {
-        // Token-light: краткий промпт, краткий ответ. Подаётся как «калькулятор».
-        finalPrompt = `Реши задачу на расчёт времени. Сложи/вычти интервалы по описанию и дай короткий понятный ответ на русском (1-3 предложения, без лишних слов, без markdown). Если есть диапазон - укажи диапазон.\n\nЗадача: ${textForAI}`;
-
-    } else if (type === 'review_reply') {
+    if (type === 'review_reply') {
         const lotName = textForAI;
         const reviewText = context;
 

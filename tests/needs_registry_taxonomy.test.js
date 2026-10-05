@@ -88,7 +88,7 @@ const EXPECTED_GROUP_IDS = {
 
 const EXPECTED_GROUP_COUNTS = {
     'Верхняя панель': 1,
-    'Чат': 12,
+    'Чат': 11,
     'Создание и оформление лота': 5,
     'Копирование и импорт лотов': 5,
     'Цены и аналитика': 6,
@@ -121,10 +121,10 @@ function sortIds(ids) {
     return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
-test('registry preserves all 37 ID-to-selector pairs with the explicit taxonomy', () => {
+test('registry preserves all 36 ID-to-selector pairs with the explicit taxonomy', () => {
     const { registry, groupOrder, chatSubgroupOrder } = loadRegistrySource();
 
-    assert.equal(registry.length, 37, 'the registry retains exactly 37 features');
+    assert.equal(registry.length, 36, 'the registry retains exactly 36 features');
 
     const ids = registry.map(({ id }) => id);
     const selectors = registry.map(({ selector }) => selector);

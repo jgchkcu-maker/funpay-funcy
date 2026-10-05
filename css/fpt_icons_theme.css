@@ -47,12 +47,12 @@
 /* ---------- 3. Vertical navigation base ---------- */
 .fp-tools-nav {
     box-sizing: border-box;
-    width: 256px;
-    flex: 0 0 256px;
+    width: 280px;
+    flex: 0 0 280px;
     margin: 16px 0 16px 16px;
     padding: 18px 12px;
     border: 1px solid var(--fptm-nav-border, var(--fptm-border, #dce8f7));
-    border-radius: 20px;
+    border-radius: 24px;
     background: var(--fptm-nav-surface, var(--fptm-surface-2, #f7faff));
     box-shadow: 0 14px 34px var(--fptm-nav-shadow, rgba(84, 133, 199, 0.12));
     display: flex;
@@ -345,14 +345,13 @@ button.add-image-btn .material-symbols-rounded {
 /* ---------- 9. Blue accent fills → 80% transparent (comprehensive) ---------- */
 /* Catches every blue FILL inside the popup that the earlier .btn rule missed:
    checkboxes, radios, accent-colors, misc backgrounds. Text/borders stay legible. */
-.fp-tools-popup input[type="checkbox"]:checked,
-.fp-tools-popup .category-select-all:checked {
+.fp-tools-popup .fpt-checkbox-control input[type="checkbox"]:checked {
     background-color: var(--fptm-accent-soft, rgba(27,117,187,0.20)) !important;
     border-color: var(--fptm-accent-border, rgba(27,117,187,0.5)) !important;
 }
-.fp-tools-popup input[type="checkbox"],
+.fp-tools-popup .fpt-checkbox-control input[type="checkbox"],
 .fp-tools-popup input[type="radio"] {
-    accent-color: rgba(27,117,187,0.55);
+    accent-color: var(--fptm-accent, #7663f6);
 }
 .fp-tools-popup input:focus,
 .fp-tools-popup textarea:focus,
@@ -817,46 +816,90 @@ button.add-image-btn .material-symbols-rounded {
 }
 .fp-tools-popup .template-item-header .template-toggle { margin: 0 !important; flex: 0 0 auto; }
 
-/* ---------- FIX D: checkboxes - outline + tick only, no fill, no gradient ---
-   "убери фон и градиент у галочек, пусть будет лишь контур и сама галочка"    */
-.fp-tools-popup input[type="checkbox"] {
-    -webkit-appearance: none !important;
-    appearance: none !important;
+/* Standard popup checkboxes use a real input for focus and keyboard access,
+   with their visual mark rendered by a centered sibling indicator. */
+.fp-tools-popup.fptm-themed .fpt-checkbox-control {
+    position: relative;
+    box-sizing: border-box;
+    display: inline-flex;
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"] {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 1;
+    box-sizing: border-box !important;
+    display: block !important;
     width: 19px !important;
     height: 19px !important;
-    border-radius: 5px !important;
-    background: transparent !important;
-    background-image: none !important;
-    border: 1.5px solid #4a4a5a !important;
-    box-shadow: none !important;
-    transition: border-color 0.15s ease !important;
-}
-.fp-tools-popup input[type="checkbox"]:hover {
-    border-color: var(--fptm-accent-border, rgba(27,117,187,0.7)) !important;
-}
-.fp-tools-popup input[type="checkbox"]:checked {
-    background: transparent !important;
-    background-image: none !important;
-    border-color: var(--fptm-accent, #1b75bb) !important;
-}
-.fp-tools-popup input[type="checkbox"]::after {
-    content: '' !important;
-    position: absolute !important;
-    top: 46% !important;
-    left: 50% !important;
-    width: 5px !important;
-    height: 9px !important;
-    border: solid var(--fptm-accent, #1b75bb) !important;
-    border-width: 0 2px 2px 0 !important;
-    border-radius: 1px;
-    transform: translate(-50%, -55%) rotate(45deg) !important;
+    margin: 0 !important;
+    padding: 0 !important;
     opacity: 0 !important;
-    transition: opacity 0.12s ease !important;
-    background: none !important;
-    color: transparent !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    cursor: pointer;
 }
-.fp-tools-popup input[type="checkbox"]:checked::after {
-    opacity: 1 !important;
+.fp-tools-popup.fptm-themed .fpt-checkbox-indicator {
+    box-sizing: border-box;
+    display: grid;
+    width: 19px;
+    height: 19px;
+    place-items: center;
+    border: 1px solid var(--fptm-nav-border, rgba(119,99,246,.25));
+    border-radius: 5px;
+    background: var(--fptm-bg, #fff);
+    pointer-events: none;
+    transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-indicator::after {
+    content: '';
+    box-sizing: border-box;
+    width: 5px;
+    height: 9px;
+    border: solid var(--fptm-on-accent, #fff);
+    border-width: 0 2px 2px 0;
+    border-radius: 1px;
+    opacity: 0;
+    transform: translateY(-1px) rotate(45deg);
+    transition: opacity .12s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-control:hover .fpt-checkbox-indicator {
+    border-color: var(--fptm-accent, #7663f6);
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:checked + .fpt-checkbox-indicator {
+    border-color: var(--fptm-accent, #7663f6);
+    background: var(--fptm-accent, #7663f6);
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:checked + .fpt-checkbox-indicator::after { opacity: 1; }
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:focus-visible + .fpt-checkbox-indicator {
+    outline: 2px solid var(--fptm-accent, #7663f6);
+    outline-offset: 2px;
+    box-shadow: none;
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:disabled { cursor: not-allowed; }
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:disabled + .fpt-checkbox-indicator {
+    opacity: .5;
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-label:not(.fpt-lot-category-row):not(.fpt-bulk-lot-row):not(.fpt-lot-check-row) {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    vertical-align: middle;
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-label--external { gap: 8px; }
+.fp-tools-popup.fptm-themed .fpt-lot-category-row,
+.fp-tools-popup.fptm-themed .fpt-bulk-lot-row,
+.fp-tools-popup.fptm-themed .fpt-lot-check-row {
+    align-items: center;
+    gap: 8px;
 }
 
 /* ---------- FIX E: variable chips - 85% transparent, easy on the eyes -------
@@ -1665,4 +1708,104 @@ button.add-image-btn .material-symbols-rounded {
     .fp-tools-nav li.fpt-nav-quick-action a,
     .fp-tools-nav li.fpt-nav-quick-action a > span:last-child { transition-duration: .01ms !important; }
     .fp-tools-nav .fpt-nav-child { transition-delay: 0ms !important; }
+}
+
+/* Shared controls used by every category in the extension popup. */
+.fp-tools-popup.fptm-themed .fpt-control-field {
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 9px 12px !important;
+    border: 1px solid var(--fptm-nav-border, rgba(119,99,246,.2)) !important;
+    border-radius: 10px !important;
+    color: var(--fptm-text, #16181d) !important;
+    background: var(--fptm-nav-field, #f4f3ff) !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    line-height: 20px !important;
+    transition: border-color .16s ease, background-color .16s ease, box-shadow .16s ease !important;
+}
+.fp-tools-popup.fptm-themed .fpt-control-field[data-control-kind="textarea"] {
+    box-sizing: border-box !important;
+    height: 76px !important;
+    min-height: 76px !important;
+    max-height: 76px !important;
+    padding: 10px 12px !important;
+    resize: none !important;
+    line-height: 20px !important;
+}
+.fp-tools-popup.fptm-themed .fpt-control-field:focus-visible {
+    border-color: var(--fptm-accent, #7663f6) !important;
+    background: var(--fptm-nav-field-focus, #fff) !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+.fp-tools-popup.fptm-themed .fpt-control-label {
+    color: var(--fptm-muted, #626473) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    line-height: 16px !important;
+}
+.fp-tools-popup.fptm-themed select.fpt-control-field option {
+    color: var(--fptm-text, #16181d);
+    background: var(--fptm-nav-field, #f4f3ff);
+}
+.fp-tools-popup.fptm-themed .fpt-bulk-group {
+    padding: 15px;
+    border-radius: 14px;
+    background: var(--fptm-bg, #fff);
+}
+.fp-tools-popup.fptm-themed .fpt-bulk-checks { align-items: center; gap: 12px 16px; }
+.fp-tools-popup.fptm-themed .fpt-lot-check-row {
+    min-height: 24px;
+    color: var(--fptm-muted, #626473);
+    font-size: 13px;
+    line-height: 18px;
+}
+.fp-tools-popup.fptm-themed .fpt-bulk-checks #fptBulkPriceMinimum { width: 126px; }
+.fp-tools-popup.fptm-themed .fpt-bulk-inline-fields #fptBulkPriceMode { width: min(320px, 100%); }
+.fp-tools-popup.fptm-themed .fpt-bulk-inline-fields #fptBulkPriceValue { width: 180px; }
+.fp-tools-popup.fptm-themed .fpt-bulk-inline-fields #fptBulkPriceStep { width: 140px; }
+.fp-tools-popup.fptm-themed .fpt-lot-category-row,
+.fp-tools-popup.fptm-themed .fpt-bulk-lot-row { min-height: 42px; }
+.fp-tools-popup.fptm-themed :is(.fp-tools-content, [role="dialog"], [aria-modal="true"]) :is(button, input[type="button"], input[type="submit"]) {
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .14s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease, color .16s ease !important;
+}
+.fp-tools-popup.fptm-themed :is(.fp-tools-content, [role="dialog"], [aria-modal="true"]) :is(button, input[type="button"], input[type="submit"]):active:not(:disabled) {
+    transform: scale(.98);
+}
+.fp-tools-popup.fptm-themed :is(.fp-tools-content, [role="dialog"], [aria-modal="true"]) :is(button, input[type="button"], input[type="submit"]):focus-visible {
+    outline: 2px solid var(--fptm-accent, #7663f6) !important;
+    outline-offset: 2px;
+    box-shadow: none !important;
+}
+.fp-tools-popup.fptm-themed .fpt-lot-category-row,
+.fp-tools-popup.fptm-themed .fpt-bulk-lot-row,
+.fp-tools-popup.fptm-themed [role="option"] {
+    transition: background-color .14s ease, box-shadow .14s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-lot-category-row:active,
+.fp-tools-popup.fptm-themed .fpt-bulk-lot-row:active,
+.fp-tools-popup.fptm-themed [role="option"]:active {
+    background: var(--fptm-accent-soft, rgba(118,99,246,.14));
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-label:has(input[type="checkbox"]:disabled) { cursor: not-allowed; }
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup.fptm-themed .fpt-checkbox-indicator,
+    .fp-tools-popup.fptm-themed .fpt-checkbox-indicator::after,
+    .fp-tools-popup.fptm-themed .fpt-control-field,
+    .fp-tools-popup.fptm-themed :is(.fp-tools-content, [role="dialog"], [aria-modal="true"]) :is(button, input[type="button"], input[type="submit"]),
+    .fp-tools-popup.fptm-themed .fpt-lot-category-row,
+    .fp-tools-popup.fptm-themed .fpt-bulk-lot-row,
+    .fp-tools-popup.fptm-themed [role="option"] {
+        transition: none !important;
+        animation: none !important;
+    }
+    .fp-tools-popup.fptm-themed :is(.fp-tools-content, [role="dialog"], [aria-modal="true"]) :is(button, input[type="button"], input[type="submit"]):active:not(:disabled) {
+        transform: none !important;
+    }
 }

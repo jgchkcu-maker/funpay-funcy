@@ -331,8 +331,8 @@ function runContractSourceChecks() {
     );
     assert.match(parseSalesSource, /error:\s*e\s*&&\s*e\.message/, 'sales parser surfaces explicit error');
 
-    assert.match(financeHubSource, /response\.success\s*!==\s*true/, 'Finance Hub rejects unsuccessful update response');
-    assert.match(financeHubSource, /Ошибка обновления:/, 'Finance Hub surfaces refresh failure');
+    assert.match(financeHubSource, /!response\?\.success/, 'Headless refresh rejects unsuccessful responses');
+    assert.match(financeHubSource, /Promise.allSettled/, 'Refresh exposes independent source failures');
     assert.doesNotMatch(
         financeHubSource,
         /chrome\.runtime\.sendMessage\(\{ action: actionName \}, \(\) => \{\s*clearTimeout\(timer\);\s*resolve\(\);/s,

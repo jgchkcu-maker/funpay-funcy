@@ -12,7 +12,7 @@ assert.ok(searchStart >= 0 && searchEnd > searchStart, 'setupNavSearch source bl
 const sections = [
     { id: 'sales', label: 'Лоты и продажи', pages: ['lot_io', 'auto_delivery', 'autobump'] },
     { id: 'customers', label: 'Покупатели', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
-    { id: 'finance', label: 'Финансы', pages: ['finance_hub', 'piggy_banks', 'calculator'] },
+    { id: 'finance', label: 'Финансы', pages: ['finance_hub'] },
     { id: 'interface', label: 'Интерфейс', pages: ['theme', 'effects', 'needs'] },
     { id: 'settings', label: 'Настройки', pages: ['accounts', 'general', 'telegram', 'settings_io'] },
     { id: 'help', label: 'Справка', pages: ['tickets', 'global_chat'] }
@@ -20,7 +20,7 @@ const sections = [
 const labels = {
     lot_io: 'Управление лотами', auto_delivery: 'Автовыдача', autobump: 'Автоподнятие',
     auto_reply: 'Автоответчик', auto_review: 'Отзывы и бонусы', templates: 'Быстрые ответы', blacklist: 'Чёрный список',
-    finance_hub: 'Обзор и аналитика', piggy_banks: 'Копилки', calculator: 'Калькуляторы', theme: 'Темы', effects: 'Эффекты',
+    finance_hub: 'Обзор и аналитика', theme: 'Темы', effects: 'Эффекты',
     needs: 'Элементы интерфейса', accounts: 'Аккаунты', general: 'Отображение FunPay',
     telegram: 'Уведомления и интеграции', settings_io: 'Перенос настроек',
     tickets: 'Поддержка FunPay', global_chat: 'Чат сообщества', support: 'Оценить расширение'
@@ -95,7 +95,7 @@ class FakeElement {
     }
     querySelectorAll(selector) {
         if (selector === 'h3, h4, h5, label > span, .setting-group > h4') return this.headings || [];
-        if (selector === '[data-quick-replies-pane], .fpt-fin-tab-pane[data-subtab], [data-calc-pane], [data-notification-pane], [data-route-mode]') return this.panes || [];
+        if (selector.includes('[data-quick-replies-pane]') && selector.includes('[data-notification-pane]')) return this.panes || [];
         if (selector === '.fpt-nav-search-result') return this.children.filter(child => child.classList.contains('fpt-nav-search-result'));
         if (selector === '.fpt-search-flash') return [];
         return [];
@@ -134,14 +134,6 @@ function createHarness() {
             templates.headings = [new FakeElement({ text: 'Готовые шаблоны' })];
             commands.headings = [new FakeElement({ text: 'Настройки команды приветствия' })];
             page.panes.push(templates, commands);
-        }
-        if (pageId === 'calculator') {
-            const currency = new FakeElement({ dataset: { calcPane: 'currency' } });
-            currency.hidden = true;
-            const exactTarget = new FakeElement({ text: 'Скрытый прогноз валютного рынка' });
-            exactTarget.scrollOrder = order;
-            currency.headings = [exactTarget];
-            page.panes.push(currency);
         }
         allHeadings.push(...page.headings, ...page.panes.flatMap(pane => pane.headings || []));
         return page;
@@ -204,7 +196,7 @@ function createHarness() {
             order.push(`route:${pageId}:${options.mode || ''}`);
             return new Promise(resolve => setTimeout(() => {
                 const page = pages.find(item => item.dataset.page === pageId);
-                const modeAttr = { templates: 'quickRepliesPane', calculator: 'calcPane' }[pageId];
+                const modeAttr = { templates: 'quickRepliesPane' }[pageId];
                 if (modeAttr) (page.panes || []).forEach(pane => { pane.hidden = pane.dataset[modeAttr] !== options.mode; });
                 resolve(true);
             }, 20));
@@ -240,14 +232,20 @@ function testIndexContractAndAliases() {
     const find = (pageId, mode, alias) => index.find(item => item.pageId === pageId && item.mode === mode && item.aliases.includes(alias));
     assert.ok(index.some(item => item.groupId === 'sales' && item.pageId == null && item.text === 'Лоты и продажи'), 'group headings have group-only entries');
     for (const [pageId, mode, alias] of [
-        ['templates', 'commands', 'Слэш-команды'], ['templates', 'templates', 'Шаблоны'], ['calculator', 'currency', 'Валюты'],
+        ['templates', 'commands', 'Слэш-команды'], ['templates', 'templates', 'Шаблоны'],
         ['theme', null, 'Кастомизация'], ['tickets', null, 'Тикеты'],
         ['lot_io', null, 'Импорт / экспорт'],
         ['settings_io', null, 'Импорт / экспорт']
     ]) assert.ok(find(pageId, mode, alias), `${alias} targets ${pageId}${mode ? `/${mode}` : ''}`);
     assert.ok(index.some(item => item.pageId === 'support' && item.text === 'Оценить расширение'), 'footer rating action is indexed with its human label');
-    assert.ok(index.some(item => item.pageId === 'calculator' && item.mode === 'currency' && item.element.textContent === 'Скрытый прогноз валютного рынка'),
-        'headings inside hidden route-mode panes are indexed');
+    assert.ok(index.every(item => item.pageId !== 'piggy_banks' && item.pageId !== 'calculator'),
+        'removed financial tools cannot contribute searchable entries');
+}
+
+async function testRemovedFinancialToolsAreNotSearchable() {
+    for (const query of ['Копилки', 'Калькуляторы', 'Валюты']) {
+        assert.deepEqual(await search(createHarness(), query), [], `${query} has no remaining search route`);
+    }
 }
 
 async function testGroupMatchRevealsWithoutNavigation() {
@@ -302,7 +300,7 @@ async function testEveryGroupHeadingRevealsOnlyItsChildren() {
 async function testLegacyAliasesActivateCanonicalPageAndMode() {
     const cases = [
         ['Слэш-команды', 'templates', 'commands'], ['Шаблоны', 'templates', 'templates'],
-        ['Валюты', 'calculator', 'currency'], ['Кастомизация', 'theme', undefined],
+        ['Кастомизация', 'theme', undefined],
         ['Тикеты', 'tickets', undefined],
     ];
     for (const [query, pageId, mode] of cases) {
@@ -319,20 +317,6 @@ async function testLegacyAliasesActivateCanonicalPageAndMode() {
         await wait(60);
         assert.deepEqual(h.routeCalls.at(-1), [pageId, mode], `${query} routes to its canonical page/mode`);
     }
-}
-
-async function testHiddenModeRoutesBeforeScrollingExactElement() {
-    const h = createHarness();
-    const rows = await search(h, 'Скрытый прогноз валютного рынка');
-    assert.equal(rows.length, 1);
-    await rows[0].dispatch('click');
-    await wait(180);
-    const target = h.pages.find(page => page.dataset.page === 'calculator').panes[0].headings[0];
-    assert.deepEqual(h.routeCalls.at(-1), ['calculator', 'currency']);
-    assert.equal(target.hidden, false, 'the hidden pane is active before its result is scrolled');
-    assert.equal(target.scrolled, true, 'the exact matched element is scrolled');
-    assert.ok(h.order.indexOf('route:calculator:currency') < h.order.indexOf(`scroll:${target.textContent}`),
-        'routing completes before the matched content scrolls');
 }
 
 async function testLateGlobalChatHideInvalidatesCurrentAndBuiltResults() {
@@ -387,11 +371,11 @@ async function testEnterIgnoresRowsAfterClearDuringFade() {
 
 async function run() {
     testIndexContractAndAliases();
+    await testRemovedFinancialToolsAreNotSearchable();
     await testGroupMatchRevealsWithoutNavigation();
     await testEveryGroupHeadingRevealsOnlyItsChildren();
     await testSupportAndQuickActionRoutesStayDistinct();
     await testLegacyAliasesActivateCanonicalPageAndMode();
-    await testHiddenModeRoutesBeforeScrollingExactElement();
     await testLateGlobalChatHideInvalidatesCurrentAndBuiltResults();
     await testClearRestoresCompactNavWithoutPreferenceWrites();
     await testImmediateClearCancelsPendingSearchRender();

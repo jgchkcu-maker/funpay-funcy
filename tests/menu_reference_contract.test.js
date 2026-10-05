@@ -73,7 +73,7 @@ function testHeaderAndSearchMatchReference() {
     assert.match(source, /const accent = '#7663f6'/, 'the menu accent must use the fixed lavender color');
     assert.match(source, /const FPT_NAV_QUICK_ACTIONS = Object\.freeze\(\['support'\]\)/,
         'support must be the footer route action');
-    assert.match(source, /class="close-btn" aria-label="Закрыть"/, 'the existing popup close control must remain available');
+    assert.doesNotMatch(source, /class="close-btn" aria-label="Закрыть"/, 'the popup must not expose a close button');
     assert.match(
         source,
         /<button[^>]+id="fptNavSearchToggle"[^>]*class="fpt-nav-search-ico"[^>]*>[\s\S]*?<svg[\s\S]*?<circle[\s\S]*?<line[\s\S]*?<\/svg>[\s\S]*?<\/button>/,
@@ -146,11 +146,11 @@ function testNavigationGeometryAndTypographyContract() {
 
     for (const layer of layers) {
         const nav = extractRule(layer.css, layer.nav);
-        assert.match(nav, /width:\s*256px/, layer.name + ' must use the narrower sidebar');
-        assert.match(nav, /flex:\s*0\s+0\s+256px/, layer.name + ' flex basis must match sidebar width');
+        assert.match(nav, /width:\s*280px/, layer.name + ' must use the wider sidebar');
+        assert.match(nav, /flex:\s*0\s+0\s+280px/, layer.name + ' flex basis must match sidebar width');
         assert.match(nav, /margin:\s*16px\s+0\s+16px\s+16px/, layer.name + ' must retain vertical outer margins');
         assert.match(nav, /padding:\s*18px\s+12px/, layer.name + ' must narrow only horizontal panel padding');
-        assert.match(nav, /border-radius:\s*20px/, layer.name + ' must retain the navigation panel radius');
+        assert.match(nav, /border-radius:\s*24px/, layer.name + ' must use the updated navigation panel radius');
 
         const groups = extractRule(layer.css, layer.groups);
         assert.match(groups, /gap:\s*6px/, layer.name + ' must keep reference category spacing');
@@ -298,7 +298,7 @@ function testMenuHasIndependentReferenceSurface() {
     const navEnd = css.indexOf('\n}', navStart);
     const navBlock = css.slice(navStart, navEnd + 2);
     assert.match(navBlock, /background:\s*var\(--fptm-nav-surface/);
-    assert.match(navBlock, /border-radius:\s*20px/);
+    assert.match(navBlock, /border-radius:\s*24px/);
 
     const toggleBlock = extractRule(css, '.fp-tools-nav .fpt-nav-group-toggle {');
     assert.match(toggleBlock, /min-height:\s*54px/);

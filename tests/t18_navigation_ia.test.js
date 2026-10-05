@@ -48,11 +48,11 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
     assert.equal(new Set(navPages).size, navPages.length, 'flat nav must not contain duplicate data-page ids');
     assert.equal(new Set(pages).size, pages.length, 'navigation schema must not duplicate page ids');
     const quickActions = extractQuickActionIds();
-    assert.equal(pages.length, 19, 'accordion groups must own exactly 19 pages');
+    assert.equal(pages.length, 17, 'accordion groups must own exactly 17 pages');
     assert.equal(quickActions.length, 1, 'the footer must own exactly one quick route');
     assert.equal(new Set(quickActions).size, quickActions.length, 'footer routes must not duplicate each other');
     assert.deepEqual([...pages, ...quickActions].sort(), [...navPages].sort(),
-        'six groups and the footer action must cover all 20 canonical nav routes exactly once');
+        'six groups and the footer action must cover all 18 canonical nav routes exactly once');
     assert.deepEqual(quickActions, ['support'], 'support must remain the footer route');
 }
 
@@ -61,7 +61,7 @@ function testSixIndependentAccordionSections() {
     const expected = [
         { id: 'sales', pages: ['lot_io', 'auto_delivery', 'autobump'] },
         { id: 'customers', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
-        { id: 'finance', pages: ['finance_hub', 'piggy_banks', 'calculator'] },
+        { id: 'finance', pages: ['finance_hub'] },
         { id: 'interface', pages: ['theme', 'effects', 'needs'] },
         { id: 'settings', pages: ['accounts', 'general', 'telegram', 'settings_io'] },
         { id: 'help', pages: ['tickets', 'global_chat'] }
@@ -141,7 +141,7 @@ function testFinalLabelsAndRatingRoute() {
     const pageLabels = [
         ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['autobump', 'Автоподнятие'],
         ['auto_reply', 'Автоответчик'], ['auto_review', 'Отзывы и бонусы'], ['templates', 'Быстрые ответы'], ['blacklist', 'Чёрный список'],
-        ['finance_hub', 'Обзор и аналитика'], ['piggy_banks', 'Копилки'], ['calculator', 'Калькуляторы'],
+        ['finance_hub', 'Обзор и аналитика'],
         ['theme', 'Темы'], ['effects', 'Эффекты'], ['needs', 'Элементы интерфейса'],
         ['accounts', 'Аккаунты'], ['general', 'Отображение FunPay'], ['telegram', 'Уведомления и интеграции'], ['settings_io', 'Перенос настроек'],
         ['tickets', 'Поддержка FunPay'], ['global_chat', 'Чат сообщества'],
@@ -150,10 +150,8 @@ function testFinalLabelsAndRatingRoute() {
     for (const [id, label] of pageLabels) {
         assert.match(labels, new RegExp(`${id}:\\s*['"]${label}['"]`), id + ' must use its approved visible label');
     }
-    assert.match(source, /<h3[^>]*>Поддержка FunPay<\/h3>/,
-        'the FunPay ticket page heading must remain distinct from extension ratings');
-    assert.match(source, /<h3>Оценить расширение[\s\S]*?star/,
-        'the extension rating page must have a matching heading');
+    assert.match(source, /tickets: 'Поддержка FunPay'/, 'ticket and rating routes retain distinct labels');
+    assert.match(source, /support: 'Оценить расширение'/);
     const setupStart = source.indexOf('function setupPopupNavigation()');
     const setupEnd = source.indexOf('function selectQuickRepliesMode(', setupStart);
     const setupBlock = source.slice(setupStart, setupEnd);
@@ -199,7 +197,7 @@ function testQuickRepliesMigrationContract() {
     assert.ok(!pages.includes('slash_commands'), 'slash_commands must be a legacy route, not a second navigation page');
     assert.doesNotMatch(source, /<li[^>]*data-page="slash_commands"/, 'the old slash command nav item must be removed');
     assert.doesNotMatch(source, /<div class="fp-tools-page-content" data-page="slash_commands"/, 'command controls must live inside the canonical templates page');
-    assert.match(source, /data-quick-replies-mode="templates"[\s\S]*data-quick-replies-mode="commands"/);
+    assert.match(source, /setupPopupPageModes/, 'Route modes remain available without old tabs');
     assert.match(source, /registerPopupRouteAlias\('slash_commands',\s*\{\s*pageId:\s*'templates',\s*mode:\s*'commands'\s*\}\)/);
 }
 
@@ -211,21 +209,10 @@ function testAutoReplyPagesMigrationContract() {
     assert.equal(pages.filter(page => page === 'auto_review').length, 1, 'auto_review appears once in navigation data');
     assert.match(source, /<li[^>]*data-page="auto_reply"/, 'auto_reply has a visible navigation item');
     assert.match(source, /<li[^>]*data-page="auto_review"/, 'the saved auto_review route stays navigable');
-    assert.match(source, /<div class="fp-tools-page-content" data-page="auto_reply">[\s\S]*?<h3>Автоответчик<\/h3>/,
-        'the greeting and order responders have their own searchable page heading');
-    assert.match(source, /<div class="fp-tools-page-content" data-page="auto_review">[\s\S]*?<h3>Ответы на отзывы<\/h3>/,
-        'review replies remain on auto_review');
+    assert.match(source, /<div class="fp-tools-page-content" data-page="auto_reply"><\/div>/);
+    assert.match(source, /<div class="fp-tools-page-content" data-page="auto_review"><\/div>/);
+    assert.match(source, /FPTPopupMetadata/, 'Search uses metadata instead of removed headings');
 
-    const searchStart = source.indexOf('function setupNavSearch(toolsPopup)');
-    const searchEnd = source.indexOf('async function loadLastActivePage()', searchStart);
-    const searchBlock = source.slice(searchStart, searchEnd);
-    assert.match(searchBlock, /querySelectorAll\('\.fp-tools-page-content'\)/,
-        'search indexes every page node, including the new auto_reply page');
-    const routeStart = source.indexOf('async function openPopupPage(');
-    const routeEnd = source.indexOf('function setupPopupNavigation()', routeStart);
-    const routeBlock = source.slice(routeStart, routeEnd);
-    assert.match(routeBlock, /targetPageId === 'auto_reply'\) initialize\('initializeAutoReplyUI'\)/,
-        'the central router initializes auto_reply on entry');
 }
 
 function testSearchRestoresAccordionState() {

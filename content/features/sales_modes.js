@@ -433,12 +433,15 @@
         .fp-sm-summary{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px;font-size:12px;color:var(--fpt-text-muted,#9099b8);}
         .fp-sm-summary strong{color:var(--fpt-text,#d8dae8);}
         .fp-sm-charts-stack{display:flex;flex-direction:column;gap:12px;}
-        .fp-sm-chartcard{padding:16px 18px 14px;}
+        .fp-sm-chartcard{padding:16px 18px 14px;animation:fp-sm-chart-in .28s cubic-bezier(.22,1,.36,1) both;}
+        @keyframes fp-sm-chart-in{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
         .fp-sm-chart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px;}
         .fp-sm-chart-tabs{display:inline-flex;gap:4px;background:var(--fpt-surface-2,rgba(127,127,127,.1));border:1px solid var(--fpt-border,#22253a);border-radius:9px;padding:3px;}
-        .fp-sm-ctab{border:none;background:transparent;color:var(--fpt-text-muted,#9099b8);font-family:inherit;font-size:12px;font-weight:600;padding:5px 14px;border-radius:6px;cursor:pointer;transition:background .14s,color .14s;}
-        .fp-sm-ctab:hover{color:var(--fpt-text,#d8dae8);}
+        .fp-sm-ctab{border:none;background:transparent;color:var(--fpt-text-muted,#9099b8);font-family:inherit;font-size:12px;font-weight:600;padding:5px 14px;border-radius:6px;cursor:pointer;transition:transform .38s cubic-bezier(.22,1,.36,1),background .24s cubic-bezier(.22,1,.36,1),color .24s cubic-bezier(.22,1,.36,1),box-shadow .24s cubic-bezier(.22,1,.36,1);}
+        .fp-sm-ctab:hover{transform:translateY(-1px) scale(1.012);color:var(--fpt-text,#d8dae8);}
+        .fp-sm-ctab:active{transform:scale(.98);}
         .fp-sm-ctab.active{background:var(--fpt-accent,#1b75bb);color:#fff;}
+        @media (prefers-reduced-motion:reduce){.fp-sm-chartcard{animation:none!important}.fp-sm-ctab{transition-duration:.01ms!important}.fp-sm-ctab:hover,.fp-sm-ctab:active{transform:none}}
         .fp-sm-chart-total{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;}
         .fp-sm-chart-total-num{font-size:18px;font-weight:800;color:var(--fpt-text,#d8dae8);}
         .fp-sm-chart-total-cap{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--fpt-text-muted,#9099b8);font-weight:600;}

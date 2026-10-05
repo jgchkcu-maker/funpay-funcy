@@ -1,6 +1,7 @@
+let _fptAccAutoRefreshing = false;
 async function saveAccountsList() {
     await chrome.storage.local.set({ fpToolsAccounts: fpToolsAccounts });
-    renderAccountsList();
+
 }
 
 const _fptAccSnapCache = {}; // key -> { ts, snapshot }
@@ -16,102 +17,6 @@ async function fptFetchAccountSnapshot(key) {
     return null;
 }
 
-async function renderAccountsList() {
-    const listContainer = document.getElementById('fpToolsAccountsList');
-    if (!listContainer) return;
-
-    const currentUsernameEl = document.querySelector('.user-link-name');
-    const currentUsername = currentUsernameEl ? currentUsernameEl.textContent.trim() : null;
-
-    listContainer.innerHTML = '';
-    if (fpToolsAccounts.length === 0) {
-        listContainer.innerHTML = '<p style="font-size: 14px; color: var(--fpt-text-muted,#a0a0a0);">Нет сохраненных аккаунтов.</p>';
-        return;
-    }
-
-    fpToolsAccounts.forEach((account, index) => {
-        const isActive = account.name === currentUsername;
-        const item = createElement('div', { class: `fpt-acc-item ${isActive ? 'active' : ''}` });
-
-        // аватар
-        const avatar = createElement('div', { class: 'fpt-acc-avatar' });
-        if (account.avatar) avatar.style.backgroundImage = `url('${account.avatar}')`;
-        else avatar.innerHTML = '<span class="material-symbols-rounded">person</span>';
-
-        // непрочитанные (бейдж поверх аватара) - только если > 0
-        if (account.unread && account.unread > 0) {
-            const badge = createElement('span', { class: 'fpt-acc-unread' });
-            badge.textContent = account.unread > 99 ? '99+' : String(account.unread);
-            badge.title = `Непрочитанных сообщений: ${account.unread}`;
-            avatar.appendChild(badge);
-        }
-
-        // инфо: имя + баланс
-        const info = createElement('div', { class: 'fpt-acc-info' });
-        const nameSpan = createElement('div', { class: 'fpt-acc-name' });
-        nameSpan.textContent = account.name;
-        if (isActive) {
-            const dot = createElement('span', { class: 'fpt-acc-active-dot' });
-            dot.title = 'Активный аккаунт';
-            nameSpan.appendChild(dot);
-        }
-        const balSpan = createElement('div', { class: 'fpt-acc-balance' });
-        balSpan.textContent = account.balance || '-';
-        info.append(nameSpan, balSpan);
-
-        // действия
-        const actionsDiv = createElement('div', { class: 'fpt-acc-actions' });
-
-        // кнопка "Войти" (текстовая) - как просили вернуть
-        const switchBtn = createElement('button', { class: `fpt-acc-login-btn ${isActive ? 'active' : ''}` });
-        switchBtn.textContent = isActive ? 'Активен' : 'Войти';
-        switchBtn.disabled = isActive;
-        switchBtn.addEventListener('click', async () => {
-            if (isActive) return;
-            switchBtn.disabled = true;
-            showNotification(`Переключаюсь на аккаунт ${account.name}...`, false);
-            try {
-                const res = await chrome.runtime.sendMessage({ action: 'setGoldenKey', key: account.key });
-                if (!res || !res.success) {
-                    switchBtn.disabled = false;
-                    showNotification(`Не удалось войти: ${res && res.error ? res.error : 'неизвестная ошибка'}`, true);
-                }
-            } catch (e) {
-                switchBtn.disabled = false;
-                showNotification(`Ошибка переключения: ${e.message}`, true);
-            }
-        });
-
-        const renameBtn = createElement('button', { class: 'fpt-acc-btn fpt-acc-btn-edit', title: 'Переименовать' });
-        renameBtn.innerHTML = '<span class="material-symbols-rounded">edit</span>';
-        renameBtn.addEventListener('click', () => {
-            const newName = prompt('Введите новое имя для аккаунта:', account.name);
-            if (newName && newName.trim() !== '') {
-                fpToolsAccounts[index].name = newName.trim();
-                saveAccountsList();
-            }
-        });
-
-        const deleteBtn = createElement('button', { class: 'fpt-acc-btn fpt-acc-btn-delete', title: 'Удалить' });
-        deleteBtn.innerHTML = '<span class="material-symbols-rounded">delete</span>';
-        deleteBtn.addEventListener('click', () => {
-            if (confirm(`Вы уверены, что хотите удалить аккаунт "${account.name}"?`)) {
-                fpToolsAccounts.splice(index, 1);
-                saveAccountsList();
-            }
-        });
-
-        actionsDiv.append(switchBtn, renameBtn, deleteBtn);
-        item.append(avatar, info, actionsDiv);
-        listContainer.appendChild(item);
-    });
-
-    // авто-обновление снимков раз в ~55 минут (если давно не обновляли)
-    maybeAutoRefreshAccounts();
-}
-
-// Автообновление аватар/баланс/непрочитанных не чаще раза в 55 минут.
-let _fptAccAutoRefreshing = false;
 async function maybeAutoRefreshAccounts() {
     if (_fptAccAutoRefreshing) return;
     const STALE = 55 * 60 * 1000;
@@ -134,7 +39,6 @@ async function maybeAutoRefreshAccounts() {
             }
         }
         if (changed) await chrome.storage.local.set({ fpToolsAccounts });
-        if (changed) renderAccountsList();
     } finally {
         _fptAccAutoRefreshing = false;
     }
@@ -154,52 +58,50 @@ async function fptRefreshAllAccounts() {
         }
     }
     await chrome.storage.local.set({ fpToolsAccounts });
-    renderAccountsList();
+
     showNotification('Данные аккаунтов обновлены.');
 }
 
-function setupAccountManagementHandlers() {
-    const addBtn = document.getElementById('addCurrentAccountBtn');
-    // Проверяем, не был ли обработчик уже привязан
-    if (!addBtn || addBtn.dataset.handlerAttached) return;
-
-    addBtn.addEventListener('click', async () => {
-        const currentUsernameEl = document.querySelector('.user-link-name');
-        const currentUsername = currentUsernameEl ? currentUsernameEl.textContent.trim() : null;
-
-        if (!currentUsername) {
-            showNotification('Не удалось определить имя текущего пользователя.', true);
-            return;
-        }
-
-        if (fpToolsAccounts.some(acc => acc.name === currentUsername)) {
-            showNotification(`Аккаунт "${currentUsername}" уже добавлен.`, true);
-            return;
-        }
-        
-        try {
-            const response = await chrome.runtime.sendMessage({ action: 'getGoldenKey' });
-            if (response && response.success) {
-                fpToolsAccounts.push({ name: currentUsername, key: response.key });
-                await saveAccountsList();
-                showNotification(`Аккаунт "${currentUsername}" успешно добавлен!`);
-            } else {
-                showNotification('Не удалось получить ключ сессии. Вы вошли в аккаунт?', true);
-            }
-        } catch (error) {
-            showNotification(`Ошибка при добавлении аккаунта: ${error.message}`, true);
-        }
-    });
-
-    // Помечаем, что обработчик привязан, чтобы избежать дублирования
-    addBtn.dataset.handlerAttached = 'true';
-
-    const refreshBtn = document.getElementById('fptRefreshAccountsBtn');
-    if (refreshBtn && !refreshBtn.dataset.handlerAttached) {
-        refreshBtn.dataset.handlerAttached = 'true';
-        refreshBtn.addEventListener('click', async () => {
-            refreshBtn.disabled = true;
-            try { await fptRefreshAllAccounts(); } finally { refreshBtn.disabled = false; }
-        });
+async function fptPopupAccountAction(action, p = {}) {
+    if (action === 'switch') {
+        const accounts = (await chrome.storage.local.get('fpToolsAccounts')).fpToolsAccounts || [];
+        const account = accounts.find(item => item.key === p.key);
+        if (!account) throw new Error('Аккаунт не найден.');
+        return chrome.runtime.sendMessage({ action: 'setGoldenKey', key: account.key });
     }
+    const result = await window.fptPopupActions.updateSettings('fpToolsAccounts', async current => {
+    fpToolsAccounts = current.fpToolsAccounts || [];
+    if (action === 'add') {
+        const name = p.name || document.querySelector('.user-link-name')?.textContent.trim();
+        if (!name) throw new Error('Не удалось определить имя текущего пользователя.');
+        if (fpToolsAccounts.some(account => account.name === name)) throw new Error('Аккаунт уже добавлен.');
+        const response = await chrome.runtime.sendMessage({ action: 'getGoldenKey' });
+        if (!response?.success) throw new Error(response?.error || 'Не удалось получить ключ сессии.');
+        fpToolsAccounts.push({ name, key: response.key });
+    } else if (action === 'refresh') {
+        for (const account of fpToolsAccounts) {
+            const snapshot = await fptFetchAccountSnapshot(account.key);
+            if (snapshot) Object.assign(account, { avatar: snapshot.avatar || account.avatar || '',
+                balance: snapshot.balance || account.balance || '',
+                unread: typeof snapshot.unread === 'number' ? snapshot.unread : account.unread || 0, _snapTs: Date.now() });
+        }
+    } else {
+        const account = fpToolsAccounts.find(item => item.key === p.key);
+        if (!account) throw new Error('Аккаунт не найден.');
+        if (action === 'rename') {
+            const name = String(p.name || '').trim();
+            if (!name) throw new Error('Название не может быть пустым.');
+            account.name = name;
+        } else if (action === 'delete') fpToolsAccounts = fpToolsAccounts.filter(item => item !== account);
+    }
+    return { fpToolsAccounts };
+    });
+    return result.fpToolsAccounts;
 }
+if (typeof window !== 'undefined' && window.fptPopupActions) {
+    Object.entries({ addCurrentAccountBtn: 'add', fptRefreshAccountsBtn: 'refresh',
+        switchAccount: 'switch', renameAccount: 'rename', deleteAccount: 'delete' }).forEach(([id, action]) => {
+        window.fptPopupActions.register('accounts', id, p => fptPopupAccountAction(action, p));
+    });
+}
+
