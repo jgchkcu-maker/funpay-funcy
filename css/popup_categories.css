@@ -11,7 +11,8 @@
     --fpt-seg-track: var(--fptm-surface-2);
     --fpt-seg-thumb: var(--fptm-bg);
     --fpt-seg-thumb-shadow: 0 1px 5px var(--fptm-shadow);
-    --fpt-seg-motion: .46s cubic-bezier(.2, 1.35, .4, 1);
+    /* Smooth deceleration without overshoot: the thumb never passes its target. */
+    --fpt-seg-motion: .36s cubic-bezier(.22, 1, .36, 1);
 }
 
 /* Reviews and bonuses: independent editors inside the shared category surface. */
@@ -4552,8 +4553,14 @@
 .fp-tools-popup.fptm-themed .fpt-rv-modes .fpt-rv-button:focus-visible { outline-offset: -2px; }
 
 /* Finance: the thumb is measured by script (tabs differ in width); only its look and motion change. */
+/* Finance tracks keep the card surface (no extra underlay); only the thumb, sizes and motion are shared. */
 .fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tabs,
-.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-segmented { padding: var(--fpt-seg-pad); gap: 0; border-radius: var(--fpt-seg-radius); background: var(--fpt-seg-track); }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-segmented { padding: var(--fpt-seg-pad); gap: 0; border-radius: var(--fpt-seg-radius); }
+/* Table filters sit on their own row, sized to their buttons: the title takes the full first row. */
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-card--table .fpt-fin-chips { flex: 0 1 auto; width: auto; }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-chips { min-width: 0; max-width: 100%; }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-chips .fpt-fin-seg-btn { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-card--table .fpt-fin-card-head:has(> .fpt-fin-chips) > .fpt-fin-card-copy { flex-basis: 100%; }
 .fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tab { min-height: var(--fpt-tab-height); border: 0; border-radius: var(--fpt-seg-item-radius); font-size: var(--fpt-tab-font); }
 .fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-seg-btn { height: var(--fpt-seg-height); border: 0; border-radius: var(--fpt-seg-item-radius); font-size: var(--fpt-seg-font); }
 .fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tab-pill { top: var(--fpt-seg-pad); }
