@@ -79,15 +79,19 @@ async function createLotIoPage(options = {}) {
                 }
                 if (actionId === 'fp-bulk-edit-btn') return window.qaBulkLots;
                 if (['fp-bulk-apply-btn', 'fp-bulk-activate-btn'].includes(actionId)) {
-                    const results = payload.lots.map(lot => ({ offerId: lot.offerId, success: true }));
+                    const results = payload.lots.map(lot => lot.offerId === window.qaFailOffer
+                        ? { offerId: lot.offerId, success: false, error: 'FunPay отклонил сохранение.' }
+                        : { offerId: lot.offerId, success: true, title: `${lot.title} ✓` });
                     payload.onProgress?.({ processed: results.length, total: results.length, result: results.at(-1) });
-                    return { results, successCount: results.length };
+                    window.qaLastBulkPayload = { lots: payload.lots, changes: payload.changes };
+                    return { results, successCount: results.filter(result => result.success).length };
                 }
                 return { success: true };
             },
             toggleCategorySelection() { return []; }
         });
     }, { task: options.pendingTask, holdPendingImport: options.holdPendingImport === true });
+    await page.addScriptTag({ path: path.join(root, 'content/features/bulk_lot_editor.js') });
     await page.addScriptTag({ path: path.join(root, 'content/ui/lot_io_page.js') });
     await page.evaluate(() => { window.qaMountPromise = window.FPTLotIOPage.mount(document.querySelector('.fp-tools-popup')); });
     await page.locator('.fpt-lot-action-band').waitFor();
@@ -229,6 +233,56 @@ test('bulk editor guides lot selection, changes, and review with live validation
 
         await activate.click();
         await page.waitForFunction(() => window.qaLotActions.some(action => action.actionId === 'fp-bulk-activate-btn'));
+    } finally {
+        await browser.close();
+    }
+});
+
+test('bulk editor selects by category, previews Cyrillic whole-word replacement and offers a retry for failed lots', async () => {
+    const { browser, page } = await createLotIoPage();
+    try {
+        await page.evaluate(() => {
+            window.qaBulkLots.push({ offerId: '503', nodeId: '42', title: 'Аккаунт Premium котик', categoryName: 'Аккаунты', price: '70' });
+            window.qaFailOffer = '503';
+        });
+        await page.locator('#fp-bulk-edit-btn').click();
+        await page.locator('.fpt-bulk-form').waitFor();
+        const accounts = page.locator('.fpt-bulk-category-chip[data-category="Аккаунты"]');
+        assert.match(await accounts.textContent(), /Аккаунты\s*2/);
+        await accounts.click();
+        assert.equal(await accounts.getAttribute('aria-pressed'), 'true');
+        assert.equal(await page.locator('[data-lot-selected]').textContent(), '2');
+
+        await page.locator('#fptBulkFind').fill('premium');
+        await page.locator('#fptBulkReplace').fill('VIP');
+        await page.locator('#fptBulkWholeWord').check();
+        assert.deepEqual(await page.locator('.fpt-bulk-preview-after').allTextContents(), ['После: Аккаунт VIP', 'После: Аккаунт VIP котик']);
+        await page.locator('#fptBulkFind').fill('кот');
+        assert.deepEqual(await page.locator('.fpt-bulk-preview-item').evaluateAll(items => items.map(item => item.dataset.changed)), ['false', 'false'],
+            'whole-word search must not match «кот» inside «котик»');
+        await page.locator('#fptBulkFind').fill('premium');
+
+        await page.locator('#fptBulkPriceMode').selectOption('pct_up');
+        await page.locator('#fptBulkPriceValue').fill('10');
+        assert.equal(await page.locator('.fpt-bulk-price-unit').textContent(), '%');
+        assert.match(await page.locator('.fpt-bulk-price-hint').textContent(), /1\s000 ₽ → 1\s100 ₽/);
+
+        await page.locator('.fpt-bulk-apply').click();
+        await page.locator('.fpt-bulk-retry').waitFor();
+        const payload = await page.evaluate(() => window.qaLastBulkPayload);
+        assert.deepEqual(payload.changes.findReplace.wholeWord, true);
+        assert.deepEqual(payload.changes.price, { mode: 'pct_up', value: 10 });
+        assert.equal(await page.locator('.fpt-bulk-lot-row[data-result="success"] .fpt-bulk-lot-name').textContent(), 'Аккаунт Premium ✓');
+        assert.equal(await page.locator('.fpt-bulk-lot-row[data-result="error"] .fpt-bulk-lot-status').getAttribute('title'), 'FunPay отклонил сохранение.');
+        assert.match(await page.locator('.fpt-bulk-log').textContent(), /Аккаунт Premium котик: FunPay отклонил сохранение\./);
+        await page.locator('.fpt-bulk-retry').click();
+        assert.equal(await page.locator('[data-lot-selected]').textContent(), '1');
+        assert.equal(await page.locator('.fpt-bulk-lot-row[data-result="error"] .fpt-bulk-lot-check').isChecked(), true);
+
+        await page.locator('.fpt-bulk-reset').click();
+        assert.equal(await page.locator('#fptBulkFind').inputValue(), '');
+        assert.equal(await page.locator('#fptBulkPriceMode').inputValue(), 'none');
+        assert.equal(await page.locator('.fpt-bulk-apply').isDisabled(), true);
     } finally {
         await browser.close();
     }

@@ -48,6 +48,11 @@
         return root.FPTPopupUI.createDialog(popup, title, { wide, description });
     }
 
+    // The bulk editor's find/replace, templates and price rules live in content/features/bulk_lot_editor.js.
+    const bulkEditor = () => root.FPTBulkLotEditor;
+    const buildFindRegex = findReplace => bulkEditor().buildFindRegex(findReplace);
+    const formatRub = value => `${Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽`;
+
     function downloadJson(contents, fileName) {
         const blob = new Blob([JSON.stringify(contents, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -686,12 +691,13 @@
                             <option value="pct_up">Поднять на %</option>
                             <option value="pct_down">Снизить на %</option>
                         </select>
-                        <input id="fptBulkPriceValue" type="number" min="0" step="0.01" placeholder="Значение" aria-label="Значение цены" disabled>
+                        <span class="fpt-bulk-price-value"><input id="fptBulkPriceValue" type="number" min="0" step="0.01" placeholder="Значение" aria-label="Значение цены" disabled><span class="fpt-bulk-price-unit" aria-hidden="true">₽</span></span>
                         <select id="fptBulkPriceStep" aria-label="Шаг округления" hidden>
                             <option value="1">до 1</option><option value="5">до 5</option><option value="10" selected>до 10</option>
                             <option value="50">до 50</option><option value="100">до 100</option><option value="500">до 500</option><option value="1000">до 1000</option>
                         </select>
                     </div>
+                    <p class="fpt-bulk-price-hint" aria-live="polite" hidden></p>
                     <div class="fpt-bulk-checks">
                         <label class="fpt-lot-check-row"><input id="fptBulkPriceRound" type="checkbox"> Округлять до целого</label>
                         <label class="fpt-lot-check-row fpt-lot-check-row--minimum"><span>Не ниже</span><input id="fptBulkPriceMinimum" type="number" min="0" step="0.01" placeholder="Мин."></label>
@@ -722,21 +728,28 @@
             lotTools.appendChild(activateButton);
             const filterEmpty = node('p', 'fpt-bulk-filter-empty', 'Лоты не найдены. Измените поисковый запрос.');
             filterEmpty.hidden = true;
+            const categoryChips = node('div', 'fpt-bulk-categories');
+            categoryChips.setAttribute('role', 'group');
+            categoryChips.setAttribute('aria-label', 'Выбрать лоты категории');
             const stepLots = node('section', 'fpt-bulk-step fpt-bulk-step--lots');
-            stepLots.append(node('h3', '', '1. Выберите лоты'), node('p', 'fpt-bulk-step-hint', 'Отметьте лоты, к которым нужно применить действие.'), lotTools, lotsList, filterEmpty);
+            stepLots.append(node('h3', '', '1. Выберите лоты'), node('p', 'fpt-bulk-step-hint', 'Отметьте лоты вручную или выберите всю категорию одним нажатием.'), categoryChips, lotTools, lotsList, filterEmpty);
             const stepChanges = node('section', 'fpt-bulk-step fpt-bulk-step--changes');
-            stepChanges.append(node('h3', '', '2. Что изменить'), node('p', 'fpt-bulk-step-hint', 'Пустые поля останутся без изменений.'), initialFields, ...changeGroups);
+            const resetButton = node('button', 'fpt-lot-dialog-button fpt-bulk-reset', 'Очистить');
+            resetButton.type = 'button';
+            resetButton.disabled = true;
+            stepChanges.append(node('h3', '', '2. Что изменить'), resetButton, node('p', 'fpt-bulk-step-hint', 'Пустые поля останутся без изменений. {current} — текущее значение поля, {lotname} — исходное название лота.'), initialFields, ...changeGroups);
             const stepReview = node('section', 'fpt-bulk-step fpt-bulk-step--review');
             stepReview.appendChild(node('h3', '', '3. Проверьте изменения'));
             const reviewSummary = node('p', 'fpt-bulk-review-summary', 'Выберите лоты и укажите изменения.');
             reviewSummary.setAttribute('role', 'status');
             const preview = node('div', 'fpt-bulk-preview');
             preview.setAttribute('aria-live', 'polite');
-            const previewTitle = node('strong', '', 'Предпросмотр первого выбранного лота');
-            const previewBefore = node('p', 'fpt-bulk-preview-before', 'До: —');
-            const previewAfter = node('p', 'fpt-bulk-preview-after', 'После: —');
+            const previewTitle = node('strong', 'fpt-bulk-preview-title', 'Названия после изменений');
+            const previewItems = node('div', 'fpt-bulk-preview-items');
+            const previewMore = node('p', 'fpt-bulk-preview-more');
+            const previewFields = node('p', 'fpt-bulk-preview-fields');
             const previewPrice = node('p', 'fpt-bulk-preview-price', '');
-            preview.append(previewTitle, previewBefore, previewAfter, previewPrice);
+            preview.append(previewTitle, previewItems, previewMore, previewFields, previewPrice);
             stepReview.append(reviewSummary, preview, progressPanel);
             form.replaceChildren(stepLots, stepChanges, stepReview);
 
@@ -744,8 +757,10 @@
             const selectedElement = form.querySelector('[data-lot-selected]');
             const list = form.querySelector('.fpt-bulk-lots-list');
             let refreshReview = () => {};
+            let syncSelection = () => {};
             const selectedCount = () => {
                 selectedElement.textContent = String(form.querySelectorAll('.fpt-bulk-lot-check:checked').length);
+                syncSelection();
                 refreshReview();
             };
             totalElement.textContent = `${lots.length} ${root.FPTPopupUI.pluralize(lots.length, ['лот', 'лота', 'лотов'])}`;
@@ -756,11 +771,48 @@
                 checkbox.dataset.offerId = String(lot.offerId ?? lot.id ?? '');
                 checkbox.dataset.nodeId = String(lot.nodeId ?? '');
                 const name = node('span', 'fpt-bulk-lot-name', lot.title || 'Лот без названия');
+                name.title = lot.title || '';
                 const category = node('span', 'fpt-bulk-lot-category', lot.categoryName || '');
-                label.append(checkbox, name, category);
+                const status = node('span', 'fpt-bulk-lot-status');
+                status.hidden = true;
+                label.dataset.category = lot.categoryName || '';
+                label.append(checkbox, name, category, status);
                 label.dataset.search = `${lot.title || ''} ${lot.categoryName || ''} ${lot.offerId || lot.id || ''}`.toLocaleLowerCase('ru');
                 list.appendChild(label);
             });
+            const lotRows = () => Array.from(list.querySelectorAll('.fpt-bulk-lot-row'));
+            const categories = new Map();
+            lotRows().forEach(row => {
+                const name = row.dataset.category || 'Без категории';
+                categories.set(name, (categories.get(name) || 0) + 1);
+            });
+            if (categories.size > 1) {
+                for (const [name, count] of categories) {
+                    const chip = node('button', 'fpt-bulk-category-chip');
+                    chip.type = 'button';
+                    chip.dataset.category = name;
+                    chip.setAttribute('aria-pressed', 'false');
+                    chip.append(node('span', '', name), node('strong', '', String(count)));
+                    chip.title = `Выбрать или снять все лоты категории «${name}»`;
+                    chip.addEventListener('click', () => {
+                        const rows = lotRows().filter(row => (row.dataset.category || 'Без категории') === name);
+                        const check = rows.some(row => !row.querySelector('.fpt-bulk-lot-check').checked);
+                        rows.forEach(row => { row.querySelector('.fpt-bulk-lot-check').checked = check; });
+                        selectedCount();
+                    });
+                    categoryChips.appendChild(chip);
+                }
+            } else {
+                categoryChips.hidden = true;
+            }
+            const syncCategoryChips = () => {
+                categoryChips.querySelectorAll('.fpt-bulk-category-chip').forEach(chip => {
+                    const rows = lotRows().filter(row => (row.dataset.category || 'Без категории') === chip.dataset.category);
+                    const checked = rows.filter(row => row.querySelector('.fpt-bulk-lot-check').checked).length;
+                    chip.setAttribute('aria-pressed', String(checked > 0 && checked === rows.length));
+                    chip.dataset.partial = String(checked > 0 && checked < rows.length);
+                });
+            };
             list.addEventListener('change', selectedCount);
             form.querySelector('.fpt-bulk-lot-filter').addEventListener('input', event => {
                 const query = event.target.value.trim().toLocaleLowerCase('ru');
@@ -768,23 +820,36 @@
                     row.hidden = Boolean(query) && !row.dataset.search.includes(query);
                 });
                 filterEmpty.hidden = Array.from(list.querySelectorAll('.fpt-bulk-lot-row')).some(row => !row.hidden);
+                syncSelection();
                 refreshReview();
             });
-            form.querySelector('[data-select-visible]').addEventListener('click', event => {
-                const rows = Array.from(list.querySelectorAll('.fpt-bulk-lot-row')).filter(row => !row.hidden);
+            const selectVisible = form.querySelector('[data-select-visible]');
+            selectVisible.addEventListener('click', () => {
+                const rows = lotRows().filter(row => !row.hidden);
                 const shouldCheck = rows.some(row => !row.querySelector('.fpt-bulk-lot-check').checked);
                 rows.forEach(row => { row.querySelector('.fpt-bulk-lot-check').checked = shouldCheck; });
-                event.currentTarget.textContent = shouldCheck ? 'Снять выделение' : 'Выбрать все';
                 selectedCount();
             });
+            syncSelection = () => {
+                syncCategoryChips();
+                const rows = lotRows().filter(row => !row.hidden);
+                selectVisible.textContent = rows.length && rows.every(row => row.querySelector('.fpt-bulk-lot-check').checked)
+                    ? 'Снять выделение' : 'Выбрать все';
+            };
 
             const priceMode = form.querySelector('#fptBulkPriceMode');
             const priceValue = form.querySelector('#fptBulkPriceValue');
             const priceStep = form.querySelector('#fptBulkPriceStep');
+            const priceUnit = form.querySelector('.fpt-bulk-price-unit');
+            const priceValueWrap = form.querySelector('.fpt-bulk-price-value');
             priceMode.addEventListener('change', () => {
                 const flat = priceMode.value === 'round_flat';
                 priceValue.disabled = priceMode.value === 'none' || flat;
+                priceValueWrap.hidden = flat;
                 priceStep.hidden = !flat;
+                priceUnit.textContent = ['pct_up', 'pct_down'].includes(priceMode.value) ? '%' : '₽';
+                if (priceMode.value === 'pct_down') priceValue.max = '100';
+                else priceValue.removeAttribute('max');
                 if (priceMode.value === 'none' || flat) priceValue.value = '';
                 refreshReview();
             });
@@ -795,7 +860,11 @@
             const progressText = form.querySelector('.fpt-bulk-progress-text');
             const log = form.querySelector('.fpt-bulk-log');
             const applyButton = addDialogButton(dialog.footer, 'Применить изменения', { primary: true });
-            const cancelButton = addDialogButton(dialog.footer, 'Отмена', { onClick: dialog.close });
+            addDialogButton(dialog.footer, 'Закрыть', { onClick: dialog.close });
+            const retryFailed = node('button', 'fpt-lot-dialog-button fpt-bulk-retry', 'Выбрать лоты с ошибками');
+            retryFailed.type = 'button';
+            retryFailed.hidden = true;
+            progress.appendChild(retryFailed);
             applyButton.classList.add('fpt-bulk-apply');
 
             const makeChangePayload = () => {
@@ -810,6 +879,7 @@
                 const mode = priceMode.value;
                 if (mode !== 'none') {
                     if (mode !== 'round_flat' && !priceValue.value.trim()) throw new Error('Введите цену для выбранного режима.');
+                    if (mode === 'pct_down' && Number(priceValue.value) > 100) throw new Error('Снизить цену можно не больше чем на 100%.');
                     const price = { mode };
                     if (mode === 'round_flat') price.step = Number(priceStep.value) || 1;
                     else price.value = Number(priceValue.value);
@@ -835,7 +905,7 @@
                         }
                     };
                     if (changes.findReplace.regex) {
-                        try { new RegExp(find, `${changes.findReplace.all ? 'g' : ''}${changes.findReplace.caseSensitive ? '' : 'i'}`); }
+                        try { buildFindRegex(changes.findReplace); }
                         catch (error) { throw new Error(`Ошибка в регулярном выражении: ${error.message}`); }
                     }
                 }
@@ -852,8 +922,11 @@
                     return true;
                 }
                 try {
-                    const pattern = form.querySelector('#fptBulkWholeWord').checked ? `\\b(?:${find})\\b` : find;
-                    new RegExp(pattern, form.querySelector('#fptBulkCase').checked ? '' : 'i');
+                    buildFindRegex({
+                        find, regex: true,
+                        wholeWord: form.querySelector('#fptBulkWholeWord').checked,
+                        caseSensitive: form.querySelector('#fptBulkCase').checked
+                    });
                     regexError.hidden = true;
                     regexError.textContent = '';
                     form.querySelector('#fptBulkFind').removeAttribute('aria-invalid');
@@ -892,27 +965,97 @@
                 activateButton.disabled = selectedCountValue === 0;
                 applyButton.disabled = selectedCountValue === 0 || changeLabels.length === 0 || !validRegex || Boolean(validationMessage);
 
-                const firstId = selectedInputs[0]?.dataset.offerId;
-                const firstLot = lots.find(lot => String(lot.offerId ?? lot.id ?? '') === String(firstId)) || null;
-                const beforeTitle = firstLot?.title || firstLot?.name || (firstLot ? `Лот #${firstId}` : '—');
-                let afterTitle = beforeTitle;
+                resetButton.disabled = !hasFormChanges();
+                renderPreview(selectedInputs, changes);
+            };
+            const hasFormChanges = () => Array.from(stepChanges.querySelectorAll('input[type="text"], textarea'))
+                .some(field => field.value.trim()) || priceMode.value !== 'none';
+
+            // Mirrors bulk_lot_editor.js: find/replace first, then {current} is the replaced value and {lotname} the original title.
+            const nextTitle = (title, changes) => {
+                let current = title;
                 if (changes.findReplace?.fields?.name) {
                     try {
-                        let pattern = changes.findReplace.regex ? changes.findReplace.find : String(changes.findReplace.find).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        if (changes.findReplace.wholeWord) pattern = `\\b${pattern}\\b`;
-                        const flags = `${changes.findReplace.all ? 'g' : ''}${changes.findReplace.caseSensitive ? '' : 'i'}`;
-                        afterTitle = afterTitle.replace(new RegExp(pattern, flags), changes.findReplace.replace ?? '');
+                        const regex = buildFindRegex(changes.findReplace);
+                        current = current.replace(regex, changes.findReplace.replace ?? '');
                     } catch (_) {}
                 }
-                if (changes.name) afterTitle = changes.name.replace(/{current}/gi, beforeTitle).replace(/{lotname}/gi, beforeTitle);
-                previewBefore.textContent = `До: ${beforeTitle}`;
-                previewAfter.textContent = `После: ${afterTitle}`;
-                previewPrice.textContent = changes.price
-                    ? `Цена: ${firstLot?.price ?? '—'} → ${changes.price.mode === 'pct_up' ? `+${changes.price.value}%` : changes.price.mode === 'pct_down' ? `−${changes.price.value}%` : changes.price.mode === 'set' ? `${changes.price.value} ₽` : 'по выбранному правилу'}`
-                    : '';
+                return changes.name ? bulkEditor().applyTemplate(changes.name, current, title) : current;
             };
+            const PREVIEW_LIMIT = 3;
+            function renderPreview(selectedInputs, changes) {
+                previewItems.replaceChildren();
+                const selectedLots = selectedInputs.map(input => lots.find(lot => String(lot.offerId ?? lot.id ?? '') === input.dataset.offerId)).filter(Boolean);
+                if (!selectedLots.length) {
+                    previewItems.appendChild(node('p', 'fpt-bulk-preview-empty', 'Отметьте лоты, чтобы увидеть, как изменятся названия.'));
+                }
+                selectedLots.slice(0, PREVIEW_LIMIT).forEach(lot => {
+                    const before = lot.title || lot.name || `Лот #${lot.offerId ?? lot.id}`;
+                    const after = nextTitle(before, changes);
+                    const item = node('div', 'fpt-bulk-preview-item');
+                    item.dataset.changed = String(after !== before);
+                    item.append(node('p', 'fpt-bulk-preview-before', `До: ${before}`), node('p', 'fpt-bulk-preview-after', `После: ${after}`));
+                    previewItems.appendChild(item);
+                });
+                const rest = selectedLots.length - PREVIEW_LIMIT;
+                previewMore.textContent = rest > 0 ? `и ещё ${rest} ${root.FPTPopupUI.pluralize(rest, ['лот', 'лота', 'лотов'])}` : '';
+                const fieldNotes = [];
+                if (changes.description) fieldNotes.push('описание будет заменено');
+                if (changes.message) fieldNotes.push('сообщение покупателю будет заменено');
+                if (changes.findReplace && (changes.findReplace.fields.desc || changes.findReplace.fields.msg)) {
+                    fieldNotes.push(`замена текста в ${[changes.findReplace.fields.desc && 'описании', changes.findReplace.fields.msg && 'сообщении'].filter(Boolean).join(' и ')}`);
+                }
+                previewFields.textContent = fieldNotes.length ? `Также: ${fieldNotes.join('; ')}.` : '';
+                previewPrice.textContent = describePrice(changes.price);
+                priceHint.hidden = !changes.price;
+                priceHint.textContent = changes.price ? describePrice(changes.price) : '';
+            }
+            const priceHint = form.querySelector('.fpt-bulk-price-hint');
+            // Current seller prices are only known after a lot is opened, so the rule is shown on an example price.
+            function describePrice(price) {
+                if (!price) return '';
+                if (price.mode === 'buyer_set') {
+                    return `Покупатель увидит ${formatRub(price.value)}; ваша цена посчитается с учётом комиссии раздела каждого лота.`;
+                }
+                if (price.mode === 'set') {
+                    return `Цена всех выбранных лотов станет ${formatRub(bulkEditor().computePrice(0, price))}.`;
+                }
+                const example = 1000;
+                return `Пример: ${formatRub(example)} → ${formatRub(bulkEditor().computePrice(example, price))}.`;
+            }
             form.addEventListener('input', refreshReview);
             form.addEventListener('change', refreshReview);
+            resetButton.addEventListener('click', () => {
+                stepChanges.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(field => { field.value = ''; });
+                priceMode.value = 'none';
+                priceMode.dispatchEvent(new Event('change', { bubbles: true }));
+                form.querySelector('#fptBulkName').focus();
+            });
+            const rowByOfferId = offerId => list.querySelector(`.fpt-bulk-lot-check[data-offer-id="${CSS.escape(String(offerId))}"]`)?.closest('.fpt-bulk-lot-row');
+            const markRow = (result, activate) => {
+                const row = rowByOfferId(result.offerId);
+                if (!row) return;
+                const status = row.querySelector('.fpt-bulk-lot-status');
+                row.dataset.result = result.success ? 'success' : 'error';
+                status.hidden = false;
+                status.replaceChildren(icon(result.success ? 'check_circle' : 'error'));
+                status.title = result.success ? (activate ? 'Активирован' : 'Сохранено') : result.error || 'Ошибка';
+                if (result.success && typeof result.title === 'string' && result.title.trim()) {
+                    const lot = lots.find(item => String(item.offerId ?? item.id ?? '') === String(result.offerId));
+                    if (lot) lot.title = result.title;
+                    const name = row.querySelector('.fpt-bulk-lot-name');
+                    name.textContent = result.title;
+                    name.title = result.title;
+                    row.dataset.search = `${result.title} ${row.dataset.category} ${result.offerId}`.toLocaleLowerCase('ru');
+                }
+            };
+            retryFailed.addEventListener('click', () => {
+                lotRows().forEach(row => {
+                    row.querySelector('.fpt-bulk-lot-check').checked = row.dataset.result === 'error';
+                });
+                selectedCount();
+                list.querySelector('.fpt-bulk-lot-row[data-result="error"]')?.scrollIntoView({ block: 'nearest' });
+            });
             refreshReview();
 
             async function applyToSelected(activate) {
@@ -940,7 +1083,13 @@
                 dialog.setBusy(true, { onStop: () => controller.abort() });
                 runButton.textContent = activate ? 'Активируем…' : 'Применяем…';
                 progress.hidden = false;
+                retryFailed.hidden = true;
                 log.replaceChildren();
+                lotRows().forEach(row => {
+                    delete row.dataset.result;
+                    row.querySelector('.fpt-bulk-lot-status').hidden = true;
+                });
+                const titleOf = offerId => selectedLots.find(lot => String(lot.offerId) === String(offerId))?.title || `Лот ${offerId}`;
                 const appendLog = (message, isError = false) => {
                     const row = node('div', isError ? 'fpt-bulk-log-row--error' : '', message);
                     log.appendChild(row);
@@ -961,23 +1110,31 @@
                             progressTrack.setAttribute('aria-valuenow', String(percent));
                             progressText.textContent = `${activate ? 'Активировано' : 'Обработано'} ${current} из ${total}`;
                             if (state.result) {
+                                markRow(state.result, activate);
+                                const note = state.result.note ? ` ${state.result.note}` : '';
                                 appendLog(state.result.success
-                                    ? `Лот ${state.result.offerId}: готово`
-                                    : `Лот ${state.result.offerId}: ${state.result.error || 'ошибка'}`,
+                                    ? `${titleOf(state.result.offerId)}: готово${note}`
+                                    : `${titleOf(state.result.offerId)}: ${state.result.error || 'ошибка'}`,
                                 !state.result.success);
                             }
                         }
                     });
                     if (!response?.results) throw new Error(response?.error || 'Не удалось обработать выбранные лоты.');
                     const failed = response.results.length - response.successCount;
-                    progressText.textContent = `Готово: ${response.successCount} из ${response.results.length}`;
+                    response.results.forEach(result => markRow(result, activate));
+                    retryFailed.hidden = failed === 0;
+                    progressText.textContent = failed
+                        ? `Готово: ${response.successCount} из ${response.results.length}, ошибок: ${failed}`
+                        : `Готово: ${response.successCount} из ${response.results.length}`;
                     showToast(popup, failed
                         ? `Обработано ${response.successCount} ${root.FPTPopupUI.pluralize(response.successCount, ['лот', 'лота', 'лотов'])}; ошибок: ${failed}.`
-                        : `Готово: ${response.successCount} ${root.FPTPopupUI.pluralize(response.successCount, ['лот', 'лота', 'лотов'])} обработано.`);
-                    runButton.textContent = activate ? 'Активировать' : 'Применить изменения';
+                        : `Готово: ${response.successCount} ${root.FPTPopupUI.pluralize(response.successCount, ['лот', 'лота', 'лотов'])} обработано.`,
+                    failed ? 'warning' : 'success');
+                    runButton.textContent = activate ? 'Активировать выбранные' : 'Применить изменения';
                 } catch (error) {
                     appendLog(error.message || 'Не удалось применить изменения.', true);
                     progressText.textContent = 'Обработка остановлена.';
+                    retryFailed.hidden = !list.querySelector('.fpt-bulk-lot-row[data-result="error"]');
                     runButton.textContent = activate ? 'Повторить активацию' : 'Повторить изменения';
                     showToast(popup, error.message || 'Не удалось применить изменения.', error?.name === 'AbortError' ? 'warning' : 'error');
                 } finally {

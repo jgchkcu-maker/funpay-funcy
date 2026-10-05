@@ -26,6 +26,42 @@ function waitForBulkLotDelay(delayMs, signal) {
     });
 }
 
+// Shared with the popup preview (FPTBulkLotEditor) so the preview and the saved result never disagree.
+// JavaScript \b ignores Cyrillic, so whole words are matched with Unicode letter lookarounds.
+function buildBulkFindRegex(fr = {}) {
+    if (!fr.find) return null;
+    const source = fr.regex ? String(fr.find) : String(fr.find).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = fr.wholeWord ? `(?<![\\p{L}\\p{N}_])(?:${source})(?![\\p{L}\\p{N}_])` : source;
+    return new RegExp(pattern, `${fr.all !== false ? 'g' : ''}${fr.caseSensitive ? '' : 'i'}${fr.wholeWord ? 'u' : ''}`);
+}
+
+function applyBulkTemplate(template, current, lotName) {
+    return String(template).replace(/{current}/gi, () => current || '').replace(/{lotname}/gi, () => lotName || '');
+}
+
+// Returns the new seller price for every mode except buyer_set, which needs the section commission.
+function computeBulkPrice(current, price = {}) {
+    const value = Number(price.value), step = Number(price.step ?? 1);
+    let next;
+    switch (price.mode) {
+        case 'set': next = value; break;
+        case 'add': next = current + value; break;
+        case 'sub': next = current - value; break;
+        case 'pct_up': next = current * (1 + value / 100); break;
+        case 'pct_down': next = current * (1 - value / 100); break;
+        case 'round_flat': next = Math.round(current / step) * step; break;
+        default: return current;
+    }
+    return finalizeBulkPrice(next, price);
+}
+
+function finalizeBulkPrice(next, price = {}) {
+    const minimum = price.minimum === undefined || price.minimum === '' ? NaN : Number(price.minimum);
+    let result = Math.max(0, next);
+    if (!Number.isNaN(minimum)) result = Math.max(minimum, result);
+    return price.round === true ? Math.round(result) : Math.round(result * 100) / 100;
+}
+
 async function openBulkEditor(p = {}) {
     const app = JSON.parse(document.body?.dataset.appData || '{}');
     const userId = p.userId || (Array.isArray(app) ? app[0] : app).userId;
@@ -37,23 +73,27 @@ async function applyPopupBulkLots(p = {}, activate = false) {
     const change = activate ? {} : (p.changes || {}), price = change.price || {}, fr = change.findReplace || {};
     const newName = change.name ?? '', newDesc = change.description ?? '', newMsg = change.message ?? '';
     const nameWanted = Object.hasOwn(change, 'name'), descWanted = Object.hasOwn(change, 'description'), msgWanted = Object.hasOwn(change, 'message');
-    const pMode = price.mode || 'none', pVal = Number(price.value), pRound = price.round === true;
-    const pMin = price.minimum === undefined ? NaN : Number(price.minimum), pFlatStep = Number(price.step ?? 1);
+    const pMode = price.mode || 'none', pVal = Number(price.value), pFlatStep = Number(price.step ?? 1);
     const priceWanted = pMode !== 'none', frActive = Boolean(fr.find), frFields = { name: true, desc: true, msg: false, ...fr.fields };
     if (!['none', 'set', 'buyer_set', 'round_flat', 'add', 'sub', 'pct_up', 'pct_down'].includes(pMode)) throw new Error('Некорректный режим цены.');
     if (priceWanted && pMode !== 'round_flat' && (!Number.isFinite(pVal) || pVal < 0)) throw new Error('Укажите корректную цену.');
+    if (pMode === 'pct_down' && pVal > 100) throw new Error('Снизить цену можно не больше чем на 100%.');
     if (pMode === 'round_flat' && (!Number.isFinite(pFlatStep) || pFlatStep <= 0)) throw new Error('Некорректный шаг округления.');
     if (!activate && !nameWanted && !descWanted && !msgWanted && !priceWanted && !frActive) throw new Error('Укажите хотя бы одно изменение.');
-    let pattern = fr.regex ? fr.find : String(fr.find || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    if (fr.wholeWord) pattern = `\\b${pattern}\\b`;
-    const re = frActive ? new RegExp(pattern, (fr.all !== false ? 'g' : '') + (fr.caseSensitive ? '' : 'i')) : null;
-    const applyFindReplace = text => re ? String(text).replace(re, fr.replace ?? '') : text;
+    let re = null;
+    try { re = buildBulkFindRegex(fr); }
+    catch (error) { throw new Error(`Ошибка в регулярном выражении: ${error.message}`); }
+    const applyFindReplace = text => {
+        if (!re) return text;
+        re.lastIndex = 0;
+        return String(text).replace(re, fr.replace ?? '');
+    };
     const getField = (data, base) => data[`fields[${base}][ru]`] ?? data[`fields[${base}]`] ?? '';
     const setField = (data, base, value) => {
         const key = `fields[${base}][ru]` in data ? `fields[${base}][ru]` : `fields[${base}]` in data ? `fields[${base}]` : `fields[${base}][ru]`;
         data[key] = value;
     };
-    const applyTemplate = (tpl, current, lotName) => String(tpl).replace(/{current}/gi, () => current || '').replace(/{lotname}/gi, () => lotName || '');
+    const applyTemplate = applyBulkTemplate;
     const results = [];
     for (const lot of p.lots) {
         throwIfBulkLotAborted(p.signal);
@@ -87,26 +127,16 @@ async function applyPopupBulkLots(p = {}, activate = false) {
                         throw new Error('не удалось прочитать текущую цену');
                     }
                     let np;
-                    switch (pMode) {
-                        case 'set':        np = pVal; break;
-                        case 'add':        np = cur + pVal; break;
-                        case 'sub':        np = cur - pVal; break;
-                        case 'pct_up':     np = cur * (1 + pVal / 100); break;
-                        case 'pct_down':   np = cur * (1 - pVal / 100); break;
-                        case 'round_flat': np = Math.round(cur / pFlatStep) * pFlatStep; break;
-                        case 'buyer_set': {
-                            let net = null;
-                            if (window.FPTCommission && nodeId) {
-                                try { net = await window.FPTCommission.sellerNet(nodeId, pVal); } catch (_) {}
-                            }
-                            if (net == null) throw new Error('не удалось получить комиссию раздела');
-                            np = net;
-                            break;
+                    if (pMode === 'buyer_set') {
+                        let net = null;
+                        if (window.FPTCommission && nodeId) {
+                            try { net = await window.FPTCommission.sellerNet(nodeId, pVal); } catch (_) {}
                         }
+                        if (net == null) throw new Error('не удалось получить комиссию раздела');
+                        np = finalizeBulkPrice(net, price);
+                    } else {
+                        np = computeBulkPrice(cur, price);
                     }
-                    np = Math.max(0, np);
-                    if (!isNaN(pMin)) np = Math.max(pMin, np);
-                    np = pRound ? Math.round(np) : Math.round(np * 100) / 100;
                     formData.price = String(np);
 
                     if (window.FPTCommission && nodeId) {
@@ -121,7 +151,12 @@ async function applyPopupBulkLots(p = {}, activate = false) {
             throwIfBulkLotAborted(p.signal);
             const saved = await chrome.runtime.sendMessage({ action: 'saveSingleLot', data: formData });
             if (!saved?.success) throw new Error(saved?.error || 'Ошибка сохранения.');
-            results.push({ offerId, success: true });
+            results.push({
+                offerId, success: true,
+                title: getField(formData, 'summary'),
+                ...(priceWanted ? { price: formData.price } : {}),
+                ...(lastBuyerInfo ? { note: lastBuyerInfo.trim() } : {})
+            });
         } catch (error) {
             if (p.signal?.aborted || error?.name === 'AbortError') throw bulkLotAbortError();
             results.push({ offerId, success: false, error: error.message });
@@ -131,6 +166,9 @@ async function applyPopupBulkLots(p = {}, activate = false) {
         if (results.length < p.lots.length) await waitForBulkLotDelay(p.delayMs ?? 1200, p.signal);
     }
     return { results, successCount: results.filter(result => result.success).length };
+}
+if (typeof window !== 'undefined') {
+    window.FPTBulkLotEditor = Object.freeze({ buildFindRegex: buildBulkFindRegex, applyTemplate: applyBulkTemplate, computePrice: computeBulkPrice });
 }
 if (typeof window !== 'undefined' && window.fptPopupActions) {
     window.fptPopupActions.register('lot_io', 'fp-bulk-edit-btn', openBulkEditor);
