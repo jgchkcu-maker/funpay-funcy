@@ -129,6 +129,7 @@
         "content/ui/auto_bump_page.js",
         "content/ui/auto_reply_page.js",
         "content/ui/auto_review_page.js",
+        "content/ui/quick_replies_page.js",
         "content/ui/finance_hub_model.js",
         "content/ui/finance_charts.js",
         "content/ui/finance_hub_page.js",

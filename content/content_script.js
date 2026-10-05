@@ -332,6 +332,13 @@
                         console.error('FunPay Funcy: не удалось открыть раздел отзывов и бонусов:', error);
                     }
                 }
+                if (window.FPTQuickRepliesPage && typeof window.FPTQuickRepliesPage.mount === 'function') {
+                    try {
+                        await window.FPTQuickRepliesPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел быстрых ответов:', error);
+                    }
+                }
                 if (window.FPTFinanceHubPage && typeof window.FPTFinanceHubPage.mount === 'function') {
                     try {
                         await window.FPTFinanceHubPage.mount(toolsPopup);
