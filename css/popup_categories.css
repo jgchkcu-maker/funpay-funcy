@@ -1,3 +1,19 @@
+/* Shared segmented controls and tab strips: one track, one sliding thumb, one motion and one size scale.
+   Sources: quick replies (reference), autoresponder, themes, reviews and the finance tabs/segments. */
+.fp-tools-popup.fptm-themed {
+    --fpt-seg-pad: 4px;
+    --fpt-seg-radius: 14px;
+    --fpt-seg-item-radius: 10px;
+    --fpt-seg-height: 34px;
+    --fpt-seg-font: 13.5px;
+    --fpt-tab-height: 38px;
+    --fpt-tab-font: 14px;
+    --fpt-seg-track: var(--fptm-surface-2);
+    --fpt-seg-thumb: var(--fptm-bg);
+    --fpt-seg-thumb-shadow: 0 1px 5px var(--fptm-shadow);
+    --fpt-seg-motion: .46s cubic-bezier(.2, 1.35, .4, 1);
+}
+
 /* Reviews and bonuses: independent editors inside the shared category surface. */
 .fp-tools-popup.fptm-themed .fpt-reviews {
     --rv-field: var(--fptm-nav-field);
@@ -3914,42 +3930,42 @@
     position: relative;
     box-sizing: border-box;
     width: min(100%, 420px);
-    padding: 4px;
+    padding: var(--fpt-seg-pad);
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     border: 1px solid var(--fptm-nav-border);
-    border-radius: 15px;
-    background: var(--fptm-surface-2);
+    border-radius: var(--fpt-seg-radius);
+    background: var(--fpt-seg-track);
 }
 .fp-tools-popup.fptm-themed .fpt-qr-tabs-pill {
     position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc((100% - 8px) / 2);
-    border-radius: 11px;
-    background: var(--fptm-bg);
-    box-shadow: 0 1px 5px var(--fptm-shadow);
+    top: var(--fpt-seg-pad);
+    bottom: var(--fpt-seg-pad);
+    left: var(--fpt-seg-pad);
+    width: calc((100% - 2 * var(--fpt-seg-pad)) / 2);
+    border-radius: var(--fpt-seg-item-radius);
+    background: var(--fpt-seg-thumb);
+    box-shadow: var(--fpt-seg-thumb-shadow);
     transform: translateX(calc(var(--qr-tab-index) * 100%));
-    transition: transform .46s cubic-bezier(.2, 1.35, .4, 1);
+    transition: transform var(--fpt-seg-motion);
 }
 .fp-tools-popup.fptm-themed .fpt-qr-tab {
     position: relative;
     z-index: 1;
     min-width: 0;
-    min-height: 38px;
+    min-height: var(--fpt-tab-height);
     padding: 0 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 7px;
     border: 0 !important;
-    border-radius: 11px !important;
+    border-radius: var(--fpt-seg-item-radius) !important;
     color: var(--fptm-muted) !important;
     background: transparent !important;
     box-shadow: none !important;
     font: inherit;
-    font-size: 14px !important;
+    font-size: var(--fpt-tab-font) !important;
     font-weight: 600 !important;
     cursor: pointer;
     transition: color .2s ease;
@@ -4020,35 +4036,35 @@
     box-sizing: border-box;
     min-width: 0;
     width: min(100%, 440px);
-    padding: 4px;
+    padding: var(--fpt-seg-pad);
     display: grid;
     grid-template-columns: repeat(var(--qr-seg-count), minmax(0, 1fr));
     border: 1px solid var(--fptm-nav-border);
-    border-radius: 13px;
-    background: var(--fptm-surface-2);
+    border-radius: var(--fpt-seg-radius);
+    background: var(--fpt-seg-track);
 }
 .fp-tools-popup.fptm-themed .fpt-qr-seg-pill {
     position: absolute;
-    top: 4px;
-    bottom: 4px;
-    left: 4px;
-    width: calc((100% - 8px) / var(--qr-seg-count));
-    border-radius: 9px;
-    background: var(--fptm-bg);
-    box-shadow: 0 1px 5px var(--fptm-shadow);
+    top: var(--fpt-seg-pad);
+    bottom: var(--fpt-seg-pad);
+    left: var(--fpt-seg-pad);
+    width: calc((100% - 2 * var(--fpt-seg-pad)) / var(--qr-seg-count));
+    border-radius: var(--fpt-seg-item-radius);
+    background: var(--fpt-seg-thumb);
+    box-shadow: var(--fpt-seg-thumb-shadow);
     transform: translateX(calc(var(--qr-seg-index) * 100%));
-    transition: transform .46s cubic-bezier(.2, 1.35, .4, 1);
+    transition: transform var(--fpt-seg-motion);
 }
 .fp-tools-popup.fptm-themed .fpt-qr-button.fpt-qr-seg-button {
     position: relative;
     z-index: 1;
-    min-height: 32px;
+    min-height: var(--fpt-seg-height);
     padding: 0 8px;
     border: 0 !important;
-    border-radius: 9px !important;
+    border-radius: var(--fpt-seg-item-radius) !important;
     color: var(--fptm-muted) !important;
     background: transparent !important;
-    font-size: 13px !important;
+    font-size: var(--fpt-seg-font) !important;
     white-space: nowrap;
 }
 .fp-tools-popup.fptm-themed .fpt-qr-button.fpt-qr-seg-button span:not(.material-symbols-rounded) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -4466,4 +4482,95 @@
     .fp-tools-popup.fptm-themed .fpt-qr-editor *,
     .fp-tools-popup.fptm-themed .fpt-qr-editor *::after { transition-duration: .01ms !important; animation: none !important; }
     .fp-tools-popup.fptm-themed .fpt-qr-help:not([hidden]) { animation: none !important; }
+}
+
+/* Autoresponder and themes: two equal options with a CSS-positioned thumb. */
+.fp-tools-popup.fptm-themed .fpt-ar-seg,
+.fp-tools-popup.fptm-themed .fpt-th-seg { padding: var(--fpt-seg-pad); border-radius: var(--fpt-seg-radius); background: var(--fpt-seg-track); }
+.fp-tools-popup.fptm-themed .fpt-ar-seg-pill,
+.fp-tools-popup.fptm-themed .fpt-th-seg-pill {
+    top: var(--fpt-seg-pad); bottom: var(--fpt-seg-pad); left: var(--fpt-seg-pad);
+    width: calc((100% - 2 * var(--fpt-seg-pad)) / 2);
+    border-radius: var(--fpt-seg-item-radius);
+    background: var(--fpt-seg-thumb);
+    box-shadow: var(--fpt-seg-thumb-shadow);
+    transition: transform var(--fpt-seg-motion);
+}
+.fp-tools-popup.fptm-themed .fpt-ar-seg-button,
+.fp-tools-popup.fptm-themed .fpt-th-seg-button { min-height: var(--fpt-seg-height); border-radius: var(--fpt-seg-item-radius) !important; font-size: var(--fpt-seg-font) !important; }
+
+/* Reviews: rating picker and bonus mode slide a thumb under the selected option. */
+.fp-tools-popup.fptm-themed .fpt-rv-ratings,
+.fp-tools-popup.fptm-themed .fpt-rv-modes {
+    --fpt-seg-count: 2;
+    --fpt-seg-index: 0;
+    position: relative;
+    box-sizing: border-box;
+    padding: var(--fpt-seg-pad);
+    gap: 0;
+    grid-template-columns: repeat(var(--fpt-seg-count), minmax(0, 1fr));
+    border: 1px solid var(--fptm-nav-border);
+    border-radius: var(--fpt-seg-radius);
+    background: var(--fpt-seg-track);
+}
+.fp-tools-popup.fptm-themed .fpt-rv-ratings { --fpt-seg-count: 5; }
+.fp-tools-popup.fptm-themed .fpt-seg-thumb {
+    position: absolute;
+    top: var(--fpt-seg-pad);
+    bottom: var(--fpt-seg-pad);
+    left: var(--fpt-seg-pad);
+    width: var(--fpt-seg-thumb-w, calc((100% - 2 * var(--fpt-seg-pad)) / var(--fpt-seg-count, 2)));
+    border-radius: var(--fpt-seg-item-radius);
+    background: var(--fpt-seg-thumb);
+    box-shadow: var(--fpt-seg-thumb-shadow);
+    transform: translateX(var(--fpt-seg-thumb-x, calc(var(--fpt-seg-index, 0) * 100%)));
+    transition: transform var(--fpt-seg-motion), width var(--fpt-seg-motion);
+    pointer-events: none;
+}
+.fp-tools-popup.fptm-themed .fpt-rv-modes { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+.fp-tools-popup.fptm-themed .fpt-rv-ratings .fpt-rv-button,
+.fp-tools-popup.fptm-themed .fpt-rv-modes .fpt-rv-button {
+    position: relative;
+    z-index: 1;
+    min-height: var(--fpt-seg-height);
+    padding: 0 8px;
+    border: 0 !important;
+    border-radius: var(--fpt-seg-item-radius) !important;
+    color: var(--fptm-muted) !important;
+    background: transparent !important;
+    font-size: var(--fpt-seg-font) !important;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color .2s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-rv-modes .fpt-rv-button span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.fp-tools-popup.fptm-themed .fpt-rv-ratings .fpt-rv-button:hover:not(:disabled),
+.fp-tools-popup.fptm-themed .fpt-rv-modes .fpt-rv-button:hover:not(:disabled) { color: var(--fptm-text) !important; background: transparent !important; }
+.fp-tools-popup.fptm-themed .fpt-rv-ratings .fpt-rv-button[aria-checked="true"],
+.fp-tools-popup.fptm-themed .fpt-rv-modes .fpt-rv-button[aria-checked="true"] { color: var(--fptm-accent) !important; background: transparent !important; }
+.fp-tools-popup.fptm-themed .fpt-rv-ratings .fpt-rv-button:focus-visible,
+.fp-tools-popup.fptm-themed .fpt-rv-modes .fpt-rv-button:focus-visible { outline-offset: -2px; }
+
+/* Finance: the thumb is measured by script (tabs differ in width); only its look and motion change. */
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tabs,
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-segmented { padding: var(--fpt-seg-pad); gap: 0; border-radius: var(--fpt-seg-radius); background: var(--fpt-seg-track); }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tab { min-height: var(--fpt-tab-height); border: 0; border-radius: var(--fpt-seg-item-radius); font-size: var(--fpt-tab-font); }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-seg-btn { height: var(--fpt-seg-height); border: 0; border-radius: var(--fpt-seg-item-radius); font-size: var(--fpt-seg-font); }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tab-pill { top: var(--fpt-seg-pad); }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tab-pill,
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-seg-pill {
+    border: 0;
+    border-radius: var(--fpt-seg-item-radius);
+    background: var(--fpt-seg-thumb);
+    box-shadow: var(--fpt-seg-thumb-shadow) !important;
+}
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tabs.is-ready .fpt-fin-tab-pill { transition: transform var(--fpt-seg-motion), width var(--fpt-seg-motion); }
+.fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-segmented.is-ready .fpt-fin-seg-pill { transition: transform var(--fpt-seg-motion), width var(--fpt-seg-motion), height var(--fpt-seg-motion), opacity .16s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup.fptm-themed .fpt-seg-thumb,
+    .fp-tools-popup.fptm-themed .fpt-ar-seg-pill,
+    .fp-tools-popup.fptm-themed .fpt-th-seg-pill,
+    .fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-tabs.is-ready .fpt-fin-tab-pill,
+    .fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-segmented.is-ready .fpt-fin-seg-pill { transition: none !important; }
 }

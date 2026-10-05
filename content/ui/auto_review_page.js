@@ -244,6 +244,8 @@
 
         const ratings = node('div', 'fpt-rv-ratings');
         ratings.setAttribute('role', 'radiogroup'); ratings.setAttribute('aria-label', 'Оценка покупателя');
+        ratings.style.setProperty('--fpt-seg-count', String(RATINGS.length));
+        ratings.append(node('span', 'fpt-seg-thumb'));
         const ratingButtons = RATINGS.map((rating, index) => {
             const el = button(`${rating}`, 'fpt-rv-rating');
             const star = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -300,6 +302,7 @@
         });
 
         const modes = node('div', 'fpt-rv-modes'); modes.setAttribute('role', 'radiogroup'); modes.setAttribute('aria-label', 'Режим бонуса');
+        modes.append(node('span', 'fpt-seg-thumb'));
         const modeButtons = ['single', 'random'].map((mode, index) => {
             const el = button(mode === 'single' ? 'Один бонус' : 'Случайный из списка', 'fpt-rv-mode');
             el.dataset.mode = mode; el.setAttribute('role', 'radio');
@@ -356,6 +359,7 @@
         function renderRatings() {
             ratingButtons.forEach((el, index) => {
                 const rating = RATINGS[index]; const selected = rating === state.rating;
+                if (selected) ratings.style.setProperty('--fpt-seg-index', String(index));
                 el.setAttribute('aria-checked', String(selected)); el.tabIndex = selected ? 0 : -1;
                 const saved = !!state.base.reviewTemplates[rating].trim();
                 el.dataset.saved = String(saved);
@@ -385,8 +389,17 @@
             reviewEditor.input.value = state.draft.reviewTemplates[rating];
             renderImages();
         }
+        // Mode labels differ in length, so the thumb follows the selected button's measured box.
+        function placeModeThumb() {
+            const active = modeButtons.find(el => el.dataset.mode === state.draft.bonusMode);
+            if (!active?.offsetWidth) return;
+            modes.style.setProperty('--fpt-seg-thumb-x', `${active.offsetLeft - (parseFloat(getComputedStyle(modes).paddingLeft) || 0)}px`);
+            modes.style.setProperty('--fpt-seg-thumb-w', `${active.offsetWidth}px`);
+        }
+        if (typeof ResizeObserver === 'function') new ResizeObserver(placeModeThumb).observe(modes);
         function renderMode() {
             const mode = state.draft.bonusMode;
+            placeModeThumb();
             modeButtons.forEach(el => { const selected = el.dataset.mode === mode; el.setAttribute('aria-checked', String(selected)); el.tabIndex = selected ? 0 : -1; });
             singleWrap.hidden = mode !== 'single'; randomWrap.hidden = mode !== 'random';
         }
