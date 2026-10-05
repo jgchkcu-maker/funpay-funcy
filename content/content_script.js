@@ -339,6 +339,13 @@
                         console.error('FunPay Funcy: не удалось открыть раздел быстрых ответов:', error);
                     }
                 }
+                if (window.FPTInterfaceElementsPage && typeof window.FPTInterfaceElementsPage.mount === 'function') {
+                    try {
+                        await window.FPTInterfaceElementsPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел элементов интерфейса:', error);
+                    }
+                }
                 if (window.FPTFinanceHubPage && typeof window.FPTFinanceHubPage.mount === 'function') {
                     try {
                         await window.FPTFinanceHubPage.mount(toolsPopup);
