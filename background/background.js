@@ -2703,8 +2703,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (request.action === 'getUnconfirmedOrders') {
                     const r = await sfetch('https://funpay.com/orders/trade?state=paid');
                     const html = await r.text();
-                    const ids = await parseHtmlViaOffscreen(html, 'parseOrdersPage');
-                    sendResponse({ success: true, orderIds: (ids || []).slice(0, request.maxOrders || 5) });
+                    const parsed = await parseHtmlViaOffscreen(html, 'parseOrdersPage');
+                    const now = Date.now();
+                    const minAgeHours = Math.max(0, Number(request.ageHours) || 0);
+                    const orders = (parsed || []).map(order => typeof order === 'string' ? { id: order, time: null } : order)
+                        .filter(order => order && order.id)
+                        .map(order => ({ id: order.id, ageHours: Number.isFinite(order.time) ? Math.max(0, now - order.time) / 3600000 : null }));
+                    // Orders younger than the chosen age still have time to be confirmed by the buyer.
+                    // An unreadable date is kept: the user sees every order in the preview before sending.
+                    const due = orders.filter(order => order.ageHours === null || order.ageHours >= minAgeHours);
+                    due.sort((a, b) => (b.ageHours ?? -1) - (a.ageHours ?? -1));
+                    const picked = due.slice(0, request.maxOrders || 5);
+                    sendResponse({ success: true, orderIds: picked.map(order => order.id), orders: picked, youngerCount: orders.length - due.length });
                     return;
                 }
 
@@ -2775,7 +2785,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     if (!token) { sendResponse({ success: false, error: 'Не удалось получить токен формы (возможно, не авторизован в ТП)' }); return; }
                     const params = new URLSearchParams();
                     Object.entries(fieldValues || {}).forEach(([k, v]) => { if (v) params.set(k, v); });
-                    if (message) params.set('ticket[comment][body_html]', `<p>${message}</p>`);
+                    if (message) params.set('ticket[comment][body_html]', supportMessageHtml(message));
                     params.set('ticket[comment][attachments]', '');
                     params.set('ticket[_token]', token);
                     const createResp = await fetch(`${supportBase}/tickets/create/${categoryId}`, {
@@ -2809,7 +2819,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (request.action === 'supportAddComment') {
                     const { ticketId, message, token } = request;
                     const params = new URLSearchParams();
-                    params.set('add_comment[comment][body_html]', `<p>${message}</p>`);
+                    params.set('add_comment[comment][body_html]', supportMessageHtml(message));
                     params.set('add_comment[comment][attachments]', '');
                     params.set('add_comment[_token]', token);
                     const r = await fetch(`${supportBase}/tickets/${ticketId}/comments/create`, {
@@ -2849,7 +2859,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         headers: { 'Cookie': baseCookie, 'User-Agent': ua, 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8', 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                         body: new URLSearchParams({ csrf_token: token }).toString()
                     });
-                    sendResponse({ success: closeResp.ok });
+                    sendResponse(closeResp.ok ? { success: true } : { success: false, error: `Поддержка не закрыла заявку (ошибка ${closeResp.status}).` });
                     return;
                 }
 
@@ -2891,6 +2901,14 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
         });
     }
 });
+
+// Plain text typed in the popup becomes the HTML body that support.funpay.com expects.
+function supportMessageHtml(message) {
+    const escape = text => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    return String(message || '').trim().split(/\n{2,}/)
+        .map(paragraph => `<p>${escape(paragraph).replace(/\n/g, '<br>')}</p>`)
+        .join('');
+}
 
 function setupInitialAlarms() {
     const autoRestoreRevision = ++_autoRestoreAlarmSyncGeneration;

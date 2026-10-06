@@ -148,3 +148,26 @@ final result: passed
 ## Result
 
 **Passed.** No blocking visual issue was found.
+
+---
+
+# FunPay support screen — visual QA
+
+## Sources and state
+
+- Shell, navigation and palette: the existing popup (light and dark palettes, violet accent, `--fptm-*` tokens). Layout follows the effects and autoresponder screens: hero card on top, grouped cards, spring-eased controls. The field list, copy and flows come from the pre-refactor tickets markup (`git show f1cc19f^:content/ui/main_popup.js`, lines 2063-2200).
+- Implementation screenshots: rendered from `tests/support_browser.test.js` (set `FPT_SCREENSHOT_DIR` to keep them): light top, ticket list, conversation, new-ticket form with a validation error, order-request preview, dark popup at 1204, 860 and 560 px, dark conversation at 560 px.
+- State: tickets loading, loaded with all four statuses, load error (not signed in), empty list, no match for a search, conversation with site HTML (links, an image, a script and inline handlers), reply sent, ticket closed, new ticket with a conditional field, failed and repeated send, no unconfirmed orders.
+
+## Comparison
+
+- The hero shows the open-ticket pill and three metrics (all, active, closed) that double as list filters. While loading or on error the metrics show `—`, never zero.
+- «Подтверждение заказов» keeps both limits from the old screen. The order age is now applied: the background reads each order's date and skips younger orders, oldest first; the preview lists every order with its age before anything is sent. The limits are remembered.
+- The ticket list filters, searches (by subject or `#number`) and sorts locally. Active tickets offer closing, which asks first.
+- A ticket opens in place: back, reload, close and open-on-site in the head; the conversation rebuilds site HTML from an allow-list, so scripts, handlers and styles never reach the popup. Enter sends, Shift + Enter adds a line; a closed ticket explains why there is no reply box.
+- A new ticket loads its topics and fields from the support site, prefills the nickname, shows conditional fields only when their trigger is chosen, checks required fields, and always ends on a preview with «Назад» back to the filled-in form. A failed send keeps the preview open for another try.
+- 1204 / 860 / 560 px keep the screen free of horizontal overflow; below 560 px cards, the toolbar and ticket rows stack.
+
+## Result
+
+**Passed.** No blocking visual issue was found. Known limits: not checked against the live support.funpay.com or a real service worker (the browser tests emulate the background replies); attachments are not offered because the background has no upload path for them.

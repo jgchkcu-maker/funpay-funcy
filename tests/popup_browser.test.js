@@ -257,6 +257,8 @@ test('real browser: lot management screen, navigation and shell geometry', async
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="accounts"] > .fpt-accounts').count(), 1);
             } else if (id === 'effects') {
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="effects"] > .fpt-fx').count(), 1);
+            } else if (id === 'tickets') {
+                assert.equal(await page.locator('.fp-tools-page-content[data-page="tickets"] > .fpt-sp').count(), 1);
             } else {
                 assert.equal(await page.locator(`.fp-tools-page-content[data-page="${id}"] > *:not(.fpt-category-header):not(.fpt-popup-toast-region)`).count(), 0, id);
             }
@@ -671,7 +673,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.locator('#fpToolsButton').click();
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));
         assert.equal(await page.locator('.fp-tools-popup').count(), 1);
-        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
+        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]):not([data-page="tickets"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
         assert.equal(await page.locator('.fp-tools-page-content > .fpt-category-header').count(), 18);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="lot_io"] > .fpt-lot-io').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_delivery"] > .fpt-category-header').count(), 1);
