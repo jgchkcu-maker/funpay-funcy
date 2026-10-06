@@ -54,6 +54,63 @@
         return { menu, items };
     }
 
+    // --- Readable colours -------------------------------------------------------------------
+    // The page palette (--fptm-* from utils.js) pairs the theme's block colour with the body text
+    // colour. Custom themes always force light text, while their block colour can be light, and
+    // the palette background may be translucent - so the menu could blend into the page. The
+    // colours are resolved on open and corrected to an opaque background with contrasting text.
+    function parseRgb(value) {
+        const m = /rgba?\(([^)]+)\)/.exec(value || '');
+        if (!m) return null;
+        const p = m[1].split(/[\s,/]+/).filter(Boolean).map(Number);
+        if (p.length < 3 || p.slice(0, 3).some(Number.isNaN)) return null;
+        return [p[0], p[1], p[2], p.length > 3 && !Number.isNaN(p[3]) ? p[3] : 1];
+    }
+    function resolveColor(host, cssValue) {
+        const probe = document.createElement('span');
+        probe.style.cssText = 'position:absolute;display:none';
+        probe.style.color = cssValue;
+        host.append(probe);
+        const rgb = parseRgb(getComputedStyle(probe).color);
+        probe.remove();
+        return rgb;
+    }
+    function luminance([r, g, b]) {
+        const lin = c => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+        return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+    }
+    function contrast(a, b) {
+        const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+        return (hi + 0.05) / (lo + 0.05);
+    }
+    function mix(a, b, t) { return [0, 1, 2].map(i => a[i] + (b[i] - a[i]) * t); }
+    function css(rgb, alpha = 1) { return `rgba(${rgb.slice(0, 3).map(Math.round).join(', ')}, ${alpha})`; }
+
+    function applyReadableColors(menu) {
+        const WHITE = [255, 255, 255];
+        const BLACK = [0, 0, 0];
+        const styles = getComputedStyle(menu);
+        let bg = parseRgb(styles.backgroundColor) || [255, 255, 255, 1];
+        // Composite a translucent background onto black/white so nothing shows through.
+        if (bg[3] < 1) bg = mix(luminance(bg) < 0.18 ? BLACK : WHITE, bg, bg[3]);
+        const dark = luminance(bg) < 0.18;
+        let text = parseRgb(styles.color) || BLACK;
+        if (contrast(text, bg) < 4.5) text = dark ? [242, 243, 245] : [22, 24, 29];
+        let accent = resolveColor(menu, 'var(--fptm-accent, #1b75bb)') || [27, 117, 187];
+        for (let i = 0; i < 10 && contrast(accent, bg) < 4.5; i++) accent = mix(accent, dark ? WHITE : BLACK, 0.2);
+
+        const set = (name, value) => menu.style.setProperty(name, value);
+        set('--fpt-psm-bg', css(bg));
+        set('--fpt-psm-text', css(text));
+        set('--fpt-psm-muted', css(text, 0.62));
+        set('--fpt-psm-border', css(mix(bg, dark ? WHITE : BLACK, dark ? 0.16 : 0.12)));
+        set('--fpt-psm-hover', css(mix(bg, dark ? WHITE : BLACK, dark ? 0.12 : 0.07)));
+        set('--fpt-psm-accent', css(accent));
+        set('--fpt-psm-accent-soft', css(accent, dark ? 0.2 : 0.12));
+        set('--fpt-psm-shadow', dark ? 'rgba(0, 0, 0, 0.55)' : 'rgba(0, 0, 0, 0.18)');
+        set('color-scheme', dark ? 'dark' : 'light');
+    }
+
     function place(select, menu) {
         const rect = select.getBoundingClientRect();
         const gap = 6;
@@ -100,6 +157,7 @@
         // Inside a native <dialog> only its own subtree is above the top layer.
         (select.closest('dialog[open]') || document.body).append(menu);
         current = { select, menu, items, active: -1 };
+        applyReadableColors(menu);
         place(select, menu);
         select.classList.add('fpt-page-select-open');
         select.setAttribute('aria-expanded', 'true');
