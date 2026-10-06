@@ -464,6 +464,7 @@
         fileInput.type = 'file';
         fileInput.accept = 'image/png,image/gif,image/webp,image/svg+xml,image/jpeg';
         fileInput.hidden = true;
+        fileInput.className = 'fpt-fx-file-input';
         dropActions.append(uploadButton, removeButton, fileInput);
         drop.append(imagePreview, dropCopy, dropActions);
         imageField.appendChild(drop);
