@@ -131,6 +131,7 @@
         "content/ui/auto_review_page.js",
         "content/ui/quick_replies_page.js",
         "content/ui/interface_elements_page.js",
+        "content/ui/accounts_page.js",
         "content/ui/finance_hub_model.js",
         "content/ui/finance_charts.js",
         "content/ui/finance_hub_page.js",

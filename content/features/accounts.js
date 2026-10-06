@@ -1,9 +1,5 @@
-let _fptAccAutoRefreshing = false;
-async function saveAccountsList() {
-    await chrome.storage.local.set({ fpToolsAccounts: fpToolsAccounts });
-
-}
-
+// Saved FunPay accounts: switching between them swaps the golden_key session cookie.
+// Account records: { name, key, avatar?, balance?, unread?, username?, loggedIn?, _snapTs? }. The key never leaves storage.
 const _fptAccSnapCache = {}; // key -> { ts, snapshot }
 
 async function fptFetchAccountSnapshot(key) {
@@ -17,91 +13,89 @@ async function fptFetchAccountSnapshot(key) {
     return null;
 }
 
-async function maybeAutoRefreshAccounts() {
-    if (_fptAccAutoRefreshing) return;
-    const STALE = 55 * 60 * 1000;
-    const now = Date.now();
-    const needsUpdate = fpToolsAccounts.some(a => a.key && (!a._snapTs || (now - a._snapTs) > STALE));
-    if (!needsUpdate) return;
-    _fptAccAutoRefreshing = true;
-    try {
-        let changed = false;
-        for (const account of fpToolsAccounts) {
-            if (!account.key) continue;
-            if (account._snapTs && (now - account._snapTs) <= STALE) continue;
-            const snap = await fptFetchAccountSnapshot(account.key);
-            if (snap) {
-                account.avatar = snap.avatar || account.avatar || '';
-                account.balance = snap.balance || account.balance || '';
-                account.unread = typeof snap.unread === 'number' ? snap.unread : (account.unread || 0);
-                account._snapTs = Date.now();
-                changed = true;
-            }
-        }
-        if (changed) await chrome.storage.local.set({ fpToolsAccounts });
-    } finally {
-        _fptAccAutoRefreshing = false;
-    }
+function fptMergeAccountSnapshot(account, snapshot) {
+    Object.assign(account, {
+        avatar: snapshot.avatar || account.avatar || '',
+        balance: snapshot.balance || account.balance || '',
+        unread: typeof snapshot.unread === 'number' ? snapshot.unread : account.unread || 0,
+        _snapTs: Date.now()
+    });
+    if (typeof snapshot.loggedIn === 'boolean') account.loggedIn = snapshot.loggedIn;
+    if (snapshot.username) account.username = snapshot.username;
 }
 
-// Кнопка ручного обновления данных всех аккаунтов (аватар/баланс/непрочитанные).
-async function fptRefreshAllAccounts() {
-    showNotification('Обновляю данные аккаунтов…');
-    for (const account of fpToolsAccounts) {
-        if (!account.key) continue;
-        const snap = await fptFetchAccountSnapshot(account.key);
-        if (snap) {
-            account.avatar = snap.avatar || account.avatar || '';
-            account.balance = snap.balance || account.balance || '';
-            account.unread = typeof snap.unread === 'number' ? snap.unread : (account.unread || 0);
-            account._snapTs = Date.now();
-        }
+function fptCurrentFunPayUser() {
+    const name = document.querySelector('.user-link-name')?.textContent.trim();
+    if (name) return name;
+    try {
+        const data = JSON.parse(document.body?.dataset?.appData || 'null');
+        const user = Array.isArray(data) ? data[0] : data;
+        return String(user?.userName || '').trim();
+    } catch (_) {
+        return '';
     }
-    await chrome.storage.local.set({ fpToolsAccounts });
-
-    showNotification('Данные аккаунтов обновлены.');
 }
 
 async function fptPopupAccountAction(action, p = {}) {
+    if (action === 'current') {
+        const name = fptCurrentFunPayUser();
+        let key = '';
+        try {
+            const response = await chrome.runtime.sendMessage({ action: 'getGoldenKey' });
+            if (response?.success && response.key) key = response.key;
+        } catch (_) {}
+        return { name, key };
+    }
     if (action === 'switch') {
         const accounts = (await chrome.storage.local.get('fpToolsAccounts')).fpToolsAccounts || [];
         const account = accounts.find(item => item.key === p.key);
         if (!account) throw new Error('Аккаунт не найден.');
         return chrome.runtime.sendMessage({ action: 'setGoldenKey', key: account.key });
     }
-    const result = await window.fptPopupActions.updateSettings('fpToolsAccounts', async current => {
-    fpToolsAccounts = current.fpToolsAccounts || [];
-    if (action === 'add') {
-        const name = p.name || document.querySelector('.user-link-name')?.textContent.trim();
-        if (!name) throw new Error('Не удалось определить имя текущего пользователя.');
-        if (fpToolsAccounts.some(account => account.name === name)) throw new Error('Аккаунт уже добавлен.');
-        const response = await chrome.runtime.sendMessage({ action: 'getGoldenKey' });
-        if (!response?.success) throw new Error(response?.error || 'Не удалось получить ключ сессии.');
-        fpToolsAccounts.push({ name, key: response.key });
-    } else if (action === 'refresh') {
-        for (const account of fpToolsAccounts) {
-            const snapshot = await fptFetchAccountSnapshot(account.key);
-            if (snapshot) Object.assign(account, { avatar: snapshot.avatar || account.avatar || '',
-                balance: snapshot.balance || account.balance || '',
-                unread: typeof snapshot.unread === 'number' ? snapshot.unread : account.unread || 0, _snapTs: Date.now() });
+    if (action === 'refresh') {
+        // Snapshots swap the session cookie one account at a time, so they are fetched before the write queue is taken.
+        const stored = (await chrome.storage.local.get('fpToolsAccounts')).fpToolsAccounts || [];
+        const keys = p.key ? [p.key] : stored.map(account => account.key).filter(Boolean);
+        const snapshots = new Map();
+        for (const key of keys) {
+            const snapshot = await fptFetchAccountSnapshot(key);
+            if (snapshot) snapshots.set(key, snapshot);
         }
-    } else {
-        const account = fpToolsAccounts.find(item => item.key === p.key);
-        if (!account) throw new Error('Аккаунт не найден.');
-        if (action === 'rename') {
-            const name = String(p.name || '').trim();
-            if (!name) throw new Error('Название не может быть пустым.');
-            account.name = name;
-        } else if (action === 'delete') fpToolsAccounts = fpToolsAccounts.filter(item => item !== account);
+        if (p.key && !snapshots.size) throw new Error('Не удалось получить данные аккаунта.');
+        const result = await window.fptPopupActions.updateSettings('fpToolsAccounts', current => {
+            const accounts = current.fpToolsAccounts || [];
+            accounts.forEach(account => { if (snapshots.has(account.key)) fptMergeAccountSnapshot(account, snapshots.get(account.key)); });
+            return { fpToolsAccounts: accounts };
+        });
+        return result.fpToolsAccounts;
     }
-    return { fpToolsAccounts };
+    const result = await window.fptPopupActions.updateSettings('fpToolsAccounts', async current => {
+        let accounts = current.fpToolsAccounts || [];
+        if (action === 'add') {
+            const name = String(p.name || fptCurrentFunPayUser() || '').trim();
+            if (!name) throw new Error('Не удалось определить имя текущего пользователя. Войдите в аккаунт FunPay.');
+            const response = await chrome.runtime.sendMessage({ action: 'getGoldenKey' });
+            if (!response?.success || !response.key) throw new Error(response?.error || 'Не удалось получить ключ сессии. Вы вошли в аккаунт?');
+            const sameKey = accounts.find(account => account.key === response.key);
+            if (sameKey) throw new Error(`Этот аккаунт уже сохранён как «${sameKey.name}».`);
+            if (accounts.some(account => account.name === name)) throw new Error(`Аккаунт «${name}» уже добавлен.`);
+            accounts.push({ name, key: response.key, username: name, loggedIn: true });
+        } else {
+            const account = accounts.find(item => item.key === p.key);
+            if (!account) throw new Error('Аккаунт не найден.');
+            if (action === 'rename') {
+                const name = String(p.name || '').trim();
+                if (!name) throw new Error('Название не может быть пустым.');
+                account.name = name;
+            } else if (action === 'delete') accounts = accounts.filter(item => item !== account);
+        }
+        return { fpToolsAccounts: accounts };
     });
     return result.fpToolsAccounts;
 }
 if (typeof window !== 'undefined' && window.fptPopupActions) {
-    Object.entries({ addCurrentAccountBtn: 'add', fptRefreshAccountsBtn: 'refresh',
+    Object.entries({ addCurrentAccountBtn: 'add', fptRefreshAccountsBtn: 'refresh', getCurrentAccount: 'current',
         switchAccount: 'switch', renameAccount: 'rename', deleteAccount: 'delete' }).forEach(([id, action]) => {
         window.fptPopupActions.register('accounts', id, p => fptPopupAccountAction(action, p));
     });
 }
-
