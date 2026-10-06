@@ -383,7 +383,10 @@
         save.type = 'button';
         save.dataset.lotSave = id;
         save.disabled = !draft.dirty;
-        saveArea.append(unsavedBadge, saveStatus, save);
+        // The slot takes the place of a field label so the button lines up with the source select.
+        const saveSlot = node('div', 'fpt-ad-lot-save-slot');
+        saveSlot.append(unsavedBadge, saveStatus);
+        saveArea.append(saveSlot, save);
 
         row.append(summary, delivery, source, saveArea, template);
         row.addEventListener('change', event => {
@@ -564,24 +567,64 @@
         const lotsCount = node('span', 'fpt-qr-pill fpt-ad-lots-count', '0');
         lotsCount.setAttribute('aria-label', 'Количество лотов');
         lotsTitleRow.append(lotsTitle, lotsCount);
-        lotsCopy.append(lotsTitleRow, node('p', 'fpt-ad-section-description', 'Выберите источник товара для каждого лота и сохраните изменения по одному или сразу все.'));
-        const loadButton = node('button', 'fpt-ad-load-button');
+        lotsCopy.append(lotsTitleRow);
+        // Toolbar reuses the finance header pieces: segmented tabs with a sliding thumb, fin buttons and selects.
+        const loadButton = node('button', 'fpt-fin-btn fpt-ad-load-button');
         loadButton.type = 'button';
         loadButton.id = 'fp-load-delivery-lots-btn';
-        loadButton.append(icon('refresh'), node('span', 'fpt-ad-load-label', 'Обновить лоты'));
+        loadButton.title = 'Обновить лоты и остатки';
+        loadButton.append(icon('refresh'), node('span', 'fpt-ad-load-label', 'Обновить'));
         lotsHeading.append(lotsCopy, loadButton);
+
+        const summary = node('div', 'fpt-fin-tabs fpt-ad-filter-tabs');
+        summary.setAttribute('role', 'group');
+        summary.setAttribute('aria-label', 'Фильтр лотов');
+        const summaryPill = node('span', 'fpt-fin-tab-pill');
+        summaryPill.setAttribute('aria-hidden', 'true');
+        summary.appendChild(summaryPill);
+        const summaryChips = new Map();
+        for (const [filter, label] of [['all', 'Все'], ['active', 'Активные'], ['problems', 'Проблемы']]) {
+            const chip = node('button', 'fpt-fin-tab fpt-ad-summary-chip', '');
+            chip.type = 'button';
+            chip.dataset.filter = filter;
+            chip.append(node('span', 'fpt-fin-tab-label', label), node('strong', 'fpt-ad-tab-count', '0'));
+            chip.setAttribute('aria-pressed', filter === 'all' ? 'true' : 'false');
+            summary.appendChild(chip);
+            summaryChips.set(filter, chip);
+        }
+        let summaryPillFrame = null;
+        const scheduleSummaryPill = () => {
+            if (summaryPillFrame !== null) return;
+            summaryPillFrame = requestAnimationFrame(() => {
+                summaryPillFrame = null;
+                const active = summaryChips.get(currentFilter);
+                summaryPill.style.opacity = active ? '1' : '0';
+                if (!active || !active.offsetWidth) return;
+                summaryPill.style.width = `${active.offsetWidth}px`;
+                summaryPill.style.height = `${active.offsetHeight}px`;
+                summaryPill.style.transform = `translateX(${active.offsetLeft}px)`;
+                if (!summary.classList.contains('is-ready')) {
+                    summaryPill.getBoundingClientRect();
+                    summary.classList.add('is-ready');
+                }
+            });
+        };
+        if (typeof ResizeObserver === 'function') {
+            const summaryResize = new ResizeObserver(scheduleSummaryPill);
+            summaryResize.observe(summary);
+            summaryChips.forEach(chip => summaryResize.observe(chip));
+        }
 
         const toolbar = node('div', 'fpt-ad-toolbar');
         const searchWrap = node('label', 'fpt-ad-search-wrap');
         searchWrap.appendChild(icon('search'));
         const search = node('input', 'fpt-ad-search');
         search.type = 'search';
-        search.placeholder = 'Название, категория или ID';
+        search.placeholder = 'Поиск по лотам';
         search.setAttribute('aria-label', 'Поиск по лотам');
         searchWrap.appendChild(search);
-        const sortLabel = node('label', 'fpt-ad-sort-control');
-        sortLabel.appendChild(icon('sort'));
-        const sort = node('select', 'fpt-ad-sort');
+        const sortLabel = node('span', 'fpt-fin-select fpt-ad-sort-control');
+        const sort = node('select', 'fpt-fin-select-input fpt-ad-sort');
         sort.setAttribute('aria-label', 'Сортировка лотов');
         for (const [value, label] of [['default', 'По порядку'], ['problematic', 'Проблемные сверху'], ['title', 'По названию']]) {
             const option = node('option', '', label);
@@ -589,21 +632,8 @@
             sort.appendChild(option);
         }
         sortLabel.appendChild(sort);
-        toolbar.append(searchWrap, sortLabel);
-
-        const summary = node('div', 'fpt-ad-summary-chips');
-        summary.setAttribute('role', 'group');
-        summary.setAttribute('aria-label', 'Сводка и фильтр лотов');
-        const summaryChips = new Map();
-        for (const [filter, label] of [['all', 'Всего'], ['active', 'Активно'], ['empty', 'Пустой склад'], ['errors', 'Ошибки'], ['unsaved', 'Не сохранено']]) {
-            const chip = node('button', 'fpt-ad-summary-chip', '');
-            chip.type = 'button';
-            chip.dataset.filter = filter;
-            chip.append(node('span', '', label), node('strong', '', '0'));
-            chip.setAttribute('aria-pressed', filter === 'all' ? 'true' : 'false');
-            summary.appendChild(chip);
-            summaryChips.set(filter, chip);
-        }
+        if (typeof root.FPTPopupUI.enhanceSelect === 'function') root.FPTPopupUI.enhanceSelect(sort, sortLabel);
+        toolbar.append(summary, searchWrap, sortLabel);
 
         const cacheStatus = node('p', 'fpt-ad-cache-status');
         cacheStatus.setAttribute('role', 'status');
@@ -637,7 +667,9 @@
         saveAll.disabled = true;
         saveBar.append(saveBarIcon, saveBarText, saveBarShow, saveAll);
 
-        lotsSection.append(lotsHeading, toolbar, summary, cacheStatus, progressWrap, loadStatus, list, saveBar);
+        const lotsHeader = node('div', 'fpt-finance fpt-ad-lots-header');
+        lotsHeader.append(lotsHeading, toolbar);
+        lotsSection.append(lotsHeader, cacheStatus, progressWrap, loadStatus, list, saveBar);
         view.append(hero, rules, lotsSection);
 
         page.appendChild(view);
@@ -697,6 +729,7 @@
                 active: 0,
                 empty: 0,
                 errors: 0,
+                problems: 0,
                 unsaved: 0
             };
             for (const lot of currentLots) {
@@ -707,10 +740,14 @@
                 if (stockKind(draft) === 'error') counts.errors += 1;
                 if (draft.dirty) counts.unsaved += 1;
             }
+            counts.problems = counts.empty + counts.errors;
             for (const [filter, chip] of summaryChips) {
                 chip.querySelector('strong').textContent = String(counts[filter] || 0);
                 chip.setAttribute('aria-pressed', String(currentFilter === filter));
+                chip.classList.toggle('is-active', currentFilter === filter);
             }
+            summaryChips.get('problems').dataset.tone = counts.problems ? 'warning' : '';
+            scheduleSummaryPill();
             saveAll.textContent = savingAll ? 'Сохраняем…' : `Сохранить все (${counts.unsaved})`;
             saveAll.disabled = savingAll || counts.unsaved === 0;
             saveAll.setAttribute('aria-busy', String(savingAll));
@@ -727,8 +764,7 @@
                 const draft = drafts.get(id);
                 const matchesFilter = currentFilter === 'all'
                     || currentFilter === 'active' && draft?.enabled
-                    || currentFilter === 'empty' && stockKind(draft) === 'empty'
-                    || currentFilter === 'errors' && stockKind(draft) === 'error'
+                    || currentFilter === 'problems' && ['empty', 'error'].includes(stockKind(draft))
                     || currentFilter === 'unsaved' && draft?.dirty;
                 row.hidden = !matchesFilter || (search && !row.dataset.search.includes(search));
             }
@@ -907,16 +943,13 @@
             }
             updateListView();
             if (cached) {
-                cacheStatus.textContent = 'Показаны сохранённые настройки. Обновите список, чтобы проверить остатки.';
+                cacheStatus.textContent = '';
                 setStatus(loadStatus, '', '');
                 return;
             }
             cacheStatus.textContent = '';
-            if (stockErrors.length) {
-                setStatus(loadStatus, `Загружено ${currentLots.length} ${pluralLots(currentLots.length)}; ошибок проверки остатка: ${stockErrors.length}.`, 'warning');
-            } else {
-                setStatus(loadStatus, `Загружено ${currentLots.length} ${pluralLots(currentLots.length)}. Остатки обновлены.`, 'success');
-            }
+            // Per-lot stock errors are already shown on the rows and in the «Проблемы» tab.
+            setStatus(loadStatus, '', '');
         };
 
         const cachedConfig = initialSettings.fpToolsAutoDeliveryLots || {};

@@ -133,13 +133,36 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         await cachedSearch.fill('игровая валюта');
         assert.deepEqual(await page.locator('.fpt-ad-lot-row:not([hidden])').evaluateAll(rows => rows.map(row => row.dataset.lotId)), ['502']);
         await cachedSearch.fill('');
-        const emptyFilter = page.locator('.fpt-ad-summary-chip[data-filter="empty"]');
-        assert.match(await emptyFilter.textContent(), /Пустой склад\s*1/);
-        await emptyFilter.click();
-        assert.deepEqual(await page.locator('.fpt-ad-lot-row:not([hidden])').evaluateAll(rows => rows.map(row => row.dataset.lotId)), ['503']);
+        const problemsFilter = page.locator('.fpt-ad-summary-chip[data-filter="problems"]');
+        assert.match(await problemsFilter.textContent(), /Проблемы\s*\d+/);
+        await problemsFilter.click();
+        const problemRows = await page.locator('.fpt-ad-lot-row:not([hidden])').evaluateAll(rows => rows.map(row => row.dataset.stock));
+        assert.ok(problemRows.length && problemRows.every(kind => kind === 'empty' || kind === 'error'));
         await page.locator('.fpt-ad-summary-chip[data-filter="all"]').click();
 
-        const inventoryLabels = await page.locator('.fpt-ad-lot-stock').evaluateAll(nodes => nodes.map(element => ({
+        // Lot row controls share one baseline: the «Автовыдача» label, the source label and the save slot sit at the same top,
+        // and the switch, source select and save button share the same top and height.
+        const rowAlignment = await page.locator('.fpt-ad-lot-row:not([hidden])').first().evaluate(row => {
+            const rect = selector => row.querySelector(selector).getBoundingClientRect();
+            return {
+                deliveryLabel: rect('.fpt-ad-lot-delivery .fpt-ad-field-label').top,
+                sourceLabel: rect('.fpt-ad-lot-source .fpt-ad-field-label').top,
+                saveSlot: rect('.fpt-ad-lot-save-slot').top,
+                switchLine: rect('.fpt-ad-lot-delivery .fpt-ad-switch-line').top,
+                select: rect('.fpt-ad-source-select').top,
+                save: rect('.fpt-ad-save-button').top,
+                selectHeight: rect('.fpt-ad-source-select').height,
+                saveHeight: rect('.fpt-ad-save-button').height
+            };
+        });
+        const near = (a, b) => Math.abs(a - b) <= 1;
+        assert.ok(near(rowAlignment.deliveryLabel, rowAlignment.sourceLabel) && near(rowAlignment.sourceLabel, rowAlignment.saveSlot),
+            `row labels should share one top: ${JSON.stringify(rowAlignment)}`);
+        assert.ok(near(rowAlignment.switchLine, rowAlignment.select) && near(rowAlignment.select, rowAlignment.save),
+            `switch, source select and save button should share one top: ${JSON.stringify(rowAlignment)}`);
+        assert.ok(near(rowAlignment.selectHeight, rowAlignment.saveHeight), `select and save button should have the same height: ${JSON.stringify(rowAlignment)}`);
+
+        const inventoryLabels =await page.locator('.fpt-ad-lot-stock').evaluateAll(nodes => nodes.map(element => ({
             state: element.dataset.stockState, text: element.textContent
         })));
         assert.deepEqual(inventoryLabels.slice(0, 4), [
@@ -191,9 +214,9 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="504"] .fpt-ad-lot-title').textContent(), 'Лот #504');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="504"] .fpt-ad-lot-category').textContent(), 'Подарочные карты');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] .fpt-ad-lot-stock').getAttribute('title'), 'Склад FunPay временно недоступен.');
-        assert.equal(await page.locator('.fpt-ad-load-status .fpt-ad-status-text').textContent(), 'Загружено 40 лотов; ошибок проверки остатка: 1.');
+        assert.equal(await page.locator('.fpt-ad-load-status').textContent(), '');
         assert.equal(await page.locator('.fpt-ad-load-status .material-symbols-rounded').textContent(), 'warning');
-        assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить лоты');
+        assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить');
         assert.equal(await page.locator('#fp-load-delivery-lots-btn .material-symbols-rounded').textContent(), 'refresh');
         assert.equal(await page.locator('#fp-load-delivery-lots-btn').evaluate(element => element.getBoundingClientRect().height), 40);
 
@@ -213,7 +236,7 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         await page.locator('.fpt-auto-delivery .fpt-ad-rule-row .fpt-ad-global-switch').first().evaluate(input => input.click());
         await page.locator('.fpt-popup-toast[data-kind="success"]').waitFor();
         assert.equal(await page.locator('.fpt-auto-delivery .fpt-ad-rules-status').textContent(), '');
-        assert.equal(await page.locator('.fpt-ad-load-status .fpt-ad-status-text').textContent(), 'Загружено 40 лотов; ошибок проверки остатка: 1.', 'saving a warehouse rule must not replace lot load status');
+        assert.equal(await page.locator('.fpt-ad-load-status').textContent(), '');
 
         const desktopGrid = await page.locator('.fpt-ad-lot-row').evaluateAll(rows => rows.map(row => {
             const rowBounds = row.getBoundingClientRect();
@@ -376,20 +399,20 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         await page.locator('.fpt-ad-load-status[data-kind="error"]').waitFor();
         assert.match(await page.locator('.fpt-ad-load-status').textContent(), /Тестовая ошибка загрузки/);
         assert.equal(await page.locator('.fpt-ad-lot-row').count(), 40, 'a refresh failure should keep the last rendered list');
-        assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить лоты');
+        assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить');
 
         await page.evaluate(() => { window.qaFailures = {}; window.qaStockError = false; });
         await page.locator('#fp-load-delivery-lots-btn').click();
         await page.waitForFunction(() => document.querySelectorAll('.fpt-ad-lot-row').length === 40);
-        assert.equal(await page.locator('.fpt-ad-load-status .fpt-ad-status-text').textContent(), 'Загружено 40 лотов. Остатки обновлены.');
+        assert.equal(await page.locator('.fpt-ad-load-status').textContent(), '');
         assert.equal(await page.locator('.fpt-ad-load-status .material-symbols-rounded').textContent(), 'check_circle');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] .fpt-ad-lot-stock').textContent(), 'На складе: 5 шт.');
-        assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить лоты');
+        assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить');
 
         await page.evaluate(() => { window.qaStockError = true; });
         await page.locator('#fp-load-delivery-lots-btn').click();
         await page.waitForFunction(() => document.querySelectorAll('.fpt-ad-lot-row').length === 40);
-        assert.equal(await page.locator('.fpt-ad-load-status .fpt-ad-status-text').textContent(), 'Загружено 40 лотов; ошибок проверки остатка: 1.');
+        assert.equal(await page.locator('.fpt-ad-load-status').textContent(), '');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] .fpt-ad-lot-stock').textContent(), 'Не удалось проверить остаток');
 
         await page.evaluate(() => {
