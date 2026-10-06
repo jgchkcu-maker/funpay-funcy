@@ -4,9 +4,11 @@ const { launch, openAccounts } = require('./helpers/accounts_browser_harness');
 
 const now = Date.now();
 const ACCOUNTS = [
-    { name: 'Outlik', key: 'key-main', balance: '12 480 ₽', unread: 3, _snapTs: now - 12 * 60000, loggedIn: true, username: 'Outlik' },
-    { name: 'Склад ключей', key: 'key-store', balance: '1 250,50 ₽', unread: 0, _snapTs: now - 30 * 60000, loggedIn: true, username: 'KeyStorePro' },
-    { name: 'Старый аккаунт', key: 'key-old', balance: '', unread: 0, _snapTs: now - 40 * 60000, loggedIn: false }
+    { name: 'Outlik', key: 'key-main', balance: '12 480 ₽', unread: 3, _snapTs: now - 2 * 60000, loggedIn: true, username: 'Outlik',
+        pending: { totals: { '₽': 3200 }, count: 4 } },
+    { name: 'Склад ключей', key: 'key-store', balance: '1 250,50 ₽', unread: 0, _snapTs: now - 5 * 60000, loggedIn: true, username: 'KeyStorePro',
+        pending: { totals: { '₽': 0 }, count: 0 } },
+    { name: 'Старый аккаунт', key: 'key-old', balance: '', unread: 0, _snapTs: now - 10 * 60000, loggedIn: false }
 ];
 const names = page => page.locator('.fpt-am-row .fpt-am-name').allTextContents();
 
@@ -35,7 +37,7 @@ test('accounts screen fits both themes and widths and never renders session keys
 test('hero, active row, unread badge and expired session reflect stored data', async () => {
     const browser = await launch();
     try {
-        const { page, errors } = await openAccounts(browser, { fpToolsAccounts: ACCOUNTS }, { session: 'key-main', userName: 'Outlik' });
+        const { page, messages, errors } = await openAccounts(browser, { fpToolsAccounts: ACCOUNTS }, { session: 'key-main', userName: 'Outlik' });
         assert.match(await page.locator('.fpt-am-hero .fpt-qr-pill').textContent(), /Вы в аккаунте Outlik/);
         const metrics = await page.locator('.fpt-am-hero .fpt-qr-metric-value').allTextContents();
         assert.deepEqual(metrics.map(value => value.replace(/\s/g, ' ')), ['3', '13 730,50 ₽', '3']);
@@ -46,6 +48,13 @@ test('hero, active row, unread badge and expired session reflect stored data', a
         assert.equal(await active.getByRole('button', { name: 'Активен' }).isDisabled(), true);
         assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-tag--expired').textContent(), 'link_offСессия истекла');
         assert.match(await page.locator('.fpt-am-row').nth(1).locator('.fpt-am-nick').textContent(), /KeyStorePro/);
+        assert.match((await active.locator('.fpt-am-balance').textContent()).replace(/\s/g, ' '), /Доступно 12 480 ₽/);
+        assert.match((await active.locator('.fpt-am-pending').textContent()).replace(/\s/g, ' '), /В ожидании 3 200 ₽ · 4 заказа/);
+        assert.equal(await page.locator('.fpt-am-row').nth(1).locator('.fpt-am-pending').getAttribute('data-empty'), 'true');
+        assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-pending').count(), 0, 'no pending data yet');
+        assert.equal((await page.locator('.fpt-am-metric-sub:not([hidden])').textContent()).replace(/\s/g, ' '), '+3 200 ₽ в ожидании');
+        assert.equal(await page.locator('.fpt-qr-metric').filter({ hasText: 'Общий баланс' }).locator('.fpt-am-metric-sub').isVisible(), true);
+        assert.equal((await messages()).filter(message => message.action === 'getAccountSnapshot').length, 0, 'fresh data is not refetched');
         assert.equal(await page.locator('.fpt-am-search').isVisible(), false, 'search appears from four accounts');
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
@@ -133,7 +142,7 @@ test('refresh updates every account in turn and stale data refreshes on open', a
     try {
         const stale = ACCOUNTS.map(account => ({ ...account, _snapTs: now - 3 * 3600000 }));
         const snapshots = {
-            'key-main': { username: 'Outlik', avatar: '', balance: '15 000 ₽', unread: 7, loggedIn: true },
+            'key-main': { username: 'Outlik', avatar: '', balance: '15 000 ₽', unread: 7, loggedIn: true, pending: { totals: { '₽': 500, '$': 2 }, count: 3 } },
             'key-store': { username: 'KeyStorePro', avatar: '', balance: '900 ₽', unread: 0, loggedIn: true }
         };
         const { page, state, messages, errors } = await openAccounts(browser, { fpToolsAccounts: stale },
@@ -144,6 +153,8 @@ test('refresh updates every account in turn and stale data refreshes on open', a
         assert.equal((await state()).fpToolsAccounts[1].balance, '900 ₽');
         assert.equal(await page.locator('.fpt-am-row[data-active="true"] .fpt-am-unread').textContent(), '7');
         assert.equal(await page.locator('.fpt-popup-toast').count(), 0);
+        assert.deepEqual((await state()).fpToolsAccounts[0].pending, { totals: { '₽': 500, '$': 2 }, count: 3 });
+        assert.match((await page.locator('.fpt-am-row[data-active="true"] .fpt-am-pending').textContent()).replace(/\s/g, ' '), /500 ₽ \+ 2 \$ · 3 заказа/);
 
         await page.evaluate(() => { window.qaSnapshots['key-main'].balance = '16 000 ₽'; window.qaSnapshotDelay = 60; });
         await page.locator('#fptRefreshAccountsBtn').click();
@@ -176,6 +187,32 @@ test('external storage changes re-render and a failed read can be retried', asyn
         assert.equal(await page.locator('.fpt-am-empty').isVisible(), true);
         await page.locator('.fpt-am-empty').getByRole('button', { name: 'Сбросить поиск' }).click();
         assert.equal(await page.locator('.fpt-am-row').count(), 4);
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
+
+test('returning to the page refreshes data that went stale while it was closed', async () => {
+    const browser = await launch();
+    try {
+        const snapshots = { 'key-main': { username: 'Outlik', balance: '99 ₽', unread: 0, loggedIn: true, pending: { totals: { '₽': 0 }, count: 0 } } };
+        const { page, state, messages, errors } = await openAccounts(browser, { fpToolsAccounts: ACCOUNTS.slice(0, 1) },
+            { session: 'key-main', userName: 'Outlik', snapshots });
+        const snapshotCalls = async () => (await messages()).filter(message => message.action === 'getAccountSnapshot').length;
+        assert.equal(await snapshotCalls(), 0);
+        await page.evaluate(() => window.fptOpenPopupPage('general'));
+        await page.evaluate(() => window.fptOpenPopupPage('accounts'));
+        assert.equal(await snapshotCalls(), 0, 'still fresh');
+
+        await page.evaluate(() => window.fptOpenPopupPage('general'));
+        await page.evaluate(() => {
+            const accounts = window.qaStorage.read().fpToolsAccounts;
+            accounts[0]._snapTs = Date.now() - 20 * 60000;
+            window.qaStorage.external({ fpToolsAccounts: accounts });
+        });
+        await page.evaluate(() => window.fptOpenPopupPage('accounts'));
+        await page.waitForFunction(() => window.qaStorage.read().fpToolsAccounts[0].balance === '99 ₽');
+        assert.equal(await snapshotCalls(), 1);
+        assert.equal((await state()).fpToolsAccounts[0].pending.count, 0);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });

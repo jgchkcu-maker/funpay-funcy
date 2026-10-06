@@ -1018,16 +1018,19 @@ function parseUnconfirmedBalance(html) {
         const pendingRows = doc.querySelectorAll('a.tc-item.info');
         let total = 0;
         let currency = 'RUB';
+        const totals = {}; // per currency sign, so mixed currencies are never added together
         pendingRows.forEach(row => {
             const priceText = row.querySelector('.tc-price')?.textContent || '';
             const price = parseFloat(priceText.replace(/\s/g, '').replace(',', '.')) || 0;
             total += price;
-            if (priceText.includes('$')) currency = 'USD';
-            else if (priceText.includes('€')) currency = 'EUR';
+            const sign = priceText.includes('$') ? '$' : priceText.includes('€') ? '€' : '₽';
+            if (sign === '$') currency = 'USD';
+            else if (sign === '€') currency = 'EUR';
+            totals[sign] = Math.round(((totals[sign] || 0) + price) * 100) / 100;
         });
-        return { total: Math.round(total * 100) / 100, currency, count: pendingRows.length };
+        return { total: Math.round(total * 100) / 100, currency, count: pendingRows.length, totals };
     } catch (e) {
-        return { total: 0, currency: 'RUB', count: 0 };
+        return { total: 0, currency: 'RUB', count: 0, totals: {} };
     }
 }
 

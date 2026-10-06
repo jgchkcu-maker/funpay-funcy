@@ -1400,13 +1400,23 @@ function fptSnapshotForKey(key) {
         let original = null;
         try { original = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' }); } catch (_) {}
 
-        // Если ключ совпадает с активным - просто грузим главную как есть.
+        // Главная даёт имя, аватар и баланс; оплаченные, но не подтверждённые заказы — деньги «в ожидании».
+        const loadSnapshot = async () => {
+            const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
+            const snap = await parseHtmlViaOffscreen(await resp.text(), 'parseAccountSnapshot');
+            if (snap && snap.loggedIn) {
+                try {
+                    const orders = await fetch('https://funpay.com/orders/trade?status=paid', { credentials: 'include', cache: 'no-store' });
+                    const pending = await parseHtmlViaOffscreen(await orders.text(), 'parseUnconfirmedBalance');
+                    if (pending && pending.totals) snap.pending = { totals: pending.totals, count: pending.count || 0 };
+                } catch (_) {}
+            }
+            return snap;
+        };
+
+        // Если ключ совпадает с активным - просто грузим как есть.
         if (original && original.value === key) {
-            try {
-                const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
-                const html = await resp.text();
-                return await parseHtmlViaOffscreen(html, 'parseAccountSnapshot');
-            } catch (e) { return null; }
+            try { return await loadSnapshot(); } catch (e) { return null; }
         }
 
         const setKey = async (value) => {
@@ -1425,11 +1435,8 @@ function fptSnapshotForKey(key) {
         try {
             // 2) Ставим cookie целевого аккаунта.
             await setKey(key);
-            // 3) Грузим главную под этим аккаунтом.
-            const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
-            const html = await resp.text();
-            const snap = await parseHtmlViaOffscreen(html, 'parseAccountSnapshot');
-            return snap;
+            // 3) Грузим главную и заказы в ожидании под этим аккаунтом.
+            return await loadSnapshot();
         } catch (e) {
             return null;
         } finally {

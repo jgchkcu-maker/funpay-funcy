@@ -3,6 +3,8 @@
     'use strict';
 
     const PAGE_ID = 'auto_delivery';
+    // The lot list and stock counts older than this are reloaded on their own when the page is opened.
+    const AUTO_REFRESH_MS = 15 * 60 * 1000;
     const GLOBAL_SETTINGS = Object.freeze({
         restore: 'fpToolsAutoRestoreEnabled',
         disable: 'fpToolsAutoDisableEnabled'
@@ -972,7 +974,10 @@
             updateListView();
         }
 
-        loadButton.addEventListener('click', async () => {
+        let reloading = false;
+        const reloadLots = async () => {
+            if (reloading) return;
+            reloading = true;
             loadButton.disabled = true;
             loadButton.setAttribute('aria-busy', 'true');
             updateLoadButton(true);
@@ -1019,12 +1024,22 @@
                 }
                 setStatus(loadStatus, `Не удалось обновить список: ${error.message || 'Проверьте подключение к FunPay.'}`, 'error');
             } finally {
+                reloading = false;
                 progressWrap.hidden = true;
                 loadButton.disabled = false;
                 loadButton.removeAttribute('aria-busy');
                 updateLoadButton(false);
             }
-        });
+        };
+        loadButton.addEventListener('click', reloadLots);
+
+        const maybeAutoRefresh = () => {
+            if (reloading || !page.isConnected || !page.classList.contains('active')) return;
+            if (checkedAt && Date.now() - checkedAt < AUTO_REFRESH_MS) return;
+            reloadLots();
+        };
+        root.FPTPopupUI?.onPageActivated?.(page, maybeAutoRefresh);
+        maybeAutoRefresh();
 
         page.addEventListener('pointerdown', event => {
             if (event.target.closest('.fpt-category-header') || event.target.closest('.fpt-ad-help')) return;
