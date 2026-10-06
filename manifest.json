@@ -169,7 +169,8 @@
         "content/features/category_peek_panel.js",
         "content/features/chat_reply.js",
         "content/features/lot_offer_actions.js",
-        "content/features/page_selects.js"
+        "content/features/page_selects.js",
+        "content/features/scroll_guard.js"
       ],
       "css": [
         "css/content_styles.css",
