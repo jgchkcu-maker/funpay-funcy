@@ -52,6 +52,12 @@ test('hero, active row, unread badge and expired session reflect stored data', a
         assert.match((await active.locator('.fpt-am-pending').textContent()).replace(/\s/g, ' '), /В ожидании 3 200 ₽ · 4 заказа/);
         assert.equal(await page.locator('.fpt-am-row').nth(1).locator('.fpt-am-pending').getAttribute('data-empty'), 'true');
         assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-pending').count(), 0, 'no pending data yet');
+        await page.evaluate(() => {
+            const accounts = window.qaStorage.read().fpToolsAccounts;
+            accounts[2].balance = 'Финансы';
+            window.qaStorage.external({ fpToolsAccounts: accounts });
+        });
+        assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-balance').textContent(), 'account_balance_walletБаланс неизвестен');
         assert.equal((await page.locator('.fpt-am-metric-sub:not([hidden])').textContent()).replace(/\s/g, ' '), '+3 200 ₽ в ожидании');
         assert.equal(await page.locator('.fpt-qr-metric').filter({ hasText: 'Общий баланс' }).locator('.fpt-am-metric-sub').isVisible(), true);
         assert.equal((await messages()).filter(message => message.action === 'getAccountSnapshot').length, 0, 'fresh data is not refetched');

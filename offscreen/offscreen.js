@@ -1296,6 +1296,21 @@ function parseOrdersDetailed(html) {
     return orders;
 }
 
+// Header balance: only text that holds an amount counts. Without a balance badge FunPay shows just the
+// «Финансы» menu link, which means a zero balance for a signed-in user.
+function fptReadHeaderBalance(doc, loggedIn) {
+    const nodes = doc.querySelectorAll('.badge-balance, .user-link-balance, .balances-value, .menu-item-balance');
+    for (const el of nodes) {
+        const text = el.textContent.replace(/[\s\u00a0\u202f]+/g, ' ').trim();
+        const match = text.match(/-?\d[\d ]*(?:[.,]\d+)?\s*([₽$€]|руб\.?)?/i);
+        if (!match) continue;
+        const sign = /\$/.test(match[0]) ? '$' : /€/.test(match[0]) ? '€' : '₽';
+        const amount = match[0].replace(/\s*([₽$€]|руб\.?)$/i, '').trim();
+        return `${amount} ${sign}`;
+    }
+    return loggedIn ? '0 ₽' : '';
+}
+
 // Parse basic profile info (username + balance) from the FunPay homepage HTML.
 // Извлекает userId и csrf-token из data-app-data главной страницы.
 // Используется фоном (autobump), когда нет открытой вкладки FunPay.
@@ -1330,9 +1345,7 @@ function parseProfileInfo(html) {
             } catch (_) {}
         }
     }
-    let balance = '';
-    const balEl = doc.querySelector('.badge-balance, .menu-item-balance, .user-link-balance');
-    if (balEl) balance = balEl.textContent.replace(/\s+/g, ' ').trim();
+    const balance = fptReadHeaderBalance(doc, Boolean(username));
     return { username, balance };
 }
 
@@ -1369,8 +1382,7 @@ function parseAccountSnapshot(html) {
     }
 
     // баланс
-    const balEl = doc.querySelector('.badge-balance, .menu-item-balance, .user-link-balance');
-    if (balEl) out.balance = balEl.textContent.replace(/\s+/g, ' ').trim();
+    out.balance = fptReadHeaderBalance(doc, out.loggedIn);
 
     // непрочитанные сообщения: бейдж на иконке чата
     const unreadEl = doc.querySelector('.menu-icon-chat .badge, .badge-chat, .menu-item-chat .badge, .chat-counter');

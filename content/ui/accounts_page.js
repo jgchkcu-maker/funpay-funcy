@@ -416,9 +416,11 @@
                 main.append(titleLine);
             }
             const meta = node('div', 'fpt-am-meta');
+            // Older snapshots could store menu text («Финансы») instead of an amount; only amounts are shown.
+            const hasBalance = Boolean(parseBalance(account.balance));
             const balance = node('span', 'fpt-am-balance');
-            balance.append(icon('account_balance_wallet'), node('span', '', account.balance ? `Доступно ${account.balance}` : 'Баланс неизвестен'));
-            balance.dataset.empty = String(!account.balance);
+            balance.append(icon('account_balance_wallet'), node('span', '', hasBalance ? `Доступно ${account.balance}` : 'Баланс неизвестен'));
+            balance.dataset.empty = String(!hasBalance);
             balance.title = 'Можно вывести или потратить';
             meta.append(balance);
             if (account.pending && typeof account.pending === 'object') {
