@@ -6145,3 +6145,65 @@ textarea.fp-cw-input { line-height:1.4; }
 .fp-tools-popup[data-fpt-empty-shell="true"] .fp-tools-content {
     padding: 0; background: transparent !important;
 }
+
+/* --- Themed option lists for FunPay's own <select> (content/features/page_selects.js).
+       Mirrors the popup's .fpt-select-menu, coloured by the page palette from utils.js. --- */
+.fpt-page-select-menu {
+    position: fixed;
+    z-index: 2147483000;
+    box-sizing: border-box;
+    width: max-content;
+    max-width: min(420px, calc(100vw - 16px));
+    max-height: 320px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 6px;
+    border: 1px solid var(--fptm-border, rgba(127, 127, 127, .25));
+    border-radius: 14px;
+    background: var(--fptm-bg, #fff);
+    color: var(--fptm-text, #222);
+    color-scheme: var(--fptm-color-scheme, light);
+    box-shadow: 0 14px 34px var(--fptm-shadow, rgba(0, 0, 0, .18));
+    font-family: inherit;
+    text-align: left;
+    transform-origin: top center;
+    animation: fpt-page-select-in .16s cubic-bezier(.4, 0, .2, 1) both;
+    scrollbar-width: thin;
+    scrollbar-color: var(--fptm-border, rgba(127, 127, 127, .35)) transparent;
+}
+.fpt-page-select-menu.is-up { transform-origin: bottom center; animation-name: fpt-page-select-in-up; }
+.fpt-page-select-option {
+    padding: 8px 10px;
+    border-radius: 9px;
+    color: var(--fptm-text, #222);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.3;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    user-select: none;
+}
+.fpt-page-select-option.is-grouped { padding-left: 18px; }
+.fpt-page-select-option.is-active { background: var(--fptm-hover, rgba(127, 127, 127, .14)); }
+.fpt-page-select-option.is-selected { background: var(--fptm-accent-soft, rgba(27, 117, 187, .12)); color: var(--fptm-accent, #1b75bb); font-weight: 600; }
+.fpt-page-select-option[aria-disabled="true"] { opacity: .5; cursor: default; }
+.fpt-page-select-group {
+    padding: 8px 10px 4px;
+    color: var(--fptm-muted, #888);
+    font-size: 12px;
+    font-weight: 600;
+    user-select: none;
+}
+@keyframes fpt-page-select-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fpt-page-select-in-up {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpt-page-select-menu { animation: none; }
+}
