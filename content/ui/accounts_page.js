@@ -176,7 +176,7 @@
             'Войдите в аккаунт FunPay и нажмите «Добавить» — Funcy запомнит его сессию.',
             'Чтобы добавить ещё один, выйдите, войдите в другой аккаунт и добавьте его тоже.',
             '«Войти» переключает сессию и перезагружает страницу — пароль вводить не нужно.',
-            '«Доступно» — баланс, который можно потратить или вывести. «В ожидании» — оплаченные заказы, которые покупатель ещё не подтвердил.',
+            '«Баланс» — сумма из шапки FunPay. «Доступно» — часть, которую можно потратить или вывести (видна, только если отличается от баланса). «В ожидании» — оплаченные заказы, которые покупатель ещё не подтвердил.',
             'Данные обновляются сами при входе в раздел, если им больше 15 минут, или по кнопке «Обновить».',
             'Ключи сессий хранятся только в этом браузере и не попадают в резервные копии настроек.'
         ].forEach(item => helpList.append(node('li', '', item)));
@@ -419,10 +419,20 @@
             // Older snapshots could store menu text («Финансы») instead of an amount; only amounts are shown.
             const hasBalance = Boolean(parseBalance(account.balance));
             const balance = node('span', 'fpt-am-balance');
-            balance.append(icon('account_balance_wallet'), node('span', '', hasBalance ? `Доступно ${account.balance}` : 'Баланс неизвестен'));
+            balance.append(icon('account_balance_wallet'), node('span', '', hasBalance ? `Баланс ${account.balance}` : 'Баланс неизвестен'));
             balance.dataset.empty = String(!hasBalance);
-            balance.title = 'Можно вывести или потратить';
+            balance.title = 'Общий баланс из шапки FunPay, вместе с замороженными средствами';
             meta.append(balance);
+            // The lot page also tells how much of it is spendable; shown only when it differs from the total.
+            const parsed = parseBalance(account.balance);
+            const sign = parsed?.currency || '₽';
+            const spendable = Number(account.funds?.available?.[sign]);
+            if (parsed && Number.isFinite(spendable) && account.funds.available[sign] !== null && Math.abs(spendable - parsed.amount) > 0.004) {
+                const available = node('span', 'fpt-am-available');
+                available.append(icon('lock_open'), node('span', '', `Доступно ${formatAmount(spendable, sign)}`));
+                available.title = 'Можно потратить или вывести прямо сейчас';
+                meta.append(available);
+            }
             if (account.pending && typeof account.pending === 'object') {
                 const count = Number(account.pending.count) || 0;
                 const pending = node('span', 'fpt-am-pending');

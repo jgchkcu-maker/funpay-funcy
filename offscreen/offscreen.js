@@ -1349,6 +1349,36 @@ function parseProfileInfo(html) {
     return { username, balance };
 }
 
+// Spendable balance lives on any lot page: <select name="method"> carries data-balance-* attributes
+// («total» includes held funds, the unprefixed ones are available). Same source the FunPay Cardinal API uses.
+function parseOfferBalance(html) {
+    try {
+        const select = window.__fptParseHTML(html).querySelector('select[name="method"]');
+        if (!select) return null;
+        const num = name => {
+            const value = parseFloat(select.getAttribute(name));
+            return Number.isFinite(value) ? value : null;
+        };
+        const result = {
+            available: { '₽': num('data-balance-rub'), '$': num('data-balance-usd'), '€': num('data-balance-eur') },
+            total: { '₽': num('data-balance-total-rub'), '$': num('data-balance-total-usd'), '€': num('data-balance-total-eur') }
+        };
+        return Object.values(result.available).every(value => value === null) ? null : result;
+    } catch (e) {
+        return null;
+    }
+}
+
+// First lot id found on a page (profile or home): links look like /lots/offer?id=123.
+function parseFirstOfferId(html) {
+    try {
+        const link = window.__fptParseHTML(html).querySelector('a[href*="lots/offer?id="]');
+        return link?.getAttribute('href')?.match(/offer\?id=(\d+)/)?.[1] || '';
+    } catch (e) {
+        return '';
+    }
+}
+
 // Снимок аккаунта для вкладки мультиаккаунтов: имя, аватар, баланс, непрочитанные.
 function parseAccountSnapshot(html) {
     const doc = window.__fptParseHTML(html);
@@ -1368,6 +1398,7 @@ function parseAccountSnapshot(html) {
     const nameEl = doc.querySelector('.user-link-name');
     if (!out.username && nameEl) out.username = nameEl.textContent.trim();
     out.loggedIn = !!out.username;
+    out.userId = userId ? String(userId) : '';
 
     // аватар: .user-link-photo background-image или img
     const photo = doc.querySelector('.user-link-photo, .avatar-photo');
@@ -1510,6 +1541,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case 'parseAuthData':
             sendResponse(parseAuthData(message.html));
+            break;
+        case 'parseOfferBalance':
+            sendResponse(parseOfferBalance(message.html));
+            break;
+        case 'parseFirstOfferId':
+            sendResponse({ id: parseFirstOfferId(message.html) });
             break;
         case 'parseAccountSnapshot':
             sendResponse(parseAccountSnapshot(message.html));
