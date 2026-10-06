@@ -116,8 +116,12 @@ const DEFAULT_THEME = {
     // Контур тексту
     textOutlineEnabled: false,
     textOutlineColor: '#000000',
-    textOutlineWidth: 1         // px
+    textOutlineWidth: 1,        // px
+    // Кнопки FunPay (content/theme_buttons.js). Пусто - «Авто»: цвет выводится из палитры темы.
+    buttonColor: '',            // обычные: поиск, «…», серые кнопки
+    buttonActiveColor: ''       // активные: «Включены оповещения», успех
 };
+
 
 function hexToRgba(hex, alpha) {
     let r = 0, g = 0, b = 0;
@@ -250,6 +254,11 @@ function fptSanitizeThemeColors(theme) {
     if (res.linkColor) res.linkColor = fptEnsureReadableColor(res.linkColor, { minContrast: 4.5, targetLightness: 68 });
     if (res.textColor) res.textColor = fptEnsureReadableColor(res.textColor, { minContrast: 5.0, targetLightness: 90 });
     if (res.bgColor1) res.bgColor1 = fptEnsureButtonColor(res.bgColor1);
+    // Цвета кнопок: пустое значение - «Авто», заданное приводим к видимому на тёмных блоках.
+    for (const key of ['buttonColor', 'buttonActiveColor']) {
+        if (res[key] && /^#?[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(String(res[key]).trim())) res[key] = fptEnsureButtonColor(res[key]);
+        else if (key in res) res[key] = '';
+    }
     return res;
 }
 
@@ -274,6 +283,11 @@ function fptScopeOutsidePopup(css) {
         }).join(', ');
         return `${scoped} {${body}}`;
     });
+}
+
+// Правила цвета кнопок FunPay. Модуль грузится на document_start; в тестовом окружении его может не быть.
+function fptButtonsCss(settings, options) {
+    return typeof fptThemeButtonsCss === 'function' ? fptThemeButtonsCss(settings, options) : '';
 }
 
 function getOriginalThemeCss(settings) {
@@ -308,6 +322,7 @@ function getOriginalThemeCss(settings) {
             ::-webkit-scrollbar-thumb:hover { background: ${settings.scrollbarThumbColor}CC; }
         `;
     }
+    css += fptScopeOutsidePopup(fptButtonsCss(settings, { onlyCustom: true }));
     return css;
 }
 
@@ -355,6 +370,7 @@ function getCustomThemeCss(settings) {
         .replace(/#2d6bb3/gi, safeLinkColor)
         .replace(/#LINK_COLOR#/gi, safeLinkColor);
 
+    themedCss += fptButtonsCss(settings);
     themedCss = themedCss.replace(/border-radius: \d+px/g, `border-radius: ${settings.borderRadius}px`);
     themedCss = fptScopeOutsidePopup(themedCss);
 

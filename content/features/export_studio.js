@@ -837,7 +837,7 @@
 (function () {
     'use strict';
     const ES = window.FPTExportStudio;
-    const { esc, fmtDate, fmtDateTime, downloadBlob, nowStamp, SYM, themeFromColor, hslToHex, hexToHsl } = ES._util;
+    const { esc, fmtDate, fmtDateTime, fmtMoney, downloadBlob, nowStamp, SYM, themeFromColor, hslToHex, hexToHsl } = ES._util;
 
     // ── определяем контекст страницы: что экспортируем и откуда брать данные ──
     function detectContext() {
@@ -931,94 +931,231 @@
         } catch (_) { return []; }
     }
 
-    // ── СТИЛИ модалки ──
-    function ensureStyles() {
-        if (document.getElementById('fpt-es-styles')) return;
-        const s = document.createElement('style');
-        s.id = 'fpt-es-styles';
-        s.textContent = `
-        .fpt-es-ov{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;
-            background:rgba(8,9,14,.55);font-family:Inter,'Segoe UI',sans-serif;}
-        .fpt-es-modal{width:min(860px,95vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;
-            background:var(--fpt-surface,#fff);color:var(--fpt-text,#16181d);border:1px solid var(--fpt-border,#e4e4ec);
-            border-radius:18px;}
-        .fpt-es-head{display:flex;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--fpt-border,#ececf2);}
-        .fpt-es-head h2{font-size:18px;font-weight:800;margin:0;flex:1;letter-spacing:-.3px;}
-        .fpt-es-head .fpt-es-sub{font-size:12px;color:var(--fpt-text-muted,#8a8a96);font-weight:500;margin-top:1px;}
-        .fpt-es-x{background:none;border:none;font-size:24px;line-height:1;cursor:pointer;color:inherit;opacity:.6;}
-        .fpt-es-x:hover{opacity:1;}
-        .fpt-es-body{padding:20px 22px;overflow-y:auto;display:flex;flex-direction:column;gap:20px;}
-        .fpt-es-sec-t{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;
-            color:var(--fpt-text-muted,#9298a6);margin:0 0 10px;}
-        .fpt-es-hint{font-size:11px;font-weight:500;color:var(--fpt-text-muted,#a0a4b0);text-transform:none;letter-spacing:0;margin-left:6px;}
-        .fpt-es-fmts{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;}
-        @media(max-width:640px){.fpt-es-fmts{grid-template-columns:repeat(3,1fr);}}
-        .fpt-es-fmt{border:1.5px solid var(--fpt-border,#e6e6ee);border-radius:13px;padding:13px 8px;cursor:pointer;
-            text-align:center;transition:border-color .14s,background .14s;background:var(--fpt-surface-2,#fafafd);position:relative;}
-        .fpt-es-fmt:hover{border-color:#2563eb;}
-        .fpt-es-fmt.sel{border-color:#2563eb;background:rgba(37,99,235,.10);}
-        .fpt-es-fmt.sel .ext{color:#2563eb;}
-        .fpt-es-fmt .ext{font-size:14px;font-weight:800;letter-spacing:.3px;}
-        .fpt-es-fmt .ds{font-size:10px;color:var(--fpt-text-muted,#9298a6);margin-top:2px;}
-        /* палитра быстрых цветов + полноразмерный выбор цвета */
-        .fpt-es-colorrow{display:flex;align-items:center;gap:14px;}
-        .fpt-es-swatch-big{position:relative;width:46px;height:46px;flex-shrink:0;cursor:pointer;border-radius:12px;overflow:hidden;
-            border:1px solid var(--fpt-border,#dcdce4);}
-        .fpt-es-swatch-big input[type=color]{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:none;padding:0;}
-        .fpt-es-swatch-big-fill{display:block;width:100%;height:100%;}
-        .fpt-es-sliders{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0;}
-        .fpt-es-spectrum{position:relative;height:18px;border-radius:9px;cursor:pointer;
-            background:linear-gradient(to right,#f00 0%,#ff0 17%,#0f0 33%,#0ff 50%,#00f 67%,#f0f 83%,#f00 100%);
-            box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);}
-        .fpt-es-light{position:relative;height:18px;border-radius:9px;cursor:pointer;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);}
-        .fpt-es-spec-knob,.fpt-es-light-knob{position:absolute;top:50%;width:16px;height:16px;border-radius:50%;
-            background:#fff;border:2px solid rgba(0,0,0,.35);transform:translate(-50%,-50%);pointer-events:none;
-            box-shadow:0 1px 3px rgba(0,0,0,.3);}
-        .fpt-es-grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-        @media(max-width:640px){.fpt-es-grid2{grid-template-columns:1fr;}}
-        .fpt-es-field{display:flex;flex-direction:column;gap:5px;}
-        .fpt-es-field label{font-size:11.5px;font-weight:600;color:var(--fpt-text-muted,#7d8290);}
-        .fpt-es-inp,.fpt-es-sel{padding:9px 11px;border-radius:10px;border:1px solid var(--fpt-border,#e0e0e8);
-            background:var(--fpt-surface-2,#fff);color:inherit;font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;}
-        .fpt-es-inp:focus,.fpt-es-sel:focus{outline:none;border-color:#2563eb;}
-        .fpt-es-cols{display:flex;flex-wrap:wrap;gap:7px;}
-        .fpt-es-chip{font-size:12px;padding:6px 11px;border-radius:20px;border:1.5px solid var(--fpt-border,#e0e0e8);
-            cursor:pointer;user-select:none;transition:background .12s,border-color .12s,color .12s;background:var(--fpt-surface-2,#fafafd);}
-        .fpt-es-chip.on{background:#2563eb;border-color:#2563eb;color:#fff;}
-        /* ── свои чекбоксы: не зависят от стилей страницы FunPay (нативные input ломались) ── */
-        .fpt-es-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;}
-        @media(max-width:640px){.fpt-es-opts{grid-template-columns:1fr;}}
-        .fpt-es-opt{display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer;padding:4px 0;user-select:none;}
-        .fpt-es-check{width:18px;height:18px;flex-shrink:0;border-radius:5px;border:1.5px solid var(--fpt-border,#c8ccd8);
-            background:var(--fpt-surface-2,#fff);position:relative;transition:background .12s,border-color .12s;box-sizing:border-box;}
-        .fpt-es-opt.on .fpt-es-check{background:#2563eb;border-color:#2563eb;}
-        .fpt-es-check::after{content:'';position:absolute;left:5px;top:1px;width:5px;height:10px;
-            border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transition:transform .12s;}
-        .fpt-es-opt.on .fpt-es-check::after{transform:rotate(45deg) scale(1);}
-        .fpt-es-opt.dim{opacity:.4;}
-        .fpt-es-rowflt{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
-        .fpt-es-tgl{font-size:12px;padding:6px 12px;border-radius:9px;border:1.5px solid var(--fpt-border,#e0e0e8);
-            cursor:pointer;background:var(--fpt-surface-2,#fafafd);transition:background .12s,border-color .12s,color .12s;user-select:none;}
-        .fpt-es-tgl.on{background:rgba(37,99,235,.12);border-color:#2563eb;
-            color:#2563eb;font-weight:600;}
-        .fpt-es-foot{display:flex;align-items:center;gap:12px;padding:15px 22px;border-top:1px solid var(--fpt-border,#ececf2);
-            background:var(--fpt-surface-2,#fafafd);}
-        .fpt-es-count{font-size:12.5px;color:var(--fpt-text-muted,#8a8a96);flex:1;}
-        .fpt-es-count b{color:var(--fpt-text,#16181d);}
-        .fpt-es-btn{padding:11px 22px;border-radius:12px;border:none;font-size:14px;font-weight:700;cursor:pointer;
-            background:#2563eb;color:#fff;transition:filter .15s;}
-        .fpt-es-btn:hover{filter:brightness(1.08);}
-        .fpt-es-btn:disabled{opacity:.6;cursor:default;filter:none;}
-        .fpt-es-btn2{padding:11px 18px;border-radius:12px;border:1px solid var(--fpt-border,#dcdce4);
-            background:var(--fpt-surface,#fff);color:inherit;font-size:14px;font-weight:600;cursor:pointer;}
-        .fpt-es-btn2:hover{border-color:var(--fpt-text-muted,#b6b6c2);}
-        .fpt-es-launch{margin-left:6px;}
-        .fpt-es-spin{width:16px;height:16px;border:2.5px solid rgba(255,255,255,.4);border-top-color:#fff;
-            border-radius:50%;animation:fptEsSpin .7s linear infinite;display:inline-block;vertical-align:-3px;margin-right:7px;}
-        @keyframes fptEsSpin{to{transform:rotate(360deg)}}
-        `;
-        document.head.appendChild(s);
+    // ── ОФОРМЛЕНИЕ модалки ──
+    // Окно живёт в shadow root: тема сайта и стили MagicStick (все с !important) до него не
+    // достают. Палитра та же, что у окна расширения (fptMenuPalette в content/ui/main_popup.js).
+    const STUDIO_ACCENT = '#7663f6';
+    const HOST_CSS = 'all: initial !important; position: fixed !important; inset: 0 !important;'
+        + ' z-index: 2147483600 !important; display: block !important;';
+
+    function studioPalette() {
+        let light = true;
+        try { if (typeof fptParseMenuColors === 'function') light = !!fptParseMenuColors().isLight; } catch (_) {}
+        const p = (typeof fptMenuPalette === 'function') ? fptMenuPalette(light) : (light
+            ? { bg: '#ffffff', text: '#16181d', muted: 'rgba(22,24,29,0.74)', faint: 'rgba(22,24,29,0.56)', border: 'rgba(22,24,29,0.10)',
+                surface: '#f5f7fa', surface2: '#eef1f6', hover: 'rgba(22,24,29,0.05)', field: '#ffffff', shadow: 'rgba(22,24,29,0.16)',
+                navSurface: '#fbfaff', navField: '#f4f3ff', navBorder: 'rgba(119,99,246,0.16)' }
+            : { bg: '#1e1f24', text: '#e7e8ec', muted: 'rgba(231,232,236,0.76)', faint: 'rgba(231,232,236,0.56)', border: 'rgba(255,255,255,0.10)',
+                surface: '#26272d', surface2: '#2c2e35', hover: 'rgba(255,255,255,0.07)', field: '#26272d', shadow: 'rgba(0,0,0,0.55)',
+                navSurface: '#24262d', navField: '#2a2e37', navBorder: 'rgba(255,255,255,0.10)' });
+        return {
+            '--bg': p.bg, '--text': p.text, '--muted': p.muted, '--faint': p.faint, '--border': p.border,
+            '--surface': p.surface, '--surface2': p.surface2, '--hover': p.hover, '--field': p.navField || p.field,
+            '--shadow': p.shadow, '--card': p.navSurface || p.surface, '--card-border': p.navBorder || p.border,
+            '--accent': STUDIO_ACCENT,
+            '--accent-soft': light ? 'rgba(118,99,246,0.12)' : 'rgba(118,99,246,0.22)',
+            '--accent-border': light ? 'rgba(118,99,246,0.35)' : 'rgba(118,99,246,0.5)',
+            '--scrim': light ? 'rgba(22,24,29,0.38)' : 'rgba(5,6,10,0.62)',
+            'color-scheme': light ? 'light' : 'dark'
+        };
     }
+
+    const STUDIO_CSS = `
+        :host { all: initial; }
+        * { box-sizing: border-box; }
+        .ico { font-family: 'Material Symbols Rounded'; font-weight: normal; font-style: normal; font-size: 20px;
+            line-height: 1; letter-spacing: normal; text-transform: none; display: inline-block; white-space: nowrap;
+            direction: ltr; font-feature-settings: 'liga'; -webkit-font-smoothing: antialiased; user-select: none; }
+        .ov { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px;
+            background: var(--scrim); font-family: Inter, 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text); font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased;
+            animation: es-fade .18s ease both; }
+        .ov.is-closing { animation: es-fade-out .16s ease both; }
+        .modal { width: min(1060px, 100%); max-height: min(900px, calc(100vh - 32px)); display: flex; flex-direction: column;
+            overflow: hidden; background: var(--bg); border: 1px solid var(--card-border); border-radius: 24px;
+            box-shadow: 0 28px 80px var(--shadow); animation: es-pop .24s cubic-bezier(.22, 1, .36, 1) both; outline: none; }
+        .ov.is-closing .modal { animation: es-pop-out .16s ease both; }
+
+        .head { display: flex; align-items: center; gap: 14px; padding: 18px 20px 16px 22px; border-bottom: 1px solid var(--border); }
+        .emblem { flex: 0 0 44px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+            border-radius: 14px; background: var(--accent-soft); color: var(--accent); font-size: 24px; }
+        .head-copy { flex: 1; min-width: 0; }
+        .head h2 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; }
+        .head p { margin: 4px 0 0; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 12.5px; }
+        .kind { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 7px; border-radius: 999px;
+            background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 650; }
+        .kind .ico { font-size: 16px; }
+        .icon-btn { flex: 0 0 auto; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center;
+            border: 0; border-radius: 12px; background: transparent; color: var(--muted); cursor: pointer;
+            transition: background .16s ease, color .16s ease; font: inherit; }
+        .icon-btn:hover { background: var(--hover); color: var(--text); }
+        .icon-btn:focus-visible, .btn:focus-visible, .chip:focus-visible, .fmt:focus-visible, .dot:focus-visible,
+        .seg button:focus-visible, .switch input:focus-visible + .track, .link:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+        .body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 330px; overflow: hidden; }
+        .settings { min-width: 0; overflow-y: auto; padding: 18px 18px 22px 22px; display: flex; flex-direction: column; gap: 14px;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+        .side { min-width: 0; overflow-y: auto; padding: 18px 22px 22px 6px; display: flex; flex-direction: column; gap: 12px; }
+        .side-sticky { position: sticky; top: 0; display: flex; flex-direction: column; gap: 12px; }
+
+        .card { border: 1px solid var(--card-border); border-radius: 18px; background: var(--card); padding: 16px 16px 18px; }
+        .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+        .card-ico { flex: 0 0 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 19px; }
+        .card-title { flex: 1; min-width: 0; margin: 0; font-size: 14.5px; font-weight: 650; letter-spacing: -.01em; }
+        .card-note { color: var(--faint); font-size: 12px; font-weight: 500; }
+        .label { display: block; margin: 0 0 8px; color: var(--muted); font-size: 12px; font-weight: 600; }
+        .group { margin-top: 16px; }
+        .card-head + .group { margin-top: 0; }
+        [hidden] { display: none !important; }
+
+        .fmts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+        .fmt { position: relative; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 14px 6px 12px; border: 1.5px solid var(--border); border-radius: 14px; background: var(--bg);
+            color: var(--text); cursor: pointer; font: inherit; text-align: center;
+            transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+        .fmt:hover { border-color: var(--accent-border); }
+        .fmt:active { transform: scale(.98); }
+        .fmt .fmt-ico { font-size: 26px; color: var(--muted); transition: color .16s ease; }
+        .fmt-ext { font-size: 13px; font-weight: 750; letter-spacing: .02em; }
+        .fmt-ds { max-width: 100%; overflow: hidden; color: var(--faint); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+        .fmt-check { position: absolute; top: 7px; right: 7px; font-size: 18px; color: var(--accent); opacity: 0; transform: scale(.6);
+            transition: opacity .16s ease, transform .2s cubic-bezier(.2, 1.4, .4, 1); font-variation-settings: 'FILL' 1; }
+        .fmt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+        .fmt[aria-pressed="true"] .fmt-ico, .fmt[aria-pressed="true"] .fmt-ext { color: var(--accent); }
+        .fmt[aria-pressed="true"] .fmt-check { opacity: 1; transform: scale(1); }
+
+        .colors { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .dot { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: var(--c);
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); transition: transform .16s ease, box-shadow .16s ease; }
+        .dot:hover { transform: scale(1.08); }
+        .dot[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--c); }
+        .picker { position: relative; width: 30px; height: 30px; border-radius: 50%; overflow: hidden; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; color: var(--muted);
+            border: 1.5px dashed var(--border); transition: border-color .16s ease, color .16s ease; }
+        .picker:hover { border-color: var(--accent-border); color: var(--accent); }
+        .picker input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+        .picker .ico { font-size: 18px; pointer-events: none; }
+        .current { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px 5px 6px;
+            border-radius: 999px; background: var(--surface2); font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .current i { width: 18px; height: 18px; border-radius: 50%; background: var(--c); box-shadow: inset 0 0 0 1px rgba(0,0,0,.12); }
+        .sliders { margin-top: 14px; display: grid; gap: 12px; }
+        .slider-row { display: grid; grid-template-columns: 64px minmax(0, 1fr); align-items: center; gap: 10px; color: var(--muted); font-size: 12px; font-weight: 600; }
+        .track-h { position: relative; height: 14px; border-radius: 999px; cursor: pointer; box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); touch-action: none; }
+        .spectrum { background: linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%); }
+        .knob { position: absolute; top: 50%; width: 18px; height: 18px; border-radius: 50%; background: #fff; pointer-events: none;
+            border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.4), inset 0 0 0 1px rgba(0,0,0,.12); transform: translate(-50%, -50%); }
+
+        .seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border-radius: 14px; background: var(--surface2); }
+        .seg button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 10px;
+            background: transparent; color: var(--muted); font-family: inherit; font-size: 13px; font-weight: 600; line-height: 1; cursor: pointer;
+            transition: background .16s ease, color .16s ease, box-shadow .16s ease; }
+        .seg button .ico { font-size: 18px; }
+        .seg button:hover { color: var(--text); }
+        .seg button[aria-checked="true"] { background: var(--bg); color: var(--accent); box-shadow: 0 1px 5px var(--shadow); }
+
+        .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+        .chip { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 12px; border: 1px solid var(--border);
+            border-radius: 999px; background: var(--bg); color: var(--text); font-family: inherit; font-size: 12.5px; font-weight: 550; line-height: 1;
+            cursor: pointer; user-select: none; transition: background .14s ease, border-color .14s ease, color .14s ease; }
+        .chip:hover { border-color: var(--accent-border); }
+        .chip .ico { width: 0; overflow: hidden; font-size: 16px; transition: width .16s ease; }
+        .chip[aria-pressed="true"] { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+        .chip[aria-pressed="true"] .ico { width: 16px; }
+        .row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+        .links { display: inline-flex; gap: 12px; }
+        .link { padding: 0; border: 0; background: none; color: var(--accent); font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+        .link:hover { text-decoration: underline; }
+
+        .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .field { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+        .input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border); border-radius: 12px;
+            background: var(--field); color: var(--text); font-family: inherit; font-size: 14px; outline: none;
+            color-scheme: inherit; transition: border-color .16s ease, box-shadow .16s ease; }
+        .input::placeholder { color: var(--faint); }
+        .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+        .range { margin-top: 10px; }
+
+        .toggles { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+        .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 40px; padding: 4px 2px;
+            cursor: pointer; font-size: 13.5px; user-select: none; }
+        .toggle-copy { display: flex; align-items: center; gap: 9px; min-width: 0; }
+        .toggle-copy .ico { color: var(--muted); font-size: 19px; }
+        .switch { position: relative; flex: 0 0 40px; width: 40px; height: 22px; }
+        .switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 1; }
+        .track { position: absolute; inset: 0; border-radius: 999px; background: color-mix(in srgb, var(--muted) 34%, var(--surface2));
+            transition: background .2s ease; }
+        .track::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .4s cubic-bezier(.2, 1.45, .4, 1); }
+        .switch input:checked + .track { background: var(--accent); }
+        .switch input:checked + .track::after { transform: translateX(18px); }
+
+        .side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .side-title { margin: 0; font-size: 14.5px; font-weight: 650; }
+        .tag { padding: 3px 9px; border-radius: 999px; background: var(--surface2); color: var(--muted); font-size: 11.5px; font-weight: 650; }
+        .paper-wrap { padding: 16px; border-radius: 18px; background: var(--surface2); display: flex; justify-content: center; }
+        .paper { width: 100%; aspect-ratio: 1.414 / 1; display: flex; flex-direction: column; overflow: hidden; border-radius: 6px;
+            background: #fff; color: #1a1a1a; box-shadow: 0 6px 22px rgba(0,0,0,.18); font-size: 7.5px; line-height: 1.35;
+            transition: aspect-ratio .3s ease, width .3s ease; }
+        .paper[data-orient="portrait"] { width: 74%; aspect-ratio: 1 / 1.414; }
+        .paper[data-plain="true"] .band { background: #f2f3f5 !important; color: #1a1a1a !important; }
+        .band { padding: 9px 10px 8px; transition: background .2s ease, color .2s ease; }
+        .band b { display: block; overflow: hidden; font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+        .band span { display: block; overflow: hidden; margin-top: 1px; opacity: .82; text-overflow: ellipsis; white-space: nowrap; }
+        .sheet { flex: 1; min-height: 0; padding: 7px 8px 0; overflow: hidden; }
+        .sheet table { width: 100%; border-collapse: collapse; table-layout: fixed; font: inherit; color: inherit; }
+        .sheet th, .sheet td { padding: 3px 4px; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+        .sheet th { font-weight: 700; }
+        .sheet td { border-bottom: 0.5px solid var(--grid, #e5e7eb); }
+        .sheet .r { text-align: right; }
+        .totals { margin: 6px 8px 0; padding: 5px 7px; border-radius: 3px; font-weight: 700; display: flex; justify-content: space-between; gap: 6px; }
+        .paper-foot { display: flex; justify-content: space-between; padding: 5px 8px 6px; color: #8a8f98; font-size: 6.5px; }
+        .empty-cell { color: #b0b4bb; }
+        .stats { display: grid; gap: 8px; padding: 14px; border-radius: 16px; border: 1px solid var(--card-border); background: var(--card); }
+        .stat-line { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12.5px; }
+        .stat-line .ico { color: var(--accent); font-size: 19px; }
+        .stat-line b { color: var(--text); font-size: 15px; font-weight: 750; }
+
+        .foot { display: flex; align-items: center; gap: 10px; padding: 14px 20px 16px 22px; border-top: 1px solid var(--border); }
+        .foot-note { flex: 1; min-width: 0; display: flex; align-items: center; gap: 7px; color: var(--faint); font-size: 12px; }
+        .foot-note .ico { font-size: 17px; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; padding: 0 18px; border-radius: 13px;
+            font-family: inherit; font-size: 14px; font-weight: 650; line-height: 1; cursor: pointer; white-space: nowrap;
+            transition: filter .16s ease, background .16s ease, border-color .16s ease, transform .16s ease; }
+        .btn:active { transform: scale(.98); }
+        .btn .ico { font-size: 19px; }
+        .btn.ghost { border: 1px solid var(--border); background: transparent; color: var(--text); }
+        .btn.ghost:hover { background: var(--hover); }
+        .btn.primary { min-width: 190px; border: 0; background: var(--accent); color: #fff; box-shadow: 0 6px 18px rgba(118,99,246,.35); }
+        .btn.primary:hover { filter: brightness(1.07); }
+        .btn:disabled { opacity: .7; cursor: default; filter: none; transform: none; }
+        .spin { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%;
+            animation: es-spin .7s linear infinite; }
+
+        @keyframes es-spin { to { transform: rotate(360deg); } }
+        @keyframes es-fade { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes es-fade-out { to { opacity: 0; } }
+        @keyframes es-pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+        @keyframes es-pop-out { to { opacity: 0; transform: translateY(6px) scale(.985); } }
+        @media (prefers-reduced-motion: reduce) {
+            .ov, .ov.is-closing, .modal, .ov.is-closing .modal { animation: none; }
+        }
+        @media (max-width: 860px) {
+            .body { grid-template-columns: 1fr; overflow-y: auto; }
+            .settings, .side { overflow: visible; }
+            .side { padding: 0 18px 22px; }
+            .side-sticky { position: static; }
+            .paper-wrap { max-width: 420px; width: 100%; align-self: center; }
+        }
+        @media (max-width: 620px) {
+            .fmts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+            .fields, .toggles { grid-template-columns: 1fr; }
+            .foot-note { display: none; }
+            .btn.primary { min-width: 0; flex: 1; }
+            .head { padding: 14px 14px 12px 16px; }
+            .settings { padding: 14px; }
+        }
+    `;
 
     // ── конфиг по умолчанию (запоминаем в localStorage) ──
     const CFG_KEY = 'fpToolsExportStudioCfg';
@@ -1059,146 +1196,176 @@
     }
 
     const FORMATS = [
-        { v: 'xlsx', ext: 'XLSX', ds: 'Excel-таблица' },
-        { v: 'docx', ext: 'DOCX', ds: 'Word-документ' },
-        { v: 'pdf', ext: 'PDF', ds: 'Готов к печати' },
-        { v: 'csv', ext: 'CSV', ds: 'Для импорта' },
-        { v: 'json', ext: 'JSON', ds: 'Сырые данные' }
+        { v: 'xlsx', ext: 'XLSX', ds: 'Excel-таблица', icon: 'table_view' },
+        { v: 'docx', ext: 'DOCX', ds: 'Word-документ', icon: 'description' },
+        { v: 'pdf', ext: 'PDF', ds: 'Готов к печати', icon: 'picture_as_pdf' },
+        { v: 'csv', ext: 'CSV', ds: 'Для импорта', icon: 'csv' },
+        { v: 'json', ext: 'JSON', ds: 'Сырые данные', icon: 'code' }
     ];
+    // быстрые цвета оформления (те же, что были пресетами раньше)
+    const QUICK_COLORS = ['2563EB', '7C5CFF', '10B981', '0EA5E9', 'E11D48', 'FF6D15', 'C79A2E', '111827'];
+    const KIND_META = {
+        finance: { label: 'Финансы', icon: 'account_balance_wallet' },
+        purchases: { label: 'Покупки', icon: 'shopping_bag' },
+        sales: { label: 'Продажи', icon: 'sell' }
+    };
+
+    let openHost = null;
 
     async function openStudio(ctx) {
-        ensureStyles();
-        const old = document.getElementById('fpt-es-ov');
-        if (old) old.remove();
+        if (openHost) openHost.remove();
         const cfg = loadCfg(ctx);
-        if (cfg.color && !/^#/.test(cfg.color)) cfg.color = '#' + cfg.color;
+        const cleanHex = v => String(v || '2563EB').replace('#', '').toUpperCase();
+        cfg.color = cleanHex(cfg.color);
         const schema = ES.schemaFor(ctx.kind, ctx.isPurchases);
         const currencies = await detectCurrencies(ctx);
+        const kind = KIND_META[ctx.kind === 'finance' ? 'finance' : ctx.isPurchases ? 'purchases' : 'sales'];
+        const sortOpts = ctx.kind === 'finance'
+            ? [['date-desc', 'Сначала новые'], ['date-asc', 'Сначала старые'], ['amt-desc', 'Больше сумма'], ['amt-asc', 'Меньше сумма']]
+            : [['date-desc', 'Сначала новые'], ['date-asc', 'Сначала старые'], ['price-desc', 'Дороже'], ['price-asc', 'Дешевле']];
 
-        const ov = document.createElement('div');
-        ov.id = 'fpt-es-ov';
-        ov.className = 'fpt-es-ov';
-        ov.innerHTML = `
-        <div class="fpt-es-modal">
-            <div class="fpt-es-head">
-                <div style="flex:1;">
-                    <h2>Студия экспорта</h2>
-                    <div class="fpt-es-sub">${esc(ctx.kind === 'finance' ? 'Финансы' : ctx.isPurchases ? 'Покупки' : 'Продажи')} · настрой формат, стиль и содержимое</div>
-                </div>
-                <button class="fpt-es-x" title="Закрыть">×</button>
+        const chip = (attr, value, label, on) =>
+            `<button type="button" class="chip" ${attr}="${esc(value)}" aria-pressed="${on ? 'true' : 'false'}"><span class="ico">check</span>${esc(label)}</button>`;
+        const card = (icon, title, body, extra = '', id = '') =>
+            `<section class="card"${id ? ` id="${id}"` : ''}><div class="card-head"><span class="card-ico ico">${icon}</span><h3 class="card-title">${title}</h3>${extra}</div>${body}</section>`;
+        const toggle = (key, icon, label, id = '') =>
+            `<label class="toggle"${id ? ` id="${id}"` : ''}><span class="toggle-copy"><span class="ico">${icon}</span>${esc(label)}</span>`
+            + `<span class="switch"><input type="checkbox" role="switch" data-opt="${key}"><span class="track"></span></span></label>`;
+
+        const host = document.createElement('fpt-export-studio');
+        host.id = 'fpt-es-ov';
+        host.style.cssText = HOST_CSS;
+        const shadow = host.attachShadow({ mode: 'open' });
+        const pal = studioPalette();
+        shadow.innerHTML = `<style>${STUDIO_CSS}</style>
+        <div class="ov" style="${Object.entries(pal).map(([k, v]) => `${k}:${v}`).join(';')}">
+          <div class="modal" role="dialog" aria-modal="true" aria-labelledby="es-h" tabindex="-1">
+            <div class="head">
+              <span class="emblem ico">ios_share</span>
+              <div class="head-copy">
+                <h2 id="es-h">Студия экспорта</h2>
+                <p><span class="kind"><span class="ico">${kind.icon}</span>${kind.label}</span>Формат, оформление и содержимое отчёта</p>
+              </div>
+              <button type="button" class="icon-btn" id="es-x" aria-label="Закрыть"><span class="ico">close</span></button>
             </div>
-            <div class="fpt-es-body">
-                <div>
-                    <p class="fpt-es-sec-t">Формат файла<span class="fpt-es-hint">можно выбрать несколько</span></p>
-                    <div class="fpt-es-fmts" id="es-fmts">
-                        ${FORMATS.map(f => `<div class="fpt-es-fmt ${cfg.formats.includes(f.v) ? 'sel' : ''}" data-fmt="${f.v}"><div class="ext">${f.ext}</div><div class="ds">${f.ds}</div></div>`).join('')}
-                    </div>
-                </div>
+            <div class="body">
+              <div class="settings">
+                ${card('draft', 'Формат файла', `<div class="fmts" id="es-fmts">${FORMATS.map(f =>
+                    `<button type="button" class="fmt" data-fmt="${f.v}" aria-pressed="${cfg.formats.includes(f.v)}"><span class="ico fmt-check">check_circle</span><span class="ico fmt-ico">${f.icon}</span><span class="fmt-ext">${f.ext}</span><span class="fmt-ds">${f.ds}</span></button>`).join('')}</div>`,
+                    '<span class="card-note">можно несколько</span>')}
 
-                <div id="es-theme-wrap">
-                    <p class="fpt-es-sec-t">Цвет оформления</p>
-                    <div class="fpt-es-colorrow">
-                        <label class="fpt-es-swatch-big" title="Выбрать точный цвет">
-                            <input type="color" id="es-color" value="${esc(cfg.color)}">
-                            <span class="fpt-es-swatch-big-fill" id="es-color-swatch" style="background:${esc(cfg.color)}"></span>
-                        </label>
-                        <div class="fpt-es-sliders">
-                            <div class="fpt-es-spectrum" id="es-spectrum"><span class="fpt-es-spec-knob" id="es-spec-knob"></span></div>
-                            <div class="fpt-es-light" id="es-light"><span class="fpt-es-light-knob" id="es-light-knob"></span></div>
-                        </div>
+                ${card('palette', 'Оформление', `
+                  <div class="group">
+                    <span class="label">Цвет документа</span>
+                    <div class="colors" id="es-colors">
+                      ${QUICK_COLORS.map(c => `<button type="button" class="dot" data-color="${c}" style="--c:#${c}" aria-label="Цвет #${c}" aria-pressed="false"></button>`).join('')}
+                      <label class="picker" title="Свой цвет"><input type="color" id="es-color" aria-label="Свой цвет"><span class="ico">format_paint</span></label>
+                      <span class="current" id="es-current"><i></i><span></span></span>
                     </div>
-                </div>
+                    <div class="sliders">
+                      <div class="slider-row"><span>Оттенок</span><div class="track-h spectrum" id="es-spectrum"><span class="knob" id="es-spec-knob"></span></div></div>
+                      <div class="slider-row"><span>Яркость</span><div class="track-h" id="es-light"><span class="knob" id="es-light-knob"></span></div></div>
+                    </div>
+                  </div>
+                  <div class="group" id="es-orient-wrap">
+                    <span class="label">Ориентация страницы · PDF и DOCX</span>
+                    <div class="seg" role="radiogroup" aria-label="Ориентация">
+                      <button type="button" role="radio" data-orient="portrait"><span class="ico">crop_portrait</span>Книжная</button>
+                      <button type="button" role="radio" data-orient="landscape"><span class="ico">crop_landscape</span>Альбомная</button>
+                    </div>
+                  </div>`, '', 'es-theme-wrap')}
 
-                <div>
-                    <p class="fpt-es-sec-t">Заголовок документа</p>
-                    <div class="fpt-es-grid2">
-                        <div class="fpt-es-field"><label>Заголовок</label><input class="fpt-es-inp" id="es-title" value="${esc(cfg.title)}" placeholder="Например: Отчёт по продажам"></div>
-                        <div class="fpt-es-field"><label>Подзаголовок (необязательно)</label><input class="fpt-es-inp" id="es-subtitle" value="${esc(cfg.subtitle)}" placeholder="Например: магазин XYZ"></div>
-                    </div>
-                </div>
+                ${card('title', 'Документ', `
+                  <div class="fields">
+                    <label class="field"><span class="label">Заголовок</span><input class="input" id="es-title" value="${esc(cfg.title)}" placeholder="Например: ${esc(ctx.titleDefault)}"></label>
+                    <label class="field"><span class="label">Подзаголовок</span><input class="input" id="es-subtitle" value="${esc(cfg.subtitle)}" placeholder="По умолчанию — период и дата"></label>
+                  </div>`)}
 
-                <div>
-                    <p class="fpt-es-sec-t">Период и фильтры</p>
-                    <div class="fpt-es-grid2">
-                        <div class="fpt-es-field"><label>Период</label>
-                            <select class="fpt-es-sel" id="es-period">${PERIODS.map(p => `<option value="${p.v}" ${cfg.period === p.v ? 'selected' : ''}>${p.l}</option>`).join('')}</select>
-                        </div>
-                        <div class="fpt-es-field"><label>Валюта</label>
-                            <select class="fpt-es-sel" id="es-currency"><option value="all" ${cfg.currency === 'all' ? 'selected' : ''}>Все валюты</option>${currencies.map(c => `<option value="${c}" ${cfg.currency === c ? 'selected' : ''}>${c} ${SYM[c] || ''}</option>`).join('')}</select>
-                        </div>
+                ${card('filter_alt', 'Данные', `
+                  <div class="group">
+                    <span class="label">Период</span>
+                    <div class="chips" id="es-period">${PERIODS.map(p => chip('data-period', p.v, p.l, cfg.period === p.v)).join('')}</div>
+                    <div class="fields range" id="es-custom-range" ${cfg.period === 'custom' ? '' : 'hidden'}>
+                      <label class="field"><span class="label">С даты</span><input type="date" class="input" id="es-from" value="${esc(cfg.from)}"></label>
+                      <label class="field"><span class="label">По дату</span><input type="date" class="input" id="es-to" value="${esc(cfg.to)}"></label>
                     </div>
-                    <div class="fpt-es-grid2" id="es-custom-range" style="margin-top:10px;display:${cfg.period === 'custom' ? 'grid' : 'none'};">
-                        <div class="fpt-es-field"><label>С даты</label><input type="date" class="fpt-es-inp" id="es-from" value="${esc(cfg.from)}"></div>
-                        <div class="fpt-es-field"><label>По дату</label><input type="date" class="fpt-es-inp" id="es-to" value="${esc(cfg.to)}"></div>
-                    </div>
-                    <div style="margin-top:12px;" class="fpt-es-rowflt" id="es-statusflt"></div>
-                    <div style="margin-top:10px;" class="fpt-es-field">
-                        <label>Сортировка</label>
-                        <select class="fpt-es-sel" id="es-sort" style="max-width:280px;">
-                            ${ctx.kind === 'finance'
-                ? `<option value="date-desc">Сначала новые</option><option value="date-asc">Сначала старые</option><option value="amt-desc">Больше сумма</option><option value="amt-asc">Меньше сумма</option>`
-                : `<option value="date-desc">Сначала новые</option><option value="date-asc">Сначала старые</option><option value="price-desc">Дороже сверху</option><option value="price-asc">Дешевле сверху</option>`}
-                        </select>
-                    </div>
-                </div>
+                  </div>
+                  <div class="group" ${currencies.length > 1 ? '' : 'hidden'}>
+                    <span class="label">Валюта</span>
+                    <div class="chips" id="es-currency">${chip('data-cur', 'all', 'Все валюты', cfg.currency === 'all')}${currencies.map(c => chip('data-cur', c, `${c} ${SYM[c] || ''}`.trim(), cfg.currency === c)).join('')}</div>
+                  </div>
+                  <div id="es-statusflt"></div>
+                  <div class="group">
+                    <span class="label">Сортировка</span>
+                    <div class="seg" role="radiogroup" aria-label="Сортировка" id="es-sort">${sortOpts.map(([v, l]) => `<button type="button" role="radio" data-sort="${v}">${l}</button>`).join('')}</div>
+                  </div>`)}
 
-                <div>
-                    <p class="fpt-es-sec-t">Колонки</p>
-                    <div class="fpt-es-cols" id="es-cols">
-                        ${schema.map(c => `<span class="fpt-es-chip ${cfg.cols.includes(c.key) ? 'on' : ''}" data-col="${c.key}">${esc(c.label)}</span>`).join('')}
-                    </div>
-                </div>
+                ${card('view_column', 'Колонки', `<div class="chips" id="es-cols">${schema.map(c => chip('data-col', c.key, c.label, cfg.cols.includes(c.key))).join('')}</div>`,
+                    '<span class="links"><button type="button" class="link" id="es-cols-all">Все</button><button type="button" class="link" id="es-cols-reset">По умолчанию</button></span>')}
 
-                <div>
-                    <p class="fpt-es-sec-t">Дополнительно</p>
-                    <div class="fpt-es-opts">
-                        <div class="fpt-es-opt on" data-opt="zebra"><span class="fpt-es-check"></span>Чередование строк (зебра)</div>
-                        <div class="fpt-es-opt on" data-opt="totals"><span class="fpt-es-check"></span>Блок итогов</div>
-                        <div class="fpt-es-opt on" data-opt="watermark"><span class="fpt-es-check"></span>Подпись FunPay Funcy</div>
-                        <div class="fpt-es-opt on" data-opt="pageNumbers" id="es-opt-pagenum"><span class="fpt-es-check"></span>Номера страниц (PDF)</div>
+                ${card('tune', 'Дополнительно', `<div class="toggles">
+                    ${toggle('zebra', 'table_rows', 'Чередование строк')}
+                    ${toggle('totals', 'functions', 'Блок итогов')}
+                    ${toggle('watermark', 'verified', 'Подпись FunPay Funcy')}
+                    ${toggle('pageNumbers', 'tag', 'Номера страниц · PDF', 'es-opt-pagenum')}
+                  </div>`)}
+              </div>
+              <aside class="side">
+                <div class="side-sticky">
+                  <div class="side-head"><h3 class="side-title">Предпросмотр</h3><span class="tag" id="es-pv-fmt"></span></div>
+                  <div class="paper-wrap">
+                    <div class="paper" id="es-paper">
+                      <div class="band" id="es-pv-band"><b id="es-pv-title"></b><span id="es-pv-sub"></span></div>
+                      <div class="sheet"><table><thead id="es-pv-head"></thead><tbody id="es-pv-body"></tbody></table></div>
+                      <div class="totals" id="es-pv-totals"></div>
+                      <div class="paper-foot"><span id="es-pv-wm">FunPay Funcy</span><span id="es-pv-page">стр. 1 из 1</span></div>
                     </div>
-                    <div style="margin-top:10px;" class="fpt-es-rowflt" id="es-orient-wrap">
-                        <span style="font-size:11.5px;color:var(--fpt-text-muted,#7d8290);">Ориентация (PDF/DOCX):</span>
-                        <span class="fpt-es-tgl ${cfg.orientation === 'portrait' ? 'on' : ''}" data-orient="portrait">Книжная</span>
-                        <span class="fpt-es-tgl ${cfg.orientation === 'landscape' ? 'on' : ''}" data-orient="landscape">Альбомная</span>
-                    </div>
+                  </div>
+                  <div class="stats">
+                    <div class="stat-line"><span class="ico">inventory_2</span><span id="es-count">Считаем записи…</span></div>
+                    <div class="stat-line"><span class="ico">date_range</span><span id="es-period-label"></span></div>
+                  </div>
                 </div>
+              </aside>
             </div>
-            <div class="fpt-es-foot">
-                <div class="fpt-es-count" id="es-count">Считаем записи…</div>
-                <button class="fpt-es-btn2" id="es-cancel">Отмена</button>
-                <button class="fpt-es-btn fpt-es-launch" id="es-go">Экспортировать</button>
+            <div class="foot">
+              <div class="foot-note"><span class="ico">download</span>Файлы сохранятся в папку загрузок браузера</div>
+              <button type="button" class="btn ghost" id="es-cancel">Отмена</button>
+              <button type="button" class="btn primary" id="es-go"><span class="ico">ios_share</span><span id="es-go-label">Экспортировать</span></button>
             </div>
+          </div>
         </div>`;
-        document.body.appendChild(ov);
+        document.body.appendChild(host);
+        openHost = host;
+        const $ = sel => shadow.querySelector(sel);
+        const $$ = sel => shadow.querySelectorAll(sel);
+        const ov = $('.ov');
 
         // ── состояние формы ──
-        const state = Object.assign({}, cfg);
+        const state = Object.assign({}, cfg, { formats: cfg.formats.slice(), cols: cfg.cols.slice() });
+        let lastRows = [];
+        const press = (el, on) => el.setAttribute('aria-pressed', on ? 'true' : 'false');
+        const check = (el, on) => el.setAttribute('aria-checked', on ? 'true' : 'false');
 
         // статус-фильтры
         function renderStatusFlt() {
-            const wrap = ov.querySelector('#es-statusflt');
+            const wrap = $('#es-statusflt');
             if (ctx.kind === 'finance') {
-                const stOpts = [['all', 'Все статусы'], ['complete', 'Завершённые'], ['cancel', 'Отменённые'], ['waiting', 'Ожидание']];
-                const tyOpts = [['all', 'Все типы'], ['order', 'Заказы'], ['payment', 'Пополнения'], ['withdraw', 'Выводы'], ['withdraw_cancel', 'Отмены выводов'], ['other', 'Другое']];
-                wrap.innerHTML = `<span style="font-size:11.5px;color:var(--fpt-text-muted,#7d8290);">Статус:</span>` +
-                    stOpts.map(([v, l]) => `<span class="fpt-es-tgl ${state.finStatus === v ? 'on' : ''}" data-finst="${v}">${l}</span>`).join('') +
-                    `<span style="font-size:11.5px;color:var(--fpt-text-muted,#7d8290);margin-left:8px;">Тип:</span>` +
-                    tyOpts.map(([v, l]) => `<span class="fpt-es-tgl ${state.finType === v ? 'on' : ''}" data-finty="${v}">${l}</span>`).join('');
+                const stOpts = [['all', 'Все'], ['complete', 'Завершённые'], ['cancel', 'Отменённые'], ['waiting', 'Ожидание']];
+                const tyOpts = [['all', 'Все'], ['order', 'Заказы'], ['payment', 'Пополнения'], ['withdraw', 'Выводы'], ['withdraw_cancel', 'Отмены выводов'], ['other', 'Другое']];
+                wrap.innerHTML = `<div class="group"><span class="label">Статус</span><div class="chips">${stOpts.map(([v, l]) => chip('data-finst', v, l, state.finStatus === v)).join('')}</div></div>`
+                    + `<div class="group"><span class="label">Тип операции</span><div class="chips">${tyOpts.map(([v, l]) => chip('data-finty', v, l, state.finType === v)).join('')}</div></div>`;
                 wrap.querySelectorAll('[data-finst]').forEach(b => b.onclick = () => { state.finStatus = b.dataset.finst; renderStatusFlt(); refreshCount(); });
                 wrap.querySelectorAll('[data-finty]').forEach(b => b.onclick = () => { state.finType = b.dataset.finty; renderStatusFlt(); refreshCount(); });
             } else {
-                wrap.innerHTML = `<span style="font-size:11.5px;color:var(--fpt-text-muted,#7d8290);">Статусы:</span>` +
-                    `<span class="fpt-es-tgl ${state.stClosed ? 'on' : ''}" data-st="stClosed">Закрытые</span>` +
-                    `<span class="fpt-es-tgl ${state.stPaid ? 'on' : ''}" data-st="stPaid">Оплаченные</span>` +
-                    `<span class="fpt-es-tgl ${state.stRefunded ? 'on' : ''}" data-st="stRefunded">Возвраты</span>`;
+                wrap.innerHTML = `<div class="group"><span class="label">Статусы заказов</span><div class="chips">`
+                    + chip('data-st', 'stClosed', 'Закрытые', state.stClosed)
+                    + chip('data-st', 'stPaid', 'Оплаченные', state.stPaid)
+                    + chip('data-st', 'stRefunded', 'Возвраты', state.stRefunded) + `</div></div>`;
                 wrap.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { state[b.dataset.st] = !state[b.dataset.st]; renderStatusFlt(); refreshCount(); });
             }
         }
         renderStatusFlt();
-
-        // selectors / inputs
-        ov.querySelector('#es-sort').value = state.sort;
 
         // какие форматы используют тему / ориентацию / номера страниц
         const STYLED = new Set(['xlsx', 'docx', 'pdf']);
@@ -1206,107 +1373,195 @@
         const ORIENTED = new Set(['pdf', 'docx']);
         function applyConditionalVisibility() {
             const anyStyled = state.formats.some(f => STYLED.has(f));
-            const anyPaged = state.formats.some(f => PAGED.has(f));
-            const anyOriented = state.formats.some(f => ORIENTED.has(f));
-            ov.querySelector('#es-theme-wrap').style.display = anyStyled ? '' : 'none';
-            ov.querySelector('#es-opt-pagenum').style.display = anyPaged ? 'flex' : 'none';
-            ov.querySelector('#es-orient-wrap').style.display = anyOriented ? 'flex' : 'none';
+            $('#es-theme-wrap').hidden = !anyStyled;
+            $('#es-opt-pagenum').hidden = !state.formats.some(f => PAGED.has(f));
+            $('#es-orient-wrap').hidden = !state.formats.some(f => ORIENTED.has(f));
+            const order = ['xlsx', 'docx', 'pdf', 'csv', 'json'].filter(f => state.formats.includes(f));
+            const names = order.map(f => f.toUpperCase()).join(', ');
+            $('#es-pv-fmt').textContent = names;
+            const goLabel = $('#es-go-label');
+            if (goLabel) goLabel.textContent = order.length > 1 ? `Экспортировать · ${order.length} файла` : `Экспортировать ${names}`;
+            $('#es-paper').dataset.plain = anyStyled ? 'false' : 'true';
         }
 
-        ov.querySelectorAll('#es-fmts .fpt-es-fmt').forEach(el => el.onclick = () => {
+        $$('#es-fmts .fmt').forEach(el => el.onclick = () => {
             const f = el.dataset.fmt;
             if (state.formats.includes(f)) {
                 if (state.formats.length > 1) state.formats = state.formats.filter(x => x !== f); // нельзя снять последний
             } else {
                 state.formats.push(f);
             }
-            el.classList.toggle('sel', state.formats.includes(f));
+            press(el, state.formats.includes(f));
             applyConditionalVisibility();
+            renderPreview();
         });
         applyConditionalVisibility();
 
-        // ── выбор цвета: спектр (hue) + ползунок яркости + точный пикер ──
+        // ── выбор цвета: быстрые цвета, спектр (hue) + яркость, точный пикер ──
         let _hsl = hexToHsl(state.color); // [h,s,l]
         if (_hsl[1] < 25) _hsl[1] = 70;   // не даём «серому» съесть насыщенность
-        const specEl = ov.querySelector('#es-spectrum');
-        const specKnob = ov.querySelector('#es-spec-knob');
-        const lightEl = ov.querySelector('#es-light');
-        const lightKnob = ov.querySelector('#es-light-knob');
-        const swatch = ov.querySelector('#es-color-swatch');
-        const picker = ov.querySelector('#es-color');
+        const specKnob = $('#es-spec-knob');
+        const lightEl = $('#es-light');
+        const lightKnob = $('#es-light-knob');
+        const picker = $('#es-color');
+        const current = $('#es-current');
 
-        function syncFromHsl(fromPicker) {
-            const hex = hslToHex(_hsl[0], _hsl[1], _hsl[2]);
-            state.color = hex;
-            if (swatch) swatch.style.background = '#' + hex;
-            if (picker && !fromPicker) picker.value = '#' + hex;
-            // позиции бегунков
+        function paintColor(fromPicker) {
+            const hex = state.color;
+            if (!fromPicker) picker.value = '#' + hex.toLowerCase();
+            current.style.setProperty('--c', '#' + hex);
+            current.querySelector('span').textContent = '#' + hex;
+            $$('#es-colors .dot').forEach(dot => press(dot, dot.dataset.color === hex));
             specKnob.style.left = (_hsl[0] / 360 * 100) + '%';
-            lightKnob.style.left = (_hsl[2]) + '%';
-            // фон ползунка яркости: от чёрного через текущий тон к белому
-            const pure = hslToHex(_hsl[0], _hsl[1], 50);
+            lightKnob.style.left = Math.max(2, Math.min(98, _hsl[2])) + '%';
+            const pure = hslToHex(_hsl[0], Math.max(_hsl[1], 25), 50);
             lightEl.style.background = `linear-gradient(to right,#000,#${pure} 50%,#fff)`;
+            renderPreview();
+        }
+        function setFromHsl() { state.color = hslToHex(_hsl[0], _hsl[1], _hsl[2]); paintColor(); }
+        function setFromHex(hex, fromPicker) {
+            state.color = cleanHex(hex);
+            _hsl = hexToHsl(state.color);
+            paintColor(fromPicker);
         }
         function dragHandler(el, onPos) {
-            const move = (e) => {
-                const r = el.getBoundingClientRect();
-                const cx = (e.touches ? e.touches[0].clientX : e.clientX);
-                let p = (cx - r.left) / r.width;
-                p = Math.max(0, Math.min(1, p));
-                onPos(p);
-            };
-            const up = () => { document.removeEventListener('mousemove', move); document.removeEventListener('mouseup', up); document.removeEventListener('touchmove', move); document.removeEventListener('touchend', up); };
-            el.addEventListener('mousedown', (e) => { move(e); document.addEventListener('mousemove', move); document.addEventListener('mouseup', up); });
-            el.addEventListener('touchstart', (e) => { move(e); document.addEventListener('touchmove', move, { passive: false }); document.addEventListener('touchend', up); });
+            el.addEventListener('pointerdown', e => {
+                e.preventDefault();
+                el.setPointerCapture(e.pointerId);
+                const move = ev => {
+                    const r = el.getBoundingClientRect();
+                    onPos(Math.max(0, Math.min(1, (ev.clientX - r.left) / r.width)));
+                };
+                const up = () => { el.removeEventListener('pointermove', move); el.removeEventListener('pointerup', up); el.removeEventListener('pointercancel', up); };
+                move(e);
+                el.addEventListener('pointermove', move);
+                el.addEventListener('pointerup', up);
+                el.addEventListener('pointercancel', up);
+            });
         }
-        dragHandler(specEl, p => { _hsl[0] = Math.round(p * 360); syncFromHsl(); });
-        dragHandler(lightEl, p => { _hsl[2] = Math.round(p * 100); syncFromHsl(); });
-        picker.oninput = e => { _hsl = hexToHsl(e.target.value); syncFromHsl(true); };
-        syncFromHsl();
+        dragHandler($('#es-spectrum'), p => { _hsl[0] = Math.round(p * 360); if (_hsl[1] < 25) _hsl[1] = 70; setFromHsl(); });
+        dragHandler(lightEl, p => { _hsl[2] = Math.round(p * 100); setFromHsl(); });
+        picker.oninput = e => setFromHex(e.target.value, true);
+        $$('#es-colors .dot').forEach(dot => dot.onclick = () => setFromHex(dot.dataset.color));
 
-        ov.querySelectorAll('#es-cols .fpt-es-chip').forEach(el => el.onclick = () => {
-            el.classList.toggle('on');
+        // ориентация
+        function paintOrient() {
+            $$('[data-orient]').forEach(x => check(x, x.dataset.orient === state.orientation));
+            $('#es-paper').dataset.orient = state.orientation;
+        }
+        $$('[data-orient]').forEach(el => el.onclick = () => { state.orientation = el.dataset.orient; paintOrient(); });
+        paintOrient();
+
+        // колонки
+        function paintCols() {
+            $$('#es-cols .chip').forEach(el => press(el, state.cols.includes(el.dataset.col)));
+            renderPreview();
+        }
+        $$('#es-cols .chip').forEach(el => el.onclick = () => {
             const k = el.dataset.col;
-            if (el.classList.contains('on')) { if (!state.cols.includes(k)) state.cols.push(k); }
-            else state.cols = state.cols.filter(x => x !== k);
+            if (state.cols.includes(k)) state.cols = state.cols.filter(x => x !== k);
+            else state.cols = schema.map(c => c.key).filter(x => x === k || state.cols.includes(x)); // порядок как в схеме
+            paintCols();
         });
-        // свои чекбоксы (надёжнее нативных input на странице FunPay)
-        ov.querySelectorAll('.fpt-es-opt[data-opt]').forEach(el => {
-            const key = el.dataset.opt;
-            el.classList.toggle('on', !!state[key]);
-            el.onclick = () => {
-                state[key] = !state[key];
-                el.classList.toggle('on', state[key]);
-            };
+        $('#es-cols-all').onclick = () => { state.cols = schema.map(c => c.key); paintCols(); };
+        $('#es-cols-reset').onclick = () => { state.cols = schema.map(c => c.key).filter(k => k !== 'link' && k !== 'currency'); paintCols(); };
+
+        // переключатели
+        $$('input[data-opt]').forEach(input => {
+            const key = input.dataset.opt;
+            input.checked = !!state[key];
+            input.onchange = () => { state[key] = input.checked; renderPreview(); };
         });
-        ov.querySelectorAll('[data-orient]').forEach(el => el.onclick = () => {
-            state.orientation = el.dataset.orient;
-            ov.querySelectorAll('[data-orient]').forEach(x => x.classList.toggle('on', x === el));
-        });
-        const periodSel = ov.querySelector('#es-period');
-        periodSel.onchange = () => {
-            state.period = periodSel.value;
-            ov.querySelector('#es-custom-range').style.display = state.period === 'custom' ? 'grid' : 'none';
+
+        // период, валюта, сортировка
+        function paintPeriod() {
+            $$('#es-period .chip').forEach(el => press(el, el.dataset.period === state.period));
+            $('#es-custom-range').hidden = state.period !== 'custom';
+        }
+        $$('#es-period .chip').forEach(el => el.onclick = () => { state.period = el.dataset.period; paintPeriod(); refreshCount(); });
+        $$('#es-currency .chip').forEach(el => el.onclick = () => {
+            state.currency = el.dataset.cur;
+            $$('#es-currency .chip').forEach(x => press(x, x === el));
             refreshCount();
-        };
-        ov.querySelector('#es-currency').onchange = e => { state.currency = e.target.value; refreshCount(); };
-        ov.querySelector('#es-from').onchange = e => { state.from = e.target.value; refreshCount(); };
-        ov.querySelector('#es-to').onchange = e => { state.to = e.target.value; refreshCount(); };
-        ov.querySelector('#es-sort').onchange = e => { state.sort = e.target.value; };
+        });
+        function paintSort() { $$('#es-sort [data-sort]').forEach(x => check(x, x.dataset.sort === state.sort)); }
+        $$('#es-sort [data-sort]').forEach(el => el.onclick = () => { state.sort = el.dataset.sort; paintSort(); refreshCount(); });
+        if (!sortOpts.some(([v]) => v === state.sort)) state.sort = 'date-desc';
+        paintSort();
+        $('#es-from').onchange = e => { state.from = e.target.value; refreshCount(); };
+        $('#es-to').onchange = e => { state.to = e.target.value; refreshCount(); };
+        $('#es-title').oninput = () => { syncSimple(); renderPreview(); };
+        $('#es-subtitle').oninput = () => { syncSimple(); renderPreview(); };
+
+        // ── живой предпросмотр документа ──
+        function renderPreview() {
+            const theme = themeFromColor(state.color);
+            const paper = $('#es-paper');
+            paper.style.setProperty('--grid', '#' + theme.grid);
+            const band = $('#es-pv-band');
+            band.style.background = '#' + theme.headerBg;
+            band.style.color = '#' + theme.headerText;
+            const plabel = periodLabel(state.period, state.from, state.to);
+            $('#es-pv-title').textContent = (state.title || '').trim() || ctx.titleDefault;
+            $('#es-pv-sub').textContent = (state.subtitle || '').trim() || `${plabel} · ${fmtDateTime(Date.now())}`;
+
+            const cols = schema.filter(c => state.cols.includes(c.key));
+            const shown = cols.slice(0, 4);
+            const more = cols.length - shown.length;
+            const head = $('#es-pv-head');
+            head.innerHTML = shown.length
+                ? `<tr style="background:#${theme.total}">${shown.map(c => `<th class="${c.align === 'r' ? 'r' : ''}">${esc(c.label)}</th>`).join('')}${more > 0 ? `<th style="width:18%">+${more}</th>` : ''}</tr>`
+                : '<tr><th class="empty-cell">Выберите колонки</th></tr>';
+            const sample = lastRows.slice(0, 7);
+            const rows = sample.length ? sample : Array.from({ length: 5 }, () => null);
+            $('#es-pv-body').innerHTML = rows.map((row, i) => {
+                const bg = state.zebra && i % 2 === 1 ? ` style="background:#${theme.zebra}"` : '';
+                const cells = shown.map(c => {
+                    let text = '';
+                    try { text = row ? c.disp(row) : ''; } catch (_) {}
+                    return `<td class="${c.align === 'r' ? 'r' : ''}${row ? '' : ' empty-cell'}">${row ? esc(text) : '—'}</td>`;
+                }).join('');
+                return `<tr${bg}>${cells}${more > 0 ? '<td class="empty-cell">…</td>' : ''}</tr>`;
+            }).join('');
+
+            const totals = $('#es-pv-totals');
+            totals.hidden = !state.totals;
+            totals.style.background = '#' + theme.total;
+            totals.innerHTML = `<span>Итого</span><span>${esc(totalsText())}</span>`;
+            $('#es-pv-wm').style.visibility = state.watermark ? 'visible' : 'hidden';
+            $('#es-pv-page').style.visibility = state.pageNumbers && state.formats.includes('pdf') ? 'visible' : 'hidden';
+            $('#es-period-label').textContent = plabel;
+        }
+        function totalsText() {
+            const n = lastRows.length;
+            const count = `${n} ${ctx.kind === 'finance' ? 'операц.' : 'зап.'}`;
+            try {
+                const sum = ES.summarize(ctx.kind, lastRows);
+                const money = ctx.kind === 'finance' ? sum.net : sum.byCur;
+                const parts = Object.entries(money || {}).filter(([c]) => c !== 'UNKNOWN').slice(0, 2).map(([c, v]) => fmtMoney(v, c));
+                return parts.length ? `${count} · ${parts.join(' · ')}` : count;
+            } catch (_) { return count; }
+        }
 
         // count
+        let countSeq = 0;
         async function refreshCount() {
             syncSimple();
+            const seq = ++countSeq;
             const rows = await gatherRows(ctx, state);
-            const el = ov.querySelector('#es-count');
-            if (el) el.innerHTML = `Будет выгружено: <b>${rows.length}</b> ${ctx.kind === 'finance' ? 'операц.' : 'записей'} · ${esc(periodLabel(state.period, state.from, state.to))}`;
+            if (seq !== countSeq) return rows;
+            lastRows = rows;
+            const el = $('#es-count');
+            if (el) el.innerHTML = `Будет выгружено <b>${rows.length}</b> ${ctx.kind === 'finance' ? 'операций' : 'записей'}`;
+            renderPreview();
             return rows;
         }
         function syncSimple() {
-            state.title = ov.querySelector('#es-title').value;
-            state.subtitle = ov.querySelector('#es-subtitle').value;
-            // чекбоксы (zebra/totals/watermark/pageNumbers) уже в state через свои тогглы
+            state.title = $('#es-title').value;
+            state.subtitle = $('#es-subtitle').value;
         }
+        paintPeriod();
+        paintColor();
         refreshCount();
         if (ctx.kind === 'sales' && typeof chrome !== 'undefined' && chrome.runtime?.id) {
             chrome.runtime.sendMessage({ action: 'updateSales' }, () => {
@@ -1315,21 +1570,36 @@
         }
 
         // close
-        const close = () => ov.remove();
-        ov.querySelector('.fpt-es-x').onclick = close;
-        ov.querySelector('#es-cancel').onclick = close;
-        ov.onclick = e => { if (e.target === ov) close(); };
-        document.addEventListener('keydown', function onEsc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); } });
+        let closed = false;
+        const onKey = e => {
+            if (e.key !== 'Escape') return;
+            e.stopPropagation();
+            close();
+        };
+        function close() {
+            if (closed) return;
+            closed = true;
+            document.removeEventListener('keydown', onKey, true);
+            const done = () => { host.remove(); if (openHost === host) openHost = null; };
+            if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return done();
+            ov.classList.add('is-closing');
+            setTimeout(done, 160);
+        }
+        $('#es-x').onclick = close;
+        $('#es-cancel').onclick = close;
+        ov.addEventListener('pointerdown', e => { if (e.target === ov) close(); });
+        document.addEventListener('keydown', onKey, true);
+        $('.modal').focus({ preventScroll: true });
 
         // GO
-        ov.querySelector('#es-go').onclick = async () => {
-            const btn = ov.querySelector('#es-go');
+        $('#es-go').onclick = async () => {
+            const btn = $('#es-go');
             syncSimple();
             if (!state.cols.length) { alert('Выберите хотя бы одну колонку.'); return; }
             if (!state.formats.length) { alert('Выберите хотя бы один формат.'); return; }
             btn.disabled = true;
             const orig = btn.innerHTML;
-            btn.innerHTML = '<span class="fpt-es-spin"></span>Готовим файлы…';
+            btn.innerHTML = '<span class="spin"></span>Готовим файлы…';
             try {
                 const rows = await gatherRows(ctx, state);
                 if (!rows.length) { alert('Нет данных для выбранных фильтров.'); btn.disabled = false; btn.innerHTML = orig; return; }
@@ -1349,7 +1619,7 @@
                 const order = ['xlsx', 'docx', 'csv', 'json', 'pdf'].filter(f => state.formats.includes(f));
                 let done = 0;
                 for (const fmt of order) {
-                    btn.innerHTML = `<span class="fpt-es-spin"></span>Формат ${fmt.toUpperCase()} (${done + 1}/${order.length})…`;
+                    btn.innerHTML = `<span class="spin"></span>${fmt.toUpperCase()} · ${done + 1} из ${order.length}…`;
                     let blob;
                     if (fmt === 'xlsx') blob = ES.buildXLSX(cols, rows, opt);
                     else if (fmt === 'docx') blob = ES.buildDOCX(cols, rows, opt);
@@ -1361,7 +1631,7 @@
                     if (done < order.length) await new Promise(r => setTimeout(r, 450));
                 }
                 saveCfg(ctx, state);
-                btn.innerHTML = 'Готово!' + (order.length > 1 ? ` (${order.length} файла)` : '');
+                btn.innerHTML = `<span class="ico">check_circle</span>Готово${order.length > 1 ? ` · ${order.length} файла` : ''}`;
                 setTimeout(() => { btn.disabled = false; btn.innerHTML = orig; }, 1500);
             } catch (err) {
                 console.error('[ExportStudio] ошибка генерации:', err);

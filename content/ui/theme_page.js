@@ -256,6 +256,47 @@
         return { element, input, sync };
     }
 
+    // FunPay button colours (content/theme_buttons.js): an empty value is "auto" - derived from the
+    // theme palette, which is how every theme set without these fields gets matching buttons.
+    function buttonColors(draft) {
+        return typeof root.fptResolveButtonColors === 'function' ? root.fptResolveButtonColors(draft) : null;
+    }
+
+    function createButtonSwatch(spec, ctx) {
+        const { key, label, hint, variant } = spec;
+        const element = node('div', 'fpt-th-btn-swatch');
+        const swatch = node('label', 'fpt-th-swatch');
+        const input = node('input', 'fpt-th-swatch-input');
+        input.type = 'color';
+        input.setAttribute('aria-label', label);
+        const dot = node('span', 'fpt-th-swatch-dot');
+        const hex = node('code', 'fpt-th-swatch-hex');
+        const copy = node('span', 'fpt-th-swatch-copy');
+        copy.append(node('strong', 'fpt-th-swatch-name', label), node('span', 'fpt-th-swatch-hint', hint));
+        swatch.append(input, dot, hex, copy);
+        input.addEventListener('input', () => ctx.edit({ [key]: input.value }));
+        const auto = makeSwitch(`${label}: авто`, true, checked => {
+            if (checked) ctx.edit({ [key]: '' });
+            else ctx.edit({ [key]: input.value });
+        });
+        const autoRow = node('div', 'fpt-th-inline-switch fpt-th-btn-auto');
+        autoRow.append(node('span', '', 'Авто из цветов темы'), auto.element);
+        element.append(swatch, autoRow);
+
+        function sync() {
+            const draft = ctx.draft();
+            const custom = toHex(draft[key], '');
+            const resolved = buttonColors(draft);
+            const shown = custom || toHex(resolved?.[variant]?.bg, '#3a3a46');
+            if (input.value !== shown) input.value = shown;
+            dot.style.background = shown;
+            hex.textContent = custom ? shown.toUpperCase() : `Авто · ${shown.toUpperCase()}`;
+            auto.setChecked(!custom);
+            element.dataset.auto = custom ? 'false' : 'true';
+        }
+        return { element, sync };
+    }
+
     function createSegmented(spec, ctx) {
         const { key, label, options } = spec;
         const element = node('div', 'fpt-th-seg');
@@ -347,7 +388,17 @@
         header.append(brand, nav, node('span', 'fpt-th-site-button fpt-th-site-button--small', 'Продать'));
 
         const main = node('div', 'fpt-th-site-main');
-        main.append(node('p', 'fpt-th-site-game', 'Genshin Impact'));
+        // Chat header controls: the buttons the theme's "Кнопки" card recolours.
+        const chatBar = node('div', 'fpt-th-site-chatbar');
+        const chatName = node('span', 'fpt-th-site-chatname', 'Покупатель');
+        const chatSearch = node('span', 'fpt-th-site-btn fpt-th-site-btn--icon');
+        chatSearch.appendChild(icon('search'));
+        const chatNotice = node('span', 'fpt-th-site-btn fpt-th-site-btn--active');
+        chatNotice.append(icon('check'), node('span', '', 'Включены оповещения'));
+        // FunPay's "..." button; the bundled icon font has no horizontal dots glyph.
+        const chatMore = node('span', 'fpt-th-site-btn fpt-th-site-btn--icon', '•••');
+        chatBar.append(chatName, chatSearch, chatNotice, chatMore);
+        main.append(chatBar, node('p', 'fpt-th-site-game', 'Genshin Impact'));
         const list = node('div', 'fpt-th-site-card');
         [
             ['Аккаунт, AR 58, все персонажи', '1 490 ₽'],
@@ -401,6 +452,14 @@
                 const opacity = Math.min(1, Math.max(0, Number(draft.containerBgOpacity)));
                 style.setProperty('--fpt-th-block', `rgba(${r}, ${g}, ${b}, ${Number.isFinite(opacity) ? opacity : 1})`);
             }
+            const buttons = buttonColors(draft);
+            const regular = !original || buttons?.customRegular ? buttons?.regular : null;
+            const activeBtn = !original || buttons?.customActive ? buttons?.active : null;
+            // The untouched FunPay page keeps its native grey and green buttons.
+            style.setProperty('--fpt-th-btn', regular?.bg || '#e9ecf0');
+            style.setProperty('--fpt-th-btn-text', regular?.text || '#2b2b2b');
+            style.setProperty('--fpt-th-btn-active', activeBtn?.bg || '#4cae4c');
+            style.setProperty('--fpt-th-btn-active-text', activeBtn?.text || '#ffffff');
             style.setProperty('--fpt-th-radius', `${Number(draft.borderRadius) || 0}px`);
             style.setProperty('--fpt-th-font', `'${draft.font}', 'Helvetica Neue', Helvetica, Arial, sans-serif`);
             style.setProperty('--fpt-th-glass-blur', `${Number(draft.glassmorphismBlur) || 0}px`);
@@ -817,6 +876,18 @@
         COLOR_FIELDS.forEach(field => swatches.appendChild(track(createSwatch(field, ctx)).element));
         colors.body.appendChild(swatches);
 
+        // --- Buttons -------------------------------------------------------------------------
+        const buttonsCard = createCard({
+            iconName: 'smart_button', title: 'Кнопки',
+            description: 'Поиск, «Включены оповещения», «…» и другие кнопки FunPay. В режиме «Авто» цвет подбирается под тему.'
+        });
+        const buttonGrid = node('div', 'fpt-th-grid fpt-th-grid--two');
+        [
+            { key: 'buttonColor', label: 'Обычные', hint: 'Поиск, меню, серые кнопки', variant: 'regular' },
+            { key: 'buttonActiveColor', label: 'Активные', hint: 'Оповещения, успех', variant: 'active' }
+        ].forEach(spec => buttonGrid.appendChild(track(createButtonSwatch(spec, ctx)).element));
+        buttonsCard.body.appendChild(buttonGrid);
+
         // --- Shape and font ------------------------------------------------------------------
         const shape = createCard({
             iconName: 'text_fields', title: 'Шрифт и форма',
@@ -1080,7 +1151,7 @@
         });
 
         // --- Render --------------------------------------------------------------------------
-        settings.append(gallery.card, background.card, colors.card, shape.card, blocks.card, details.card, tools.card);
+        settings.append(gallery.card, background.card, colors.card, buttonsCard.card, shape.card, blocks.card, details.card, tools.card);
         view.append(hero, layout, dockSlot);
         view.setAttribute('data-ready', 'true');
 

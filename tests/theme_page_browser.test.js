@@ -57,6 +57,8 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
     const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
+    // Theme button colours load at document_start in the extension; the page shares that world.
+    await page.addScriptTag({ path: path.join(root, 'content/theme_buttons.js') });
     for (const js of content.js) await page.addScriptTag({ path: path.join(root, js) });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => typeof window.__fpEnsurePopup === 'function');
@@ -107,7 +109,7 @@ test('real browser: theme page builds every section from stored settings and kee
             stageRadius: document.querySelector('.fpt-th-stage').style.getPropertyValue('--fpt-th-radius'),
             emptyContainers: [...document.querySelectorAll('.fp-tools-page-content')].filter(el => !el.children.length).length
         }));
-        assert.deepEqual(summary.cards, ['Готовые темы', 'Фон', 'Цвета', 'Шрифт и форма', 'Блоки', 'Детали', 'Инструменты']);
+        assert.deepEqual(summary.cards, ['Готовые темы', 'Фон', 'Цвета', 'Кнопки', 'Шрифт и форма', 'Блоки', 'Детали', 'Инструменты']);
         assert.equal(summary.swatches, 5);
         assert.equal(summary.sliders, 9);
         assert.deepEqual(summary.presets, ['Оригинальная', 'Чёрная', 'Случайная', 'Аврора', 'Графит']);
@@ -128,6 +130,45 @@ test('real browser: theme page builds every section from stored settings and kee
         await page.screenshot({ path: path.join(shots, 'fpt-theme-light-top.png') });
         await page.locator('.fp-tools-content').evaluate(el => { el.scrollTop = el.scrollHeight; });
         await page.screenshot({ path: path.join(shots, 'fpt-theme-light-bottom.png') });
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
+
+test('real browser: buttons card follows the theme in auto mode and takes an explicit colour', async () => {
+    const browser = await launch();
+    try {
+        const { page, errors } = await openThemePage(browser, { initial: { enableCustomTheme: true, fpToolsTheme: { baseStyle: 'custom', bgColor1: '#8b5cf6', containerBgColor: '#1a1033' } } });
+        const card = page.locator('.fpt-th-card', { has: page.locator('.fpt-th-card-title', { hasText: 'Кнопки' }) });
+        await card.scrollIntoViewIfNeeded();
+        const read = () => page.evaluate(() => {
+            const stage = document.querySelector('.fpt-th-stage').style;
+            return {
+                auto: [...document.querySelectorAll('.fpt-th-btn-swatch')].map(el => el.dataset.auto),
+                hex: [...document.querySelectorAll('.fpt-th-btn-swatch .fpt-th-swatch-hex')].map(el => el.textContent),
+                btn: stage.getPropertyValue('--fpt-th-btn'),
+                active: stage.getPropertyValue('--fpt-th-btn-active'),
+                chatButtons: document.querySelectorAll('.fpt-th-site-chatbar .fpt-th-site-btn').length
+            };
+        });
+        const auto = await read();
+        assert.deepEqual(auto.auto, ['true', 'true'], 'themes without button colours start in auto mode');
+        assert.match(auto.hex[0], /^Авто · #[0-9A-F]{6}$/);
+        assert.equal(auto.active, '#8b5cf6', 'auto active buttons use the main colour of the theme');
+        assert.equal(auto.chatButtons, 3, 'the preview shows search, notifications and the menu button');
+        if (shots) await card.screenshot({ path: path.join(shots, 'fpt-theme-buttons-auto.png') });
+
+        await card.locator('.fpt-th-btn-swatch').first().locator('.fpt-th-swatch-input').evaluate(input => {
+            input.value = '#14532d';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        await nextFrames(page);
+        const custom = await read();
+        assert.deepEqual(custom.auto, ['false', 'true']);
+        assert.equal(custom.btn, '#14532d');
+        await card.locator('.fpt-th-btn-auto input').first().click();
+        await nextFrames(page);
+        assert.deepEqual((await read()).auto, ['true', 'true'], 'switching auto back clears the explicit colour');
+        if (shots) await page.locator('.fpt-th-stage').screenshot({ path: path.join(shots, 'fpt-theme-buttons-stage.png') });
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });

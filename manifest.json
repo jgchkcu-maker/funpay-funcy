@@ -58,6 +58,7 @@
         "https://funpay.com/*"
       ],
       "js": [
+        "content/theme_buttons.js",
         "content/theme_flash_fix.js",
         "content/early_custom_styles.js"
       ],

@@ -3511,6 +3511,38 @@
     white-space: nowrap;
 }
 .fp-tools-popup.fptm-themed .fpt-th-site-button--small { padding: 4px 11px; }
+/* Chat header buttons in the preview (theme "Кнопки" card). */
+.fp-tools-popup.fptm-themed .fpt-th-site-chatbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-radius: var(--fpt-th-radius);
+    background: var(--fpt-th-block);
+}
+.fp-tools-popup.fptm-themed .fpt-th-site-chatname { flex: 1; min-width: 0; overflow: hidden; color: var(--fpt-th-text); font-size: 11.5px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.fp-tools-popup.fptm-themed .fpt-th-site-btn {
+    box-sizing: border-box;
+    height: 26px;
+    padding: 0 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+    border-radius: var(--fpt-th-radius);
+    color: var(--fpt-th-btn-text);
+    background: var(--fpt-th-btn);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background-color .2s ease, color .2s ease, border-radius .2s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-th-site-btn .material-symbols-rounded { font-size: 16px; line-height: 1; }
+.fp-tools-popup.fptm-themed .fpt-th-site-btn--icon { width: 26px; padding: 0; justify-content: center; }
+.fp-tools-popup.fptm-themed .fpt-th-site-btn--active { color: var(--fpt-th-btn-active-text); background: var(--fpt-th-btn-active); }
+.fp-tools-popup.fptm-themed .fpt-th-btn-swatch { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fp-tools-popup.fptm-themed .fpt-th-btn-auto { font-size: 13px; font-weight: 500; color: var(--fptm-muted); }
+.fp-tools-popup.fptm-themed .fpt-th-btn-swatch[data-auto="true"] .fpt-th-swatch-hex { color: var(--fptm-muted); }
 .fp-tools-popup.fptm-themed .fpt-th-site-main {
     flex: 1;
     min-height: 0;

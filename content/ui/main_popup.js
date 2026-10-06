@@ -551,34 +551,39 @@ function fptInjectMenuThemeCSS() {
     document.head.appendChild(s);
 }
 
+// Surface palette of the extension's own windows (light/dark). Shared with page-level windows
+// such as the export studio (content/features/export_studio.js) so they look like the menu.
+function fptMenuPalette(isLight) {
+    if (isLight) {
+        return {
+            bg:'#ffffff', head:'#f7f8fb', nav:'#fbfcfe', text:'#16181d',
+            muted:'rgba(22,24,29,0.74)', faint:'rgba(22,24,29,0.56)', border:'rgba(22,24,29,0.10)',
+            surface:'#f5f7fa', surface2:'#eef1f6', hover:'rgba(22,24,29,0.05)', field:'#ffffff',
+            shadow:'rgba(22,24,29,0.16)', navFade:'rgba(22,24,29,0.12)',
+            navSurface:'#fbfaff', navRow:'transparent', navExpanded:'transparent', navChildSurface:'transparent',
+            navField:'#f4f3ff', navFieldFocus:'#ffffff', navBorder:'rgba(119,99,246,0.16)',
+            navRowShadow:'rgba(94,84,170,0.10)', navDot:'#b4c8e8'
+        };
+    } else {
+        return {
+            bg:'#1e1f24', head:'#191a1e', nav:'#1b1c21', text:'#e7e8ec',
+            muted:'rgba(231,232,236,0.76)', faint:'rgba(231,232,236,0.56)', border:'rgba(255,255,255,0.10)',
+            surface:'#26272d', surface2:'#2c2e35', hover:'rgba(255,255,255,0.07)', field:'#26272d',
+            shadow:'rgba(0,0,0,0.55)', navFade:'rgba(0,0,0,0.30)',
+            navSurface:'#24262d', navRow:'#2b2e36', navExpanded:'rgba(118,99,246,0.22)', navChildSurface:'rgba(19,22,28,0.72)',
+            navField:'#2a2e37', navFieldFocus:'#313640', navBorder:'rgba(255,255,255,0.10)',
+            navRowShadow:'rgba(0,0,0,0.20)', navDot:'rgba(231,232,236,0.40)'
+        };
+    }
+}
+
 function fptApplyMenuTheme(root) {
     if (!root) return;
     try {
         const parsed = fptParseMenuColors();
         const isLight = parsed.isLight;
         const accent = '#7663f6';
-        let vars;
-        if (isLight) {
-            vars = {
-                bg:'#ffffff', head:'#f7f8fb', nav:'#fbfcfe', text:'#16181d',
-                muted:'rgba(22,24,29,0.74)', faint:'rgba(22,24,29,0.56)', border:'rgba(22,24,29,0.10)',
-                surface:'#f5f7fa', surface2:'#eef1f6', hover:'rgba(22,24,29,0.05)', field:'#ffffff',
-                shadow:'rgba(22,24,29,0.16)', navFade:'rgba(22,24,29,0.12)',
-                navSurface:'#fbfaff', navRow:'transparent', navExpanded:'transparent', navChildSurface:'transparent',
-                navField:'#f4f3ff', navFieldFocus:'#ffffff', navBorder:'rgba(119,99,246,0.16)',
-                navRowShadow:'rgba(94,84,170,0.10)', navDot:'#b4c8e8'
-            };
-        } else {
-            vars = {
-                bg:'#1e1f24', head:'#191a1e', nav:'#1b1c21', text:'#e7e8ec',
-                muted:'rgba(231,232,236,0.76)', faint:'rgba(231,232,236,0.56)', border:'rgba(255,255,255,0.10)',
-                surface:'#26272d', surface2:'#2c2e35', hover:'rgba(255,255,255,0.07)', field:'#26272d',
-                shadow:'rgba(0,0,0,0.55)', navFade:'rgba(0,0,0,0.30)',
-                navSurface:'#24262d', navRow:'#2b2e36', navExpanded:'rgba(118,99,246,0.22)', navChildSurface:'rgba(19,22,28,0.72)',
-                navField:'#2a2e37', navFieldFocus:'#313640', navBorder:'rgba(255,255,255,0.10)',
-                navRowShadow:'rgba(0,0,0,0.20)', navDot:'rgba(231,232,236,0.40)'
-            };
-        }
+        const vars = fptMenuPalette(isLight);
         let rgb;
         const hx = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(accent);
         if (hx) {

@@ -283,6 +283,8 @@
             .replace(/#2d6bb3/gi, safeLinkColor)
             .replace(/#LINK_COLOR#/gi, safeLinkColor);
 
+        // Цвета кнопок FunPay - общий модуль content/theme_buttons.js (грузится перед этим скриптом).
+        if (typeof fptThemeButtonsCss === 'function') themedCss += fptThemeButtonsCss(settings);
         themedCss = themedCss.replace(/border-radius: \d+px/g, `border-radius: ${settings.borderRadius}px`);
 
         if (settings.enableCircleCustomization) {
