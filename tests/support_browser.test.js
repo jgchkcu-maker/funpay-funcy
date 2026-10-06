@@ -140,11 +140,14 @@ test('support page: tickets load on open, filter, search and sort locally', asyn
         assert.equal((await page.locator('.fpt-sp-hero .fpt-sp-pill').textContent()).trim(), 'Загрузка…');
         await page.locator('.fpt-sp-ticket').first().waitFor();
         assert.equal((await sent(page, 'supportGetTickets')).length, 1, 'the list loads once when the page opens');
-        assert.deepEqual(await page.locator('.fpt-sp-metric-value').allTextContents(), ['4', '2', '2']);
+        assert.equal(await page.locator('.fpt-sp-metric').count(), 0, 'the hero has no metric tiles');
+        assert.deepEqual(await page.locator('.fpt-sp-seg-count').allTextContents(), ['4', '2', '2']);
         assert.equal((await page.locator('.fpt-sp-hero .fpt-sp-pill').textContent()).trim(), '2 актуальные');
         assert.deepEqual(await rowIds(page), ['120045', '119870', '118511', '117004']);
         assert.deepEqual(await page.locator('.fpt-sp-ticket .fpt-sp-status').evaluateAll(items => items.map(item => item.dataset.kind)), ['open', 'pending', 'solved', 'closed']);
         assert.equal(await page.locator('.fpt-sp-ticket[data-kind="open"] .fpt-sp-row-action').count(), 1, 'only active tickets offer closing');
+        const heights = await page.locator('.fpt-sp-hero-actions .fpt-sp-button').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().height));
+        assert.deepEqual(heights, [40, 40], 'hero buttons share one height');
         if (shotDir) {
             await settle(page);
             await page.screenshot({ path: path.join(shotDir, 'support-light.png') });
@@ -155,9 +158,8 @@ test('support page: tickets load on open, filter, search and sort locally', asyn
         assert.deepEqual(await rowIds(page), ['120045', '119870']);
         await page.keyboard.press('ArrowRight');
         assert.deepEqual(await rowIds(page), ['118511', '117004']);
-        assert.equal(await page.locator('.fpt-sp-metric[data-filter="solved"]').getAttribute('aria-pressed'), 'true');
 
-        await page.locator('.fpt-sp-metric[data-filter="all"]').click();
+        await page.locator('.fpt-sp-seg-button[data-value="all"]').click();
         await page.locator('#fp-tickets-search').fill('#1185');
         assert.deepEqual(await rowIds(page), ['118511']);
         await page.locator('#fp-tickets-search').fill('нет такого');
@@ -282,7 +284,16 @@ test('support page: order confirmation collects old orders, remembers limits and
     const browser = await launch();
     try {
         const { page, errors } = await openSupportPage(browser);
-        await page.locator('#fp-ticket-age-hours').fill('36');
+        // Typed values are centred and digits-only; the stepper buttons and arrow keys move by one.
+        assert.equal(await page.locator('#fp-ticket-age-hours').evaluate(input => getComputedStyle(input).textAlign), 'center');
+        await page.locator('#fp-ticket-age-hours').fill('3a5');
+        assert.equal(await page.locator('#fp-ticket-age-hours').inputValue(), '35');
+        await page.locator('#fp-ticket-age-hours').press('ArrowUp');
+        assert.equal(await page.locator('#fp-ticket-age-hours').inputValue(), '36');
+        await page.locator('#fp-ticket-max-orders').fill('19');
+        await page.locator('#fp-ticket-max-orders').blur();
+        await page.locator('.fpt-sp-number').nth(1).locator('.fpt-sp-step').nth(1).click();
+        assert.equal(await page.locator('.fpt-sp-number').nth(1).locator('.fpt-sp-step').nth(1).isDisabled(), true, 'plus stops at the maximum');
         await page.locator('#fp-ticket-max-orders').fill('50');
         await page.locator('#fp-ticket-max-orders').blur();
         await page.waitForFunction(() => window.qaState.fpToolsSupportAutoTicket?.maxOrders === 20);
@@ -313,7 +324,7 @@ test('support page: no orders, load errors and the empty list explain themselves
         const { page, errors } = await openSupportPage(browser, { mode: { ticketsError: true, noOrders: true } });
         await page.locator('.fpt-sp-empty[data-kind="error"]').waitFor();
         assert.match(await page.locator('.fpt-sp-empty-text').textContent(), /Не авторизован на FunPay/);
-        assert.deepEqual(await page.locator('.fpt-sp-metric-value').allTextContents(), ['—', '—', '—'], 'unknown counts are not shown as zero');
+        assert.deepEqual(await page.locator('.fpt-sp-seg-count').allTextContents(), ['', '', ''], 'unknown counts are not shown as zero');
         assert.equal(await page.locator('#fp-tickets-search').isDisabled(), true);
 
         await page.locator('#fp-send-auto-ticket-btn').click();
