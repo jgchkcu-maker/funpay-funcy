@@ -277,22 +277,57 @@
         return { card, head, body, tools };
     }
 
-    function createNumberField({ id, label, hint, min, max, suffix }) {
-        const field = node('label', 'fpt-sp-number');
-        field.htmlFor = id;
-        const copy = node('span', 'fpt-sp-number-copy');
+    // A fully custom number control: − value + with the value typed in the middle.
+    function createNumberField({ id, label, hint, min, max }) {
+        const field = node('div', 'fpt-sp-number');
+        const copy = node('label', 'fpt-sp-number-copy');
+        copy.htmlFor = id;
         copy.append(node('strong', '', label), node('span', '', hint));
-        const box = node('span', 'fpt-sp-number-box');
+        const stepper = node('div', 'fpt-sp-stepper');
+        const minus = createButton('fpt-sp-step', 'remove', '');
+        minus.setAttribute('aria-label', `${label}: меньше`);
+        minus.tabIndex = -1;
+        const plus = createButton('fpt-sp-step', 'add', '');
+        plus.setAttribute('aria-label', `${label}: больше`);
+        plus.tabIndex = -1;
         const input = node('input', 'fpt-sp-number-input');
-        input.type = 'number';
+        input.type = 'text';
         input.id = id;
-        input.min = String(min);
-        input.max = String(max);
-        input.step = '1';
         input.inputMode = 'numeric';
-        box.append(input, node('span', 'fpt-sp-number-suffix', suffix));
-        field.append(copy, box);
-        return { element: field, input };
+        input.autocomplete = 'off';
+        input.maxLength = 3;
+        input.setAttribute('role', 'spinbutton');
+        input.setAttribute('aria-valuemin', String(min));
+        input.setAttribute('aria-valuemax', String(max));
+        stepper.append(minus, input, plus);
+        field.append(copy, stepper);
+        const commit = value => {
+            input.value = String(clampInt(value, min, max, min));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+        const step = delta => commit((parseInt(input.value, 10) || 0) + delta);
+        minus.addEventListener('click', () => step(-1));
+        plus.addEventListener('click', () => step(1));
+        input.addEventListener('input', () => {
+            const digits = input.value.replace(/\D+/g, '');
+            if (digits !== input.value) input.value = digits;
+        });
+        input.addEventListener('keydown', event => {
+            const delta = { ArrowUp: 1, ArrowDown: -1, PageUp: 10, PageDown: -10 }[event.key];
+            if (!delta) return;
+            event.preventDefault();
+            step(delta);
+        });
+        return {
+            element: field,
+            input,
+            sync(value) {
+                if (document.activeElement !== input) input.value = String(value);
+                input.setAttribute('aria-valuenow', String(value));
+                minus.disabled = value <= min;
+                plus.disabled = value >= max;
+            }
+        };
     }
 
     function statusBadge(status) {
@@ -376,25 +411,7 @@
         refreshButton.id = 'fp-ticket-refresh-btn';
         const siteLink = externalLink('fpt-sp-link', `${SUPPORT_URL}/tickets`, 'Открыть сайт поддержки');
         heroActions.append(createButtonEl, refreshButton, siteLink);
-        const metrics = node('div', 'fpt-sp-metrics');
-        const metric = (iconName, label, filter) => {
-            const button = node('button', 'fpt-sp-metric');
-            button.type = 'button';
-            button.dataset.filter = filter;
-            const iconWrap = node('span', 'fpt-sp-metric-icon');
-            iconWrap.appendChild(icon(iconName));
-            const value = node('strong', 'fpt-sp-metric-value', '—');
-            const copy = node('span', 'fpt-sp-metric-copy');
-            copy.append(value, node('span', 'fpt-sp-metric-label', label));
-            button.append(iconWrap, copy);
-            button.setAttribute('aria-label', `${label}: показать в списке`);
-            metrics.appendChild(button);
-            return { button, value };
-        };
-        const metricAll = metric('inbox', 'Всего заявок', 'all');
-        const metricActive = metric('mark_chat_unread', 'Актуальные', 'active');
-        const metricSolved = metric('task_alt', 'Закрытые', 'solved');
-        hero.append(heroMain, heroActions, metrics);
+        hero.append(heroMain, heroActions);
 
         // --- Order confirmation --------------------------------------------------------------
         const auto = createCard({
@@ -402,10 +419,10 @@
             description: 'FunPay не всегда подтверждает заказы сам. Расширение соберёт ваши оплаченные, но не подтверждённые заказы и подготовит заявку с просьбой их закрыть.'
         });
         const ageField = createNumberField({
-            id: 'fp-ticket-age-hours', label: 'Возраст заказа', hint: 'Не моложе, чем', min: AGE_HOURS.min, max: AGE_HOURS.max, suffix: 'ч'
+            id: 'fp-ticket-age-hours', label: 'Возраст заказа', hint: 'Не моложе, часов', min: AGE_HOURS.min, max: AGE_HOURS.max
         });
         const maxField = createNumberField({
-            id: 'fp-ticket-max-orders', label: 'Заказов в заявке', hint: 'Не больше, чем', min: MAX_ORDERS.min, max: MAX_ORDERS.max, suffix: 'шт.'
+            id: 'fp-ticket-max-orders', label: 'Заказов в заявке', hint: 'Не больше, штук', min: MAX_ORDERS.min, max: MAX_ORDERS.max
         });
         const autoFields = node('div', 'fpt-sp-auto-fields');
         autoFields.append(ageField.element, maxField.element);
@@ -517,14 +534,6 @@
         // --- Rendering -----------------------------------------------------------------------
         function renderHero() {
             const counts = countTickets(state.tickets);
-            const ready = state.loaded && !state.error;
-            metricAll.value.textContent = ready ? String(counts.all) : '—';
-            metricActive.value.textContent = ready ? String(counts.active) : '—';
-            metricSolved.value.textContent = ready ? String(counts.solved) : '—';
-            [metricAll, metricActive, metricSolved].forEach(item => {
-                item.button.disabled = !ready;
-                item.button.setAttribute('aria-pressed', ready && item.button.dataset.filter === state.status ? 'true' : 'false');
-            });
             if (state.loading && !state.loaded) {
                 heroPill.dataset.kind = 'neutral';
                 heroPill.textContent = 'Загрузка…';
@@ -651,8 +660,8 @@
         }
 
         function renderAuto() {
-            if (document.activeElement !== ageField.input) ageField.input.value = String(state.auto.ageHours);
-            if (document.activeElement !== maxField.input) maxField.input.value = String(state.auto.maxOrders);
+            ageField.sync(state.auto.ageHours);
+            maxField.sync(state.auto.maxOrders);
         }
 
         function render() {
@@ -1274,11 +1283,6 @@
         refreshButton.addEventListener('click', () => loadTickets({ force: true, quiet: state.loaded }));
         createButtonEl.addEventListener('click', () => { newTicketDraft = null; openNewTicket(); });
         autoButton.addEventListener('click', buildAutoTicket);
-        [metricAll, metricActive, metricSolved].forEach(item => item.button.addEventListener('click', () => {
-            state.status = item.button.dataset.filter;
-            render();
-            list.card.scrollIntoView?.({ block: 'start', behavior: 'smooth' });
-        }));
         search.addEventListener('input', () => {
             state.query = search.value;
             renderList();
