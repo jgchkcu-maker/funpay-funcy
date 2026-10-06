@@ -417,7 +417,8 @@ function fptComputePalette() {
 
     return {
         dark,
-        bg:        fptRgbStr(bg),
+        // фон окон всегда плотный: найденный блок может быть полупрозрачным (стекло темы)
+        bg:        fptRgbStr(bg, 1),
         surface:   fptRgbStr(surface),
         surface2:  fptRgbStr(surface2),
         border:    fptRgbStr(border),
@@ -428,6 +429,24 @@ function fptComputePalette() {
         accentSoft: fptRgbStr(accent, dark ? 0.18 : 0.12),
         shadow:    dark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.18)'
     };
+}
+
+// Плотный фон и цвет текста для всплывающих меню и окон, «как у страницы».
+// Блоки кастомной темы полупрозрачные (стекло/прозрачность блоков), и окно, взявшее
+// такой фон, просвечивало: текст страницы под меню сливался с его пунктами.
+// Фон блока берём, только если он непрозрачный, иначе - поверхность палитры --fpt-*.
+function fptSolidSurface(candidates) {
+    let color = '';
+    for (const c of candidates) {
+        const el = typeof c === 'string' ? document.querySelector(c) : c;
+        if (!el) continue;
+        const cs = getComputedStyle(el);
+        if (!color) color = cs.color;
+        const rgb = fptParseRGB(cs.backgroundColor);
+        if (rgb && rgb[3] >= 0.98) return { bg: fptRgbStr(rgb, 1), color };
+    }
+    const p = fptComputePalette();
+    return { bg: p.surface, color: color || p.text };
 }
 
 // Выставляет CSS-переменные --fpt-* на :root.

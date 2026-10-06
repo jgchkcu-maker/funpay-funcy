@@ -23,29 +23,11 @@ function getContrastColor(hexColor) {
     return (yiq >= 128) ? '#000000' : '#FFFFFF';
 }
 
-// Берёт фон/текст у самой страницы, чтобы окна совпадали с темой FunPay
-// (в т.ч. кастомной или светлой). Ищет ближайший непрозрачный фон.
-function fptPageSurface() {
-    const candidates = [
-        document.querySelector('.chat-contacts'),
-        document.querySelector('.chat'),
-        document.querySelector('.content-with-cd-wide'),
-        document.body
-    ].filter(Boolean);
-    let bg = '', color = '';
-    for (const el of candidates) {
-        const cs = getComputedStyle(el);
-        if (!color) color = cs.color;
-        const b = cs.backgroundColor;
-        if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') { bg = b; break; }
-    }
-    if (!bg) bg = getComputedStyle(document.body).backgroundColor || '#1e1e1e';
-    if (!color) color = getComputedStyle(document.body).color || '#e0e0e0';
-    return { bg, color };
-}
+// Фон/текст окон - как у самой страницы (FunPay, кастомная или светлая тема),
+// но всегда плотный, чтобы список чатов не просвечивал сквозь меню.
 function fptApplyThemeSurface(el) {
     if (!el) return;
-    const { bg, color } = fptPageSurface();
+    const { bg, color } = fptSolidSurface(['.chat-contacts', '.chat', '.content-with-cd-wide', document.body]);
     el.style.backgroundColor = bg;
     el.style.color = color;
 }

@@ -41,17 +41,8 @@ function closeCloneWizard() {
 }
 
 function cloneSurfaceColors() {
-    const pick = (sel) => document.querySelector(sel);
-    const candidates = [pick('.content-account'), pick('.content'), pick('.container'), document.body].filter(Boolean);
-    let bg = '', color = '';
-    for (const el of candidates) {
-        const cs = getComputedStyle(el);
-        if (!color) color = cs.color;
-        const b = cs.backgroundColor;
-        if (b && b !== 'rgba(0, 0, 0, 0)' && b !== 'transparent') { bg = b; break; }
-    }
-    if (!bg) bg = getComputedStyle(document.body).backgroundColor || '#1e1e1e';
-    if (!color) color = getComputedStyle(document.body).color || '#222';
+    // плотный фон: при кастомной теме блоки страницы прозрачные, и мастер просвечивал
+    const { bg, color } = fptSolidSurface(['.content-account', '.content', '.container', document.body]);
     let accent = '';
     const btn = document.querySelector('.btn-primary');
     if (btn) {
