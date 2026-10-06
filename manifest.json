@@ -137,6 +137,7 @@
         "content/ui/finance_hub_page.js",
         "content/features/theme_gallery.js",
         "content/ui/theme_page.js",
+        "content/ui/effects_page.js",
         "content/ui/header_button_styler.js",
         "content/features/lot_context_menu.js",
         "content/features/settings_io.js",

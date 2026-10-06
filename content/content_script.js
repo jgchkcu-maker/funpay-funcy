@@ -367,6 +367,13 @@
                         console.error('FunPay Funcy: не удалось открыть раздел тем:', error);
                     }
                 }
+                if (window.FPTEffectsPage && typeof window.FPTEffectsPage.mount === 'function') {
+                    try {
+                        await window.FPTEffectsPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел эффектов:', error);
+                    }
+                }
 
                 // Общий чат: опрашиваем public-chat.json раз в 16 минут.
                 // Так active/display/url меняются на лету без обновления расширения.

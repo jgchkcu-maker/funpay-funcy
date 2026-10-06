@@ -1,3 +1,64 @@
+// Particle physics shared by the on-page effect and the popup preview on the «Эффекты» screen.
+const FPTCursorFxParticles = (() => {
+    const hexToRgb = hex => {
+        const parts = String(hex || '').match(/\w\w/g);
+        return parts && parts.length >= 3 ? parts.slice(0, 3).map(x => parseInt(x, 16)) : [255, 255, 255];
+    };
+
+    function spawn(config, x, y, hue) {
+        const p = { x, y, life: Math.random() * 40 + 40 };
+
+        switch (config.type) {
+            case 'trail': p.vx = 0; p.vy = 0; p.size = Math.random() * 3 + 2; break;
+            case 'snow': p.vx = Math.random() * 2 - 1; p.vy = Math.random() * 1 + 0.5; p.size = Math.random() * 2 + 1; break;
+            case 'blood': p.vx = Math.random() * 2 - 1; p.vy = Math.random() * 1 - 2; p.gravity = 0.15; p.size = Math.random() * 4 + 2; break;
+            default: { const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 3 + 1; p.vx = Math.cos(angle) * speed; p.vy = Math.sin(angle) * speed; p.size = Math.random() * 2 + 1; break; }
+        }
+
+        if (config.rgb) {
+            p.color = `hsl(${hue}, 100%, 70%)`;
+            if (config.type === 'snow') p.color = `hsla(${hue}, 100%, 90%, ${Math.random() * 0.5 + 0.3})`;
+        } else {
+            const t = Math.random();
+            const c1 = hexToRgb(config.color1);
+            const c2 = hexToRgb(config.color2);
+            const r = Math.round(c1[0] * (1 - t) + c2[0] * t);
+            const g = Math.round(c1[1] * (1 - t) + c2[1] * t);
+            const b = Math.round(c1[2] * (1 - t) + c2[2] * t);
+            p.color = `rgb(${r},${g},${b})`;
+            if (config.type === 'snow') p.color = `rgba(255,255,255,${Math.random() * 0.5 + 0.3})`;
+        }
+        return p;
+    }
+
+    // Advances one frame; returns false once the particle has faded out.
+    function step(p) {
+        p.life--;
+        if (p.life <= 0) return false;
+        p.x += p.vx; p.y += p.vy;
+        if (p.gravity) p.vy += p.gravity;
+        return true;
+    }
+
+    function draw(ctx, p) {
+        ctx.globalAlpha = Math.min(1, p.life / 35);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Particles per mouse move for an intensity of 0–100.
+    function spawnCount(count) {
+        const value = Number(count);
+        const amount = ((Number.isFinite(value) ? value : 50) / 100) * 5;
+        return Math.floor(amount) + (Math.random() < (amount % 1) ? 1 : 0);
+    }
+
+    return Object.freeze({ spawn, step, draw, spawnCount });
+})();
+window.FPTCursorFxParticles = FPTCursorFxParticles;
+
 class CursorFX {
     constructor() {
         this.canvas = createElement('canvas', { id: 'fp-tools-cursor-fx' });
@@ -80,16 +141,19 @@ class CursorFX {
             this._customCursorActive = true;
             this.customCursor.style.display = 'block';
             
-            if (this.customCursorConfig.hideSystem) {
+            // Older saves may lack these fields; use the same defaults as the «Эффекты» screen.
+            const size = Number(this.customCursorConfig.size) || 32;
+            const opacity = Number.isFinite(Number(this.customCursorConfig.opacity)) ? Number(this.customCursorConfig.opacity) : 100;
+            if (this.customCursorConfig.hideSystem !== false) {
                 this.cursorHideStyleTag.textContent = `* { cursor: none !important; }`;
             } else {
                 this.cursorHideStyleTag.textContent = '';
             }
             
             this.customCursor.style.backgroundImage = `url(${this.customCursorConfig.image})`;
-            this.customCursor.style.width = `${this.customCursorConfig.size}px`;
-            this.customCursor.style.height = `${this.customCursorConfig.size}px`;
-            this.customCursor.style.opacity = this.customCursorConfig.opacity / 100;
+            this.customCursor.style.width = `${size}px`;
+            this.customCursor.style.height = `${size}px`;
+            this.customCursor.style.opacity = opacity / 100;
             // place it under the current pointer immediately so it doesn't jump from 0,0
             this.customCursor.style.transform = `translate(calc(${this.mouse.x}px - 50%), calc(${this.mouse.y}px - 50%))`;
         } else {
@@ -129,35 +193,7 @@ class CursorFX {
         if (this.particles.length >= this.maxParticles) {
             return;
         }
-        
-        const p = {
-            x: this.mouse.x, y: this.mouse.y,
-            life: Math.random() * 40 + 40,
-        };
-
-        const hexToRgb = hex => hex.match(/\w\w/g).map(x => parseInt(x, 16));
-
-        switch(this.config.type) {
-            case 'trail': p.vx = 0; p.vy = 0; p.size = Math.random() * 3 + 2; break;
-            case 'snow': p.vx = Math.random() * 2 - 1; p.vy = Math.random() * 1 + 0.5; p.size = Math.random() * 2 + 1; break;
-            case 'blood': p.vx = Math.random() * 2 - 1; p.vy = Math.random() * 1 - 2; p.gravity = 0.15; p.size = Math.random() * 4 + 2; break;
-            default: const angle = Math.random() * Math.PI * 2; const speed = Math.random() * 3 + 1; p.vx = Math.cos(angle) * speed; p.vy = Math.sin(angle) * speed; p.size = Math.random() * 2 + 1; break;
-        }
-
-        if (this.config.rgb) {
-            p.color = `hsl(${this.hue}, 100%, 70%)`;
-            if (this.config.type === 'snow') p.color = `hsla(${this.hue}, 100%, 90%, ${Math.random() * 0.5 + 0.3})`;
-        } else {
-            const t = Math.random();
-            const c1 = hexToRgb(this.config.color1);
-            const c2 = hexToRgb(this.config.color2);
-            const r = Math.round(c1[0] * (1 - t) + c2[0] * t);
-            const g = Math.round(c1[1] * (1 - t) + c2[1] * t);
-            const b = Math.round(c1[2] * (1 - t) + c2[2] * t);
-            p.color = `rgb(${r},${g},${b})`;
-            if (this.config.type === 'snow') p.color = `rgba(255,255,255,${Math.random() * 0.5 + 0.3})`;
-        }
-        this.particles.push(p);
+        this.particles.push(FPTCursorFxParticles.spawn(this.config, this.mouse.x, this.mouse.y, this.hue));
     }
 
     createParticle() {
@@ -166,8 +202,7 @@ class CursorFX {
             this.animate();
         }
 
-        const count = (this.config.count / 100) * 5;
-        const numToSpawn = Math.floor(count) + (Math.random() < (count % 1) ? 1 : 0);
+        const numToSpawn = FPTCursorFxParticles.spawnCount(this.config.count);
 
         for(let i = 0; i < numToSpawn; i++) {
             this.spawnSingleParticle();
@@ -191,21 +226,12 @@ class CursorFX {
 
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const p = this.particles[i];
-            p.life--;
-
-            if (p.life <= 0) {
+            if (!FPTCursorFxParticles.step(p)) {
                 this.particles.splice(i, 1);
                 continue;
             }
 
-            p.x += p.vx; p.y += p.vy;
-            if (p.gravity) p.vy += p.gravity;
-
-            this.ctx.globalAlpha = p.life / 35;
-            this.ctx.fillStyle = p.color;
-            this.ctx.beginPath();
-            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-            this.ctx.fill();
+            FPTCursorFxParticles.draw(this.ctx, p);
         }
 
         this.ctx.globalAlpha = 1;

@@ -127,3 +127,24 @@ final result: passed
 ### Autoresponder screen — class isolation
 
 - All pages share one popup DOM and the neighbouring browser tests look elements up document-wide, so this screen owns its hero, pill, metric, search and segmented-control classes (`fpt-ar-*`) instead of reusing `fpt-ab-*`, `fpt-ad-search` and `fpt-th-seg*`. `tests/auto_reply_ui_contract.test.js` fails if those names come back.
+
+---
+
+# Effects screen — visual QA
+
+## Sources and state
+
+- Shell, navigation and palette: the existing popup (light and dark palettes, violet accent, `--fptm-*` tokens). Layout follows the auto-bump and themes screens: hero card on top, grouped cards with a master switch, spring-eased controls.
+- Implementation screenshots: rendered from `tests/effects_browser.test.js` (set `FPT_SCREENSHOT_DIR` to keep them): light top, custom cursor card with an uploaded image, dark top, dark particles card, dark popup at 860 and 560 px.
+- State: particles off and on (sparkle, trail, snow, blood), two-colour and rainbow modes, custom cursor without an image, with an image, after removal, a rejected oversize file and a failed save.
+
+## Comparison
+
+- The preview stage stays dark in both themes so white snow and light colours remain visible; it runs a demo path when idle and follows the pointer on hover. The demo stops while the page is hidden and is pointer-only with reduced motion.
+- Effect types are a radio group of tiles; the selected tile takes the current colours (or a rainbow) so the choice reads at a glance.
+- Saving is immediate, like auto-bump. Sliders and colour pickers are debounced; a failed save rolls the control back and shows a toast.
+- At 1204 px the four type tiles sit in one row; below 680 px they wrap to two, below 420 px to one, and card headers stack. No horizontal overflow at 860 or 560 px.
+
+## Result
+
+**Passed.** No blocking visual issue was found.
