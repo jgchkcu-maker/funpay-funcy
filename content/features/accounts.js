@@ -22,6 +22,7 @@ function fptMergeAccountSnapshot(account, snapshot) {
     });
     if (typeof snapshot.loggedIn === 'boolean') account.loggedIn = snapshot.loggedIn;
     if (snapshot.username) account.username = snapshot.username;
+    if (snapshot.funds && typeof snapshot.funds === 'object') account.funds = snapshot.funds;
     if (snapshot.pending && typeof snapshot.pending === 'object') {
         account.pending = { totals: { ...(snapshot.pending.totals || {}) }, count: Number(snapshot.pending.count) || 0 };
     }

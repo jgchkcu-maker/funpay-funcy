@@ -5,7 +5,8 @@ const { launch, openAccounts } = require('./helpers/accounts_browser_harness');
 const now = Date.now();
 const ACCOUNTS = [
     { name: 'Outlik', key: 'key-main', balance: '12 480 ₽', unread: 3, _snapTs: now - 2 * 60000, loggedIn: true, username: 'Outlik',
-        pending: { totals: { '₽': 3200 }, count: 4 } },
+        pending: { totals: { '₽': 3200 }, count: 4 },
+        funds: { available: { '₽': 9000, '$': null, '€': null }, total: { '₽': 12480, '$': null, '€': null } } },
     { name: 'Склад ключей', key: 'key-store', balance: '1 250,50 ₽', unread: 0, _snapTs: now - 5 * 60000, loggedIn: true, username: 'KeyStorePro',
         pending: { totals: { '₽': 0 }, count: 0 } },
     { name: 'Старый аккаунт', key: 'key-old', balance: '', unread: 0, _snapTs: now - 10 * 60000, loggedIn: false }
@@ -48,9 +49,11 @@ test('hero, active row, unread badge and expired session reflect stored data', a
         assert.equal(await active.getByRole('button', { name: 'Активен' }).isDisabled(), true);
         assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-tag--expired').textContent(), 'link_offСессия истекла');
         assert.match(await page.locator('.fpt-am-row').nth(1).locator('.fpt-am-nick').textContent(), /KeyStorePro/);
-        assert.match((await active.locator('.fpt-am-balance').textContent()).replace(/\s/g, ' '), /Доступно 12 480 ₽/);
+        assert.match((await active.locator('.fpt-am-balance').textContent()).replace(/\s/g, ' '), /Баланс 12 480 ₽/);
         assert.match((await active.locator('.fpt-am-pending').textContent()).replace(/\s/g, ' '), /В ожидании 3 200 ₽ · 4 заказа/);
         assert.equal(await page.locator('.fpt-am-row').nth(1).locator('.fpt-am-pending').getAttribute('data-empty'), 'true');
+        assert.match((await active.locator('.fpt-am-available').textContent()).replace(/\s/g, ' '), /Доступно 9 000 ₽/);
+        assert.equal(await page.locator('.fpt-am-row').nth(1).locator('.fpt-am-available').count(), 0, 'no funds data or equal to the balance');
         assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-pending').count(), 0, 'no pending data yet');
         await page.evaluate(() => {
             const accounts = window.qaStorage.read().fpToolsAccounts;

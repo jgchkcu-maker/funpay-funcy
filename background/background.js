@@ -1410,6 +1410,21 @@ function fptSnapshotForKey(key) {
                     const pending = await parseHtmlViaOffscreen(await orders.text(), 'parseUnconfirmedBalance');
                     if (pending && pending.totals) snap.pending = { totals: pending.totals, count: pending.count || 0 };
                 } catch (_) {}
+                // The spendable balance is only on lot pages: take any lot, preferably the seller's own.
+                try {
+                    const pages = [snap.userId ? `https://funpay.com/users/${snap.userId}/` : '', 'https://funpay.com/'].filter(Boolean);
+                    let offerId = '';
+                    for (const url of pages) {
+                        const page = await fetch(url, { credentials: 'include', cache: 'no-store' });
+                        offerId = (await parseHtmlViaOffscreen(await page.text(), 'parseFirstOfferId'))?.id || '';
+                        if (offerId) break;
+                    }
+                    if (offerId) {
+                        const offer = await fetch(`https://funpay.com/lots/offer?id=${offerId}`, { credentials: 'include', cache: 'no-store' });
+                        const available = await parseHtmlViaOffscreen(await offer.text(), 'parseOfferBalance');
+                        if (available) snap.funds = available;
+                    }
+                } catch (_) {}
             }
             return snap;
         };
