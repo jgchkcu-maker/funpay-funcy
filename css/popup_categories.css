@@ -5306,3 +5306,223 @@
     .fp-tools-popup.fptm-themed .fpt-ie-group.fpt-ie-flash { animation: none !important; transition: none !important; }
     .fp-tools-popup.fptm-themed .fpt-ie-spin { animation-duration: 2.4s; }
 }
+
+/* Accounts: saved FunPay sessions with avatars, balances and one-click switching. */
+.fp-tools-popup.fptm-themed .fpt-accounts {
+    position: relative;
+    min-width: 0;
+    margin-top: 8px;
+    display: grid;
+    gap: 18px;
+    container-type: inline-size;
+    container-name: fpt-accounts;
+    color: var(--fptm-text);
+}
+.fp-tools-popup.fptm-themed .fpt-accounts [hidden] { display: none !important; }
+.fp-tools-popup.fptm-themed .fpt-accounts .material-symbols-rounded { width: 1em; overflow: hidden; text-align: center; }
+.fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-pill { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+
+/* Avatar: initials underneath, the FunPay photo fades in on top once it loads. */
+.fp-tools-popup.fptm-themed .fpt-am-avatar {
+    position: relative;
+    box-sizing: border-box;
+    width: 48px;
+    height: 48px;
+    flex: 0 0 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: var(--fptm-on-accent);
+    background: linear-gradient(135deg, var(--fptm-accent), color-mix(in srgb, var(--fptm-accent) 55%, var(--fptm-text)));
+    transition: box-shadow .25s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-am-initials { font-size: 16px; font-weight: 700; line-height: 1; letter-spacing: .02em; }
+.fp-tools-popup.fptm-themed .fpt-am-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: var(--fptm-nav-field);
+    opacity: 0;
+    transition: opacity .3s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-am-avatar.has-photo .fpt-am-photo { opacity: 1; }
+.fp-tools-popup.fptm-themed .fpt-am-avatar--ghost { color: var(--fptm-muted); background: var(--fptm-surface-2); box-shadow: inset 0 0 0 1px var(--fptm-nav-border); }
+.fp-tools-popup.fptm-themed .fpt-am-avatar--ghost .material-symbols-rounded { font-size: 24px; }
+.fp-tools-popup.fptm-themed .fpt-am-unread {
+    position: absolute;
+    z-index: 2;
+    top: -3px;
+    right: -5px;
+    box-sizing: border-box;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    color: #fff;
+    background: var(--fptm-danger);
+    box-shadow: 0 0 0 2px var(--fptm-nav-field);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+.fp-tools-popup.fptm-themed .fpt-am-avatar-spinner {
+    position: absolute;
+    z-index: 1;
+    inset: -4px;
+    border: 2px solid transparent;
+    border-top-color: var(--fptm-accent);
+    border-right-color: var(--fptm-accent);
+    border-radius: 50%;
+    animation: fpt-ad-spin .8s linear infinite;
+}
+
+/* Current session card */
+.fp-tools-popup.fptm-themed .fpt-am-current {
+    border-style: dashed;
+    border-color: var(--fptm-accent-border);
+    background: color-mix(in srgb, var(--fptm-accent) 5%, var(--fptm-nav-field));
+    animation: fpt-ad-panel-in .42s cubic-bezier(.2, 1.35, .4, 1) both;
+    transform-origin: top center;
+}
+.fp-tools-popup.fptm-themed .fpt-am-current[data-state="signed-out"] { border-color: var(--fptm-nav-border); background: var(--fptm-nav-field); }
+.fp-tools-popup.fptm-themed .fpt-am-current-head { min-width: 0; padding: 14px 16px; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.fp-tools-popup.fptm-themed .fpt-am-current-avatar { display: inline-flex; }
+
+/* List head */
+.fp-tools-popup.fptm-themed .fpt-am-updated { color: var(--fptm-muted); font-size: 12.5px; line-height: 1.3; white-space: nowrap; }
+.fp-tools-popup.fptm-themed .fpt-qr-button.fpt-am-refresh { min-height: 38px; margin-left: auto; font-size: 13px !important; }
+.fp-tools-popup.fptm-themed .fpt-am-search:not([hidden]) + .fpt-am-refresh { margin-left: 0; }
+.fp-tools-popup.fptm-themed .fpt-am-refresh.is-busy .material-symbols-rounded,
+.fp-tools-popup.fptm-themed .fpt-am-row[data-busy="refresh"] .fpt-am-row-refresh .material-symbols-rounded { animation: fpt-ad-spin 1s linear infinite; }
+
+/* Account rows */
+.fp-tools-popup.fptm-themed .fpt-am-list { min-width: 0; display: grid; gap: 10px; }
+.fp-tools-popup.fptm-themed .fpt-am-row {
+    position: relative;
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 14px;
+    border: 1px solid var(--fptm-nav-border);
+    border-radius: 16px;
+    background: var(--fptm-nav-field);
+    transition: border-color .16s ease, box-shadow .2s ease, background .2s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-am-row:hover { border-color: var(--fptm-accent-border); box-shadow: 0 6px 18px color-mix(in srgb, var(--fptm-accent) 8%, transparent); }
+.fp-tools-popup.fptm-themed .fpt-am-row[data-active="true"] {
+    border-color: var(--fptm-accent-border);
+    background: linear-gradient(110deg, color-mix(in srgb, var(--fptm-accent) 10%, var(--fptm-nav-field)) 0%, var(--fptm-nav-field) 70%);
+    box-shadow: 0 8px 24px color-mix(in srgb, var(--fptm-accent) 10%, transparent);
+}
+.fp-tools-popup.fptm-themed .fpt-am-row[data-active="true"] .fpt-am-avatar { box-shadow: 0 0 0 2px var(--fptm-nav-field), 0 0 0 4px var(--fptm-accent); }
+.fp-tools-popup.fptm-themed .fpt-am-row[data-expired="true"]:not([data-active="true"]) .fpt-am-avatar { filter: grayscale(.85); opacity: .7; }
+.fp-tools-popup.fptm-themed .fpt-am-main { min-width: 0; display: grid; gap: 5px; }
+.fp-tools-popup.fptm-themed .fpt-am-title { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.fp-tools-popup.fptm-themed .fpt-am-name { min-width: 0; color: var(--fptm-text); font-size: 15px; font-weight: 650; line-height: 1.3; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.fp-tools-popup.fptm-themed .fpt-am-tag {
+    padding: 1px 8px 1px 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid var(--fptm-accent-border);
+    border-radius: 999px;
+    color: var(--fptm-accent);
+    background: var(--fptm-accent-soft);
+    font-size: 11.5px;
+    font-weight: 650;
+    line-height: 1.6;
+    white-space: nowrap;
+}
+.fp-tools-popup.fptm-themed .fpt-am-tag .material-symbols-rounded { font-size: 13px; line-height: 1; }
+.fp-tools-popup.fptm-themed .fpt-am-tag--active { color: var(--fptm-success); border-color: var(--fptm-success-border); background: var(--fptm-success-soft); }
+.fp-tools-popup.fptm-themed .fpt-am-tag--expired { color: var(--fptm-danger); border-color: var(--fptm-danger-border); background: var(--fptm-danger-soft); }
+.fp-tools-popup.fptm-themed .fpt-am-meta { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; color: var(--fptm-muted); font-size: 12.5px; line-height: 1.4; }
+.fp-tools-popup.fptm-themed .fpt-am-meta > span { min-width: 0; display: inline-flex; align-items: center; gap: 5px; }
+.fp-tools-popup.fptm-themed .fpt-am-meta .material-symbols-rounded { font-size: 15px; line-height: 1; }
+.fp-tools-popup.fptm-themed .fpt-am-balance { color: var(--fptm-text); font-weight: 650; font-variant-numeric: tabular-nums; }
+.fp-tools-popup.fptm-themed .fpt-am-balance .material-symbols-rounded { color: var(--fptm-accent); }
+.fp-tools-popup.fptm-themed .fpt-am-balance[data-empty="true"] { color: var(--fptm-muted); font-weight: 500; }
+.fp-tools-popup.fptm-themed .fpt-am-balance[data-empty="true"] .material-symbols-rounded { color: inherit; }
+.fp-tools-popup.fptm-themed .fpt-am-nick span:last-child,
+.fp-tools-popup.fptm-themed .fpt-am-balance span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-tools-popup.fptm-themed .fpt-am-actions { display: flex; align-items: center; gap: 6px; }
+.fp-tools-popup.fptm-themed .fpt-qr-button.fpt-am-login { min-width: 104px; min-height: 36px; padding: 0 14px; font-size: 13.5px !important; }
+.fp-tools-popup.fptm-themed .fpt-qr-button.fpt-am-login--active:disabled {
+    opacity: 1;
+    border-color: var(--fptm-success-border) !important;
+    color: var(--fptm-success) !important;
+    background: var(--fptm-success-soft) !important;
+}
+.fp-tools-popup.fptm-themed .fpt-am-row[data-busy="switch"] .fpt-am-login .material-symbols-rounded { animation: fpt-ad-spin .9s linear infinite; }
+
+/* Inline rename */
+.fp-tools-popup.fptm-themed .fpt-am-rename-form { min-width: 0; margin: 0; display: flex; align-items: center; gap: 6px; }
+.fp-tools-popup.fptm-themed .fpt-qr-input.fpt-am-rename-input,
+.fp-tools-popup.fptm-themed .fpt-qr-input.fpt-am-rename-input.fpt-control-field {
+    box-sizing: border-box !important;
+    flex: 1 1 auto;
+    width: auto !important;
+    min-width: 0;
+    height: 36px;
+    margin: 0;
+    padding: 0 12px !important;
+    border: 1px solid var(--fptm-accent-border) !important;
+    border-radius: 10px !important;
+    color: var(--fptm-text) !important;
+    background: var(--fptm-bg) !important;
+    box-shadow: 0 0 0 3px var(--fptm-accent-soft) !important;
+    font: inherit;
+    font-size: 14px !important;
+    font-weight: 600;
+    outline: none;
+}
+.fp-tools-popup.fptm-themed .fpt-qr-icon-button.fpt-am-rename-save:not(:disabled) { border-color: var(--fptm-accent) !important; color: var(--fptm-on-accent) !important; background: var(--fptm-accent) !important; }
+
+.fp-tools-popup.fptm-themed .fpt-am-empty .fpt-qr-button { margin-top: 10px; min-height: 36px; font-size: 13px !important; }
+.fp-tools-popup.fptm-themed .fpt-am-empty > .material-symbols-rounded { width: 48px; }
+
+@container fpt-accounts (max-width: 720px) {
+    .fp-tools-popup.fptm-themed .fpt-am-hero { padding: 16px; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-hero-main { grid-template-columns: 52px minmax(0, 1fr); gap: 12px; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-hero-icon { width: 52px; height: 52px; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-hero-icon .material-symbols-rounded { font-size: 27px; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-metric { padding: 10px 12px; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-metric-icon { display: none; }
+}
+@container fpt-accounts (max-width: 600px) {
+    .fp-tools-popup.fptm-themed .fpt-am-row { grid-template-columns: 48px minmax(0, 1fr); gap: 10px 12px; }
+    .fp-tools-popup.fptm-themed .fpt-am-actions { grid-column: 1 / -1; padding-top: 10px; border-top: 1px solid var(--fptm-nav-border); }
+    .fp-tools-popup.fptm-themed .fpt-qr-button.fpt-am-login { flex: 1 1 auto; }
+    .fp-tools-popup.fptm-themed .fpt-am-current-head { grid-template-columns: 48px minmax(0, 1fr); }
+    .fp-tools-popup.fptm-themed .fpt-qr-button.fpt-am-add { grid-column: 1 / -1; width: 100%; }
+}
+@container fpt-accounts (max-width: 520px) {
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-hero-title { font-size: 18px; }
+    .fp-tools-popup.fptm-themed .fpt-am-search.fpt-control-field { width: 100% !important; margin-left: 0; }
+    .fp-tools-popup.fptm-themed .fpt-am-updated { flex: 1 1 auto; }
+}
+@container fpt-accounts (max-width: 420px) {
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-metrics { gap: 6px; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-metric { padding: 9px 10px; border-radius: 13px; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-metric-label { font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fp-tools-popup.fptm-themed .fpt-am-hero .fpt-qr-metric-value { font-size: 13.5px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup.fptm-themed .fpt-accounts *,
+    .fp-tools-popup.fptm-themed .fpt-accounts *::after { transition-duration: .01ms !important; }
+    .fp-tools-popup.fptm-themed .fpt-am-current { animation: none !important; }
+    .fp-tools-popup.fptm-themed .fpt-am-avatar-spinner,
+    .fp-tools-popup.fptm-themed .fpt-accounts [data-busy] .material-symbols-rounded,
+    .fp-tools-popup.fptm-themed .fpt-am-refresh.is-busy .material-symbols-rounded { animation-duration: 2.4s !important; }
+}

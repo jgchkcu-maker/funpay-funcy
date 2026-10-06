@@ -346,6 +346,13 @@
                         console.error('FunPay Funcy: не удалось открыть раздел элементов интерфейса:', error);
                     }
                 }
+                if (window.FPTAccountsPage && typeof window.FPTAccountsPage.mount === 'function') {
+                    try {
+                        await window.FPTAccountsPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел аккаунтов:', error);
+                    }
+                }
                 if (window.FPTFinanceHubPage && typeof window.FPTFinanceHubPage.mount === 'function') {
                     try {
                         await window.FPTFinanceHubPage.mount(toolsPopup);
