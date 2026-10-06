@@ -44,10 +44,11 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
         return { categoryId, message, fieldValues: { ...p.fieldValues }, preview: p.preview || message };
     });
     register('fp-send-auto-ticket-btn', async p => {
-        const { orderIds } = await _msg('getUnconfirmedOrders', { ageHours: p.ageHours ?? 24, maxOrders: p.maxOrders ?? 5 });
+        const { orderIds = [], orders = [], youngerCount = 0 } = await _msg('getUnconfirmedOrders', { ageHours: p.ageHours ?? 24, maxOrders: p.maxOrders ?? 5 });
         const username = p.username || _getUsername();
+        if (orderIds.length && !username) throw new Error('Не удалось определить ваш ник на FunPay. Обновите страницу и попробуйте снова.');
         const ids = orderIds.join(', ');
-        return { categoryId: '1', orderIds, message: `Здравствуйте! Прошу подтвердить заказы: ${ids}. С уважением, ${username}!`,
+        return { categoryId: '1', orderIds, orders, youngerCount, message: `Здравствуйте! Прошу подтвердить заказы: ${ids}. С уважением, ${username}!`,
             fieldValues: { 'ticket[fields][1]': username, 'ticket[fields][2]': ids, 'ticket[fields][3]': '2', 'ticket[fields][5]': '201' } };
     });
     for (const id of ['fp-ticket-detail-back', 'fp-ticket-confirm-no', 'fp-new-ticket-close']) register(id, () => null);

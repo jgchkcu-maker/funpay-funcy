@@ -1261,14 +1261,17 @@ function parseSupportFormToken(html) {
     return doc.querySelector("input[name='ticket[_token]']")?.value || null;
 }
 
+// Orders on /orders/trade with the time each was placed (null when the row has no readable date).
 function parseOrdersPage(html) {
     const doc = window.__fptParseHTML(html);
-    const ids = new Set();
+    const orders = new Map();
     doc.querySelectorAll('a[href*="/orders/"]').forEach(a => {
         const m = (a.getAttribute('href') || '').match(/\/orders\/([A-Z0-9]{8})/);
-        if (m) ids.add(m[1]);
+        if (!m || orders.has(m[1])) return;
+        const dateText = a.querySelector('.tc-date-time')?.textContent.trim() || '';
+        orders.set(m[1], { id: m[1], time: dateText ? parseFunPayDate(dateText) : null });
     });
-    return [...ids];
+    return [...orders.values()];
 }
 
 // Detailed parse of the sales/orders list (used by Telegram notifications + /orders).

@@ -857,13 +857,22 @@ window.FPTPopupMetadata = Object.freeze({
     "tickets": {
       "features": [
         {
-          "text": "Поддержка FunPay"
+          "text": "Заявки в техподдержку FunPay"
         },
         {
-          "text": "Возраст заказа (ч)"
+          "text": "Новая заявка в поддержку"
         },
         {
-          "text": "Заказов в заявке (макс)"
+          "text": "Подтверждение заказов: возраст заказа и заказов в заявке"
+        },
+        {
+          "text": "Ваши заявки: поиск, статус, сортировка"
+        },
+        {
+          "text": "Переписка с поддержкой и ответ в заявке"
+        },
+        {
+          "text": "Закрыть заявку"
         }
       ],
       "modes": [],
@@ -873,7 +882,6 @@ window.FPTPopupMetadata = Object.freeze({
         "fp-send-auto-ticket-btn",
         "fp-create-ticket-btn",
         "fp-ticket-detail-back",
-        "fp-tarm",
         "fp-ticket-reply-btn",
         "fp-ticket-confirm-yes",
         "fp-ticket-confirm-no",
