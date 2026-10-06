@@ -1256,8 +1256,48 @@
 }
 .fp-tools-popup.fptm-themed .fpt-ad-lots-heading-copy { min-width: 0; }
 .fp-tools-popup.fptm-themed .fpt-ad-lots-heading-copy .fpt-ad-section-description { margin-bottom: 0; }
-.fp-tools-popup.fptm-themed .fpt-ad-search,
+.fp-tools-popup.fptm-themed .fpt-ad-search {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 11px;
+    border: 1px solid var(--fptm-nav-border) !important;
+    border-radius: 11px !important;
+    color: var(--fptm-text) !important;
+    background: var(--fptm-bg) !important;
+    box-shadow: none !important;
+    font: inherit;
+    font-size: 13px !important;
+}
+.fp-tools-popup.fptm-themed .fpt-ad-search:focus { outline: 2px solid var(--fptm-accent-border); outline-offset: 1px; }
+.fp-tools-popup.fptm-themed .fpt-ad-unsaved-badge { color: var(--fptm-warning); font-size: 12px; font-weight: 600; text-align: center; }
 .fp-tools-popup.fptm-themed .fpt-ad-unsaved-badge[hidden] { display: none; }
+/* Standalone accent action button (auto-bump «Поднять сейчас»); auto-delivery's load button is a .fpt-fin-btn. */
+.fp-tools-popup.fptm-themed .fpt-ab-raise-button {
+    min-width: 172px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    border: 1px solid var(--fptm-accent) !important;
+    border-radius: 13px !important;
+    color: var(--fptm-on-accent) !important;
+    background: var(--fptm-accent) !important;
+    box-shadow: none !important;
+    font: inherit;
+    font-size: 14px !important;
+    font-weight: 650 !important;
+    cursor: pointer;
+    transition: filter .18s ease, transform .48s cubic-bezier(.2, 1.45, .4, 1), box-shadow .2s ease;
+}
+.fp-tools-popup.fptm-themed .fpt-ab-raise-button:hover:not(:disabled) { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 4px 12px color-mix(in srgb, var(--fptm-accent) 22%, transparent) !important; }
+.fp-tools-popup.fptm-themed .fpt-ab-raise-button:active:not(:disabled) { transform: translateY(1px) scale(.97); box-shadow: none !important; }
+.fp-tools-popup.fptm-themed .fpt-ab-raise-button:disabled { opacity: .6; }
+.fp-tools-popup.fptm-themed .fpt-ab-raise-button .material-symbols-rounded { font-size: 20px; line-height: 1; }
 .fp-tools-popup.fptm-themed .fpt-ad-load-status,
 .fp-tools-popup.fptm-themed .fpt-ad-rules-status {
     box-sizing: border-box;
@@ -1365,7 +1405,7 @@
 .fp-tools-popup.fptm-themed .fpt-ad-load-button:disabled { cursor: wait; }
 .fp-tools-popup.fptm-themed .fpt-ad-load-button[aria-busy="true"] .material-symbols-rounded { animation: fpt-ad-spin .9s linear infinite; }
 .fp-tools-popup.fptm-themed .fpt-ad-load-button .material-symbols-rounded { transition: transform .5s cubic-bezier(.22, 1, .36, 1); }
-.fp-tools-popup.fptm-themed .fpt-ad-load-button:hover:not(:disabled) .material-symbols-rounded { transform: rotate(180deg); }
+.fp-tools-popup.fptm-themed .fpt-fin-btn.fpt-ad-load-button:hover:not(:disabled) .material-symbols-rounded { transform: rotate(180deg); }
 .fp-tools-popup.fptm-themed .fpt-ad-toolbar {
     min-width: 0;
     display: grid;
