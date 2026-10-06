@@ -53,3 +53,17 @@ test('initials, relative time and avatar urls', () => {
     assert.equal(page.avatarUrl('//sfunpay.com/s/avatar/ab/cd.jpg'), 'https://sfunpay.com/s/avatar/ab/cd.jpg');
     assert.equal(page.avatarUrl('javascript:alert(1)'), '');
 });
+
+test('pending money is summed per currency across accounts', () => {
+    const page = load();
+    const summary = page.summarize([
+        { pending: { totals: { '₽': 3200 }, count: 4 } },
+        { pending: { totals: { '₽': 800, '$': 2.5 }, count: 2 } },
+        { balance: '10 ₽' }
+    ]);
+    assert.equal(summary.pending.replace(/\s/g, ' '), '4 000 ₽ + 2,50 $');
+    assert.equal(summary.pendingCount, 6);
+    assert.equal(page.summarize([{ balance: '1 ₽' }]).pending, '', 'no pending data yet');
+    assert.equal(page.formatPending({ '₽': 0 }), '0 ₽');
+    assert.equal(page.formatPending({}), '0 ₽');
+});

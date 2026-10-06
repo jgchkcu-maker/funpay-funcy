@@ -4,7 +4,7 @@
     'use strict';
     const PAGE_ID = 'accounts';
     const STORAGE_KEY = 'fpToolsAccounts';
-    const STALE_MS = 55 * 60 * 1000;
+    const STALE_MS = 15 * 60 * 1000;
     const SEARCH_FROM = 4;
 
     const normalize = value => String(value ?? '').toLowerCase().replace(/ё/g, 'е').trim();
@@ -32,6 +32,14 @@
         return currency ? `${number} ${currency}` : number;
     }
 
+    // Money in paid but unconfirmed orders, per currency sign: { '₽': 3200, '$': 4 } → "3 200 ₽ + 4 $".
+    function formatPending(totals) {
+        const entries = Object.entries(totals || {}).map(([sign, value]) => [sign, Math.round((Number(value) || 0) * 100) / 100]);
+        const nonZero = entries.filter(([, value]) => value > 0);
+        if (!nonZero.length) return formatAmount(0, entries[0]?.[0] || '₽');
+        return nonZero.map(([sign, value]) => formatAmount(value, sign)).join(' + ');
+    }
+
     // Totals for the hero. The balance is summed only when every known balance uses one currency.
     function summarize(accounts) {
         const list = Array.isArray(accounts) ? accounts : [];
@@ -42,7 +50,14 @@
             balance = formatAmount(balances.reduce((sum, item) => sum + item.amount, 0), balances[0].currency);
         } else if (balances.length) balance = 'разные валюты';
         const stamps = list.map(account => Number(account._snapTs) || 0).filter(Boolean);
+        const withPending = list.filter(account => account.pending && typeof account.pending === 'object');
+        const pendingTotals = {};
+        withPending.forEach(account => Object.entries(account.pending.totals || {}).forEach(([sign, value]) => {
+            pendingTotals[sign] = (pendingTotals[sign] || 0) + (Number(value) || 0);
+        }));
         return {
+            pending: withPending.length ? formatPending(pendingTotals) : '',
+            pendingCount: withPending.reduce((sum, account) => sum + (Number(account.pending.count) || 0), 0),
             total: list.length,
             unread: list.reduce((sum, account) => sum + (Math.max(0, Number(account.unread) || 0)), 0),
             balance,
@@ -112,9 +127,11 @@
         badge.append(icon(iconName));
         const copy = node('div', 'fpt-qr-metric-copy');
         const value = node('strong', 'fpt-qr-metric-value', '—');
-        copy.append(node('span', 'fpt-qr-metric-label', label), value);
+        const sub = node('span', 'fpt-am-metric-sub');
+        sub.hidden = true;
+        copy.append(node('span', 'fpt-qr-metric-label', label), value, sub);
         element.append(badge, copy);
-        return { element, value };
+        return { element, value, sub };
     }
     function avatar(account, className = '') {
         const wrap = node('span', `fpt-am-avatar ${className}`.trim());
@@ -144,7 +161,7 @@
         const toast = (message, kind = 'success') => ui.showToast?.(popup, message, kind);
         const state = {
             accounts: [], current: { name: '', key: '' }, loaded: false, loadError: '', query: '',
-            editing: null, draft: '', busy: new Map(), refreshing: null, autoRefreshed: false, activeDialog: null
+            editing: null, draft: '', busy: new Map(), refreshing: null, activeDialog: null
         };
 
         // --- Header and help ---------------------------------------------------------------------
@@ -159,7 +176,8 @@
             'Войдите в аккаунт FunPay и нажмите «Добавить» — Funcy запомнит его сессию.',
             'Чтобы добавить ещё один, выйдите, войдите в другой аккаунт и добавьте его тоже.',
             '«Войти» переключает сессию и перезагружает страницу — пароль вводить не нужно.',
-            'Баланс, аватар и непрочитанные сообщения обновляются раз в час или по кнопке «Обновить».',
+            '«Доступно» — баланс, который можно потратить или вывести. «В ожидании» — оплаченные заказы, которые покупатель ещё не подтвердил.',
+            'Данные обновляются сами при входе в раздел, если им больше 15 минут, или по кнопке «Обновить».',
             'Ключи сессий хранятся только в этом браузере и не попадают в резервные копии настроек.'
         ].forEach(item => helpList.append(node('li', '', item)));
         helpPanel.append(helpList);
@@ -280,6 +298,10 @@
             metricTotal.value.textContent = state.loaded ? String(summary.total) : '—';
             metricBalance.value.textContent = state.loaded && summary.balance ? summary.balance : '—';
             metricBalance.value.title = summary.balance === 'разные валюты' ? 'Балансы в разных валютах не складываются' : '';
+            metricBalance.sub.hidden = !state.loaded || !summary.pending;
+            metricBalance.sub.textContent = summary.pending ? `+${summary.pending} в ожидании` : '';
+            metricBalance.sub.title = summary.pendingCount
+                ? `Оплачено, но не подтверждено: ${summary.pendingCount} ${pluralize(summary.pendingCount, ['заказ', 'заказа', 'заказов'])}` : '';
             metricUnread.value.textContent = state.loaded ? String(summary.unread) : '—';
             hero.dataset.state = active ? 'on' : 'off';
             if (!state.loaded) {
@@ -395,9 +417,19 @@
             }
             const meta = node('div', 'fpt-am-meta');
             const balance = node('span', 'fpt-am-balance');
-            balance.append(icon('account_balance_wallet'), node('span', '', account.balance || 'Баланс неизвестен'));
+            balance.append(icon('account_balance_wallet'), node('span', '', account.balance ? `Доступно ${account.balance}` : 'Баланс неизвестен'));
             balance.dataset.empty = String(!account.balance);
+            balance.title = 'Можно вывести или потратить';
             meta.append(balance);
+            if (account.pending && typeof account.pending === 'object') {
+                const count = Number(account.pending.count) || 0;
+                const pending = node('span', 'fpt-am-pending');
+                const text = `В ожидании ${formatPending(account.pending.totals)}${count ? ` · ${count} ${pluralize(count, ['заказ', 'заказа', 'заказов'])}` : ''}`;
+                pending.append(icon('hourglass_top'), node('span', '', text));
+                pending.dataset.empty = String(!count);
+                pending.title = 'Оплаченные заказы, которые покупатель ещё не подтвердил';
+                meta.append(pending);
+            }
             if (account.username && account.username !== account.name) {
                 const nick = node('span', 'fpt-am-nick');
                 nick.append(icon('alternate_email'), node('span', '', account.username));
@@ -633,12 +665,11 @@
                 maybeAutoRefresh();
             }
         }
-        // Snapshots older than an hour are refreshed once per popup session, when the page is opened.
+        // Each time the page is opened, snapshots older than STALE_MS are refreshed quietly.
         function maybeAutoRefresh() {
-            if (state.autoRefreshed || !state.loaded || !page.classList.contains('active')) return;
+            if (!state.loaded || state.refreshing || !page.classList.contains('active')) return;
             const now = Date.now();
             if (!state.accounts.some(account => account.key && (!account._snapTs || now - account._snapTs > STALE_MS))) return;
-            state.autoRefreshed = true;
             refreshAll({ silent: true });
         }
         const onStorage = (changes, area) => {
@@ -649,13 +680,12 @@
             if (state.editing && !state.accounts.some(account => account.key === state.editing)) state.editing = null;
             renderAll();
         };
-        const activation = new MutationObserver(() => maybeAutoRefresh());
-        activation.observe(page, { attributes: true, attributeFilter: ['class'] });
+        const stopActivation = ui.onPageActivated(page, () => maybeAutoRefresh());
         function dispose() {
             document.removeEventListener('pointerdown', onHelpOutside);
             root.chrome?.storage?.onChanged?.removeListener?.(onStorage);
             state.activeDialog?.close({ force: true });
-            activation.disconnect();
+            stopActivation();
             disposal.disconnect();
         }
         root.chrome?.storage?.onChanged?.addListener(onStorage);
@@ -667,5 +697,5 @@
         return loading;
     }
 
-    root.FPTAccountsPage = Object.freeze({ mount, summarize, parseBalance, initials, formatAgo, avatarUrl });
+    root.FPTAccountsPage = Object.freeze({ mount, summarize, parseBalance, formatPending, initials, formatAgo, avatarUrl });
 })(typeof window !== 'undefined' ? window : globalThis);

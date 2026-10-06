@@ -570,7 +570,21 @@
         return select;
     }
 
+    // Calls back each time a popup page becomes the active one. Returns a disconnect function.
+    function onPageActivated(page, callback) {
+        if (!page || typeof callback !== 'function' || typeof MutationObserver !== 'function') return () => {};
+        let wasActive = page.classList.contains('active');
+        const observer = new MutationObserver(() => {
+            const active = page.classList.contains('active');
+            if (active && !wasActive) callback();
+            wasActive = active;
+        });
+        observer.observe(page, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
+    }
+
     root.FPTPopupUI = Object.freeze({
+        onPageActivated,
         enhanceSelect,
         createCategoryHeader,
         ensureCategoryHeader,

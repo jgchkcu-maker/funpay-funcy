@@ -50,7 +50,8 @@ test('auto-delivery shows layout-matched skeleton rows while the first lot list 
         await page.addScriptTag({ path: path.join(root, 'content/ui/auto_delivery_page.js') });
         await page.evaluate(() => window.FPTAutoDeliveryPage.mount(document.querySelector('.fp-tools-popup')));
         await page.emulateMedia({ reducedMotion: 'reduce' });
-        await page.locator('#fp-load-delivery-lots-btn').click();
+        // An active page without a cached list starts loading on its own.
+        assert.equal(await page.locator('#fp-load-delivery-lots-btn').getAttribute('aria-busy'), 'true');
         const skeleton = page.locator('.fpt-ad-skeleton-list');
         await skeleton.waitFor();
         assert.equal(await skeleton.getAttribute('aria-hidden'), 'true');

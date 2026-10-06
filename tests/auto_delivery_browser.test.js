@@ -34,11 +34,12 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
                     '502': { enabled: false, mode: 'secrets', productCount: 4 },
                     '504': { enabled: true, mode: 'template', text: 'Спасибо за покупку', productCount: null }
                 },
-                fpToolsAutoDeliveryLotsCache: [
+                // A fresh cache: the page shows it and does not reload lots on its own.
+                fpToolsAutoDeliveryLotsCache: { updatedAt: Date.now(), lots: [
                     { id: '501', title: 'Кристаллы Генезиса — расширенный сезонный набор с длинным названием для проверки сетки', nodeId: '42', categoryName: 'Аккаунты', imageUrl: 'https://funpay.com/icon-501.png' },
                     { id: '502', title: 'Игровая валюта', nodeId: '43', categoryName: 'Игровая валюта' },
                     { id: '504', title: '', nodeId: '45', categoryName: 'Подарочные карты' }
-                ]
+                ] }
             };
             window.qaState = state;
             window.qaMessages = [];

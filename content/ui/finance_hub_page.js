@@ -9,6 +9,8 @@
     const TAB_KEY = 'fpt_fin_active_subtab';
     const PAGE_SIZE = 25;
     const STALE_MS = 45000;
+    // FunPay data older than this is reloaded on its own when the page is opened.
+    const AUTO_REFRESH_MS = 15 * 60 * 1000;
     const MODES = Object.freeze([
         { id: 'overview', label: 'Обзор', icon: 'dashboard', action: 'fptFinTabOverview' },
         { id: 'sales', label: 'Продажи', icon: 'trending_up', action: 'fptFinTabSales' },
@@ -1202,7 +1204,7 @@
             load({ force: true });
         }
 
-        async function refresh() {
+        async function refresh({ silent = false } = {}) {
             if (state.refreshing) return;
             state.refreshing = true;
             refreshBtn.disabled = true;
@@ -1224,7 +1226,7 @@
                     state.notice = { text: `Не удалось обновить: ${failed.map(key => sourceNames[key]).join(', ')}. Показаны сохранённые данные.`, kind: 'warning' };
                     setStatusLine(state.notice.text, state.notice.kind);
                     root.FPTPopupUI.showToast(popup, 'Часть данных не обновилась. Проверьте, что вы авторизованы на FunPay.', 'error');
-                } else {
+                } else if (!silent) {
                     root.FPTPopupUI.showToast(popup, 'Обновление завершено', 'success');
                 }
             } catch (error) {
@@ -1349,17 +1351,24 @@
             if (MODE_IDS.includes(mode) && mode !== state.mode) applyMode(mode);
         }).observe(page, { attributes: true, attributeFilter: ['data-fpt-page-mode'] });
 
+        // Pulls fresh data from FunPay when the stored copy is missing or older than AUTO_REFRESH_MS.
+        async function maybeAutoRefresh() {
+            if (state.refreshing) return;
+            const meta = await readMeta();
+            const updated = Number(meta?.oldestLastUpdate) || 0;
+            if (updated && Date.now() - updated < AUTO_REFRESH_MS) return;
+            if (page.classList.contains('active')) await refresh({ silent: true });
+        }
+
         // Load lazily when the page becomes visible; refresh stale data on every return to it.
-        let wasActive = false;
-        const activationCheck = () => {
-            const active = page.classList.contains('active');
-            if (active && !wasActive) load();
-            wasActive = active;
+        const onActivated = () => {
+            load();
+            maybeAutoRefresh();
         };
-        new MutationObserver(activationCheck).observe(page, { attributes: true, attributeFilter: ['class'] });
+        root.FPTPopupUI.onPageActivated(page, onActivated);
 
         renderPane();
-        activationCheck();
+        if (page.classList.contains('active')) onActivated();
     }
 
     root.FPTFinanceHubPage = Object.freeze({ mount, summarize });
