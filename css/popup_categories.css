@@ -6826,6 +6826,10 @@
 .fp-tools-popup.fptm-themed .fpt-sp-required { color: var(--fptm-danger); }
 .fp-tools-popup.fptm-themed .fpt-sp-form-field[data-invalid="true"] .fpt-sp-form-input,
 .fp-tools-popup.fptm-themed .fpt-sp-form-field[data-invalid="true"] .fpt-sp-choice-group { border-color: var(--fptm-danger) !important; }
+.fp-tools-popup.fptm-themed .fpt-sp-topics { min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.fp-tools-popup.fptm-themed .fpt-sp-topics-skeleton { grid-column: 1 / -1; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.fp-tools-popup.fptm-themed .fpt-sp-topics-skeleton .fpt-sp-skeleton-row { height: 44px; border-radius: 13px; }
+.fp-tools-popup.fptm-themed .fpt-sp-topic { min-height: 48px; }
 .fp-tools-popup.fptm-themed .fpt-sp-choice-group { min-width: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; border: 1px solid transparent; border-radius: 14px; }
 .fp-tools-popup.fptm-themed .fpt-sp-choice {
     position: relative;

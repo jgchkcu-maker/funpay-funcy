@@ -858,25 +858,7 @@
             wrap.appendChild(label);
             const initial = values[field.id] ?? (NICK_FIELD_PATTERN.test(field.name) ? getUsername() : field.defaultValue || '');
             const options = Array.isArray(field.options) ? field.options : [];
-            // Long option lists read better as a dropdown than as a wall of radio tiles.
-            if (field.type === 'select' && options.length > 6) {
-                const host = node('div', 'fpt-sp-category');
-                const select = node('select', 'fpt-sp-category-select');
-                select.setAttribute('aria-labelledby', labelId);
-                const placeholder = node('option', '', 'Выберите…');
-                placeholder.value = '';
-                select.append(placeholder, ...options.map(option => {
-                    const element = node('option', '', option.text);
-                    element.value = option.value;
-                    return element;
-                }));
-                select.value = options.some(option => String(option.value) === String(initial)) ? String(initial) : '';
-                select.addEventListener('change', onChange);
-                host.appendChild(select);
-                wrap.appendChild(host);
-                ui.enhanceSelect?.(select, host);
-                return { wrap, field, read: () => select.value, focus: () => host.querySelector('.fpt-select-trigger')?.focus() };
-            }
+            // Choices are tiles, never a dropdown: the dialog body scrolls and would clip an open list.
             if (field.type === 'radio' || field.type === 'select') {
                 const group = node('div', 'fpt-sp-choice-group');
                 group.setAttribute('role', 'radiogroup');
@@ -917,14 +899,18 @@
             const form = node('div', 'fpt-sp-form');
             form.id = 'fp-new-ticket-fields';
             const categoryWrap = node('div', 'fpt-sp-form-field');
-            const categoryLabel = node('label', 'fpt-sp-form-label', 'Тема обращения');
-            categoryLabel.htmlFor = 'fp-ticket-cat-select';
-            const categoryHost = node('div', 'fpt-sp-category');
-            const categorySelect = node('select', 'fpt-sp-category-select');
-            categorySelect.id = 'fp-ticket-cat-select';
-            categorySelect.setAttribute('aria-label', 'Тема обращения');
-            categoryHost.appendChild(categorySelect);
-            categoryWrap.append(categoryLabel, categoryHost);
+            const categoryLabel = node('span', 'fpt-sp-form-label', 'Тема обращения');
+            categoryLabel.id = 'fpt-sp-topic-label';
+            // Topics are tiles instead of a dropdown, so the whole list is visible at once.
+            const topics = node('div', 'fpt-sp-topics');
+            topics.id = 'fp-ticket-cat-select';
+            topics.setAttribute('role', 'radiogroup');
+            topics.setAttribute('aria-labelledby', categoryLabel.id);
+            const topicSkeleton = node('div', 'fpt-sp-skeleton fpt-sp-topics-skeleton');
+            for (let i = 0; i < 4; i++) topicSkeleton.appendChild(node('span', 'fpt-sp-skeleton-row'));
+            topics.appendChild(topicSkeleton);
+            const selectedTopic = () => topics.querySelector('input:checked')?.value || '';
+            categoryWrap.append(categoryLabel, topics);
             const fieldsHost = node('div', 'fpt-sp-form-fields');
             const formStatus = node('p', 'fpt-sp-inline-status');
             formStatus.hidden = true;
@@ -999,14 +985,14 @@
             }
 
             let restoreValues = null;
-            categorySelect.addEventListener('change', () => {
+            topics.addEventListener('change', () => {
                 const restore = restoreValues || {};
                 restoreValues = null;
-                loadFields(categorySelect.value, restore);
+                loadFields(selectedTopic(), restore);
             });
 
             next.addEventListener('click', async () => {
-                const categoryId = categorySelect.value;
+                const categoryId = selectedTopic();
                 const visible = visibleControls();
                 const missing = visible.find(control => control.field.required && !control.read());
                 if (missing) {
@@ -1062,23 +1048,26 @@
                 const response = await run('fp-create-ticket-btn');
                 if (!dialog.backdrop.isConnected) return;
                 categories = Array.isArray(response && response.categories) ? response.categories : [];
-                const placeholder = node('option', '', 'Выберите тему…');
-                placeholder.value = '';
-                categorySelect.replaceChildren(placeholder, ...categories.map(category => {
-                    const option = node('option', '', category.name);
-                    option.value = String(category.id);
-                    return option;
+                topics.replaceChildren(...categories.map(category => {
+                    const tile = node('label', 'fpt-sp-choice fpt-sp-topic');
+                    const radio = node('input', 'fpt-sp-choice-input');
+                    radio.type = 'radio';
+                    radio.name = 'fpt-sp-topic';
+                    radio.value = String(category.id);
+                    tile.append(radio, node('span', 'fpt-sp-choice-mark'), node('span', 'fpt-sp-choice-text', category.name));
+                    return tile;
                 }));
-                ui.enhanceSelect?.(categorySelect, categoryHost);
                 setStatus(categories.length ? '' : 'Сайт поддержки не вернул ни одной темы.', categories.length ? 'neutral' : 'error');
                 // Stepping back from the preview brings the filled-in form back.
                 if (newTicketDraft && categories.some(category => String(category.id) === String(newTicketDraft.categoryId))) {
                     restoreValues = newTicketDraft.values;
-                    categorySelect.value = String(newTicketDraft.categoryId);
-                    categorySelect.dispatchEvent(new Event('change'));
+                    const radio = [...topics.querySelectorAll('input')].find(input => input.value === String(newTicketDraft.categoryId));
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             } catch (error) {
                 if (!dialog.backdrop.isConnected) return;
+                topics.replaceChildren();
                 setStatus(error.message || 'Не удалось загрузить темы обращений.', 'error');
             }
         }

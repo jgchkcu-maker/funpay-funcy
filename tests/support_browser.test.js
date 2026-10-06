@@ -231,10 +231,14 @@ test('support page: a new ticket is built from the site form and sent only after
         const { page, errors } = await openSupportPage(browser, { mode: { createError: true } });
         await page.locator('.fpt-sp-ticket').first().waitFor();
         await page.locator('#fp-create-ticket-btn').click();
-        await page.locator('#fp-ticket-cat-select option[value="1"]').waitFor({ state: 'attached' });
+        await page.locator('.fpt-sp-topic').first().waitFor();
         assert.equal(await page.locator('#fp-new-ticket-submit').isDisabled(), true);
-        await page.locator('.fpt-sp-category .fpt-select-trigger').click();
-        await page.locator('.fpt-sp-category .fpt-select-option', { hasText: 'Подтверждение заказа' }).click();
+        assert.equal(await page.locator('.fpt-sp-dialog select, .fpt-sp-dialog .fpt-select-trigger').count(), 0, 'no dropdown to be clipped by the dialog');
+        assert.deepEqual(await page.locator('.fpt-sp-topic').allTextContents(), ['Подтверждение заказа', 'Проблема с выводом средств']);
+        const tile = await page.locator('.fpt-sp-topic').first().boundingBox();
+        assert.ok(tile.width >= 220 && tile.height >= 44, `topic tiles are roomy: ${JSON.stringify(tile)}`);
+        if (shotDir) { await settle(page); await page.screenshot({ path: path.join(shotDir, 'support-topics.png') }); }
+        await page.locator('.fpt-sp-topic', { hasText: 'Подтверждение заказа' }).click();
         await page.locator('.fpt-sp-form-field[data-field-id="ticket[fields][1]"] input').waitFor();
         assert.equal(await page.locator('.fpt-sp-form-field[data-field-id="ticket[fields][1]"] input').inputValue(), 'qa-seller', 'the nickname is filled in');
         assert.equal(await page.locator('.fpt-sp-form-field[data-field-id="ticket[fields][2]"]').isHidden(), true, 'conditional fields wait for their trigger');
