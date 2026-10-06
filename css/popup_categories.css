@@ -6252,6 +6252,9 @@
 .fp-tools-popup.fptm-themed .fpt-sp-icon-button[aria-busy="true"] { opacity: 1; cursor: wait; }
 .fp-tools-popup.fptm-themed .fpt-sp-button[aria-busy="true"] .material-symbols-rounded,
 .fp-tools-popup.fptm-themed .fpt-sp-icon-button[aria-busy="true"] .material-symbols-rounded { animation: fpt-ad-spin .9s linear infinite; }
+/* Secondary buttons get a visible accent frame so they read as tall as the filled primary next to them. */
+.fp-tools-popup.fptm-themed .fpt-sp-button:not(.fpt-sp-button--primary):not(.fpt-sp-button--danger) { border-color: var(--fptm-accent-border) !important; background: var(--fptm-accent-soft) !important; }
+.fp-tools-popup.fptm-themed .fpt-sp-button:not(.fpt-sp-button--primary):not(.fpt-sp-button--danger):hover:not(:disabled) { border-color: var(--fptm-accent) !important; }
 .fp-tools-popup.fptm-themed .fpt-sp-button--primary { border-color: var(--fptm-accent) !important; color: var(--fptm-on-accent) !important; background: var(--fptm-accent) !important; }
 .fp-tools-popup.fptm-themed .fpt-sp-button--primary .material-symbols-rounded { color: var(--fptm-on-accent); }
 .fp-tools-popup.fptm-themed .fpt-sp-button--primary:hover:not(:disabled) { border-color: var(--fptm-accent) !important; background: var(--fptm-accent) !important; filter: brightness(1.07); }
