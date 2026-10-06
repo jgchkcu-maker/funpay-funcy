@@ -5994,6 +5994,8 @@
 .fp-tools-popup.fptm-themed .fpt-fx-drop-title { color: var(--fptm-text); font-size: 14px; font-weight: 650; line-height: 1.35; }
 .fp-tools-popup.fptm-themed .fpt-fx-drop-hint { color: var(--fptm-muted); font-size: 12.5px; line-height: 1.4; }
 .fp-tools-popup.fptm-themed .fpt-fx-drop-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Site styles show file inputs despite [hidden]; the buttons and drop zone replace it. */
+.fp-tools-popup.fptm-themed .fpt-fx-file-input { display: none !important; }
 
 /* Buttons */
 .fp-tools-popup.fptm-themed .fpt-fx-button,

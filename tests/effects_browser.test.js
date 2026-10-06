@@ -163,6 +163,7 @@ test('effects page: custom cursor uploads, adjusts, validates and removes the im
         const { page, errors } = await openEffectsPage(browser);
         const cursorCard = page.locator('.fpt-fx-card').nth(1);
         assert.equal(await page.locator('#removeCursorImageBtn').isDisabled(), true);
+        assert.equal(await page.locator('.fpt-fx-file-input').isHidden(), true, 'the native file input stays hidden');
 
         // Turning the cursor on without an image asks for one.
         const chooser = page.waitForEvent('filechooser');
@@ -196,7 +197,7 @@ test('effects page: custom cursor uploads, adjusts, validates and removes the im
 
         // Files that are too large are rejected without touching the saved image.
         const before = (await cursor(page)).image;
-        await page.locator('.fpt-fx-drop input[type="file"]').setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
+        await page.locator('.fpt-fx-file-input').setInputFiles({ name: 'big.png', mimeType: 'image/png', buffer: Buffer.alloc(2 * 1024 * 1024 + 1) });
         await page.waitForFunction(() => /больше 2 МБ/.test(document.querySelector('.fpt-popup-toast[data-kind="error"]')?.textContent || ''));
         assert.equal((await cursor(page)).image, before);
 
