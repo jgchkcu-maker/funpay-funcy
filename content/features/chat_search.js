@@ -54,6 +54,16 @@
         const notice = controls.querySelector('.notice-button-container');
         if (notice) controls.insertBefore(btn, notice);
         else controls.insertBefore(btn, controls.firstChild);
+        syncHeaderButtonSize(btn, controls);
+    }
+
+    // Лупа - квадрат высотой с родные кнопки шапки («Включены оповещения», «…»).
+    function syncHeaderButtonSize(btn, controls) {
+        const neighbour = [...controls.querySelectorAll('.btn, .chat-control')]
+            .find(el => el !== btn && !btn.contains(el) && el.offsetHeight > 0);
+        const height = neighbour ? Math.round(neighbour.getBoundingClientRect().height) : 0;
+        if (height >= 24 && height <= 64) btn.style.setProperty('--fpt-ctl-size', height + 'px');
+        else btn.style.removeProperty('--fpt-ctl-size');
     }
 
     function toggleInChatSearch() {

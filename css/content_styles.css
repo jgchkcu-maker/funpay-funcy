@@ -2479,10 +2479,26 @@ html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) .fp-tools-stats-container {
 }
 
 .fp-stats-controls .btn {
-    padding: 8px 18px;
+    box-sizing: border-box;
+    height: 38px; /* как у селекта периода (.form-control у FunPay - 38px), с темой и без */
+    padding: 0 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     font-size: 14px;
+    line-height: 1;
     border-radius: 20px;
 }
+/* Кнопки-иконки в ряду - квадратные той же высоты. */
+.fp-stats-controls .fp-stats-search-toggle,
+.fp-stats-controls .fp-stats-filter-toggle,
+.fp-stats-controls #fpTools-stats-accuracy {
+    width: 38px;
+    padding: 0;
+}
+.fp-stats-controls .btn .material-symbols-rounded { font-size: 20px !important; vertical-align: 0 !important; line-height: 1; }
+.fp-stats-controls .form-control { height: 38px; box-sizing: border-box; }
 
 .fp-stats-controls .form-control {
     width: auto;
@@ -5256,7 +5272,8 @@ html.fpt-custom-theme-on #autobump-category-search {
 .chat-form .chat-btn-image,
 #fpt-tpl-popover-btn,
 #aiModeToggleBtn{
-    width:36px !important;height:36px !important;min-width:36px;padding:0 !important;
+    /* 40px - как родная кнопка отправки (.btn-round у FunPay) в том же ряду */
+    width:40px !important;height:40px !important;min-width:40px;padding:0 !important;
     display:inline-flex !important;align-items:center;justify-content:center;
     border-radius:50% !important;flex-shrink:0;align-self:center;margin:0 2px !important;
     box-sizing:border-box;
@@ -5446,7 +5463,7 @@ html.fpt-custom-theme-on #autobump-category-search {
 
 /* наша кнопка-скрепка - никаких цветов, только форма; цвет берёт у темы */
 .fpt-attach-btn{
-    width:36px !important;height:36px !important;min-width:36px;padding:0 !important;
+    width:40px !important;height:40px !important;min-width:40px;padding:0 !important;
     display:inline-flex !important;align-items:center;justify-content:center;
     border-radius:50% !important;flex-shrink:0;align-self:center;margin:0 2px !important;
     box-sizing:border-box;background:transparent;border:none;cursor:pointer;
@@ -5676,13 +5693,16 @@ body.fpt-dnd-active .chat{ position:relative; }
 
 /* кнопка-лупа в шапке: квадратная, иконка строго по центру, цвет от темы.
    Переопределяем растяжку родных классов btn-info-* до квадрата. */
+/* Размер = высота родных кнопок шапки (.btn-info-sm у FunPay - 39px); chat_search.js
+   подставляет точную высоту соседа в --fpt-ctl-size. */
 .fpt-search-toggle.btn{
-    width:34px !important;height:34px !important;min-width:34px !important;
+    width:var(--fpt-ctl-size, 39px) !important;height:var(--fpt-ctl-size, 39px) !important;
+    min-width:var(--fpt-ctl-size, 39px) !important;
     padding:0 !important;display:inline-flex !important;align-items:center;justify-content:center;
-    line-height:1 !important;box-sizing:border-box;
+    vertical-align:middle;line-height:1 !important;box-sizing:border-box;
 }
 .fpt-search-toggle .material-symbols-rounded{
-    font-size:18px;line-height:1;display:block;margin:0;
+    font-size:20px;line-height:1;display:block;margin:0;
 }
 .fpt-search-toggle.active{ background:color-mix(in srgb, currentColor 20%, transparent) !important; }
 
