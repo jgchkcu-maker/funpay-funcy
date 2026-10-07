@@ -172,11 +172,11 @@ const FPT_FEATURE_REGISTRY = [
     {
         id: 'lot_font_controls',
         label: 'Блок шрифта и спецсимволов',
-        desc: 'Блок «Шрифт» с выпадающим списком стилизованных шрифтов и кнопкой «Клавиатура» на странице редактирования лота.',
+        desc: 'Блок с кнопкой «Клавиатура» и панелью спецсимволов на странице редактирования лота.',
         legacyLabels: ['Шрифты и спецсимволы в лоте'],
         group: 'Создание и оформление лота',
         selector: '.fp-tools-font-controls, .fp-tools-symbols-panel',
-        preview: { kind: 'html', html: '<div class="fpt-pv-fontblock"><label>Шрифт</label><select class="fpt-pv-fpselect"><option>Стандартный</option></select><span class="fpt-pv-fpbtn"><i class="fa fa-keyboard-o"></i> Клавиатура</span></div>' }
+        preview: { kind: 'html', html: '<div class="fpt-pv-fontblock"><span class="fpt-pv-fpbtn"><i class="fa fa-keyboard-o"></i> Клавиатура</span></div>' }
     },
     {
         id: 'lot_keyboard_btn',
