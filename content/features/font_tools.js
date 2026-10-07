@@ -21,11 +21,16 @@ function initializeFontTools() {
 
     const controlsHtml = `
         <div class="form-group fp-tools-font-controls">
-            <button type="button" class="btn btn-default" id="fpToolsKeyboardToggleBtn">
+            <button type="button" class="btn btn-default" id="fpToolsKeyboardToggleBtn" aria-expanded="false" aria-controls="fpToolsSymbolsPanel">
                 <i class="fa fa-keyboard-o" aria-hidden="true"></i> Клавиатура
+                <i class="fa fa-chevron-down fp-tools-kbd-chevron" aria-hidden="true"></i>
             </button>
         </div>
-        <div class="fp-tools-symbols-panel" style="display: none;"></div>
+        <div class="fp-tools-symbols-panel" id="fpToolsSymbolsPanel" aria-hidden="true">
+            <div class="fp-tools-symbols-clip">
+                <div class="fp-tools-symbols-grid">${symbols.map(symbol => `<span class="fp-tools-symbol-char">${symbol}</span>`).join('')}</div>
+            </div>
+        </div>
     `;
     
     controlBlock.insertAdjacentHTML('beforeend', controlsHtml);
@@ -38,12 +43,14 @@ function initializeFontTools() {
     });
 
     // Обработчик для кнопки "Клавиатура"
+    // Панель выдвигается из-под кнопки (анимация в CSS через grid-template-rows)
     document.getElementById("fpToolsKeyboardToggleBtn").addEventListener("click", function() {
-        const panel = document.querySelector(".fp-tools-symbols-panel");
-        if (panel.innerHTML === '') {
-            panel.innerHTML = symbols.map(symbol => `<span class="fp-tools-symbol-char">${symbol}</span>`).join('');
-        }
-        panel.style.display = panel.style.display === 'none' ? 'grid' : 'none';
+        const panel = document.getElementById("fpToolsSymbolsPanel");
+        const open = !panel.classList.contains('is-open');
+        panel.classList.toggle('is-open', open);
+        panel.setAttribute('aria-hidden', String(!open));
+        this.classList.toggle('is-open', open);
+        this.setAttribute('aria-expanded', String(open));
     });
 
     // Обработчик клика по символу
