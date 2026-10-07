@@ -81,6 +81,7 @@
         "content/error_page_reload.js",
         "content/scripts/jquery.js",
         "content/utils.js",
+        "content/ui/page_windows.js",
         "content/features/feature_registry.js",
         "content/features/feature_disabler.js",
         "content/features/cursor_fx.js",
@@ -179,7 +180,8 @@
         "css/image_generator.css",
         "css/ai_creator.css",
         "css/live_styler.css",
-        "css/fpt_icons_theme.css"
+        "css/fpt_icons_theme.css",
+        "css/page_windows.css"
       ],
       "run_at": "document_idle"
     }

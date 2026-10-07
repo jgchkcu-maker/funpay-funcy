@@ -11,7 +11,7 @@ function initializeToolsPopup() {
     if (!popup || popup.dataset.initialized === 'true') return;
     const closeOnOutsideClick = (event) => {
         if (!popup.classList.contains('active') || popup.classList.contains('is-closing')) return;
-        if (popup.contains(event.target) || event.target?.closest?.('#fpToolsButton')) return;
+        if (popup.contains(event.target) || event.target?.closest?.('#fpToolsButton, .fpt-win-scrim')) return;
         popup._fptClose?.();
     };
     document.addEventListener('click', closeOnOutsideClick, true);

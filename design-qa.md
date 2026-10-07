@@ -171,3 +171,25 @@ final result: passed
 ## Result
 
 **Passed.** No blocking visual issue was found. Known limits: not checked against the live support.funpay.com or a real service worker (the browser tests emulate the background replies); attachments are not offered because the background has no upload path for them.
+
+---
+
+# Windows on FunPay pages — visual QA
+
+## Sources and state
+
+- Reference: the extension menu (light and dark palettes from `fptMenuPalette`, violet accent `#7663f6`, `--fptm-*` tokens, 16–22 px radii, card headers with an accent icon tile). The starting point was the user screenshot of «Копирование лота», which took its surface and blue accent from the page and looked like neither FunPay nor the menu.
+- Shared shell: `content/ui/page_windows.js` (`fptWindow.create / open / close`) and `css/page_windows.css`. Every window gets the menu palette through `fptApplyMenuTheme`, closes on Escape, the close button or a backdrop click, keeps Tab inside, returns focus to the opener, and stacks (Escape closes only the top window).
+- Windows moved onto the shell: «Копирование лота», «Импорт данных лота», «Клонирование лота», «Копии в других категориях», «Редактор цен», «Включить лоты», «ИИ-генератор лотов», «Генератор изображений», «Шаблон пуст», «Управление метками», «Менеджер товаров» with «Массовое добавление» and «Дублирование товара», «Стойте, это не точные данные?», the operations and orders lists of the legacy statistics, «Отправка изображений» with the image editor, and the MagicStick «Мои стили» and selector windows. The category side panel, the lot context menu with its «Написать» panel and the order price popover take the same palette (`fptWindow.paint`).
+- Implementation screenshots: rendered with the scratch harness and `tests/page_windows_browser.test.js` (set `FPT_SCREENSHOT_DIR`): light and dark pages at 1280 px and 420 px, stacked windows, FunPay Bootstrap rules plus the custom site theme injected on top.
+
+## Comparison
+
+- Head: accent icon tile, 18 px title, muted subtitle (for the lot copy it carries the category and seller that used to sit at the bottom), round-cornered close button. Footer: status on the left, quiet secondary and filled primary actions on the right, the same button metrics as the menu dialogs.
+- Content is grouped into cards with icon headers; RU / EN, price modes, generator tabs and editor tools are the menu's segmented switcher; checkboxes, inputs, colour swatches and sliders use the menu controls. The category clone picker replaced native multi-selects with checkbox grids and shows the number of copies before anything is sent.
+- Bare-tag rules from FunPay Bootstrap and the custom site theme no longer reach windows (`:where()` reset in the stylesheet, the theme guard in `theme.js` now covers `.fpt-win-scrim`); checked in a browser with both injected.
+- Below 560 px windows become bottom sheets with 12 px gutters, two-column layouts stack, footers stretch their buttons; no horizontal overflow in any window at 420 px.
+
+## Result
+
+**Passed.** No blocking visual issue was found. Known limits: not checked on the live FunPay site; the image generator preview icon uses Google's Material Icons font, which the offline harness cannot load; in «Менеджер товаров» the close button, Escape and a backdrop click save the items like the old close button did, only «Отмена» discards them.

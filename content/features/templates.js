@@ -191,35 +191,40 @@ async function applyTemplateToInput(chatInput, templateContent, images, sendOrde
 
 
 function showEmptyTemplateModal(templateKey, isCustom) {
-    const existingOverlay = document.querySelector('.fp-tools-empty-template-overlay');
-    if (existingOverlay) existingOverlay.remove();
+    document.getElementById('fp-tools-empty-template')?.remove();
 
-    const overlay = createElement('div', { class: 'fp-tools-empty-template-overlay' });
-    const modal = createElement('div', { class: 'fp-tools-empty-template-modal' });
-    
-    modal.innerHTML = `
-        <h4>Шаблон пуст</h4>
-        <p>Хотите добавить текст для этой кнопки прямо сейчас?</p>
-        <div class="textarea-with-controls">
-            <textarea class="template-input" placeholder="Введите текст шаблона..."></textarea>
-            <button class="btn add-image-btn fpt-img-btn" title="Добавить изображение"><span class="material-symbols-rounded">image</span></button>
-        </div>
-        <div class="modal-actions">
-            <button class="btn" id="empty-template-save">Сохранить</button>
-            <button class="btn btn-default" id="empty-template-close">Закрыть</button>
+    const win = fptWindow.create({
+        id: 'fp-tools-empty-template',
+        title: 'Шаблон пуст',
+        subtitle: 'Добавьте текст для этой кнопки прямо сейчас.',
+        icon: 'edit_note',
+        size: 'sm',
+        removeOnClose: true
+    });
+    const modal = win.dialog;
+    win.body.innerHTML = `
+        <label class="fpt-win-label" for="fp-tools-empty-template-text">Текст шаблона</label>
+        <textarea class="fpt-win-input template-input" id="fp-tools-empty-template-text" rows="5" placeholder="Введите текст шаблона..."></textarea>
+        <button type="button" class="fpt-win-btn fpt-win-btn--sm fp-tpl-add-image" style="margin-top:10px;">
+            <span class="material-symbols-rounded" aria-hidden="true">image</span>Добавить изображение
+        </button>
+    `;
+    win.foot.innerHTML = `
+        <div class="fpt-win-actions">
+            <button type="button" class="fpt-win-btn fpt-win-btn--quiet" id="empty-template-close">Закрыть</button>
+            <button type="button" class="fpt-win-btn fpt-win-btn--primary" id="empty-template-save">Сохранить</button>
         </div>
     `;
-    
-    overlay.appendChild(modal);
+    const overlay = win.scrim;
     document.body.appendChild(overlay);
+    fptWindow.open(overlay, { focus: win.body.querySelector('textarea') });
 
     const textarea = modal.querySelector('textarea');
-    modal.querySelector('.add-image-btn').addEventListener('click', () => handleImageAddClick(textarea));
+    modal.querySelector('.fp-tpl-add-image').addEventListener('click', () => handleImageAddClick(textarea));
 
-    const closeModal = () => overlay.remove();
-    
+    const closeModal = () => win.close();
+
     overlay.querySelector('#empty-template-close').addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
 
     overlay.querySelector('#empty-template-save').addEventListener('click', async () => {
         const newText = textarea.value;

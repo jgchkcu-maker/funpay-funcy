@@ -75,8 +75,8 @@ class MagicStickStyler {
         this.ui.highlightEl.style.display = 'none';
         this.ui.panelEl.style.display = 'none';
         this.ui.exitBtn.style.display = 'none';
-        this.ui.myStylesModal.style.display = 'none';
-        this.ui.selectorModal.style.display = 'none';
+        fptWindow.close(this.ui.myStylesModal, { immediate: true });
+        fptWindow.close(this.ui.selectorModal, { immediate: true });
         document.removeEventListener('mousemove', this.throttledMouseMove);
         document.removeEventListener('click', this.bound.handleClick, true);
         document.removeEventListener('keydown', this.bound.handleKeyDown);
@@ -292,24 +292,25 @@ class MagicStickStyler {
         list.innerHTML = '';
         
         if (Object.keys(this.savedStyles).length === 0) {
-            list.innerHTML = '<div class="ms-styles-empty">Нет сохраненных стилей.</div>';
+            list.innerHTML = '<div class="fpt-win-empty ms-styles-empty"><span class="material-symbols-rounded" aria-hidden="true">style</span>Нет сохранённых стилей.</div>';
         } else {
             for (const selector in this.savedStyles) {
                 const item = createElement('div', { class: 'ms-style-item' });
+                const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
                 let propsHTML = '';
                 for (const prop in this.savedStyles[selector]) {
-                    propsHTML += `<div><code>${prop}:</code> ${this.savedStyles[selector][prop]}</div>`;
+                    propsHTML += `<div><code>${esc(prop)}:</code> ${esc(this.savedStyles[selector][prop])}</div>`;
                 }
-                
+
                 item.innerHTML = `
-                    <div class="ms-style-selector">${selector}</div>
+                    <div class="ms-style-selector">${esc(selector)}</div>
                     <div class="ms-style-props">${propsHTML}</div>
-                    <button class="ms-style-delete-btn" data-selector="${encodeURIComponent(selector)}">&times;</button>
+                    <button type="button" class="fpt-win-btn fpt-win-btn--quiet fpt-win-btn--icon fpt-win-btn--sm ms-style-delete-btn" title="Удалить стиль" aria-label="Удалить стиль" data-selector="${encodeURIComponent(selector)}"><span class="material-symbols-rounded" aria-hidden="true">delete</span></button>
                 `;
                 list.appendChild(item);
             }
         }
-        this.ui.myStylesModal.style.display = 'flex';
+        fptWindow.open(this.ui.myStylesModal);
     }
     
     deleteStyle(selector) {
@@ -385,16 +386,16 @@ class MagicStickStyler {
         const list = this.ui.selectorModal.querySelector('.ms-selector-list');
         list.innerHTML = '';
         selectors.forEach(selector => {
-            const item = createElement('button', { class: 'ms-selector-option' });
+            const item = createElement('button', { class: 'fpt-win-item ms-selector-option', type: 'button' });
             item.textContent = selector;
             item.addEventListener('click', () => {
                 this.activeSelector = selector;
-                this.ui.selectorModal.style.display = 'none';
+                fptWindow.close(this.ui.selectorModal, { immediate: true });
                 this.showPanel();
             });
             list.appendChild(item);
         });
-        this.ui.selectorModal.style.display = 'flex';
+        fptWindow.open(this.ui.selectorModal);
     }
 
     createUI() {
@@ -405,8 +406,27 @@ class MagicStickStyler {
         this.ui.highlightEl = container.querySelector('#ms-highlight');
         this.ui.panelEl = container.querySelector('#ms-panel');
         this.ui.exitBtn = container.querySelector('#ms-exit-btn');
-        this.ui.myStylesModal = container.querySelector('#ms-my-styles-modal');
-        this.ui.selectorModal = container.querySelector('#ms-selector-modal');
+        // Окна «Мои стили» и выбора селектора - общий каркас окон расширения.
+        const stylesWin = fptWindow.create({
+            id: 'ms-my-styles-modal',
+            title: 'Мои стили',
+            subtitle: 'Сохранённые правки волшебной палочки. Действуют на всех страницах FunPay.',
+            icon: 'style',
+            size: 'md',
+            footer: false
+        });
+        stylesWin.body.innerHTML = '<div class="ms-styles-list"></div>';
+        const selectorWin = fptWindow.create({
+            id: 'ms-selector-modal',
+            title: 'Выберите селектор',
+            subtitle: 'К какому элементу применить стиль: чем точнее селектор, тем меньше элементов изменится.',
+            icon: 'ads_click',
+            size: 'md',
+            footer: false
+        });
+        selectorWin.body.innerHTML = '<div class="fpt-win-list ms-selector-list"></div>';
+        this.ui.myStylesModal = stylesWin.scrim;
+        this.ui.selectorModal = selectorWin.scrim;
         
         this.ui.dynamicStyleTag = document.createElement('style');
         this.ui.dynamicStyleTag.id = 'fp-tools-magic-stick-dynamic-styles';
@@ -507,8 +527,6 @@ class MagicStickStyler {
         document.getElementById('ms-save-btn').addEventListener('click', () => this.saveStylesToStorage());
         
         document.getElementById('ms-my-styles-btn').addEventListener('click', () => this.showMyStyles());
-        this.ui.myStylesModal.querySelector('.ms-modal-close').addEventListener('click', () => this.ui.myStylesModal.style.display = 'none');
-        this.ui.selectorModal.querySelector('.ms-modal-close').addEventListener('click', () => this.ui.selectorModal.style.display = 'none');
         
         this.ui.myStylesModal.addEventListener('click', e => {
             if (e.target.closest('.ms-style-delete-btn')) {
@@ -558,24 +576,6 @@ class MagicStickStyler {
                     <button id="ms-save-btn" data-title="Автосохранение всегда включено (можно нажать для ручного сохранения)"><span class="material-icons">save</span></button>
                     <button id="ms-my-styles-btn" data-title="Мои стили"><span class="material-icons">style</span></button>
                     <button id="ms-exit-panel-btn" data-title="Выйти из режима"><span class="material-icons">logout</span></button>
-                </div>
-            </div>
-            <div id="ms-selector-modal">
-                <div class="ms-modal-content">
-                    <div class="ms-modal-header">
-                        <h3>Выберите селектор для стилизации</h3>
-                        <button class="ms-modal-close">&times;</button>
-                    </div>
-                    <div class="ms-selector-list"></div>
-                </div>
-            </div>
-            <div id="ms-my-styles-modal">
-                <div class="ms-modal-content">
-                    <div class="ms-modal-header">
-                        <h3>Мои стили</h3>
-                        <button class="ms-modal-close">&times;</button>
-                    </div>
-                    <div class="ms-styles-list"></div>
                 </div>
             </div>
         `;

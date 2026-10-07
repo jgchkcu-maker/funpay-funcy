@@ -139,7 +139,7 @@ test('site theme rules are guarded against the popup without changing specificit
     const sandbox = {};
     vm.runInNewContext(`${themeSource.slice(themeSource.indexOf('const FPT_THEME_POPUP_GUARD'), themeSource.indexOf('function getOriginalThemeCss'))}; this.scope = fptScopeOutsidePopup;`, sandbox);
     const out = sandbox.scope('body::before { content: ""; }\n header { background: red; } a:hover, .x .y:after { color: #fff; }');
-    const guard = ':not(:where(.fp-tools-popup, .fp-tools-popup *))';
+    const guard = ':not(:where(.fp-tools-popup, .fp-tools-popup *, .fpt-win-scrim, .fpt-win-scrim *))';
     assert.ok(out.includes(`body${guard}::before {`), 'pseudo-elements stay last');
     assert.ok(out.includes(`header${guard} { background: red; }`));
     assert.ok(out.includes(`a:hover${guard}, .x .y${guard}:after {`));

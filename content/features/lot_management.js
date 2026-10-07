@@ -896,19 +896,16 @@ function setupActionProcessing() {
     });
 
     
-    $(document).on('click', '.actions .price-editor', function() {
-        $('#fp-price-editor-overlay').css('display', 'flex').hide().fadeIn(200);
-        if (typeof window.refreshPriceEditorPreviews === 'function') window.refreshPriceEditorPreviews();
-    });
+    $(document).on('click', '.actions .price-editor', openPriceEditorWindow);
     
     $('#fp-price-editor-apply').on('click', function() {
-        const mode  = $('.fp-pe-mode.active').data('mode') || 'set';
+        const mode  = $('.fp-pe-mode.is-active').data('mode') || 'set';
         const value = parseFloat($('#fp-price-change-input').val());
         const round = $('#fp-pe-round').is(':checked');
         const min   = parseFloat($('#fp-pe-min').val());
         const max   = parseFloat($('#fp-pe-max').val());
         if (isNaN(value)) { if (typeof showNotification === 'function') showNotification('Введите число', true); return; }
-        $('#fp-price-editor-overlay').fadeOut(200);
+        closePriceEditorWindow();
         processPriceChange({ mode, value, round, min, max });
     });
 }
@@ -956,7 +953,7 @@ async function reactivateLot(offerId, nodeId, button) {
             $(button).closest('.fp-reactivate-item').fadeOut(300, function() { 
                 $(this).remove();
                 if ($('.fp-reactivate-list').children().length === 0) {
-                    $('.fp-reactivate-list').html('<li style="text-align:center; color:#888;">Пока нет отключенных лотов</li>');
+                    $('.fp-reactivate-list').html(FPT_REACTIVATE_EMPTY);
                 }
             });
             if (typeof showNotification === 'function') showNotification('Лот включен!', false);
@@ -970,28 +967,22 @@ async function reactivateLot(offerId, nodeId, button) {
     }
 }
 
+const FPT_REACTIVATE_EMPTY = '<li class="fpt-win-empty fp-reactivate-empty"><span class="material-symbols-rounded" aria-hidden="true">task_alt</span>Пока нет отключенных лотов</li>';
+
 function createReactivationPopup() {
-    if ($('#fp-reactivate-popup-overlay').length > 0) return;
+    if (document.getElementById('fp-reactivate-popup-overlay')) return;
 
-    const popupHtml = `
-        <div class="fp-reactivate-popup-overlay" id="fp-reactivate-popup-overlay">
-            <div class="fp-reactivate-popup">
-                <div class="fp-reactivate-popup-header">
-                    <h3>Включить лоты</h3>
-                    <button class="fp-reactivate-popup-close">&times;</button>
-                </div>
-                <ul class="fp-reactivate-list"></ul>
-            </div>
-        </div>
-    `;
-    $('body').append(popupHtml);
-
-    $('#fp-reactivate-popup-overlay').on('click', function(e) {
-        if ($(e.target).is('#fp-reactivate-popup-overlay') || $(e.target).is('.fp-reactivate-popup-close')) {
-            $(this).fadeOut(200);
-        }
+    const win = fptWindow.create({
+        id: 'fp-reactivate-popup-overlay',
+        title: 'Включить лоты',
+        subtitle: 'Отключённые расширением и неактивные лоты на этой странице.',
+        icon: 'toggle_on',
+        size: 'md',
+        footer: false
     });
-    
+    win.body.innerHTML = '<ul class="fpt-win-list fp-reactivate-list"></ul>';
+    document.body.appendChild(win.scrim);
+
     $('.fp-reactivate-list').on('click', '.fp-reactivate-btn', function() {
         const item = $(this).closest('.fp-reactivate-item');
         const offerId = item.attr('data-offer-id');
@@ -1000,51 +991,78 @@ function createReactivationPopup() {
     });
 }
 
+function openPriceEditorWindow() {
+    const scrim = document.getElementById('fp-price-editor-overlay');
+    if (!scrim) return;
+    fptWindow.open(scrim, { focus: document.getElementById('fp-price-change-input') });
+    if (typeof window.refreshPriceEditorPreviews === 'function') window.refreshPriceEditorPreviews();
+}
+
+function closePriceEditorWindow() {
+    const scrim = document.getElementById('fp-price-editor-overlay');
+    if (scrim) fptWindow.close(scrim);
+}
+
 function createPriceEditorPopup() {
-    if ($('#fp-price-editor-overlay').length > 0) return;
-    const popupHtml = `
-        <div id="fp-price-editor-overlay">
-            <div id="fp-price-editor-popup">
-                <div class="fp-pe-head">
-                    <h3>Редактор цен</h3>
-                    <button id="fp-price-editor-close" class="fp-pe-x">&times;</button>
-                </div>
-                <p class="fp-pe-sub">Применится ко всем выбранным лотам.</p>
-
-                <label class="fp-pe-label">Что сделать с ценой</label>
-                <div class="fp-pe-modes">
-                    <button class="fp-pe-mode active" data-mode="set">Установить =</button>
-                    <button class="fp-pe-mode" data-mode="add">Прибавить +</button>
-                    <button class="fp-pe-mode" data-mode="sub">Вычесть −</button>
-                    <button class="fp-pe-mode" data-mode="pct_up">Поднять %</button>
-                    <button class="fp-pe-mode" data-mode="pct_down">Снизить %</button>
-                </div>
-
-                <div class="fp-pe-row">
-                    <input type="number" step="0.01" id="fp-price-change-input" placeholder="0">
-                    <span class="fp-pe-unit" id="fp-pe-unit">₽</span>
-                </div>
-
-                <div class="fp-pe-opts">
-                    <label class="fp-pe-check"><input type="checkbox" id="fp-pe-round"> Округлять до целого</label>
-                    <label class="fp-pe-minmax">не ниже <input type="number" step="0.01" id="fp-pe-min" placeholder="-"></label>
-                    <label class="fp-pe-minmax">не выше <input type="number" step="0.01" id="fp-pe-max" placeholder="-"></label>
-                </div>
-
-                <div class="fp-pe-preview-head">Предпросмотр (<span id="fp-pe-sel-count">0</span> выбрано):</div>
-                <div class="fp-pe-preview-list" id="fp-pe-preview-list"></div>
-
-                <div class="price-editor-actions">
-                    <button id="fp-price-editor-cancel">Отмена</button>
-                    <button id="fp-price-editor-apply">Применить</button>
-                </div>
+    if (document.getElementById('fp-price-editor-overlay')) return;
+    const win = fptWindow.create({
+        id: 'fp-price-editor-overlay',
+        dialogId: 'fp-price-editor-popup',
+        closeId: 'fp-price-editor-close',
+        title: 'Редактор цен',
+        subtitle: 'Применится ко всем выбранным лотам.',
+        icon: 'sell',
+        size: 'md'
+    });
+    win.body.innerHTML = `
+        <div class="fpt-win-field-group">
+            <span class="fpt-win-label">Что сделать с ценой</span>
+            <div class="fpt-win-seg fp-pe-modes" role="radiogroup" aria-label="Что сделать с ценой">
+                <button type="button" class="fpt-win-seg-btn fp-pe-mode is-active" data-mode="set" aria-pressed="true">Установить =</button>
+                <button type="button" class="fpt-win-seg-btn fp-pe-mode" data-mode="add" aria-pressed="false">Прибавить +</button>
+                <button type="button" class="fpt-win-seg-btn fp-pe-mode" data-mode="sub" aria-pressed="false">Вычесть −</button>
+                <button type="button" class="fpt-win-seg-btn fp-pe-mode" data-mode="pct_up" aria-pressed="false">Поднять %</button>
+                <button type="button" class="fpt-win-seg-btn fp-pe-mode" data-mode="pct_down" aria-pressed="false">Снизить %</button>
             </div>
         </div>
+
+        <div class="fp-pe-fields">
+            <div class="fpt-win-field-group fp-pe-value">
+                <label class="fpt-win-label" for="fp-price-change-input">Значение</label>
+                <div class="fpt-win-affix">
+                    <input type="number" step="0.01" class="fpt-win-input" id="fp-price-change-input" placeholder="0">
+                    <span class="fpt-win-affix-unit" id="fp-pe-unit">₽</span>
+                </div>
+            </div>
+            <div class="fpt-win-field-group">
+                <label class="fpt-win-label" for="fp-pe-min">Не ниже</label>
+                <input type="number" step="0.01" class="fpt-win-input" id="fp-pe-min" placeholder="—">
+            </div>
+            <div class="fpt-win-field-group">
+                <label class="fpt-win-label" for="fp-pe-max">Не выше</label>
+                <input type="number" step="0.01" class="fpt-win-input" id="fp-pe-max" placeholder="—">
+            </div>
+        </div>
+        <div style="margin-top:12px;">${fptWindow.checkboxHtml('Округлять до целого', { id: 'fp-pe-round' })}</div>
+
+        <section class="fpt-win-card fp-pe-preview">
+            <div class="fpt-win-card-head">
+                <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">preview</span></span>
+                <h3 class="fpt-win-card-title">Предпросмотр</h3>
+                <span class="fpt-win-badge">выбрано: <span id="fp-pe-sel-count">0</span></span>
+            </div>
+            <div class="fp-pe-preview-list" id="fp-pe-preview-list"></div>
+        </section>
     `;
-    $('body').append(popupHtml);
+    win.foot.innerHTML = `
+        <div class="fpt-win-actions">
+            <button type="button" class="fpt-win-btn fpt-win-btn--quiet" id="fp-price-editor-cancel">Отмена</button>
+            <button type="button" class="fpt-win-btn fpt-win-btn--primary" id="fp-price-editor-apply">Применить</button>
+        </div>`;
+    document.body.appendChild(win.scrim);
 
     const recalcPreview = () => {
-        const mode = $('.fp-pe-mode.active').data('mode') || 'set';
+        const mode = $('.fp-pe-mode.is-active').data('mode') || 'set';
         const v = parseFloat($('#fp-price-change-input').val());
         const round = $('#fp-pe-round').is(':checked');
         const mn = parseFloat($('#fp-pe-min').val());
@@ -1056,7 +1074,7 @@ function createPriceEditorPopup() {
         const $list = $('#fp-pe-preview-list').empty();
 
         if (selected.length === 0) {
-            $list.html('<div class="fp-pe-preview-empty">Лоты не выбраны - выберите лоты на странице.</div>');
+            $list.html('<div class="fpt-win-empty fp-pe-preview-empty"><span class="material-symbols-rounded" aria-hidden="true">checklist</span>Лоты не выбраны - отметьте лоты на странице.</div>');
             return;
         }
 
@@ -1090,19 +1108,14 @@ function createPriceEditorPopup() {
     window.refreshPriceEditorPreviews = recalcPreview;
 
     $('#fp-price-editor-overlay').on('click', '.fp-pe-mode', function () {
-        $('.fp-pe-mode').removeClass('active');
-        $(this).addClass('active');
+        $('.fp-pe-mode').removeClass('is-active').attr('aria-pressed', 'false');
+        $(this).addClass('is-active').attr('aria-pressed', 'true');
         recalcPreview();
     });
     $('#fp-price-editor-overlay').on('input', '#fp-price-change-input, #fp-pe-min, #fp-pe-max', recalcPreview);
     $('#fp-price-editor-overlay').on('change', '#fp-pe-round', recalcPreview);
 
-    $('#fp-price-editor-overlay').on('click', function(e) {
-        if ($(e.target).is('#fp-price-editor-overlay')) $(this).fadeOut(200);
-    });
-    $('#fp-price-editor-cancel, #fp-price-editor-close').on('click', function() {
-        $('#fp-price-editor-overlay').fadeOut(200);
-    });
+    $('#fp-price-editor-cancel').on('click', closePriceEditorWindow);
     recalcPreview();
 }
 
@@ -1171,27 +1184,29 @@ async function showReactivationPopup() {
     const items = Array.from(merged.values());
 
     if (items.length === 0) {
-        list.html('<li style="text-align:center; color:#888;">Пока нет отключенных лотов</li>');
+        list.html(FPT_REACTIVATE_EMPTY);
     } else {
         items.sort((a, b) => (b.deactivatedAt || 0) - (a.deactivatedAt || 0));
         items.forEach(lot => {
             const dateLine = lot.deactivatedAt
                 ? `Отключен: ${new Date(lot.deactivatedAt).toLocaleString()}`
                 : 'Неактивен на FunPay';
-            const itemHtml = `
-                <li class="fp-reactivate-item" data-offer-id="${lot.offerId}" data-node-id="${lot.nodeId || ''}">
+            const item = $(`
+                <li class="fp-reactivate-item">
                     <div class="fp-reactivate-info">
-                        <div class="name">${lot.name}</div>
-                        <div class="date">${dateLine}</div>
+                        <div class="fpt-win-item-title name"></div>
+                        <div class="fpt-win-item-meta date"></div>
                     </div>
-                    <button class="fp-reactivate-btn">Включить</button>
+                    <button type="button" class="fpt-win-btn fpt-win-btn--sm fp-reactivate-btn">Включить</button>
                 </li>
-            `;
+            `);
+            item.attr({ 'data-offer-id': lot.offerId, 'data-node-id': lot.nodeId || '' });
+            item.find('.name').text(lot.name || ('Лот #' + lot.offerId));
+            item.find('.date').text(dateLine);
+            const itemHtml = item;
             list.append(itemHtml);
         });
     }
 
-    // центрируем (overlay - flex-контейнер; fadeIn ставил display:block и окно
-    // уезжало в левый верхний угол).
-    $('#fp-reactivate-popup-overlay').css('display', 'flex').hide().fadeIn(200);
+    fptWindow.open(document.getElementById('fp-reactivate-popup-overlay'));
 }

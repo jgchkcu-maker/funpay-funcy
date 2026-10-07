@@ -75,27 +75,33 @@ async function initializeAutoDeliveryManager() {
         const managerPopup = createAdvancedManagerModal();
 
         openBtn.addEventListener('click', () => {
+            // окно открываем до заполнения: высоту многострочных товаров можно измерить только у видимого поля.
+            // Крестик, Esc и клик по фону сохраняют товары (как прежний крестик); сбрасывает только «Отмена».
+            fptWindow.open(managerPopup, { onClose: () => { if (!quietClose) applyItems(); } });
             populatePopupFromOriginal();
-            managerPopup.style.display = 'flex';
         });
 
         const popupItemList = managerPopup.querySelector('#ad-items-list-popup');
         const popupItemCount = managerPopup.querySelector('#ad-item-count');
+        const popupEmpty = managerPopup.querySelector('#ad-items-empty');
 
         const updateItemCount = () => {
             const count = popupItemList.children.length;
             popupItemCount.textContent = `Товаров: ${count}`;
+            popupEmpty.hidden = count > 0;
         };
 
         const createItemRow = (content = '') => {
             const row = createElement('div', { class: 'ad-item-row' });
-            const input = createElement('textarea', { class: 'ad-item-input', rows: '1' });
+            const input = createElement('textarea', { class: 'fpt-win-input ad-item-input', rows: '1', 'aria-label': 'Товар' });
             input.value = content;
-            const autoResize = () => { input.style.height = 'auto'; input.style.height = `${input.scrollHeight}px`; };
+            const autoResize = () => { input.style.height = 'auto'; input.style.height = `${input.scrollHeight + 2}px`; };
             input.addEventListener('input', () => { autoResize(); updateCharCounter(input, counter); });
             const controls = createElement('div', { class: 'ad-item-controls' });
             const counter = createElement('div', { class: 'ad-char-counter' });
-            const removeBtn = createElement('button', { type: 'button', class: 'ad-remove-item-btn', title: 'Удалить' }, {}, '×');
+            const removeBtn = fptWindow.button('', { kind: 'quiet', size: 'sm', iconName: 'close', title: 'Удалить' });
+            removeBtn.classList.add('fpt-win-btn--icon', 'ad-remove-item-btn');
+            removeBtn.setAttribute('aria-label', 'Удалить товар');
             removeBtn.addEventListener('click', () => { row.remove(); updateItemCount(); });
             controls.append(removeBtn, counter);
             row.append(input, controls);
@@ -120,24 +126,32 @@ async function initializeAutoDeliveryManager() {
             updateItemCount();
         };
 
-        const closeWithoutSaving = () => managerPopup.style.display = 'none';
+        let quietClose = false;
+        const closeWithoutSaving = () => {
+            quietClose = true;
+            fptWindow.close(managerPopup);
+            quietClose = false;
+        };
 
-        const saveAndCloseManager = () => {
+        const applyItems = () => {
             const itemInputs = popupItemList.querySelectorAll('.ad-item-input');
             const values = Array.from(itemInputs).map(input => input.value.replace(/\n/g, '\\n'));
             secretsTextarea.value = values.join('\n');
             amountInput.value = values.length;
             countDisplay.textContent = `Загружено товаров: ${values.length}`;
             secretsTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-            closeWithoutSaving();
             showNotification('Товары обновлены. Не забудьте сохранить сам лот.', false);
+        };
+
+        const saveAndCloseManager = () => {
+            applyItems();
+            closeWithoutSaving();
         };
 
         // --- ИСПРАВЛЕНИЕ: ВОТ ЭТА СТРОКА БЫЛА ПРОПУЩЕНА ---
         managerPopup.querySelector('#ad-add-item-btn').addEventListener('click', () => { createItemRow(); updateItemCount(); });
         // --- КОНЕЦ ИСПРАВЛЕНИЯ ---
         
-        managerPopup.querySelector('#ad-manager-close-btn').addEventListener('click', saveAndCloseManager);
         managerPopup.querySelector('#ad-manager-save-btn').addEventListener('click', saveAndCloseManager);
         managerPopup.querySelector('#ad-manager-cancel-btn').addEventListener('click', closeWithoutSaving);
         
@@ -145,8 +159,8 @@ async function initializeAutoDeliveryManager() {
         
         const massAddPopup = document.getElementById('ad-mass-add-popup');
         const duplicatePopup = document.getElementById('ad-duplicate-popup');
-        const showPopup = (popupEl) => popupEl.style.display = 'block';
-        const hidePopup = (popupEl) => popupEl.style.display = 'none';
+        const showPopup = (popupEl) => fptWindow.open(popupEl, { focus: popupEl.querySelector('textarea') });
+        const hidePopup = (popupEl) => fptWindow.close(popupEl);
 
         managerPopup.querySelector('#ad-mass-add-btn').addEventListener('click', () => showPopup(massAddPopup));
         document.getElementById('ad-mass-add-cancel').addEventListener('click', () => hidePopup(massAddPopup));
@@ -180,37 +194,63 @@ async function initializeAutoDeliveryManager() {
 
 // Вспомогательная функция, вынесена наружу
 function createAdvancedManagerModal() {
-    // Создаем модальные окна, только если их еще нет
+    // Создаем окна, только если их еще нет
     if (!document.getElementById('fp-tools-ad-manager-popup')) {
-        const managerPopup = createElement('div', { id: 'fp-tools-ad-manager-popup' });
-        managerPopup.innerHTML = `
-            <div class="ad-manager-popup-header">
-                <h3>Менеджер товаров</h3>
-                <button type="button" class="close-btn" id="ad-manager-close-btn">×</button>
+        const manager = fptWindow.create({
+            id: 'fp-tools-ad-manager-popup',
+            closeId: 'ad-manager-close-btn',
+            title: 'Менеджер товаров',
+            subtitle: 'Каждый товар выдаётся покупателю отдельно. До 140 символов на товар.',
+            icon: 'inventory_2',
+            size: 'lg',
+            tall: true
+        });
+        manager.body.innerHTML = `
+            <div class="ad-manager-toolbar">
+                <button type="button" id="ad-add-item-btn" class="fpt-win-btn fpt-win-btn--sm"><span class="material-symbols-rounded" aria-hidden="true">add</span>Добавить товар</button>
+                <button type="button" id="ad-mass-add-btn" class="fpt-win-btn fpt-win-btn--sm"><span class="material-symbols-rounded" aria-hidden="true">playlist_add</span>Массовое добавление</button>
+                <button type="button" id="ad-duplicate-btn" class="fpt-win-btn fpt-win-btn--sm"><span class="material-symbols-rounded" aria-hidden="true">control_point_duplicate</span>Дублировать</button>
+                <button type="button" id="ad-clear-all-btn" class="fpt-win-btn fpt-win-btn--sm fpt-win-btn--danger"><span class="material-symbols-rounded" aria-hidden="true">delete_sweep</span>Очистить всё</button>
+                <span id="ad-item-count" class="fpt-win-badge fpt-win-badge--accent">Товаров: 0</span>
             </div>
-            <div class="ad-manager-popup-body">
-                <div class="ad-manager-toolbar">
-                    <button type="button" id="ad-add-item-btn" class="btn">+ Добавить товар</button>
-                    <button type="button" id="ad-mass-add-btn" class="btn">Массовое добавление</button>
-                    <button type="button" id="ad-duplicate-btn" class="btn">Дублировать</button>
-                    <button type="button" id="ad-clear-all-btn" class="btn btn-default">Очистить всё</button>
-                    <span id="ad-item-count">Товаров: 0</span>
-                </div>
-                <div class="ad-items-list" id="ad-items-list-popup"></div>
-            </div>
-            <div class="ad-manager-popup-footer">
-                <button type="button" id="ad-manager-cancel-btn" class="btn btn-default">Отмена</button>
-                <button type="button" id="ad-manager-save-btn" class="btn btn-primary">Сохранить и закрыть</button>
+            <div class="ad-items-list" id="ad-items-list-popup"></div>
+            <div class="fpt-win-empty" id="ad-items-empty"><span class="material-symbols-rounded" aria-hidden="true">inventory_2</span>Товаров пока нет. Добавьте первый или вставьте список.</div>`;
+        manager.foot.innerHTML = `
+            <div class="fpt-win-actions">
+                <button type="button" id="ad-manager-cancel-btn" class="fpt-win-btn fpt-win-btn--quiet">Отмена</button>
+                <button type="button" id="ad-manager-save-btn" class="fpt-win-btn fpt-win-btn--primary">Сохранить и закрыть</button>
             </div>`;
-        document.body.appendChild(managerPopup);
+        document.body.appendChild(manager.scrim);
 
-        const massAddPopup = createElement('div', { id: 'ad-mass-add-popup', class: 'fp-tools-ad-popup' });
-        massAddPopup.innerHTML = `<h4>Массовое добавление</h4><p style="font-size: 14px; color: var(--fpt-text-muted, #676a73); margin-top: -10px; margin-bottom: 15px;">Вставьте список товаров, каждый с новой строки.</p><textarea id="ad-mass-add-textarea" class="template-input" placeholder="Товар 1\nТовар 2\nТовар 3..."></textarea><div class="popup-actions"><button type="button" id="ad-mass-add-cancel" class="btn btn-default">Отмена</button><button type="button" id="ad-mass-add-confirm" class="btn">Добавить</button></div>`;
-        document.body.appendChild(massAddPopup);
+        const massAdd = fptWindow.create({
+            id: 'ad-mass-add-popup',
+            title: 'Массовое добавление',
+            subtitle: 'Вставьте список товаров, каждый с новой строки.',
+            icon: 'playlist_add',
+            size: 'sm'
+        });
+        massAdd.body.innerHTML = `<textarea id="ad-mass-add-textarea" class="fpt-win-input" rows="8" placeholder="Товар 1\nТовар 2\nТовар 3..." aria-label="Список товаров"></textarea>`;
+        massAdd.foot.innerHTML = `<div class="fpt-win-actions"><button type="button" id="ad-mass-add-cancel" class="fpt-win-btn fpt-win-btn--quiet">Отмена</button><button type="button" id="ad-mass-add-confirm" class="fpt-win-btn fpt-win-btn--primary">Добавить</button></div>`;
+        document.body.appendChild(massAdd.scrim);
 
-        const duplicatePopup = createElement('div', { id: 'ad-duplicate-popup', class: 'fp-tools-ad-popup' });
-        duplicatePopup.innerHTML = `<h4>Дублирование товара</h4><p style="font-size: 14px; color: var(--fpt-text-muted, #676a73); margin-top: -10px; margin-bottom: 15px;">Введите текст товара (можно многострочный) и количество копий.</p><textarea id="ad-duplicate-textarea" class="template-input" placeholder="Текст товара..."></textarea><input type="number" id="ad-duplicate-amount" class="template-input" placeholder="Количество" min="1" value="10"><div class="popup-actions"><button type="button" id="ad-duplicate-cancel" class="btn btn-default">Отмена</button><button type="button" id="ad-duplicate-confirm" class="btn">Создать</button></div>`;
-        document.body.appendChild(duplicatePopup);
+        const duplicate = fptWindow.create({
+            id: 'ad-duplicate-popup',
+            title: 'Дублирование товара',
+            subtitle: 'Один и тот же товар (можно многострочный) добавится нужное число раз.',
+            icon: 'control_point_duplicate',
+            size: 'sm'
+        });
+        duplicate.body.innerHTML = `
+            <div class="fpt-win-field-group">
+                <label class="fpt-win-label" for="ad-duplicate-textarea">Текст товара</label>
+                <textarea id="ad-duplicate-textarea" class="fpt-win-input" rows="4" placeholder="Текст товара..."></textarea>
+            </div>
+            <div class="fpt-win-field-group">
+                <label class="fpt-win-label" for="ad-duplicate-amount">Количество копий</label>
+                <input type="number" id="ad-duplicate-amount" class="fpt-win-input" placeholder="Количество" min="1" value="10" style="max-width:160px;">
+            </div>`;
+        duplicate.foot.innerHTML = `<div class="fpt-win-actions"><button type="button" id="ad-duplicate-cancel" class="fpt-win-btn fpt-win-btn--quiet">Отмена</button><button type="button" id="ad-duplicate-confirm" class="fpt-win-btn fpt-win-btn--primary">Создать</button></div>`;
+        document.body.appendChild(duplicate.scrim);
     }
     return document.getElementById('fp-tools-ad-manager-popup');
 }

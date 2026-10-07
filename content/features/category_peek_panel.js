@@ -50,27 +50,30 @@
         const s = document.createElement('style');
         s.id = 'fpt-peek-styles';
         s.textContent = `
+        /* Палитра меню расширения (fptWindow.paint ставит --fptm-* на панель). */
         .fpt-peek-panel{
-            --pk-bg: var(--fpt-bg, #13141a);
-            --pk-surface: var(--fpt-surface, #1a1c26);
-            --pk-surface2: var(--fpt-surface-2, #20222e);
-            --pk-border: var(--fpt-border, #22253a);
-            --pk-text: var(--fpt-text, #d8dae8);
-            --pk-muted: var(--fpt-text-muted, #9099b8);
-            --pk-accent: var(--fpt-accent, #1b75bb);
-            --pk-shadow: var(--fpt-shadow, rgba(0,0,0,0.5));
+            --pk-bg: var(--fptm-bg, #ffffff);
+            --pk-surface: var(--fptm-nav-surface, #fbfaff);
+            --pk-surface2: var(--fptm-accent-soft, rgba(118,99,246,.12));
+            --pk-border: var(--fptm-nav-border, rgba(119,99,246,.16));
+            --pk-text: var(--fptm-text, #16181d);
+            --pk-muted: var(--fptm-muted, rgba(22,24,29,.74));
+            --pk-accent: var(--fptm-accent, #7663f6);
+            --pk-shadow: var(--fptm-shadow, rgba(22,24,29,.16));
+            color-scheme: var(--fptm-color-scheme, light);
             position:fixed; top:0; right:0; height:100vh; width:340px; max-width:92vw;
             background:var(--pk-bg); border-left:1px solid var(--pk-border);
             box-shadow:-4px 0 16px var(--pk-shadow); z-index:99998;
-            display:flex; flex-direction:column; font-family:Inter,'Segoe UI',sans-serif;
+            display:flex; flex-direction:column; font-family:Inter,'Segoe UI',system-ui,sans-serif; color:var(--pk-text);
             transform:translateX(102%); transition:transform .25s ease;
         }
         .fpt-peek-panel.open{ transform:translateX(0); }
         .fpt-peek-head{ display:flex; align-items:center; justify-content:space-between;
-            padding:14px 16px; border-bottom:1px solid var(--pk-border); flex-shrink:0; }
-        .fpt-peek-head h3{ margin:0; font-size:14px; color:var(--pk-text); font-weight:700; }
-        .fpt-peek-close{ background:none; border:none; color:var(--pk-muted); font-size:22px; cursor:pointer; line-height:1; }
-        .fpt-peek-close:hover{ color:var(--pk-text); }
+            padding:16px 14px 14px 18px; border-bottom:1px solid var(--pk-border); flex-shrink:0; }
+        .fpt-peek-head h3{ margin:0; font-size:16px; color:var(--pk-text); font-weight:650; letter-spacing:-.01em; text-shadow:none; }
+        .fpt-peek-close{ width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center;
+            background:none; border:none; border-radius:10px; color:var(--pk-muted); font-size:22px; cursor:pointer; line-height:1; }
+        .fpt-peek-close:hover{ color:var(--pk-text); background:var(--fptm-hover, rgba(22,24,29,.05)); }
         .fpt-peek-body{ flex:1; overflow-y:auto; padding:12px 14px; }
         .fpt-peek-section-title{ font-size:11px; text-transform:uppercase; letter-spacing:.6px;
             color:var(--pk-muted); font-weight:700; margin:4px 0 8px; display:flex; align-items:center; gap:6px; }
@@ -78,8 +81,8 @@
         .fpt-peek-lots{ display:flex; flex-direction:column; gap:8px;
             padding-right:4px; margin-bottom:18px; }
         .fpt-peek-lot{ display:block; text-decoration:none; background:var(--pk-surface);
-            border:1px solid var(--pk-border); border-radius:9px; padding:9px 11px; transition:border-color .15s, background .15s; }
-        .fpt-peek-lot:hover{ border-color:var(--pk-accent); background:var(--pk-surface2); }
+            border:1px solid var(--pk-border); border-radius:13px; padding:10px 12px; transition:border-color .15s, background .15s; }
+        .fpt-peek-lot:hover{ border-color:var(--fptm-accent-border, var(--pk-accent)); background:var(--pk-surface2); text-decoration:none; }
         .fpt-peek-lot-top{ display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
         .fpt-peek-lot-title{ font-size:12.5px; color:var(--pk-text); line-height:1.35; flex:1;
             display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
@@ -96,7 +99,7 @@
         .fpt-peek-lot-server{ margin-top:5px; font-size:10px; color:var(--pk-muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
         /* чат */
         .fpt-peek-chat{ display:flex; flex-direction:column; gap:8px; }
-        .fpt-peek-msg{ background:var(--pk-surface); border:1px solid var(--pk-border); border-radius:9px; padding:8px 10px; }
+        .fpt-peek-msg{ background:var(--pk-surface); border:1px solid var(--pk-border); border-radius:13px; padding:9px 11px; }
         .fpt-peek-msg-head{ display:flex; justify-content:space-between; gap:8px; margin-bottom:3px; }
         .fpt-peek-msg-author{ font-size:11.5px; font-weight:700; color:var(--pk-accent);
             text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -105,9 +108,9 @@
         .fpt-peek-msg-text{ font-size:12px; color:var(--pk-text); line-height:1.4; white-space:pre-wrap; word-break:break-word; }
         .fpt-peek-empty{ font-size:12px; color:var(--pk-muted); text-align:center; padding:14px 0; }
         .fpt-peek-loader{ font-size:12px; color:var(--pk-muted); text-align:center; padding:18px 0; }
-        .fpt-peek-refresh{ background:none; border:1px solid var(--pk-border); color:var(--pk-muted);
-            border-radius:6px; cursor:pointer; font-size:11px; padding:2px 8px; }
-        .fpt-peek-refresh:hover{ color:var(--pk-text); border-color:var(--pk-accent); }
+        .fpt-peek-refresh{ background:none; border:1px solid var(--fptm-accent-border, var(--pk-border)); color:var(--pk-accent);
+            border-radius:10px; cursor:pointer; font-size:12px; font-weight:600; padding:6px 11px; font-family:inherit; }
+        .fpt-peek-refresh:hover{ background:var(--pk-surface2); }
         .fpt-peek-body::-webkit-scrollbar,.fpt-peek-lots::-webkit-scrollbar{ width:6px; }
         .fpt-peek-body::-webkit-scrollbar-thumb,.fpt-peek-lots::-webkit-scrollbar-thumb{ background:var(--pk-border); border-radius:6px; }
         .fpt-peek-toggle-btn{ }
@@ -218,6 +221,7 @@
             </div>
         `;
         document.body.appendChild(panelEl);
+        if (window.fptWindow) window.fptWindow.paint(panelEl);
         panelEl.querySelector('#fpt-peek-close').addEventListener('click', closePanel);
         panelEl.querySelector('#fpt-peek-refresh').addEventListener('click', () => loadAndRender(node, true));
         return panelEl;

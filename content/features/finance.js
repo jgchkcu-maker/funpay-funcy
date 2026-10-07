@@ -168,30 +168,6 @@
         .fpt-fin-spin{width:30px;height:30px;border:3px solid var(--fpt-border,#ddd);
             border-top-color:var(--fpt-accent,#ff6d15);border-radius:50%;animation:fptFinSpin .8s linear infinite;margin:0 auto 12px;}
         @keyframes fptFinSpin{to{transform:rotate(360deg)}}
-        /* модалка списка операций */
-        .fpt-fin-ov{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;
-            background:rgba(8,9,14,0.62);backdrop-filter:blur(3px);}
-        .fpt-fin-modal{width:min(640px,94vw);max-height:86vh;display:flex;flex-direction:column;
-            background:var(--fpt-surface,#fff);color:var(--fpt-text,#1a1a1a);border:1px solid var(--fpt-border,#e3e3e8);
-            border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.5);overflow:hidden;}
-        .fpt-fin-mhead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 18px;
-            border-bottom:1px solid var(--fpt-border,#ececf0);}
-        .fpt-fin-mtitle{font-size:15px;font-weight:700;}
-        .fpt-fin-msub{font-size:12px;color:var(--fpt-text-muted,#8a8a94);margin-top:2px;}
-        .fpt-fin-mclose{background:none;border:none;font-size:22px;line-height:1;cursor:pointer;color:inherit;opacity:.7;}
-        .fpt-fin-mclose:hover{opacity:1;}
-        .fpt-fin-mtools{display:flex;gap:8px;padding:10px 18px 0;}
-        .fpt-fin-msearch{flex:1;padding:8px 10px;border-radius:8px;font-size:13px;
-            background:var(--fpt-surface-2,#f3f3f5);color:inherit;border:1px solid var(--fpt-border,#ddd);}
-        .fpt-fin-msort{padding:8px 10px;border-radius:8px;font-size:13px;background:var(--fpt-surface-2,#f3f3f5);
-            color:inherit;border:1px solid var(--fpt-border,#ddd);cursor:pointer;}
-        .fpt-fin-mlist{padding:12px 18px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:7px;}
-        .fpt-fin-row{display:flex;justify-content:space-between;gap:10px;align-items:baseline;
-            background:var(--fpt-surface-2,#f7f7f9);border:1px solid var(--fpt-border,#ececf0);border-radius:9px;padding:8px 11px;}
-        .fpt-fin-rtitle{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .fpt-fin-rmeta{font-size:11px;color:var(--fpt-text-muted,#8a8a94);margin-top:3px;}
-        .fpt-fin-rval{font-size:13px;font-weight:700;white-space:nowrap;}
-        .fpt-fin-empty{padding:24px;text-align:center;color:var(--fpt-text-muted,#8a8a94);font-size:13px;}
         `;
         document.head.appendChild(css);
     }
@@ -212,35 +188,37 @@
         </div>`;
     }
 
+    // Список операций открывается в окне расширения (content/ui/page_windows.js).
     function openList(title, list) {
         ensureStyles();
         const old = document.getElementById('fpt-fin-ov');
         if (old) old.remove();
-        const ov = document.createElement('div');
-        ov.id = 'fpt-fin-ov';
-        ov.className = 'fpt-fin-ov';
-        ov.innerHTML = `
-            <div class="fpt-fin-modal">
-                <div class="fpt-fin-mhead">
-                    <div><div class="fpt-fin-mtitle">${esc(title)}</div>
-                    <div class="fpt-fin-msub">${list.length} операц.</div></div>
-                    <button class="fpt-fin-mclose" title="Закрыть">×</button>
-                </div>
-                <div class="fpt-fin-mtools">
-                    <input class="fpt-fin-msearch" type="text" placeholder="Поиск по операциям…" autocomplete="off">
-                    <select class="fpt-fin-msort">
-                        <option value="date-desc">Сначала новые</option>
-                        <option value="date-asc">Сначала старые</option>
-                        <option value="amt-desc">Больше сумма</option>
-                        <option value="amt-asc">Меньше сумма</option>
-                    </select>
-                </div>
-                <div class="fpt-fin-mlist"></div>
-            </div>`;
-        document.body.appendChild(ov);
-        const listEl = ov.querySelector('.fpt-fin-mlist');
-        const searchEl = ov.querySelector('.fpt-fin-msearch');
-        const sortEl = ov.querySelector('.fpt-fin-msort');
+        const win = window.fptWindow.create({
+            id: 'fpt-fin-ov',
+            title,
+            subtitle: `${list.length} операц.`,
+            icon: 'receipt_long',
+            size: 'md',
+            tall: true,
+            footer: false,
+            removeOnClose: true
+        });
+        win.body.innerHTML = `
+            <div class="fpt-win-toolbar">
+                <input class="fpt-win-input fpt-fin-msearch" type="search" placeholder="Поиск по операциям…" aria-label="Поиск по операциям" autocomplete="off">
+                <select class="fpt-win-input fpt-fin-msort" aria-label="Сортировка">
+                    <option value="date-desc">Сначала новые</option>
+                    <option value="date-asc">Сначала старые</option>
+                    <option value="amt-desc">Больше сумма</option>
+                    <option value="amt-asc">Меньше сумма</option>
+                </select>
+            </div>
+            <div class="fpt-fin-mlist"></div>`;
+        document.body.appendChild(win.scrim);
+        window.fptWindow.open(win.scrim);
+        const listEl = win.body.querySelector('.fpt-fin-mlist');
+        const searchEl = win.body.querySelector('.fpt-fin-msearch');
+        const sortEl = win.body.querySelector('.fpt-fin-msort');
         const render = () => {
             let arr = list.slice();
             const q = searchEl.value.trim().toLowerCase();
@@ -251,17 +229,11 @@
             else if (v === 'amt-asc') arr.sort((a, b) => Math.abs(a.signed) - Math.abs(b.signed));
             else if (v === 'date-asc') arr.sort((a, b) => a.date - b.date);
             else arr.sort((a, b) => b.date - a.date);
-            listEl.innerHTML = arr.length ? arr.map(txnRow).join('') : `<div class="fpt-fin-empty">Ничего не найдено.</div>`;
+            listEl.innerHTML = arr.length ? arr.map(txnRow).join('') : `<div class="fpt-win-empty">Ничего не найдено.</div>`;
         };
         render();
         searchEl.addEventListener('input', render);
         sortEl.addEventListener('change', render);
-        const close = () => ov.remove();
-        ov.addEventListener('click', e => { if (e.target === ov) close(); });
-        ov.querySelector('.fpt-fin-mclose').addEventListener('click', close);
-        document.addEventListener('keydown', function onEsc(e) {
-            if (e.key === 'Escape') { close(); document.removeEventListener('keydown', onEsc); }
-        });
     }
 
     function periodLabel() {

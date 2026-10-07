@@ -47,77 +47,101 @@ class ImageGenerator {
     createModal() {
         if (document.getElementById('fpToolsImageGeneratorModal')) return;
 
-        const modal = createElement('div', { id: 'fpToolsImageGeneratorModal' });
-        modal.innerHTML = `
-            <div class="fp-tools-ig-container">
-                <div class="fp-tools-ig-header">
-                    <h3>Генератор изображений</h3>
-                    <button id="fpToolsImageGeneratorClose" class="fp-tools-ig-close">×</button>
+        const win = fptWindow.create({
+            id: 'fpToolsImageGeneratorModal',
+            dialogId: 'fpToolsImageGeneratorDialog',
+            closeId: 'fpToolsImageGeneratorClose',
+            title: 'Генератор изображений',
+            subtitle: 'Соберите картинку для лота и сохраните её на компьютер.',
+            icon: 'imagesmode',
+            size: 'lg'
+        });
+        const line = (id, placeholder, colorId, sizeId, min, max, value) => `
+            <div class="fp-tools-ig-line">
+                <input type="text" id="${id}" class="fpt-win-input fp-tools-ig-input" placeholder="${placeholder}" aria-label="${placeholder}">
+                <div class="fp-tools-ig-inline-controls">
+                    <input type="color" id="${colorId}" class="fpt-win-color" aria-label="Цвет: ${placeholder}">
+                    <span class="material-symbols-rounded fpt-win-faint" aria-hidden="true">text_increase</span>
+                    <input type="range" id="${sizeId}" class="fpt-win-range" min="${min}" max="${max}" value="${value}" aria-label="Размер: ${placeholder}">
                 </div>
-                <div class="fp-tools-ig-body">
+            </div>`;
+        win.body.innerHTML = `
+            <div class="fp-tools-ig-body">
+                <div class="fp-tools-ig-side">
                     <div class="fp-tools-ig-preview">
                         <canvas id="fpToolsImageCanvas" width="320" height="320"></canvas>
                     </div>
-                    <div class="fp-tools-ig-controls">
-                        <div class="fp-tools-ig-tabs">
-                            <button class="fp-tools-ig-tab active" data-tab="themes">Темы</button>
-                            <button class="fp-tools-ig-tab" data-tab="text">Текст</button>
-                            <button class="fp-tools-ig-tab" data-tab="background">Фон</button>
-                            <button class="fp-tools-ig-tab" data-tab="icon">Иконка</button>
-                            <button class="fp-tools-ig-tab" id="fpToolsKeyboardToggleBtn">Символы</button>
+                    <section class="fpt-win-card fp-tools-ig-ai-generator">
+                        <div class="fpt-win-card-head">
+                            <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span></span>
+                            <h3 class="fpt-win-card-title">Создать с помощью ИИ</h3>
                         </div>
-                        <div class="fp-tools-ig-panels">
-                            <div class="fp-tools-ig-panel active" data-panel="themes">
-                                <div class="fp-tools-ig-theme-grid">
-                                    <div class="fp-tools-ig-theme-item" data-theme='{"bgColor1":"#2c3e50","bgColor2":"#fd746c","text1Color":"#ffffff","iconColor":"#ffffff"}' style="background: linear-gradient(45deg, #2c3e50, #fd746c);"></div>
-                                    <div class="fp-tools-ig-theme-item" data-theme='{"bgColor1":"#00c6ff","bgColor2":"#0072ff","text1Color":"#ffffff","iconColor":"#ffffff"}' style="background: linear-gradient(45deg, #00c6ff, #0072ff);"></div>
-                                    <div class="fp-tools-ig-theme-item" data-theme='{"bgColor1":"#ff0084","bgColor2":"#33001b","text1Color":"#ffffff","iconColor":"#ffffff"}' style="background: linear-gradient(45deg, #ff0084, #33001b);"></div>
-                                    <div class="fp-tools-ig-theme-item" data-theme='{"bgColor1":"#101010","bgColor2":"#101010","text1Color":"#00ff00","iconColor":"#00ff00"}' style="background: #101010;"></div>
-                                    <div class="fp-tools-ig-theme-item" data-theme='{"bgColor1":"#fdfc47","bgColor2":"#24fe41","text1Color":"#000000","iconColor":"#000000"}' style="background: linear-gradient(45deg, #fdfc47, #24fe41);"></div>
-                                    <div class="fp-tools-ig-theme-item" data-theme='{"bgColor1":"#ffffff","bgColor2":"#e0e0e0","text1Color":"#333333","iconColor":"#333333"}' style="background: #ffffff;"></div>
-                                </div>
+                        <textarea id="igAiPrompt" class="fpt-win-input" rows="3" placeholder="Пример: огненный значок для клана, текст 'FIRE SQUAD'" aria-label="Описание картинки для ИИ"></textarea>
+                        <button type="button" id="igAiGenerateBtn" class="fpt-win-btn fpt-win-btn--block" style="margin-top:10px;">
+                            <span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>Сгенерировать
+                        </button>
+                    </section>
+                </div>
+                <div class="fp-tools-ig-controls">
+                    <div class="fpt-win-seg fpt-win-seg--fill fp-tools-ig-tabs" role="tablist" aria-label="Настройки картинки">
+                        <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab is-active" data-tab="themes" aria-selected="true">Темы</button>
+                        <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="text" aria-selected="false">Текст</button>
+                        <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="background" aria-selected="false">Фон</button>
+                        <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="icon" aria-selected="false">Иконка</button>
+                        <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="symbols" id="fpToolsKeyboardToggleBtn" aria-selected="false">Символы</button>
+                    </div>
+                    <div class="fp-tools-ig-panels">
+                        <div class="fp-tools-ig-panel fpt-win-pane" data-panel="themes">
+                            <p class="fpt-win-hint" style="margin:0 0 12px;">Готовые сочетания цветов фона, текста и иконки.</p>
+                            <div class="fp-tools-ig-theme-grid">
+                                    <button type="button" class="fp-tools-ig-theme-item" aria-label="Тема 1" data-theme='{"bgColor1":"#2c3e50","bgColor2":"#fd746c","text1Color":"#ffffff","iconColor":"#ffffff"}' style="background: linear-gradient(45deg, #2c3e50, #fd746c);"></button>
+                                    <button type="button" class="fp-tools-ig-theme-item" aria-label="Тема 2" data-theme='{"bgColor1":"#00c6ff","bgColor2":"#0072ff","text1Color":"#ffffff","iconColor":"#ffffff"}' style="background: linear-gradient(45deg, #00c6ff, #0072ff);"></button>
+                                    <button type="button" class="fp-tools-ig-theme-item" aria-label="Тема 3" data-theme='{"bgColor1":"#ff0084","bgColor2":"#33001b","text1Color":"#ffffff","iconColor":"#ffffff"}' style="background: linear-gradient(45deg, #ff0084, #33001b);"></button>
+                                    <button type="button" class="fp-tools-ig-theme-item" aria-label="Тема 4" data-theme='{"bgColor1":"#101010","bgColor2":"#101010","text1Color":"#00ff00","iconColor":"#00ff00"}' style="background: #101010;"></button>
+                                    <button type="button" class="fp-tools-ig-theme-item" aria-label="Тема 5" data-theme='{"bgColor1":"#fdfc47","bgColor2":"#24fe41","text1Color":"#000000","iconColor":"#000000"}' style="background: linear-gradient(45deg, #fdfc47, #24fe41);"></button>
+                                    <button type="button" class="fp-tools-ig-theme-item" aria-label="Тема 6" data-theme='{"bgColor1":"#ffffff","bgColor2":"#e0e0e0","text1Color":"#333333","iconColor":"#333333"}' style="background: #ffffff;"></button>
                             </div>
-                            <div class="fp-tools-ig-panel" data-panel="text">
-                                <input type="text" id="igText1" class="fp-tools-ig-input" placeholder="Заголовок">
-                                <div class="fp-tools-ig-inline-controls"><input type="color" id="igText1Color"><input type="range" id="igText1Size" min="16" max="100" value="48"></div>
-                                <input type="text" id="igText2" class="fp-tools-ig-input" placeholder="Подзаголовок">
-                                <div class="fp-tools-ig-inline-controls"><input type="color" id="igText2Color"><input type="range" id="igText2Size" min="12" max="64" value="24"></div>
-                                <input type="text" id="igText3" class="fp-tools-ig-input" placeholder="Доп. текст">
-                                <div class="fp-tools-ig-inline-controls"><input type="color" id="igText3Color"><input type="range" id="igText3Size" min="10" max="48" value="20"></div>
-                            </div>
-                            <div class="fp-tools-ig-panel" data-panel="background">
-                                <label>Цвет 1:</label><input type="color" id="igBgColor1">
-                                <label>Цвет 2 (для градиента):</label><input type="color" id="igBgColor2">
-                            </div>
-                            <div class="fp-tools-ig-panel" data-panel="icon">
-                                 <input type="text" id="igIcon" class="fp-tools-ig-input" placeholder="Иконка (напр. gamepad). Оставьте пустым, чтобы убрать.">
-                                <div class="fp-tools-ig-inline-controls"><input type="color" id="igIconColor"><input type="range" id="igIconSize" min="32" max="200" value="100"></div>
-                                <p class="fp-tools-ig-small-text">Используйте названия из <a href="https://fonts.google.com/icons" target="_blank" rel="noopener noreferrer">Google Material Icons</a> (в нижнем регистре, заменяя пробелы на \`_\`).</p>
-                            </div>
-                            <div class="fp-tools-ig-symbols-panel"></div>
                         </div>
-                        <div class="fp-tools-ig-ai-generator">
-                            <div class="fp-tools-ig-ai-header">
-                                <span class="material-icons" style="font-size: 20px;">auto_awesome</span>
-                                <span>Создать с помощью ИИ</span>
+                        <div class="fp-tools-ig-panel fpt-win-pane" data-panel="text" hidden>
+                            ${line('igText1', 'Заголовок', 'igText1Color', 'igText1Size', 16, 100, 48)}
+                            ${line('igText2', 'Подзаголовок', 'igText2Color', 'igText2Size', 12, 64, 24)}
+                            ${line('igText3', 'Доп. текст', 'igText3Color', 'igText3Size', 10, 48, 20)}
+                        </div>
+                        <div class="fp-tools-ig-panel fpt-win-pane" data-panel="background" hidden>
+                            <div class="fp-tools-ig-colors">
+                                <label class="fp-tools-ig-color-field">
+                                    <input type="color" id="igBgColor1" class="fpt-win-color">
+                                    <span><span class="fpt-win-label" style="margin:0;">Цвет 1</span><span class="fpt-win-hint" style="margin:0;">Начало градиента</span></span>
+                                </label>
+                                <label class="fp-tools-ig-color-field">
+                                    <input type="color" id="igBgColor2" class="fpt-win-color">
+                                    <span><span class="fpt-win-label" style="margin:0;">Цвет 2</span><span class="fpt-win-hint" style="margin:0;">Конец градиента</span></span>
+                                </label>
                             </div>
-                            <textarea id="igAiPrompt" rows="3" placeholder="Пример: огненный значок для клана, текст 'FIRE SQUAD'"></textarea>
-                            <button id="igAiGenerateBtn" class="fp-tools-ig-btn-primary">
-                                <span class="btn-text">Сгенерировать</span>
-                                <span class="btn-loader"></span>
-                            </button>
+                        </div>
+                        <div class="fp-tools-ig-panel fpt-win-pane" data-panel="icon" hidden>
+                            ${line('igIcon', 'Иконка (напр. gamepad)', 'igIconColor', 'igIconSize', 32, 200, 100)}
+                            <p class="fpt-win-hint">Названия из <a href="https://fonts.google.com/icons" target="_blank" rel="noopener noreferrer">Google Material Icons</a> - в нижнем регистре, пробелы заменяются на «_». Оставьте поле пустым, чтобы убрать иконку.</p>
+                        </div>
+                        <div class="fp-tools-ig-panel fpt-win-pane fp-tools-ig-symbols-panel" data-panel="symbols" hidden>
+                            <p class="fpt-win-hint" style="margin:0 0 12px;">Поставьте курсор в поле на вкладке «Текст» или «Иконка» и нажмите символ - он вставится туда.</p>
+                            <div class="fp-tools-ig-symbols"></div>
                         </div>
                     </div>
                 </div>
-                <div class="fp-tools-ig-footer">
-                    <button id="fpToolsImageGeneratorSave" class="fp-tools-ig-btn-primary">Сохранить</button>
-                </div>
             </div>`;
-        document.body.appendChild(modal);
+        win.foot.innerHTML = `
+            <div class="fpt-win-actions">
+                <button type="button" class="fpt-win-btn fpt-win-btn--quiet" data-ig-close>Закрыть</button>
+                <button type="button" id="fpToolsImageGeneratorSave" class="fpt-win-btn fpt-win-btn--primary">
+                    <span class="material-symbols-rounded" aria-hidden="true">download</span>Сохранить
+                </button>
+            </div>`;
+        document.body.appendChild(win.scrim);
     }
 
-    show() { document.getElementById('fpToolsImageGeneratorModal').style.display = 'flex'; }
-    hide() { document.getElementById('fpToolsImageGeneratorModal').style.display = 'none'; }
+    show() { fptWindow.open(document.getElementById('fpToolsImageGeneratorModal')); }
+    hide() { fptWindow.close(document.getElementById('fpToolsImageGeneratorModal')); }
     
     updateInputs() {
         document.getElementById('igText1').value = this.settings.text1;
@@ -144,25 +168,30 @@ class ImageGenerator {
 
     addEventListeners() {
         const modal = document.getElementById('fpToolsImageGeneratorModal');
-        modal.querySelector('#fpToolsImageGeneratorClose').addEventListener('click', () => this.hide());
+        modal.querySelector('[data-ig-close]').addEventListener('click', () => this.hide());
         modal.querySelector('#fpToolsImageGeneratorSave').addEventListener('click', () => this.saveToComputer());
 
-        modal.querySelectorAll('.fp-tools-ig-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const tabName = e.target.dataset.tab;
-                modal.querySelectorAll('.fp-tools-ig-tab, .fp-tools-ig-panel, .fp-tools-ig-symbols-panel').forEach(el => el.classList.remove('active'));
-                e.target.classList.add('active');
-                if (tabName !== 'symbols') {
-                    const panel = modal.querySelector(`.fp-tools-ig-panel[data-panel="${tabName}"]`);
-                    if (panel) panel.classList.add('active');
-                    modal.querySelector('.fp-tools-ig-symbols-panel').style.display = 'none';
+        const SYMBOLS = [ '★', '☆', '✪', '✯', '✡', '✩', '✧', '✵', '✶', '✷', '✸', '✹', '✔', '✓', '☑', '✅', '✖', '❌', '✘', '❎', '❤', '♡', '♥', '✨', '⚡', '❄', '🔥', '☘', '⚜', '⚫', '⚪', '◼', '◻', '●', '○', '➥', '➡', '➢', '➤', '▶', '◀', '▲', '▼', '⚔', '⚖', '⚕', '⚓', '⚙', '⚠', '⛔', '☢', '☣', '⬆', '↗' ];
+        const tabs = modal.querySelectorAll('.fp-tools-ig-tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                tabs.forEach(t => {
+                    const on = t === tab;
+                    t.classList.toggle('is-active', on);
+                    t.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+                modal.querySelectorAll('.fp-tools-ig-panel').forEach(panel => { panel.hidden = panel.dataset.panel !== tabName; });
+                const symbolsPanel = modal.querySelector('.fp-tools-ig-symbols');
+                if (tabName === 'symbols' && !symbolsPanel.childElementCount) {
+                    symbolsPanel.innerHTML = SYMBOLS.map(symbol => `<button type="button" class="fp-tools-ig-symbol-char">${symbol}</button>`).join('');
                 }
             });
         });
 
         modal.querySelectorAll('.fp-tools-ig-theme-item').forEach(item => {
             item.addEventListener('click', (e) => {
-                this.applyTheme(JSON.parse(e.target.dataset.theme));
+                this.applyTheme(JSON.parse(e.currentTarget.dataset.theme));
             });
         });
 
@@ -180,20 +209,7 @@ class ImageGenerator {
                 this.settings[keyMap[id]] = e.target.value;
                 this.draw();
             });
-            el.addEventListener('focus', () => { this.activeInput = el; });
-        });
-
-        modal.querySelector("#fpToolsKeyboardToggleBtn").addEventListener("click", () => {
-            const panel = modal.querySelector(".fp-tools-ig-symbols-panel");
-            const symbols = [ '★', '☆', '✪', '✯', '✡', '✩', '✧', '✵', '✶', '✷', '✸', '✹', '✔', '✓', '☑', '✅', '✖', '❌', '✘', '❎', '❤', '♡', '♥', '✨', '⚡', '❄', '🔥', '☘', '⚜', '⚫', '⚪', '◼', '◻', '●', '○', '➥', '➡', '➢', '➤', '▶', '◀', '▲', '▼', '⚔', '⚖', '⚕', '⚓', '⚙', '⚠', '⛔', '☢', '☣', '⬆', '↗' ];
-            if (panel.innerHTML === '') {
-                panel.innerHTML = symbols.map(symbol => `<span class="fp-tools-ig-symbol-char">${symbol}</span>`).join('');
-            }
-            const isVisible = panel.style.display === 'grid';
-            panel.style.display = isVisible ? 'none' : 'grid';
-            if (!isVisible) {
-                modal.querySelectorAll('.fp-tools-ig-panel').forEach(p => p.classList.remove('active'));
-            }
+            if (el.type === 'text') el.addEventListener('focus', () => { this.activeInput = el; });
         });
 
         modal.querySelector('.fp-tools-ig-panels').addEventListener("click", (event) => {
@@ -220,7 +236,7 @@ class ImageGenerator {
                 return;
             }
 
-            btn.classList.add('loading');
+            btn.classList.add('is-loading');
             btn.disabled = true;
 
             try {
@@ -234,7 +250,7 @@ class ImageGenerator {
             } catch (error) {
                 showNotification(`Ошибка ИИ: ${error.message}`, true);
             } finally {
-                btn.classList.remove('loading');
+                btn.classList.remove('is-loading');
                 btn.disabled = false;
             }
         });
@@ -352,4 +368,4 @@ function initializeImageGenerator() {
         }
         imageGeneratorInstance.show();
     });
-}
+}

@@ -29,60 +29,54 @@ function createAIGeneratorUI() {
 }
 
 function createModal() {
-    const modal = createElement('div', { class: 'fp-tools-ai-gen-modal', id: 'fp-tools-ai-gen-modal' });
-    modal.innerHTML = `
-        <div class="fp-tools-ai-gen-modal-content">
-            <div class="fp-tools-ai-gen-modal-header">
-                <h3>ИИ-генератор лотов</h3>
-                <button class="close-btn">&times;</button>
-            </div>
-            <div class="fp-tools-ai-gen-modal-body">
-                <p>ИИ проанализирует ваши существующие лоты и создаст новый в похожем стиле.</p>
-                <label for="ai-prompt-title">Что продаём? (Краткая идея для заголовка)</label>
-                <input type="text" id="ai-prompt-title" placeholder="Например: Пак аватарок на тему аниме">
-                
-                <label for="ai-prompt-desc">О чём написать в описании? (Ключевые особенности)</label>
-                <textarea id="ai-prompt-desc" rows="4" placeholder="Например: 350 тысяч картинок, разделено по категориям, автовыдача, уникальные"></textarea>
-
-                <div class="fp-tools-ai-gen-options">
-                    <label>
-                        <input type="checkbox" id="ai-gen-buyer-msg">
-                        <span class="custom-checkbox"></span>
-                        <span>Сгенерировать сообщение для покупателя</span>
-                    </label>
-                    <label>
-                        <input type="checkbox" id="ai-gen-translate">
-                        <span class="custom-checkbox"></span>
-                        <span>Автоматически перевести на английский</span>
-                    </label>
-                </div>
-            </div>
-            <div class="fp-tools-ai-gen-modal-footer">
-                <button id="ai-gen-submit-btn" class="submit-btn">
-                    <span class="btn-text">Сгенерировать</span>
-                    <span class="btn-loader"></span>
-                </button>
-            </div>
+    const win = fptWindow.create({
+        id: 'fp-tools-ai-gen-modal',
+        title: 'ИИ-генератор лотов',
+        subtitle: 'ИИ изучит ваши лоты и напишет новый в похожем стиле.',
+        icon: 'auto_awesome',
+        size: 'md'
+    });
+    win.body.innerHTML = `
+        <div class="fpt-win-field-group">
+            <label class="fpt-win-label" for="ai-prompt-title">Что продаём?</label>
+            <input type="text" class="fpt-win-input" id="ai-prompt-title" placeholder="Например: Пак аватарок на тему аниме">
+            <p class="fpt-win-hint">Краткая идея для заголовка.</p>
+        </div>
+        <div class="fpt-win-field-group">
+            <label class="fpt-win-label" for="ai-prompt-desc">О чём написать в описании?</label>
+            <textarea class="fpt-win-input" id="ai-prompt-desc" rows="4" placeholder="Например: 350 тысяч картинок, разделено по категориям, автовыдача, уникальные"></textarea>
+            <p class="fpt-win-hint">Ключевые особенности товара.</p>
+        </div>
+        <div class="fpt-win-checks fpt-win-checks--panel fpt-win-checks--column" style="margin-top:16px;">
+            ${fptWindow.checkboxHtml('Сгенерировать сообщение для покупателя', { id: 'ai-gen-buyer-msg' })}
+            ${fptWindow.checkboxHtml('Автоматически перевести на английский', { id: 'ai-gen-translate' })}
         </div>
     `;
-    return modal;
+    win.foot.innerHTML = `
+        <div class="fpt-win-actions">
+            <button type="button" class="fpt-win-btn fpt-win-btn--quiet" data-ai-gen-cancel>Отмена</button>
+            <button type="button" id="ai-gen-submit-btn" class="fpt-win-btn fpt-win-btn--primary">
+                <span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>Сгенерировать
+            </button>
+        </div>`;
+    return win.scrim;
 }
 
 function setupAIGeneratorEventListeners(button, overlay, canvas, modal) {
     // FIX 2.9.0: кнопка ИИ-генерации - простой клон "Импорт", без частиц/canvas.
-    // Здесь только открытие/закрытие модалки и отправка.
-    button.addEventListener('click', () => modal.classList.add('active'));
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.classList.remove('active');
+    // Здесь только открытие/закрытие окна и отправка.
+    button.addEventListener('click', (event) => {
+        event.preventDefault();
+        fptWindow.open(modal, { focus: modal.querySelector('#ai-prompt-title') });
     });
-    modal.querySelector('.close-btn').addEventListener('click', () => modal.classList.remove('active'));
+    modal.querySelector('[data-ai-gen-cancel]').addEventListener('click', () => fptWindow.close(modal));
     modal.querySelector('#ai-gen-submit-btn').addEventListener('click', handleAIGeneration);
 }
 
 
 async function handleAIGeneration() {
     const submitBtn = document.getElementById('ai-gen-submit-btn');
-    submitBtn.classList.add('loading');
+    submitBtn.classList.add('is-loading');
     submitBtn.disabled = true;
 
     try {
@@ -157,14 +151,14 @@ async function handleAIGeneration() {
         
         document.querySelectorAll('.lot-field-input').forEach(el => el.dispatchEvent(new Event('input', { bubbles: true })));
 
-        document.getElementById('fp-tools-ai-gen-modal').classList.remove('active');
+        fptWindow.close(document.getElementById('fp-tools-ai-gen-modal'));
         showNotification('Лот успешно сгенерирован!', false);
 
     } catch (error) {
         showNotification(`Ошибка генерации: ${error.message}`, true);
         console.error("AI Lot Generation Error:", error);
     } finally {
-        submitBtn.classList.remove('loading');
+        submitBtn.classList.remove('is-loading');
         submitBtn.disabled = false;
     }
 }

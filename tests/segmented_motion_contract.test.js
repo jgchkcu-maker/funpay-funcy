@@ -7,15 +7,15 @@ const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
 test('tab-like controls use consistent hover and selected-state motion across popup sections', () => {
     const categories = read('css/popup_categories.css');
-    const shell = read('css/content_styles.css');
     const imageGenerator = read('css/image_generator.css');
+    const windows = read('css/page_windows.css');
     const salesModes = read('content/features/sales_modes.js');
 
     for (const [source, selector] of [
         [categories, '.fpt-fin-tab'],
         [categories, '.fpt-fin-seg-btn'],
         [categories, '.fpt-ad-summary-chip'],
-        [shell, '.fp-cw-tab'],
+        [windows, '.fpt-win-seg-btn'],
         [imageGenerator, '.fp-tools-ig-tab'],
         [salesModes, '.fp-sm-ctab'],
     ]) {

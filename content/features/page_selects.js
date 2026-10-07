@@ -115,11 +115,11 @@
         if (p.length < 3 || p.slice(0, 3).some(Number.isNaN)) return null;
         return [p[0], p[1], p[2], p.length > 3 && !Number.isNaN(p[3]) ? p[3] : 1];
     }
-    function resolveColor(cssValue) {
+    function resolveColor(cssValue, scope = document.body) {
         const probe = document.createElement('span');
         probe.style.setProperty('display', 'none', 'important');
         probe.style.setProperty('color', cssValue, 'important');
-        document.body.append(probe);
+        scope.append(probe);
         const rgb = parseRgb(getComputedStyle(probe).color);
         probe.remove();
         return rgb;
@@ -138,13 +138,15 @@
     function applyColors(select, menu) {
         const WHITE = [255, 255, 255];
         const BLACK = [0, 0, 0];
-        let bg = resolveColor('var(--fptm-bg, #fff)') || [255, 255, 255, 1];
+        // Selects inside extension windows take that window's palette (css/page_windows.css).
+        const scope = select.closest('.fpt-win-scrim') || document.body;
+        let bg = resolveColor('var(--fptm-bg, #fff)', scope) || [255, 255, 255, 1];
         // Composite a translucent background onto black/white so nothing shows through.
         if (bg[3] < 1) bg = mix(luminance(bg) < 0.18 ? BLACK : WHITE, bg, bg[3]);
         const dark = luminance(bg) < 0.18;
-        let text = resolveColor('var(--fptm-text, #222)') || BLACK;
+        let text = resolveColor('var(--fptm-text, #222)', scope) || BLACK;
         if (contrast(text, bg) < 4.5) text = dark ? [242, 243, 245] : [22, 24, 29];
-        let accent = resolveColor('var(--fptm-accent, #1b75bb)') || [27, 117, 187];
+        let accent = resolveColor('var(--fptm-accent, #1b75bb)', scope) || [27, 117, 187];
         for (let i = 0; i < 10 && contrast(accent, bg) < 4.5; i++) accent = mix(accent, dark ? WHITE : BLACK, 0.2);
 
         const set = (name, value) => menu.style.setProperty(name, value);

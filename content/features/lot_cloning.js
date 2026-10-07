@@ -12,86 +12,69 @@ async function handlePublicLotCopy() {
     openCloneWizard(offerId);
 }
 
+// Окно «Копирование лота» - общий каркас окон расширения (content/ui/page_windows.js):
+// та же палитра, фиолетовый акцент и элементы, что и в меню FunPay Funcy.
 function ensureCloneWizardModal() {
-    let overlay = document.getElementById('fp-clone-wizard-overlay');
-    if (overlay) return overlay;
+    const existing = document.getElementById('fp-clone-wizard-overlay');
+    if (existing) return existing;
 
-    overlay = createElement('div', { id: 'fp-clone-wizard-overlay' });
-    overlay.innerHTML = `
-        <div id="fp-clone-wizard" class="fp-wizard-container">
-            <div class="fp-cw-header">
-                <h3>Копирование лота</h3>
-                <button class="fp-cw-close" id="fp-cw-close">×</button>
-            </div>
-            <div class="fp-cw-body" id="fp-cw-body">
-                <div class="fp-cw-loader"></div>
-            </div>
-        </div>`;
-    document.body.appendChild(overlay);
-
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeCloneWizard(); });
-    overlay.querySelector('#fp-cw-close').addEventListener('click', closeCloneWizard);
-    return overlay;
+    const win = fptWindow.create({
+        id: 'fp-clone-wizard-overlay',
+        dialogId: 'fp-clone-wizard',
+        bodyId: 'fp-cw-body',
+        footId: 'fp-cw-foot',
+        closeId: 'fp-cw-close',
+        title: 'Копирование лота',
+        icon: 'content_copy',
+        size: 'xl',
+        onClose: () => { __fpCloneState = null; }
+    });
+    document.body.appendChild(win.scrim);
+    return win.scrim;
 }
 
 function closeCloneWizard() {
     const overlay = document.getElementById('fp-clone-wizard-overlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) fptWindow.close(overlay);
     __fpCloneState = null;
 }
 
-function cloneSurfaceColors() {
-    // плотный фон: при кастомной теме блоки страницы прозрачные, и мастер просвечивал
-    const { bg, color } = fptSolidSurface(['.content-account', '.content', '.container', document.body]);
-    let accent = '';
-    const btn = document.querySelector('.btn-primary');
-    if (btn) {
-        const bc = getComputedStyle(btn).backgroundColor;
-        if (bc && bc !== 'rgba(0, 0, 0, 0)' && bc !== 'transparent') accent = bc;
-    }
-    if (!accent) accent = '#1b75bb';
-    const rgb = bg.match(/\d+/g);
-    const lum = rgb ? (0.299 * +rgb[0] + 0.587 * +rgb[1] + 0.114 * +rgb[2]) : 30;
-    const isLight = lum > 140;
-    return { bg, color, accent, isLight };
+function setCloneWizardSubtitle(text) {
+    const sub = document.querySelector('#fp-clone-wizard .fpt-win-sub');
+    if (!sub) return;
+    sub.textContent = text || '';
+    sub.hidden = !text;
 }
 
-function applyWizardTheme(rootId) {
-    const root = document.getElementById(rootId);
-    if (!root) return;
-    const { bg, color, accent, isLight } = cloneSurfaceColors();
-    const border = isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.12)';
-    const subtle = isLight ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.05)';
-    const muted = isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)';
-    
-    if (!document.getElementById('fp-wizard-shared-css')) {
-        const s = document.createElement('style');
-        s.id = 'fp-wizard-shared-css';
-        s.textContent = `
-            .fp-wizard-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(3px); z-index:10010; justify-content:center; align-items:center; font-family:inherit; }
-            .fp-wizard-container { width:92%; max-width:960px; max-height:90vh; display:flex; flex-direction:column; background:var(--cw-bg); color:var(--cw-color); border:1px solid var(--cw-border); border-radius:14px; box-shadow:0 12px 48px rgba(0,0,0,0.45); overflow:hidden; animation:fpCwPopIn 0.24s cubic-bezier(0.26,0.53,0.74,1.3); }
-        `;
-        document.head.appendChild(s);
-    }
+// Состояние загрузки: спиннер и пояснение в теле, подвал пустой.
+function showCloneWizardLoading(text) {
+    setCloneWizardSubtitle('');
+    const body = document.getElementById('fp-cw-body');
+    const foot = document.getElementById('fp-cw-foot');
+    if (foot) foot.innerHTML = '';
+    body.innerHTML = `<div class="fpt-win-empty"><div class="fpt-win-spinner"></div>${escapeHtmlClone(text)}</div>`;
+}
 
-    root.style.setProperty('--cw-bg', bg);
-    root.style.setProperty('--cw-color', color);
-    root.style.setProperty('--cw-accent', accent);
-    root.style.setProperty('--cw-border', border);
-    root.style.setProperty('--cw-subtle', subtle);
-    root.style.setProperty('--cw-muted', muted);
-    root.style.setProperty('--cw-field-bg', isLight ? '#fff' : 'rgba(255,255,255,0.04)');
+function showCloneWizardError(message, retry) {
+    const body = document.getElementById('fp-cw-body');
+    const foot = document.getElementById('fp-cw-foot');
+    if (foot) foot.innerHTML = '';
+    body.innerHTML = `
+        <div class="fpt-win-empty fpt-win-empty--error" role="alert">
+            <span class="material-symbols-rounded" aria-hidden="true">error</span>
+            <p class="fpt-win-empty-title">Не удалось подготовить копию</p>
+            ${escapeHtmlClone(message)}
+            ${retry ? '<div style="margin-top:16px;"><button type="button" class="fpt-win-btn fpt-win-btn--sm" id="fp-cw-retry"><span class="material-symbols-rounded" aria-hidden="true">refresh</span>Повторить</button></div>' : ''}
+        </div>`;
+    if (retry) document.getElementById('fp-cw-retry')?.addEventListener('click', retry);
 }
 
 // FunPay Funcy: запуск ТОГО ЖЕ визарда создания лота, но из данных страницы
 // купленного заказа (без offerId). Форму категории строит background по nodeId.
 async function openCloneWizardFromOrder(data) {
     const overlay = ensureCloneWizardModal();
-    overlay.className = 'fp-wizard-overlay';
-    overlay.style.display = 'flex';
-    applyWizardTheme('fp-clone-wizard');
-    const body = document.getElementById('fp-cw-body');
-    body.innerHTML = '<div class="fp-cw-loader"></div><p class="fp-cw-muted" style="text-align:center;">Готовлю форму категории и перевод EN…</p>';
+    fptWindow.open(overlay);
+    showCloneWizardLoading('Готовлю форму категории и перевод EN…');
 
     try {
         const resp = await chrome.runtime.sendMessage({ action: 'orderBuildClone', data });
@@ -107,17 +90,14 @@ async function openCloneWizardFromOrder(data) {
         };
         renderCloneReview();
     } catch (e) {
-        body.innerHTML = `<div class="fp-cw-error">Ошибка: ${escapeHtmlClone(e.message)}</div>`;
+        showCloneWizardError(e.message, null);
     }
 }
 
 async function openCloneWizard(offerId) {
     const overlay = ensureCloneWizardModal();
-    overlay.className = 'fp-wizard-overlay';
-    overlay.style.display = 'flex';
-    applyWizardTheme('fp-clone-wizard');
-    const body = document.getElementById('fp-cw-body');
-    body.innerHTML = '<div class="fp-cw-loader"></div><p class="fp-cw-muted" style="text-align:center;">Читаю лот с сервера (RU + EN + цена)…</p>';
+    fptWindow.open(overlay);
+    showCloneWizardLoading('Читаю лот с сервера (RU + EN + цена)…');
 
     try {
         const resp = await chrome.runtime.sendMessage({ action: 'cloneGetSource', offerId });
@@ -133,9 +113,7 @@ async function openCloneWizard(offerId) {
         };
         renderCloneReview();
     } catch (e) {
-        body.innerHTML = `<div class="fp-cw-error">Ошибка: ${escapeHtmlClone(e.message)}</div>
-            <div class="fp-cw-actions" style="justify-content:center; margin-top:20px;"><button class="fp-cw-btn-secondary" id="fp-cw-retry">Повторить</button></div>`;
-        document.getElementById('fp-cw-retry')?.addEventListener('click', () => openCloneWizard(offerId));
+        showCloneWizardError(e.message, () => openCloneWizard(offerId));
     }
 }
 
@@ -145,103 +123,130 @@ function escapeHtmlClone(str) {
     ));
 }
 
+function cloneNoteHtml(kind, iconName, html) {
+    return `<div class="fpt-win-note" data-kind="${kind}"><span class="material-symbols-rounded" aria-hidden="true">${iconName}</span><div class="fpt-win-note-copy">${html}</div></div>`;
+}
+
 function renderCloneReview() {
     const st = __fpCloneState;
     if (!st) return;
     const body = document.getElementById('fp-cw-body');
+    const foot = document.getElementById('fp-cw-foot');
     const src = st.source;
 
-    const attrRows = (src.attributePairs || []).map(p => `
-        <div class="fp-cw-attr">
-            <span class="fp-cw-attr-k">${escapeHtmlClone(p.label)}</span>
-            <span class="fp-cw-attr-v">${escapeHtmlClone(p.value)}</span>
-        </div>`).join('') || '<div class="fp-cw-muted">Параметров категории не обнаружено.</div>';
+    const metaParts = [];
+    if (src.categoryName) metaParts.push(src.categoryName);
+    const seller = src.sellerName || (src.sellerId ? '#' + src.sellerId : '');
+    if (seller) metaParts.push('продавец ' + seller);
+    setCloneWizardSubtitle(metaParts.join(' · '));
+
+    const attrRows = (src.attributePairs || []).length
+        ? `<dl class="fpt-win-kv">${src.attributePairs.map(p => `
+            <div class="fpt-win-kv-row">
+                <dt class="fpt-win-kv-key">${escapeHtmlClone(p.label)}</dt>
+                <dd class="fpt-win-kv-value" style="margin:0;">${escapeHtmlClone(p.value)}</dd>
+            </div>`).join('')}</dl>`
+        : '<p class="fpt-win-hint" style="margin:0;">Параметров категории не обнаружено.</p>';
 
     let formWarn = '';
     if (st.source.isChips) {
-        formWarn = `<div class="fp-cw-warn">Лот из раздела валюты/чипов - другая форма, серверное создание не поддерживается. Доступно копирование текстов.</div>`;
+        formWarn = cloneNoteHtml('warning', 'info', 'Лот из раздела валюты/чипов - другая форма, серверное создание не поддерживается. Доступно копирование текстов.');
     } else if (!st.source.nodeId) {
-        formWarn = `<div class="fp-cw-warn">Не удалось определить категорию (node). Создание на сервере недоступно.</div>`;
+        formWarn = cloneNoteHtml('warning', 'info', 'Не удалось определить категорию (node). Создание на сервере недоступно.');
     } else if (!st.fields) {
-        formWarn = `<div class="fp-cw-warn">Не удалось построить форму категории${st.formError ? ': ' + escapeHtmlClone(st.formError) : ''}.</div>`;
+        formWarn = cloneNoteHtml('warning', 'info', `Не удалось построить форму категории${st.formError ? ': ' + escapeHtmlClone(st.formError) : ''}.`);
     }
     if (!st.source.enDiffers && (st.source.summary_ru || st.source.desc_ru)) {
-        formWarn += `<div class="fp-cw-warn">У лота нет отдельного английского текста - вкладка EN заполнена русским. Если категория требует валидный английский, FunPay может отклонить - отредактируйте EN или оставьте пустым.<div style="margin-top:8px;"><button type="button" class="fp-cw-btn-secondary" id="fp-cw-translate-en">Перевести</button></div></div>`;
+        formWarn += cloneNoteHtml('warning', 'translate', 'У лота нет отдельного английского текста - вкладка EN заполнена русским. Если категория требует валидный английский, FunPay может отклонить - отредактируйте EN или оставьте пустым.<br><button type="button" class="fpt-win-btn fpt-win-btn--sm" id="fp-cw-translate-en"><span class="material-symbols-rounded" aria-hidden="true">translate</span>Перевести</button>');
     }
 
     const canCreate = !!st.fields && !st.source.isChips && !!st.source.nodeId;
-    const invincibleCheckbox = `-webkit-appearance: checkbox !important; appearance: checkbox !important; width: 16px !important; height: 16px !important; margin: 0 !important; display: inline-block !important; position: static !important; opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;`;
+    const images = src.images || [];
 
     body.innerHTML = `
-        <div class="fp-cw-grid">
-            <div class="fp-cw-col">
-                <div class="fp-cw-section-title">Содержимое лота</div>
+        <div class="fpt-win-grid fp-cw-grid">
+            <section class="fpt-win-card fp-cw-texts">
+                <div class="fpt-win-card-head">
+                    <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">description</span></span>
+                    <h3 class="fpt-win-card-title">Содержимое лота</h3>
+                    <div class="fpt-win-seg" role="tablist" aria-label="Язык текста">
+                        <button type="button" class="fpt-win-seg-btn is-active" data-tab="ru" aria-selected="true">RU</button>
+                        <button type="button" class="fpt-win-seg-btn" data-tab="en" aria-selected="false">EN</button>
+                    </div>
+                </div>
                 ${formWarn}
-
-                <div class="fp-cw-tabs">
-                    <button class="fp-cw-tab active" data-tab="ru">RU</button>
-                    <button class="fp-cw-tab" data-tab="en">EN</button>
+                <div class="fpt-win-pane" data-pane="ru">
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-cw-summary-ru">Название</label>
+                        <textarea class="fpt-win-input" id="fp-cw-summary-ru" rows="2">${escapeHtmlClone(src.summary_ru || '')}</textarea>
+                    </div>
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-cw-desc-ru">Описание</label>
+                        <textarea class="fpt-win-input" id="fp-cw-desc-ru" rows="11">${escapeHtmlClone(src.desc_ru || '')}</textarea>
+                    </div>
                 </div>
-
-                <div class="fp-cw-tabpane" data-pane="ru">
-                    <label class="fp-cw-mini">Название</label>
-                    <textarea class="fp-cw-input" id="fp-cw-summary-ru" rows="2">${escapeHtmlClone(src.summary_ru || '')}</textarea>
-                    <label class="fp-cw-mini">Описание</label>
-                    <textarea class="fp-cw-input" id="fp-cw-desc-ru" rows="7">${escapeHtmlClone(src.desc_ru || '')}</textarea>
+                <div class="fpt-win-pane" data-pane="en" hidden>
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-cw-summary-en">Title</label>
+                        <textarea class="fpt-win-input" id="fp-cw-summary-en" rows="2">${escapeHtmlClone(src.summary_en || '')}</textarea>
+                    </div>
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-cw-desc-en">Description</label>
+                        <textarea class="fpt-win-input" id="fp-cw-desc-en" rows="11">${escapeHtmlClone(src.desc_en || '')}</textarea>
+                    </div>
                 </div>
-                <div class="fp-cw-tabpane" data-pane="en" style="display:none;">
-                    <label class="fp-cw-mini">Title</label>
-                    <textarea class="fp-cw-input" id="fp-cw-summary-en" rows="2">${escapeHtmlClone(src.summary_en || '')}</textarea>
-                    <label class="fp-cw-mini">Description</label>
-                    <textarea class="fp-cw-input" id="fp-cw-desc-en" rows="7">${escapeHtmlClone(src.desc_en || '')}</textarea>
-                </div>
-            </div>
+            </section>
 
-            <div class="fp-cw-col">
-                <div class="fp-cw-section-title">Параметры категории</div>
-                <div class="fp-cw-attrs">${attrRows}</div>
+            <div class="fpt-win-stack">
+                <section class="fpt-win-card">
+                    <div class="fpt-win-card-head">
+                        <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">tune</span></span>
+                        <h3 class="fpt-win-card-title">Параметры категории</h3>
+                    </div>
+                    ${attrRows}
+                </section>
 
-                ${(src.images && src.images.length) ? `
-                <div class="fp-cw-section-title" style="margin-top:18px;">Картинки</div>
-                <label class="fp-cw-imgtoggle" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                    <input type="checkbox" id="fp-cw-opt-images" checked style="${invincibleCheckbox}"> 
-                    Перенести картинки лота (${src.images.length})
-                </label>
-                <div class="fp-cw-thumbs">
-                    ${src.images.map(u => `<span class="fp-cw-thumb" style="background-image:url('${escapeHtmlClone(u)}')"></span>`).join('')}
-                </div>` : '<div class="fp-cw-muted" style="margin-top:14px;font-size:12px;">У лота нет картинок.</div>'}
-                <div class="fp-cw-section-title" style="margin-top:18px;">Замена текста</div>
-                <div class="fp-cw-row">
-                    <input type="text" class="fp-cw-input" id="fp-cw-find" placeholder="найти…">
-                    <input type="text" class="fp-cw-input" id="fp-cw-replace" placeholder="заменить…">
-                </div>
-                <button class="fp-cw-btn-secondary fp-cw-apply-replace" id="fp-cw-apply-replace">Применить к текстам</button>
+                <section class="fpt-win-card">
+                    <div class="fpt-win-card-head">
+                        <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">image</span></span>
+                        <h3 class="fpt-win-card-title">Картинки</h3>
+                        ${images.length ? `<span class="fpt-win-badge">${images.length}</span>` : ''}
+                    </div>
+                    ${images.length ? `
+                        ${fptWindow.checkboxHtml(`Перенести картинки лота (${images.length})`, { id: 'fp-cw-opt-images', checked: true })}
+                        <div class="fp-cw-thumbs">
+                            ${images.map(u => `<span class="fp-cw-thumb" style="background-image:url('${escapeHtmlClone(u)}')"></span>`).join('')}
+                        </div>` : '<p class="fpt-win-hint" style="margin:0;">У лота нет картинок.</p>'}
+                </section>
 
-                <div class="fp-cw-meta">
-                    <div><span class="fp-cw-muted">Категория:</span> ${escapeHtmlClone(src.categoryName || '-')}</div>
-                    <div><span class="fp-cw-muted">Продавец:</span> ${escapeHtmlClone(src.sellerName || ('#' + (src.sellerId || '-')))}</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="fp-cw-footer">
-            <div class="fp-cw-status" id="fp-cw-status"></div>
-            <div class="fp-cw-actions">
-                <button class="fp-cw-btn-secondary" id="fp-cw-copy-text">Только тексты</button>
-                <button class="fp-cw-btn-primary" id="fp-cw-create" ${canCreate ? '' : 'disabled'}>Создать лот</button>
+                <section class="fpt-win-card">
+                    <div class="fpt-win-card-head">
+                        <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">find_replace</span></span>
+                        <h3 class="fpt-win-card-title">Замена текста</h3>
+                    </div>
+                    <div class="fpt-win-row">
+                        <input type="text" class="fpt-win-input" id="fp-cw-find" placeholder="Найти…" aria-label="Найти">
+                        <span class="material-symbols-rounded fpt-win-faint" aria-hidden="true" style="flex:0 0 auto;font-size:18px;">arrow_forward</span>
+                        <input type="text" class="fpt-win-input" id="fp-cw-replace" placeholder="Заменить на…" aria-label="Заменить на">
+                    </div>
+                    <button type="button" class="fpt-win-btn fpt-win-btn--block" id="fp-cw-apply-replace" style="margin-top:10px;">Применить к текстам</button>
+                    <p class="fpt-win-hint">Меняет текст во всех полях RU и EN.</p>
+                </section>
             </div>
         </div>
     `;
 
-    body.querySelectorAll('.fp-cw-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            body.querySelectorAll('.fp-cw-tab').forEach(t => t.classList.toggle('active', t === tab));
-            const which = tab.dataset.tab;
-            body.querySelectorAll('.fp-cw-tabpane').forEach(p => {
-                p.style.display = (p.dataset.pane === which) ? '' : 'none';
-            });
-        });
-    });
+    foot.innerHTML = `
+        <div class="fpt-win-status" id="fp-cw-status" role="status" aria-live="polite"></div>
+        <div class="fpt-win-actions" id="fp-cw-actions">
+            <button type="button" class="fpt-win-btn" id="fp-cw-copy-text">Только тексты</button>
+            <button type="button" class="fpt-win-btn fpt-win-btn--primary" id="fp-cw-create" ${canCreate ? '' : 'disabled'}>
+                <span class="material-symbols-rounded" aria-hidden="true">add_circle</span>Создать лот
+            </button>
+        </div>
+    `;
+
+    const tabs = fptWindow.wireTabs(body.querySelector('.fp-cw-texts'));
 
     document.getElementById('fp-cw-apply-replace').addEventListener('click', () => {
         const find = document.getElementById('fp-cw-find').value;
@@ -276,8 +281,9 @@ function renderCloneReview() {
                 showNotification('Нечего переводить — русские поля пусты.', true);
                 return;
             }
-            const origLabel = translateBtn.textContent;
-            translateBtn.textContent = 'Перевожу...';
+            const label = translateBtn.lastChild;
+            const origLabel = label.textContent;
+            label.textContent = 'Перевожу...';
             translateBtn.disabled = true;
             try {
                 const result = await chrome.runtime.sendMessage({
@@ -289,8 +295,7 @@ function renderCloneReview() {
                     setVal('fp-cw-summary-en', result.data.title);
                     setVal('fp-cw-desc-en', result.data.description);
                     // переключаемся на вкладку EN, чтобы перевод сразу было видно
-                    const enTab = document.querySelector('.fp-cw-tab[data-tab="en"]');
-                    if (enTab) enTab.click();
+                    tabs?.select('en');
                     showNotification('Текст переведён на английский.', false);
                 } else {
                     throw new Error((result && result.error) || 'Неизвестная ошибка перевода.');
@@ -298,7 +303,7 @@ function renderCloneReview() {
             } catch (e) {
                 showNotification(`Ошибка перевода: ${e.message}`, true);
             } finally {
-                translateBtn.textContent = origLabel;
+                label.textContent = origLabel;
                 translateBtn.disabled = false;
             }
         });
@@ -329,7 +334,7 @@ async function executeCloneCreate() {
 
     let imageIds = [];
     if (wantImages && st.source.images && st.source.images.length) {
-        statusEl.innerHTML = `<span class="fp-cw-spin"></span> Переношу картинки (${st.source.images.length})…`;
+        statusEl.innerHTML = `<span class="fpt-win-spinner fpt-win-spinner--inline"></span>Переношу картинки (${st.source.images.length})…`;
         try {
             const imgResp = await chrome.runtime.sendMessage({ action: 'cloneUploadImages', urls: st.source.images });
             if (imgResp && imgResp.success) {
@@ -368,7 +373,7 @@ async function executeCloneCreate() {
     fields['secrets'] = fields['secrets'] || '';
     fields['fields[images]'] = imageIds.length ? imageIds.join(',') : (fields['fields[images]'] || '');
 
-    statusEl.innerHTML = '<span class="fp-cw-spin"></span> Создаю лот на сервере…';
+    statusEl.innerHTML = '<span class="fpt-win-spinner fpt-win-spinner--inline"></span>Создаю лот на сервере…';
 
     try {
         const resp = await chrome.runtime.sendMessage({ action: 'cloneCreateLot', fields, location: 'trade' });
@@ -378,12 +383,12 @@ async function executeCloneCreate() {
         const link = resp.newId
             ? `<a href="https://funpay.com/lots/offerEdit?offer=${resp.newId}" target="_blank">Открыть лот →</a>`
             : '';
-        statusEl.innerHTML = `<span class="fp-cw-ok">✓ Лот создан!</span> ${link}`;
+        statusEl.innerHTML = `<span class="fpt-win-ok">✓ Лот создан.</span> ${link}`;
         showNotification('Лот успешно создан на сервере!', false);
 
-        const actions = document.querySelector('#fp-clone-wizard .fp-cw-actions');
+        const actions = document.getElementById('fp-cw-actions');
         if (resp.newId && actions && !document.getElementById('fp-cw-undo')) {
-            const undo = createElement('button', { class: 'fp-cw-btn-secondary', id: 'fp-cw-undo' }, {}, 'Удалить созданный');
+            const undo = fptWindow.button('Удалить созданный', { kind: 'danger', id: 'fp-cw-undo', iconName: 'delete' });
             actions.prepend(undo);
             undo.addEventListener('click', async () => {
                 undo.disabled = true;
@@ -391,7 +396,7 @@ async function executeCloneCreate() {
                 if (del && del.success) {
                     showNotification('Созданный лот удалён.', false);
                     undo.remove();
-                    statusEl.innerHTML = '<span class="fp-cw-muted">Лот удалён.</span>';
+                    statusEl.textContent = 'Лот удалён.';
                 } else {
                     undo.disabled = false;
                     showNotification('Не удалось удалить лот: ' + (del?.error || ''), true);
@@ -399,9 +404,9 @@ async function executeCloneCreate() {
             });
         }
         createBtn.disabled = false;
-        createBtn.textContent = 'Создать ещё копию';
+        createBtn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">add_circle</span>Создать ещё копию';
     } catch (e) {
-        statusEl.innerHTML = `<span class="fp-cw-err">✗ ${escapeHtmlClone(e.message)}</span>`;
+        statusEl.innerHTML = `<span class="fpt-win-err">✗ ${escapeHtmlClone(e.message)}</span>`;
         showNotification('Ошибка: ' + e.message, true);
         createBtn.disabled = false;
     }
@@ -501,78 +506,77 @@ function setFormField(baseName, valueRu, valueEn) {
 // =====================================================================================
 
 function ensureImportWizardModal() {
-    let overlay = document.getElementById('fp-import-wizard-overlay');
-    if (overlay) return overlay;
+    const existing = document.getElementById('fp-import-wizard-overlay');
+    if (existing) return existing;
 
-    if (!document.getElementById('fp-iw-list-css')) {
-        const s = document.createElement('style');
-        s.id = 'fp-iw-list-css';
-        s.textContent = `
-            .fp-iw-list-item { padding:10px 12px; border-radius:8px; cursor:pointer; display:flex; flex-direction:column; gap:4px; border:1px solid transparent; transition: background 0.15s; color:var(--cw-color); }
-            .fp-iw-list-item:hover { background: var(--cw-subtle); }
-            .fp-iw-list-item-title { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-            .fp-iw-list-item-meta { font-size:11px; color:var(--cw-muted); display:flex; justify-content:space-between; }
-            .fp-iw-list-item.active { background: color-mix(in srgb, var(--cw-accent) 15%, transparent); border-color: var(--cw-accent); }
-            .fp-iw-search-wrap { padding:15px; border-bottom:1px solid var(--cw-border); background:rgba(0,0,0,0.1); }
-            .fp-iw-pane { animation: fpCwPopIn 0.15s ease-out; }
-            .fp-iw-btn-paste { padding:10px 24px; font-size:14px; }
-        `;
-        document.head.appendChild(s);
-    }
-
-    overlay = createElement('div', { id: 'fp-import-wizard-overlay' });
-    overlay.className = 'fp-wizard-overlay';
-    
-    overlay.innerHTML = `
-        <div id="fp-import-wizard" class="fp-wizard-container" style="max-width: 1000px; height: 80vh;">
-            <div class="fp-cw-header">
-                <h3>Глобальный импорт данных лота</h3>
-                <button class="fp-cw-close" id="fp-iw-close">×</button>
-            </div>
-            <div class="fp-cw-body" style="padding:0; display:flex; flex:1; min-height:0; overflow:hidden;">
-                <!-- Левая колонка: Поиск и Список -->
-                <div style="width: 330px; border-right: 1px solid var(--cw-border); display: flex; flex-direction: column; flex-shrink: 0; background: var(--cw-field-bg);">
-                    <div class="fp-iw-search-wrap">
-                        <div class="fp-cw-tabs" style="display:flex; width:100%; margin-bottom:12px; box-sizing:border-box;">
-                            <button class="fp-cw-tab active" id="fp-iw-tab-my" style="flex:1;">Мои лоты</button>
-                            <button class="fp-cw-tab" id="fp-iw-tab-global" style="flex:1;">Поиск</button>
-                        </div>
-                        <button id="fp-iw-back-btn" class="fp-cw-btn-secondary" style="display:none; width:100%; margin-bottom:10px; padding: 6px;">← Назад</button>
-                        <input type="text" class="fp-cw-input" id="fp-iw-search" placeholder="Поиск по моим лотам...">
-                        <button id="fp-iw-current-cat-btn" class="fp-cw-btn-secondary" style="display:none; width:100%; margin-top:10px; padding: 6px; font-size:12px;">Искать в текущей категории</button>
+    const win = fptWindow.create({
+        id: 'fp-import-wizard-overlay',
+        dialogId: 'fp-import-wizard',
+        closeId: 'fp-iw-close',
+        title: 'Импорт данных лота',
+        subtitle: 'Перенесите тексты, цену и автовыдачу из другого лота в эту форму.',
+        icon: 'move_to_inbox',
+        size: 'xl',
+        tall: true,
+        flushBody: true
+    });
+    win.body.innerHTML = `
+        <div class="fp-iw-layout">
+            <aside class="fp-iw-side">
+                <div class="fp-iw-side-tools">
+                    <div class="fpt-win-seg fpt-win-seg--fill" role="tablist" aria-label="Источник">
+                        <button type="button" class="fpt-win-seg-btn is-active" id="fp-iw-tab-my" aria-selected="true">Мои лоты</button>
+                        <button type="button" class="fpt-win-seg-btn" id="fp-iw-tab-global" aria-selected="false">Поиск</button>
                     </div>
-                    <div id="fp-iw-list" style="flex:1; overflow-y:auto; padding: 10px; display:flex; flex-direction:column; gap:4px;"></div>
+                    <button type="button" id="fp-iw-back-btn" class="fpt-win-btn fpt-win-btn--quiet fpt-win-btn--sm" hidden>
+                        <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>Назад
+                    </button>
+                    <input type="search" class="fpt-win-input" id="fp-iw-search" placeholder="Поиск по моим лотам..." aria-label="Поиск" autocomplete="off">
+                    <button type="button" id="fp-iw-current-cat-btn" class="fpt-win-btn fpt-win-btn--sm fpt-win-btn--block" hidden>Искать в текущей категории</button>
                 </div>
-
-                <!-- Правая колонка: Предпросмотр -->
-                <div id="fp-iw-preview" style="flex:1; display:flex; flex-direction:column; padding: 20px; overflow-y:auto; background: var(--cw-bg);">
-                    <div class="fp-cw-muted" style="margin:auto; text-align:center;">Выберите лот из списка слева</div>
-                </div>
+                <div id="fp-iw-list" class="fpt-win-list fp-iw-list"></div>
+            </aside>
+            <div id="fp-iw-preview" class="fp-iw-preview">
+                ${importEmptyHtml('touch_app', 'Выберите лот из списка слева')}
             </div>
-        </div>
-    `;
-    
-    document.body.appendChild(overlay);
+        </div>`;
+    win.foot.innerHTML = `
+        <div class="fpt-win-status" id="fp-iw-status"></div>
+        <div class="fpt-win-actions">
+            <button type="button" class="fpt-win-btn fpt-win-btn--primary" id="fp-iw-paste-btn" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">input</span>Вставить в текущий лот
+            </button>
+        </div>`;
+    document.body.appendChild(win.scrim);
 
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeImportWizard(); });
-    overlay.querySelector('#fp-iw-close').addEventListener('click', closeImportWizard);
+    setupImportWizardLogic(win.scrim);
 
-    setupImportWizardLogic(overlay);
+    return win.scrim;
+}
 
-    return overlay;
+function importEmptyHtml(iconName, text, kind = '') {
+    return `<div class="fpt-win-empty${kind ? ` fpt-win-empty--${kind}` : ''}"><span class="material-symbols-rounded" aria-hidden="true">${iconName}</span>${text}</div>`;
+}
+
+function importLoaderHtml(text = '') {
+    return `<div class="fpt-win-empty"><div class="fpt-win-spinner"></div>${text}</div>`;
+}
+
+// Пока справа нет разобранного лота, вставлять нечего.
+function resetImportPaste() {
+    const pasteBtn = document.getElementById('fp-iw-paste-btn');
+    if (pasteBtn) { pasteBtn.disabled = true; pasteBtn.onclick = null; }
 }
 
 function openImportWizard() {
     const overlay = ensureImportWizardModal();
-    overlay.style.display = 'flex';
-    applyWizardTheme('fp-import-wizard');
-    
+    fptWindow.open(overlay);
     document.getElementById('fp-iw-tab-my')?.click();
 }
 
 function closeImportWizard() {
     const overlay = document.getElementById('fp-import-wizard-overlay');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) fptWindow.close(overlay);
 }
 
 function setupImportWizardLogic(overlay) {
@@ -583,6 +587,7 @@ function setupImportWizardLogic(overlay) {
     const currentCatBtn = overlay.querySelector('#fp-iw-current-cat-btn');
     const listEl = overlay.querySelector('#fp-iw-list');
     const previewEl = overlay.querySelector('#fp-iw-preview');
+    const pickHint = importEmptyHtml('touch_app', 'Выберите лот из списка слева');
 
     let currentTab = 'my';
     let globalStep = 'game'; // game -> category -> lot
@@ -590,6 +595,15 @@ function setupImportWizardLogic(overlay) {
     let globalCategoryUrl = null;
     let searchDebounceTimer = null;
     let myLotsCache = [];
+
+    const selectTab = (tab) => {
+        [tabMy, tabGlobal].forEach(t => {
+            const on = t === tab;
+            t.classList.toggle('is-active', on);
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+    };
+    const showPick = () => { previewEl.innerHTML = pickHint; resetImportPaste(); };
 
     // Извлечение текущей категории для кнопки "Искать в этой категории"
     let currentNodeId = null;
@@ -609,67 +623,67 @@ function setupImportWizardLogic(overlay) {
 
     tabMy.addEventListener('click', async () => {
         currentTab = 'my';
-        tabMy.classList.add('active'); tabGlobal.classList.remove('active');
+        selectTab(tabMy);
         searchInput.placeholder = 'Поиск по моим лотам...';
         searchInput.value = '';
-        searchInput.style.display = 'block';
-        backBtn.style.display = 'none';
-        currentCatBtn.style.display = 'none';
-        
-        listEl.innerHTML = '<div class="fp-cw-loader"></div>';
-        previewEl.innerHTML = '<div class="fp-cw-muted" style="margin:auto; text-align:center;">Выберите лот из списка слева</div>';
-        
+        searchInput.hidden = false;
+        backBtn.hidden = true;
+        currentCatBtn.hidden = true;
+
+        listEl.innerHTML = importLoaderHtml();
+        showPick();
+
         try {
             const appData = JSON.parse(document.body.dataset.appData || '{}');
             const userId = (Array.isArray(appData) ? appData[0] : appData).userId;
             const lots = await chrome.runtime.sendMessage({ action: 'getUserLotsList', userId: userId });
-            
+
             myLotsCache = lots || [];
             renderMyLots();
         } catch (e) {
-            listEl.innerHTML = `<div class="fp-cw-err" style="padding:15px; text-align:center;">Ошибка загрузки: ${e.message}</div>`;
+            listEl.innerHTML = importEmptyHtml('error', `Ошибка загрузки: ${escapeHtmlClone(e.message)}`, 'error');
         }
     });
 
     tabGlobal.addEventListener('click', () => {
         currentTab = 'global';
-        tabGlobal.classList.add('active'); tabMy.classList.remove('active');
+        selectTab(tabGlobal);
         globalStep = 'game';
         searchInput.placeholder = 'Название игры или ID категории...';
         searchInput.value = '';
-        searchInput.style.display = 'block';
-        backBtn.style.display = 'none';
-        
+        searchInput.hidden = false;
+        backBtn.hidden = true;
+
         if (currentNodeId) {
-            currentCatBtn.style.display = 'block';
+            currentCatBtn.hidden = false;
             currentCatBtn.textContent = `Искать в текущей категории (#${currentNodeId})`;
         } else {
-            currentCatBtn.style.display = 'none';
+            currentCatBtn.hidden = true;
         }
-        
-        listEl.innerHTML = '<div class="fp-cw-muted" style="text-align:center; padding:20px;">Введите название игры или ID</div>';
-        previewEl.innerHTML = '<div class="fp-cw-muted" style="margin:auto; text-align:center;">Выберите лот из списка слева</div>';
+
+        listEl.innerHTML = importEmptyHtml('search', 'Введите название игры или ID категории');
+        showPick();
     });
 
     currentCatBtn.addEventListener('click', async () => {
         if (!currentNodeId) return;
         globalCategoryUrl = `https://funpay.com/lots/${currentNodeId}/`;
         globalStep = 'lot';
-        searchInput.style.display = 'none';
-        currentCatBtn.style.display = 'none';
-        backBtn.style.display = 'block';
-        
-        listEl.innerHTML = '<div class="fp-cw-loader"></div>';
+        searchInput.hidden = true;
+        currentCatBtn.hidden = true;
+        backBtn.hidden = false;
+
+        listEl.innerHTML = importLoaderHtml();
         try {
             const lots = await chrome.runtime.sendMessage({ action: 'getLotList', url: globalCategoryUrl });
             renderGlobalItems(lots, 'lot');
-        } catch (err) { listEl.innerHTML = `<div class="fp-cw-err">Ошибка: ${err.message}</div>`; }
+        } catch (err) { listEl.innerHTML = importEmptyHtml('error', `Ошибка: ${escapeHtmlClone(err.message)}`, 'error'); }
     });
 
     searchInput.addEventListener('input', () => {
         const query = searchInput.value.trim().toLowerCase();
         clearTimeout(searchDebounceTimer);
-        
+
         if (currentTab === 'my') {
             renderMyLots(query);
         } else {
@@ -678,19 +692,19 @@ function setupImportWizardLogic(overlay) {
                     renderGlobalItems([{ name: 'Категория #' + query, url: 'https://funpay.com/lots/' + query + '/', count: 'Перейти' }], 'category');
                     return;
                 }
-                
+
                 if (query.length < 2) {
-                    listEl.innerHTML = '<div class="fp-cw-muted" style="text-align:center; padding:20px;">Введите название игры или ID</div>';
+                    listEl.innerHTML = importEmptyHtml('search', 'Введите название игры или ID категории');
                     return;
                 }
-                
+
                 searchDebounceTimer = setTimeout(async () => {
-                    listEl.innerHTML = '<div class="fp-cw-loader"></div>';
+                    listEl.innerHTML = importLoaderHtml();
                     try {
                         const games = await chrome.runtime.sendMessage({ action: 'searchGames', query: query });
                         renderGlobalItems(games, 'game');
                     } catch (e) {
-                        listEl.innerHTML = `<div class="fp-cw-err" style="padding:15px; text-align:center;">Ошибка: ${e.message}</div>`;
+                        listEl.innerHTML = importEmptyHtml('error', `Ошибка: ${escapeHtmlClone(e.message)}`, 'error');
                     }
                 }, 400);
             }
@@ -698,17 +712,17 @@ function setupImportWizardLogic(overlay) {
     });
 
     backBtn.addEventListener('click', async () => {
-        listEl.innerHTML = '<div class="fp-cw-loader"></div>';
-        previewEl.innerHTML = '<div class="fp-cw-muted" style="margin:auto; text-align:center;">Выберите лот из списка слева</div>';
+        listEl.innerHTML = importLoaderHtml();
+        showPick();
         try {
             if (globalStep === 'lot') {
                 globalStep = 'category';
                 // Если мы перешли по "Текущая категория" или поиску ID, у нас нет globalGameUrl
                 if (!globalGameUrl) {
                     globalStep = 'game';
-                    searchInput.style.display = 'block';
-                    backBtn.style.display = 'none';
-                    if (currentNodeId) currentCatBtn.style.display = 'block';
+                    searchInput.hidden = false;
+                    backBtn.hidden = true;
+                    if (currentNodeId) currentCatBtn.hidden = false;
                     searchInput.dispatchEvent(new Event('input'));
                     return;
                 }
@@ -716,13 +730,13 @@ function setupImportWizardLogic(overlay) {
                 renderGlobalItems(categories, 'category');
             } else if (globalStep === 'category') {
                 globalStep = 'game';
-                searchInput.style.display = 'block';
-                backBtn.style.display = 'none';
-                if (currentNodeId) currentCatBtn.style.display = 'block';
-                searchInput.dispatchEvent(new Event('input')); 
+                searchInput.hidden = false;
+                backBtn.hidden = true;
+                if (currentNodeId) currentCatBtn.hidden = false;
+                searchInput.dispatchEvent(new Event('input'));
             }
         } catch (e) {
-            listEl.innerHTML = `<div class="fp-cw-err" style="padding:15px; text-align:center;">Ошибка: ${e.message}</div>`;
+            listEl.innerHTML = importEmptyHtml('error', `Ошибка: ${escapeHtmlClone(e.message)}`, 'error');
         }
     });
 
@@ -730,8 +744,8 @@ function setupImportWizardLogic(overlay) {
         const item = e.target.closest('.fp-iw-list-item');
         if (!item) return;
 
-        listEl.querySelectorAll('.fp-iw-list-item').forEach(el => el.classList.remove('active'));
-        item.classList.add('active');
+        listEl.querySelectorAll('.fp-iw-list-item').forEach(el => el.classList.remove('is-active'));
+        item.classList.add('is-active');
 
         if (currentTab === 'my') {
             loadLotPreviewForImport(item.dataset.offerId, previewEl, true);
@@ -739,22 +753,22 @@ function setupImportWizardLogic(overlay) {
             if (globalStep === 'game') {
                 globalGameUrl = item.dataset.url;
                 globalStep = 'category';
-                searchInput.style.display = 'none';
-                currentCatBtn.style.display = 'none';
-                backBtn.style.display = 'block';
-                listEl.innerHTML = '<div class="fp-cw-loader"></div>';
+                searchInput.hidden = true;
+                currentCatBtn.hidden = true;
+                backBtn.hidden = false;
+                listEl.innerHTML = importLoaderHtml();
                 try {
                     const categories = await chrome.runtime.sendMessage({ action: 'getCategoryList', url: globalGameUrl });
                     renderGlobalItems(categories, 'category');
-                } catch (err) { listEl.innerHTML = `<div class="fp-cw-err">Ошибка: ${err.message}</div>`; }
+                } catch (err) { listEl.innerHTML = importEmptyHtml('error', `Ошибка: ${escapeHtmlClone(err.message)}`, 'error'); }
             } else if (globalStep === 'category') {
                 globalCategoryUrl = item.dataset.url;
                 globalStep = 'lot';
-                listEl.innerHTML = '<div class="fp-cw-loader"></div>';
+                listEl.innerHTML = importLoaderHtml();
                 try {
                     const lots = await chrome.runtime.sendMessage({ action: 'getLotList', url: globalCategoryUrl });
                     renderGlobalItems(lots, 'lot');
-                } catch (err) { listEl.innerHTML = `<div class="fp-cw-err">Ошибка: ${err.message}</div>`; }
+                } catch (err) { listEl.innerHTML = importEmptyHtml('error', `Ошибка: ${escapeHtmlClone(err.message)}`, 'error'); }
             } else if (globalStep === 'lot') {
                 loadLotPreviewForImport(item.dataset.offerId, previewEl, false);
             }
@@ -763,56 +777,54 @@ function setupImportWizardLogic(overlay) {
 
     function renderMyLots(filter = '') {
         if (!myLotsCache || myLotsCache.length === 0) {
-            listEl.innerHTML = '<div class="fp-cw-muted" style="text-align:center; padding:20px;">Нет лотов.</div>';
+            listEl.innerHTML = importEmptyHtml('inventory_2', 'Нет лотов.');
             return;
         }
         let html = '';
         myLotsCache.forEach(lot => {
             if (!filter || lot.title.toLowerCase().includes(filter)) {
                 html += `
-                <div class="fp-iw-list-item" data-offer-id="${lot.id}">
-                    <span class="fp-iw-list-item-title">${escapeHtmlClone(lot.title)}</span>
-                    <div class="fp-iw-list-item-meta">
+                <button type="button" class="fpt-win-item fp-iw-list-item" data-offer-id="${escapeHtmlClone(lot.id)}">
+                    <span class="fpt-win-item-title">${escapeHtmlClone(lot.title)}</span>
+                    <span class="fpt-win-item-meta">
                         <span>${escapeHtmlClone(lot.categoryName)}</span>
-                        <span>#${lot.id}</span>
-                    </div>
-                </div>`;
+                        <span>#${escapeHtmlClone(lot.id)}</span>
+                    </span>
+                </button>`;
             }
         });
-        listEl.innerHTML = html || '<div class="fp-cw-muted" style="text-align:center; padding:20px;">Ничего не найдено.</div>';
+        listEl.innerHTML = html || importEmptyHtml('search_off', 'Ничего не найдено.');
     }
 
     function renderGlobalItems(items, type) {
         if (!items || items.length === 0) {
-            listEl.innerHTML = '<div class="fp-cw-muted" style="text-align:center; padding:20px;">Ничего не найдено.</div>';
+            listEl.innerHTML = importEmptyHtml('search_off', 'Ничего не найдено.');
             return;
         }
         let html = '';
         if (type === 'game') {
             items.forEach(g => {
-                html += `<div class="fp-iw-list-item" data-url="${g.url}" style="flex-direction:row; align-items:center;">
-                    <img src="${g.img}" style="width:24px;height:24px;border-radius:4px;" onerror="this.style.display='none'">
-                    <span class="fp-iw-list-item-title" style="flex:1;">${escapeHtmlClone(g.name)}</span>
-                </div>`;
+                html += `<button type="button" class="fpt-win-item fp-iw-list-item fp-iw-game" data-url="${escapeHtmlClone(g.url)}">
+                    <img src="${escapeHtmlClone(g.img)}" alt="" onerror="this.style.display='none'">
+                    <span class="fpt-win-item-title">${escapeHtmlClone(g.name)}</span>
+                </button>`;
             });
         } else if (type === 'category') {
             items.forEach(c => {
-                html += `<div class="fp-iw-list-item" data-url="${c.url}">
-                    <div class="fp-iw-list-item-meta">
-                        <span style="font-weight:600; color:var(--cw-color);">${escapeHtmlClone(c.name)}</span>
-                        <span style="background:var(--cw-subtle); padding:2px 6px; border-radius:10px;">${c.count}</span>
-                    </div>
-                </div>`;
+                html += `<button type="button" class="fpt-win-item fp-iw-list-item fp-iw-category" data-url="${escapeHtmlClone(c.url)}">
+                    <span class="fpt-win-item-title">${escapeHtmlClone(c.name)}</span>
+                    <span class="fpt-win-badge">${escapeHtmlClone(c.count)}</span>
+                </button>`;
             });
         } else if (type === 'lot') {
             items.forEach(l => {
-                html += `<div class="fp-iw-list-item" data-offer-id="${l.offerId}">
-                    <span class="fp-iw-list-item-title">${escapeHtmlClone(l.description)}</span>
-                    <div class="fp-iw-list-item-meta">
+                html += `<button type="button" class="fpt-win-item fp-iw-list-item" data-offer-id="${escapeHtmlClone(l.offerId)}">
+                    <span class="fpt-win-item-title">${escapeHtmlClone(l.description)}</span>
+                    <span class="fpt-win-item-meta">
                         <span>Продавец: ${escapeHtmlClone(l.seller)}</span>
-                        <span style="color:var(--cw-accent); font-weight:bold;">${escapeHtmlClone(l.price)}</span>
-                    </div>
-                </div>`;
+                        <span class="fp-iw-price">${escapeHtmlClone(l.price)}</span>
+                    </span>
+                </button>`;
             });
         }
         listEl.innerHTML = html;
@@ -821,6 +833,7 @@ function setupImportWizardLogic(overlay) {
 
 async function loadLotPreviewForImport(offerId, previewEl, isOwn = true) {
     if (!offerId) return;
+    resetImportPaste();
 
     // FIX 2.9.3: чипс-лоты (валюта/платина и т.п.) - другой тип предложения. У них
     // НЕТ формы offerEdit с описанием/сообщением покупателю/автовыдачей: только
@@ -829,9 +842,9 @@ async function loadLotPreviewForImport(offerId, previewEl, isOwn = true) {
     // "15858540-35-37-10046-0". Показываем дружелюбное пояснение вместо ошибки.
     if (/-/.test(String(offerId))) {
         previewEl.innerHTML = `
-            <div style="margin:auto; text-align:center; max-width:340px; color:var(--cw-muted, #999); font-size:13px; line-height:1.5;">
-                <div style="font-size:30px; margin-bottom:10px;">💱</div>
-                <div style="color:var(--cw-color, #ddd); font-weight:600; margin-bottom:6px;">Это лот валюты (chips)</div>
+            <div class="fpt-win-empty" style="max-width:360px;">
+                <span class="material-symbols-rounded" aria-hidden="true">currency_exchange</span>
+                <p class="fpt-win-empty-title">Это лот валюты (chips)</p>
                 Такие предложения (платина, валюта, голда и т.п.) устроены иначе:
                 в них нет описания, сообщения покупателю или автовыдачи - только
                 наличие и цена за единицу для конкретного сервера. Импортировать здесь нечего.
@@ -839,7 +852,7 @@ async function loadLotPreviewForImport(offerId, previewEl, isOwn = true) {
         return;
     }
 
-    previewEl.innerHTML = '<div class="fp-cw-loader"></div><p class="fp-cw-muted" style="text-align:center;">Анализирую лот...</p>';
+    previewEl.innerHTML = importLoaderHtml('Анализирую лот...');
     try {
         let source;
         if (isOwn) {
@@ -850,9 +863,9 @@ async function loadLotPreviewForImport(offerId, previewEl, isOwn = true) {
                 // мягкий фолбэк: если форму разобрать не удалось (нестандартный лот) -
                 // не пугаем красной ошибкой, а поясняем по-человечески.
                 previewEl.innerHTML = `
-                    <div style="margin:auto; text-align:center; max-width:340px; color:var(--cw-muted, #999); font-size:13px; line-height:1.5;">
-                        <div style="font-size:30px; margin-bottom:10px;">🤔</div>
-                        <div style="color:var(--cw-color, #ddd); font-weight:600; margin-bottom:6px;">Не удалось прочитать этот лот</div>
+                    <div class="fpt-win-empty" style="max-width:360px;">
+                        <span class="material-symbols-rounded" aria-hidden="true">help</span>
+                        <p class="fpt-win-empty-title">Не удалось прочитать этот лот</p>
                         Похоже, у него нестандартная форма (например, валюта или особая категория),
                         и импортировать из него нечего. Попробуйте другой лот.
                     </div>`;
@@ -869,84 +882,88 @@ async function loadLotPreviewForImport(offerId, previewEl, isOwn = true) {
         }
         renderImportPreviewPanel(source, previewEl);
     } catch (e) {
-        previewEl.innerHTML = `<div class="fp-cw-error">Ошибка: ${escapeHtmlClone(e.message)}</div>`;
+        previewEl.innerHTML = importEmptyHtml('error', `Ошибка: ${escapeHtmlClone(e.message)}`, 'error');
     }
 }
 
 function renderImportPreviewPanel(src, previewEl) {
-    const invincibleCheckbox = `-webkit-appearance: checkbox !important; appearance: checkbox !important; width: 15px !important; height: 15px !important; margin: 0 !important; display: inline-block !important; cursor: pointer !important; position: static !important; visibility: visible !important; opacity: 1 !important;`;
-    
+    const check = (label, id, checked) => fptWindow.checkboxHtml(label, { id, checked });
+    const secretsCount = src.secrets ? String(src.secrets).split('\n').filter(Boolean).length : 0;
+
     previewEl.innerHTML = `
-        <div class="fp-cw-section-title" style="font-size:14px; margin-bottom:15px;">Что импортировать?</div>
-        
-        <div style="display:flex; gap:15px; margin-bottom:20px; background:var(--cw-subtle); padding:10px 15px; border-radius:8px; flex-wrap:wrap;">
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cw-color); font-size:13px;">
-                <input type="checkbox" id="fp-iw-opt-title" checked style="${invincibleCheckbox}"> Название
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cw-color); font-size:13px;">
-                <input type="checkbox" id="fp-iw-opt-desc" checked style="${invincibleCheckbox}"> Описание
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cw-color); font-size:13px;">
-                <input type="checkbox" id="fp-iw-opt-price" checked style="${invincibleCheckbox}"> Цена
-            </label>
-            ${src.isOwn ? `
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cw-color); font-size:13px;">
-                <input type="checkbox" id="fp-iw-opt-paymsg" checked style="${invincibleCheckbox}"> Сообщение покупателю
-            </label>
-            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--cw-color); font-size:13px;">
-                <input type="checkbox" id="fp-iw-opt-secrets" ${src.autoDelivery ? 'checked' : ''} style="${invincibleCheckbox}"> Автовыдача
-            </label>` : ''}
-        </div>
+        <div class="fpt-win-stack">
+            <section class="fpt-win-card">
+                <div class="fpt-win-card-head">
+                    <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">checklist</span></span>
+                    <h3 class="fpt-win-card-title">Что импортировать</h3>
+                    <span class="fpt-win-card-note">Цена: <span class="fpt-win-strong">${escapeHtmlClone(src.rawPrice || '-')}</span></span>
+                </div>
+                <div class="fpt-win-checks">
+                    ${check('Название', 'fp-iw-opt-title', true)}
+                    ${check('Описание', 'fp-iw-opt-desc', true)}
+                    ${check('Цена', 'fp-iw-opt-price', true)}
+                    ${src.isOwn ? check('Сообщение покупателю', 'fp-iw-opt-paymsg', true) : ''}
+                    ${src.isOwn ? check('Автовыдача', 'fp-iw-opt-secrets', !!src.autoDelivery) : ''}
+                </div>
+            </section>
 
-        <div class="fp-cw-tabs" style="margin-bottom:15px; display:inline-flex;">
-            <button class="fp-cw-tab active" data-iw-tab="ru">RU</button>
-            <button class="fp-cw-tab" data-iw-tab="en">EN</button>
-        </div>
+            <section class="fpt-win-card fp-iw-texts">
+                <div class="fpt-win-card-head">
+                    <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">description</span></span>
+                    <h3 class="fpt-win-card-title">Тексты лота</h3>
+                    <div class="fpt-win-seg" role="tablist" aria-label="Язык текста">
+                        <button type="button" class="fpt-win-seg-btn is-active" data-tab="ru" aria-selected="true">RU</button>
+                        <button type="button" class="fpt-win-seg-btn" data-tab="en" aria-selected="false">EN</button>
+                    </div>
+                </div>
+                <div class="fpt-win-pane" data-pane="ru">
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-iw-val-title-ru">Краткое описание</label>
+                        <textarea class="fpt-win-input" id="fp-iw-val-title-ru" rows="2" readonly>${escapeHtmlClone(src.summary_ru)}</textarea>
+                    </div>
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-iw-val-desc-ru">Подробное описание</label>
+                        <textarea class="fpt-win-input" id="fp-iw-val-desc-ru" rows="6" readonly>${escapeHtmlClone(src.desc_ru)}</textarea>
+                    </div>
+                    ${src.isOwn ? `<div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-iw-val-paymsg-ru">Сообщение покупателю после оплаты</label>
+                        <textarea class="fpt-win-input" id="fp-iw-val-paymsg-ru" rows="4" readonly>${escapeHtmlClone(src.payment_msg_ru || '')}</textarea>
+                    </div>` : ''}
+                </div>
+                <div class="fpt-win-pane" data-pane="en" hidden>
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-iw-val-title-en">Short description</label>
+                        <textarea class="fpt-win-input" id="fp-iw-val-title-en" rows="2" readonly>${escapeHtmlClone(src.summary_en)}</textarea>
+                    </div>
+                    <div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-iw-val-desc-en">Detailed description</label>
+                        <textarea class="fpt-win-input" id="fp-iw-val-desc-en" rows="6" readonly>${escapeHtmlClone(src.desc_en)}</textarea>
+                    </div>
+                    ${src.isOwn ? `<div class="fpt-win-field-group">
+                        <label class="fpt-win-label" for="fp-iw-val-paymsg-en">Message to the buyer after payment</label>
+                        <textarea class="fpt-win-input" id="fp-iw-val-paymsg-en" rows="4" readonly>${escapeHtmlClone(src.payment_msg_en || '')}</textarea>
+                    </div>` : ''}
+                </div>
+            </section>
 
-        <div class="fp-iw-pane" data-iw-pane="ru">
-            <label class="fp-cw-mini">Краткое описание (RU)</label>
-            <textarea class="fp-cw-input" id="fp-iw-val-title-ru" rows="2" readonly>${escapeHtmlClone(src.summary_ru)}</textarea>
-            <label class="fp-cw-mini">Подробное описание (RU)</label>
-            <textarea class="fp-cw-input" id="fp-iw-val-desc-ru" rows="6" readonly>${escapeHtmlClone(src.desc_ru)}</textarea>
-            ${src.isOwn ? `<label class="fp-cw-mini">Сообщение покупателю после оплаты (RU)</label>
-            <textarea class="fp-cw-input" id="fp-iw-val-paymsg-ru" rows="4" readonly>${escapeHtmlClone(src.payment_msg_ru || '')}</textarea>` : ''}
-        </div>
-        <div class="fp-iw-pane" data-iw-pane="en" style="display:none;">
-            <label class="fp-cw-mini">Short description (EN)</label>
-            <textarea class="fp-cw-input" id="fp-iw-val-title-en" rows="2" readonly>${escapeHtmlClone(src.summary_en)}</textarea>
-            <label class="fp-cw-mini">Detailed description (EN)</label>
-            <textarea class="fp-cw-input" id="fp-iw-val-desc-en" rows="6" readonly>${escapeHtmlClone(src.desc_en)}</textarea>
-            ${src.isOwn ? `<label class="fp-cw-mini">Message to the buyer after payment (EN)</label>
-            <textarea class="fp-cw-input" id="fp-iw-val-paymsg-en" rows="4" readonly>${escapeHtmlClone(src.payment_msg_en || '')}</textarea>` : ''}
-        </div>
-
-        ${src.secrets ? `
-        <label class="fp-cw-mini" style="margin-top:12px;">Товары автовыдачи (${(String(src.secrets).split('\n').filter(Boolean).length)} шт.)</label>
-        <textarea class="fp-cw-input" id="fp-iw-val-secrets" rows="4" readonly>${escapeHtmlClone(src.secrets)}</textarea>
-        ` : ''}
-
-        <div style="margin-top:15px; display:flex; align-items:center; gap:10px;">
-            <label class="fp-cw-mini" style="margin:0;">Оригинальная цена:</label>
-            <span style="font-weight:bold; color:var(--cw-color); font-size:14px;">${escapeHtmlClone(src.rawPrice || '-')}</span>
-        </div>
-
-        <div style="margin-top:auto; padding-top:20px; text-align:right;">
-            <button class="fp-cw-btn-primary fp-iw-btn-paste" id="fp-iw-paste-btn">Вставить в текущий лот</button>
+            ${src.secrets ? `
+            <section class="fpt-win-card">
+                <div class="fpt-win-card-head">
+                    <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">bolt</span></span>
+                    <h3 class="fpt-win-card-title">Товары автовыдачи</h3>
+                    <span class="fpt-win-badge">${secretsCount} шт.</span>
+                </div>
+                <textarea class="fpt-win-input" id="fp-iw-val-secrets" rows="4" readonly aria-label="Товары автовыдачи">${escapeHtmlClone(src.secrets)}</textarea>
+            </section>` : ''}
         </div>
     `;
 
-    previewEl.querySelectorAll('.fp-cw-tab').forEach(t => {
-        t.addEventListener('click', () => {
-            previewEl.querySelectorAll('.fp-cw-tab').forEach(x => x.classList.remove('active'));
-            t.classList.add('active');
-            const paneName = t.dataset.iwTab;
-            previewEl.querySelectorAll('.fp-iw-pane').forEach(p => {
-                p.style.display = p.dataset.iwPane === paneName ? 'block' : 'none';
-            });
-        });
-    });
+    fptWindow.wireTabs(previewEl.querySelector('.fp-iw-texts'));
 
-    previewEl.querySelector('#fp-iw-paste-btn').addEventListener('click', () => {
+    const pasteBtn = document.getElementById('fp-iw-paste-btn');
+    if (!pasteBtn) return;
+    pasteBtn.disabled = false;
+    pasteBtn.onclick = () => {
         const doTitle = previewEl.querySelector('#fp-iw-opt-title').checked;
         const doDesc = previewEl.querySelector('#fp-iw-opt-desc').checked;
         const doPrice = previewEl.querySelector('#fp-iw-opt-price').checked;
@@ -990,7 +1007,7 @@ function renderImportPreviewPanel(src, previewEl) {
 
         showNotification('Данные успешно импортированы в форму!', false);
         closeImportWizard();
-    });
+    };
 }
 
 async function submitForm(formData) {
@@ -1018,6 +1035,160 @@ async function submitForm(formData) {
     } catch (error) { console.error('Ошибка при выполнении запроса', error); showNotification('Ошибка при выполнении запроса', true); }
 }
 
+// Окно «Клонирование лота» на странице редактирования: полная копия или копии в других
+// значениях параметров категории.
+function openLotCloneMenu() {
+    let scrim = document.getElementById('fp-clone-menu');
+    if (!scrim) {
+        const win = fptWindow.create({
+            id: 'fp-clone-menu',
+            title: 'Клонирование лота',
+            subtitle: 'Создаёт копию этого лота на FunPay из текущей формы.',
+            icon: 'content_copy',
+            size: 'sm',
+            footer: false
+        });
+        win.body.innerHTML = `
+            <div class="fpt-win-options">
+                <button type="button" class="fpt-win-option" id="fullClone">
+                    <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">content_copy</span></span>
+                    <span class="fpt-win-option-copy">
+                        <span class="fpt-win-option-title">Скопировать полностью</span>
+                        <span class="fpt-win-option-desc">Новый лот с той же категорией, текстами и ценой.</span>
+                    </span>
+                    <span class="material-symbols-rounded fpt-win-option-arrow" aria-hidden="true">chevron_right</span>
+                </button>
+                <button type="button" class="fpt-win-option" id="changeCategoryClone">
+                    <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">call_split</span></span>
+                    <span class="fpt-win-option-copy">
+                        <span class="fpt-win-option-title">Поменять категорию и скопировать</span>
+                        <span class="fpt-win-option-desc">Отметьте другие значения параметров - для каждой комбинации появится своя копия.</span>
+                    </span>
+                    <span class="material-symbols-rounded fpt-win-option-arrow" aria-hidden="true">chevron_right</span>
+                </button>
+            </div>`;
+        document.body.appendChild(win.scrim);
+        scrim = win.scrim;
+
+        scrim.querySelector('#fullClone').addEventListener('click', () => {
+            fptWindow.close(scrim);
+            const form = document.querySelector('form.form-offer-editor');
+            if (!form) { showNotification('Форма редактирования лота не найдена!', true); return; }
+            submitForm(new FormData(form));
+        });
+        scrim.querySelector('#changeCategoryClone').addEventListener('click', () => {
+            fptWindow.close(scrim, { immediate: true });
+            openCategoryCloneWindow();
+        });
+    }
+    fptWindow.open(scrim);
+}
+
+function openCategoryCloneWindow() {
+    const selects = document.querySelectorAll('select.form-control.lot-field-input, select.form-control[name="server_id"]');
+    const categoryData = {};
+    selects.forEach(select => {
+        const labelElement = select.closest('.form-group')?.querySelector('label');
+        const label = labelElement ? labelElement.textContent.trim().replace('*', '') : (select.name === 'server_id' ? 'Сервер' : 'Категория');
+        if (!categoryData[label]) categoryData[label] = { name: select.name, options: [] };
+        select.querySelectorAll('option').forEach(option => { if (option.value) categoryData[label].options.push({ value: option.value, text: option.textContent.trim() }); });
+    });
+
+    document.getElementById('fp-category-clone')?.remove();
+    const win = fptWindow.create({
+        id: 'fp-category-clone',
+        title: 'Копии в других категориях',
+        subtitle: 'Отметьте значения параметров. Копия создаётся для каждой комбинации.',
+        icon: 'call_split',
+        size: 'md',
+        removeOnClose: true
+    });
+    const groups = Object.entries(categoryData).filter(([, data]) => data.options.length);
+    win.body.innerHTML = groups.length ? `<div class="fpt-win-stack">${groups.map(([label, data]) => `
+        <section class="fpt-win-card fp-cc-group" data-name="${escapeHtmlClone(data.name)}">
+            <div class="fpt-win-card-head">
+                <h3 class="fpt-win-card-title">${escapeHtmlClone(label)}</h3>
+                ${fptWindow.checkboxHtml('Выбрать все', { extra: 'class="fp-cc-all"' })}
+            </div>
+            <div class="fp-cc-options">
+                ${data.options.map(option => fptWindow.checkboxHtml(option.text, { extra: `class="fp-cc-option" value="${escapeHtmlClone(option.value)}"` })).join('')}
+            </div>
+        </section>`).join('')}</div>`
+        : importEmptyHtml('category', 'На этой странице нет параметров категории, которые можно поменять.');
+    win.foot.innerHTML = `
+        <div class="fpt-win-status" id="cloneWarning" role="status"></div>
+        <div class="fpt-win-actions">
+            <button type="button" class="fpt-win-btn fpt-win-btn--quiet" id="closeCategoryMenu">Закрыть</button>
+            <button type="button" class="fpt-win-btn fpt-win-btn--primary" id="copyWithCategory" disabled>Копировать</button>
+        </div>`;
+    document.body.appendChild(win.scrim);
+    fptWindow.open(win.scrim);
+
+    const warningDiv = win.foot.querySelector('#cloneWarning');
+    const copyBtn = win.foot.querySelector('#copyWithCategory');
+
+    // Комбинации: декартово произведение отмеченных значений по каждому параметру.
+    const selectedCombos = () => {
+        let combinations = [{}];
+        let hasSelections = false;
+        win.body.querySelectorAll('.fp-cc-group').forEach(group => {
+            const values = Array.from(group.querySelectorAll('.fp-cc-option:checked')).map(input => input.value);
+            if (!values.length) return;
+            hasSelections = true;
+            const next = [];
+            combinations.forEach(combo => values.forEach(value => next.push({ ...combo, [group.dataset.name]: value })));
+            combinations = next;
+        });
+        return hasSelections ? combinations : [];
+    };
+
+    const updateState = () => {
+        win.body.querySelectorAll('.fp-cc-group').forEach(group => {
+            const options = group.querySelectorAll('.fp-cc-option');
+            const checked = group.querySelectorAll('.fp-cc-option:checked').length;
+            const all = group.querySelector('.fp-cc-all');
+            all.checked = checked > 0 && checked === options.length;
+            all.indeterminate = checked > 0 && checked < options.length;
+        });
+        const count = selectedCombos().length;
+        copyBtn.disabled = count === 0;
+        copyBtn.textContent = count ? `Копировать (${count})` : 'Копировать';
+        warningDiv.textContent = count
+            ? `Будет создано копий: ${count}.`
+            : 'Выберите хотя бы одно значение.';
+    };
+
+    win.body.addEventListener('change', event => {
+        if (event.target.matches('.fp-cc-all')) {
+            const group = event.target.closest('.fp-cc-group');
+            group.querySelectorAll('.fp-cc-option').forEach(input => { input.checked = event.target.checked; });
+        }
+        updateState();
+    });
+    updateState();
+
+    win.foot.querySelector('#closeCategoryMenu').addEventListener('click', () => win.close());
+    copyBtn.addEventListener('click', async () => {
+        const form = document.querySelector('form.form-offer-editor');
+        if (!form) { showNotification('Форма редактирования лота не найдена!', true); return; }
+        const combinations = selectedCombos();
+        if (!combinations.length) { showNotification('Не выбрано ни одной категории для копирования.', true); return; }
+        const baseFormData = new FormData(form);
+        win.close();
+        showNotification(`Начинается копирование ${combinations.length} лотов...`, false);
+        let count = 0;
+        for (const combo of combinations) {
+            count++;
+            const clonedFormData = new FormData();
+            for (const [key, value] of baseFormData.entries()) clonedFormData.append(key, value);
+            for (const fieldName in combo) clonedFormData.set(fieldName, combo[fieldName]);
+            await submitForm(clonedFormData);
+            if (count < combinations.length) await new Promise(resolve => setTimeout(resolve, 1200));
+        }
+        showNotification(`Копирование ${combinations.length} лотов завершено!`, false);
+    });
+}
+
 function initializeLotCloning() {
     checkForCopiedLotData();
 
@@ -1033,119 +1204,10 @@ function initializeLotCloning() {
     if (!document.querySelector('.fp-tools-clone-btn')) {
         const cloneButton = createElement('button', { class: 'btn btn-default fp-tools-clone-btn' }, {}, 'Копировать');
         actionsContainer.appendChild(cloneButton);
-        const popupMenu = createElement('div', { class: 'fp-clone-popup' }, {}, `
-            <h3>Клонирование лота</h3>
-            <button id="fullClone">Скопировать полностью</button>
-            <button id="changeCategoryClone">Поменять категорию и скопировать</button>
-            <button id="closePopup" class="btn-default-custom" style="margin-top: 15px;">Закрыть</button>`);
-        document.body.appendChild(popupMenu);
-
-        cloneButton.addEventListener('click', () => { popupMenu.classList.add('active'); });
-
-        document.getElementById('fullClone')?.addEventListener('click', () => {
-            popupMenu.classList.remove('active');
-            const form = document.querySelector('form.form-offer-editor');
-            if (!form) { showNotification('Форма редактирования лота не найдена!', true); return; }
-            submitForm(new FormData(form));
+        cloneButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            openLotCloneMenu();
         });
-
-        document.getElementById('changeCategoryClone')?.addEventListener('click', () => {
-            popupMenu.classList.remove('active');
-            const selects = document.querySelectorAll('select.form-control.lot-field-input, select.form-control[name="server_id"]');
-            const categoryData = {};
-            selects.forEach(select => {
-                const labelElement = select.closest('.form-group')?.querySelector('label');
-                const label = labelElement ? labelElement.textContent.trim().replace('*', '') : (select.name === 'server_id' ? 'Сервер' : 'Категория');
-                if (!categoryData[label]) categoryData[label] = { name: select.name, options: [] };
-                select.querySelectorAll('option').forEach(option => { if(option.value) categoryData[label].options.push({ value: option.value, text: option.textContent.trim() }); });
-            });
-
-            const existingMenu = document.querySelector('.fp-category-clone-popup');
-            if(existingMenu) existingMenu.remove();
-
-            const categoryMenu = createElement('div', { class: 'fp-category-clone-popup' });
-            let htmlContent = '<h4>Выберите категории для дублирования</h4>';
-            for (const label in categoryData) {
-                if (categoryData[label].options.length === 0) continue;
-                htmlContent += `<div class="category-group">
-                                  <label><input type="checkbox" class="category-select-all" data-target="${categoryData[label].name}Select"> ${label} (Выбрать все)</label>`;
-                htmlContent += `<select id="${categoryData[label].name}Select" name="${categoryData[label].name}" multiple>`;
-                categoryData[label].options.forEach(option => { htmlContent += `<option value="${option.value}">${option.text}</option>`; });
-                htmlContent += `</select></div>`;
-            }
-            htmlContent += `<div id="cloneWarning"></div>`;
-            htmlContent += `<div class="actions-bar">
-                                <button id="copyWithCategory">Копировать выбранные</button>
-                                <button id="closeCategoryMenu" class="btn-default-custom">Закрыть</button>
-                            </div>`;
-            categoryMenu.innerHTML = htmlContent;
-            document.body.appendChild(categoryMenu);
-            categoryMenu.classList.add('active');
-
-            function updateCloneWarningState(catMenu) {
-                const warningDiv = catMenu.querySelector('#cloneWarning');
-                const copyBtn = catMenu.querySelector('#copyWithCategory');
-                if (!warningDiv || !copyBtn) return;
-                let numCombinations = 1; let hasFieldsWithSelections = false;
-                catMenu.querySelectorAll('select[multiple]').forEach(select => {
-                    const selectedCount = select.selectedOptions.length;
-                    if (selectedCount > 0) { numCombinations *= selectedCount; hasFieldsWithSelections = true; }
-                });
-                copyBtn.disabled = !hasFieldsWithSelections;
-                if (!hasFieldsWithSelections) {
-                    warningDiv.textContent = 'Выберите хотя бы одну опцию для создания копий.';
-                    warningDiv.style.display = 'block'; copyBtn.textContent = "Копировать";
-                } else if (numCombinations > 0) {
-                    warningDiv.textContent = `Будет создано ${numCombinations} копий лота.`;
-                    warningDiv.style.display = 'block'; copyBtn.textContent = `Копировать (${numCombinations})`;
-                } else { warningDiv.style.display = 'none'; copyBtn.textContent = "Копировать"; }
-            }
-
-            updateCloneWarningState(categoryMenu);
-            categoryMenu.querySelectorAll('.category-select-all, select[multiple]').forEach(el => el.addEventListener('change', () => updateCloneWarningState(categoryMenu)));
-            categoryMenu.querySelectorAll('.category-select-all').forEach(checkbox => {
-                checkbox.addEventListener('change', (event) => {
-                    const select = categoryMenu.querySelector(`#${event.target.dataset.target}`);
-                    if (select) Array.from(select.options).forEach(option => option.selected = event.target.checked);
-                    updateCloneWarningState(categoryMenu);
-                });
-            });
-
-            document.getElementById('copyWithCategory')?.addEventListener('click', async () => {
-                const form = document.querySelector('form.form-offer-editor');
-                if (!form) { showNotification('Форма редактирования лота не найдена!', true); return; }
-                const baseFormData = new FormData(form); let combinations = [{}]; let hasCategorySelections = false;
-                for (const label in categoryData) {
-                    const selectName = categoryData[label].name;
-                    const selectElement = categoryMenu.querySelector(`select[name="${selectName}"]`);
-                    if (!selectElement) continue;
-                    const selectedOptions = Array.from(selectElement.selectedOptions).map(opt => opt.value);
-                    if (selectedOptions.length > 0) {
-                        hasCategorySelections = true; const newCombinations = [];
-                        combinations.forEach(existingCombo => { selectedOptions.forEach(optionValue => { newCombinations.push({ ...existingCombo, [selectName]: optionValue }); }); });
-                        combinations = newCombinations;
-                    }
-                }
-                if (!hasCategorySelections) { showNotification('Не выбрано ни одной категории для копирования.', true); return; }
-                categoryMenu.classList.remove('active');
-                setTimeout(() => { if (document.body.contains(categoryMenu)) document.body.removeChild(categoryMenu); }, 500);
-                showNotification(`Начинается копирование ${combinations.length} лотов...`, false);
-                let count = 0;
-                for (const combo of combinations) {
-                    count++; const clonedFormData = new FormData();
-                    for (const [key, value] of baseFormData.entries()) clonedFormData.append(key, value);
-                    for (const fieldName in combo) clonedFormData.set(fieldName, combo[fieldName]);
-                    await submitForm(clonedFormData);
-                    if (count < combinations.length) await new Promise(resolve => setTimeout(resolve, 1200));
-                }
-                showNotification(`Копирование ${combinations.length} лотов завершено!`, false);
-            });
-            document.getElementById('closeCategoryMenu')?.addEventListener('click', () => {
-                categoryMenu.classList.remove('active');
-                setTimeout(() => { if (document.body.contains(categoryMenu)) document.body.removeChild(categoryMenu); }, 500);
-            });
-        });
-        document.getElementById('closePopup')?.addEventListener('click', () => { popupMenu.classList.remove('active'); });
     }
 
     if (!document.querySelector('.fp-tools-import-btn')) {

@@ -279,8 +279,9 @@ function fptResolveThemeBaseStyle(saved) {
 
 // Правила темы написаны для страницы FunPay и задевают голые теги (header, p, a, h5, label...).
 // Без защиты они красят и наше меню: серая «подложка» под заголовком, тени у ссылок, белый текст
-// в абзацах. :where() не добавляет специфичности, так что остальные правила работают как раньше.
-const FPT_THEME_POPUP_GUARD = ':not(:where(.fp-tools-popup, .fp-tools-popup *))';
+// в абзацах. То же для окон расширения на странице (.fpt-win-scrim, css/page_windows.css).
+// :where() не добавляет специфичности, так что остальные правила работают как раньше.
+const FPT_THEME_POPUP_GUARD = ':not(:where(.fp-tools-popup, .fp-tools-popup *, .fpt-win-scrim, .fpt-win-scrim *))';
 function fptScopeOutsidePopup(css) {
     return css.replace(/([^{}]+)\{([^{}]*)\}/g, (_, selectors, body) => {
         const scoped = selectors.split(',').map(selector => {

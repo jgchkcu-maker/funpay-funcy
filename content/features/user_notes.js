@@ -303,43 +303,38 @@ function applyDotsButtons() {
 /* ------------------------------------------------------------------ */
 
 function openLabelManager() {
-    document.querySelector('.fp-tools-label-overlay')?.remove();
+    document.getElementById('fp-tools-label-manager')?.remove();
 
-    const overlay = createElement('div', { class: 'fp-tools-label-overlay' });
-    const modal = createElement('div', { class: 'fp-tools-label-modal' });
+    const win = fptWindow.create({
+        id: 'fp-tools-label-manager',
+        title: 'Управление метками',
+        subtitle: 'Чтобы повесить метку на чат, наведите на него в списке и нажмите ⋮.',
+        icon: 'label',
+        size: 'sm',
+        removeOnClose: true
+    });
+    const listWrap = createElement('div', { class: 'fpt-win-list fp-tools-label-list' });
+    win.body.appendChild(listWrap);
 
-    const head = createElement('div', { class: 'fp-tools-label-head' });
-    const title = createElement('h3', {});
-    title.textContent = 'Управление метками';
-    const closeBtn = createElement('button', { class: 'fp-tools-label-close material-icons', type: 'button' });
-    closeBtn.textContent = 'close';
-    head.appendChild(title);
-    head.appendChild(closeBtn);
-    modal.appendChild(head);
-
-    const hint = createElement('div', { class: 'fp-tools-label-hint' });
-    hint.textContent = 'Здесь создаются и редактируются метки. Чтобы повесить метку на чат - наведите на него в списке и нажмите ⋮.';
-    modal.appendChild(hint);
-
-    const listWrap = createElement('div', { class: 'fp-tools-label-list' });
-    modal.appendChild(listWrap);
-
-    const addBtn = createElement('button', { class: 'fp-tools-label-add', type: 'button' });
-    addBtn.textContent = '+ Добавить метку';
-    modal.appendChild(addBtn);
+    const addBtn = fptWindow.button('Добавить метку', { iconName: 'add', size: 'sm' });
+    addBtn.classList.add('fp-tools-label-add');
+    win.foot.appendChild(addBtn);
+    const doneBtn = fptWindow.button('Готово', { kind: 'primary', size: 'sm' });
+    doneBtn.addEventListener('click', () => win.close());
+    const actions = createElement('div', { class: 'fpt-win-actions' });
+    actions.appendChild(doneBtn);
+    win.foot.appendChild(actions);
 
     const renderRows = () => {
         listWrap.innerHTML = '';
         if (!fpToolsCustomLabels.length) {
-            const empty = createElement('div', { class: 'fp-tools-label-empty' });
-            empty.textContent = 'Меток пока нет. Добавьте первую.';
-            listWrap.appendChild(empty);
+            listWrap.innerHTML = '<div class="fpt-win-empty fp-tools-label-empty"><span class="material-symbols-rounded" aria-hidden="true">label_off</span>Меток пока нет. Добавьте первую.</div>';
         }
         fpToolsCustomLabels.forEach(label => {
             const row = createElement('div', { class: 'fp-tools-label-row' });
 
             const color = createElement('input', {
-                type: 'color', value: label.color, class: 'fp-tools-label-color'
+                type: 'color', value: label.color, class: 'fpt-win-color fp-tools-label-color', 'aria-label': 'Цвет метки'
             });
             color.addEventListener('input', () => {
                 label.color = color.value;
@@ -348,8 +343,8 @@ function openLabelManager() {
             });
 
             const name = createElement('input', {
-                type: 'text', value: label.name, class: 'fp-tools-label-name',
-                placeholder: 'Название метки'
+                type: 'text', value: label.name, class: 'fpt-win-input fp-tools-label-name',
+                placeholder: 'Название метки', 'aria-label': 'Название метки'
             });
             const commitName = () => {
                 const newName = name.value.trim() || 'Без названия';
@@ -361,8 +356,9 @@ function openLabelManager() {
             name.addEventListener('blur', commitName);
             name.addEventListener('keydown', (e) => { if (e.key === 'Enter') name.blur(); });
 
-            const del = createElement('button', { class: 'fp-tools-label-del material-icons', type: 'button', title: 'Удалить' });
-            del.textContent = 'delete';
+            const del = fptWindow.button('', { kind: 'quiet', iconName: 'delete', title: 'Удалить' });
+            del.classList.add('fpt-win-btn--icon', 'fp-tools-label-del');
+            del.setAttribute('aria-label', 'Удалить метку');
             del.addEventListener('click', () => {
                 fpToolsCustomLabels = fpToolsCustomLabels.filter(l => l.id !== label.id);
                 saveLabels();
@@ -385,14 +381,9 @@ function openLabelManager() {
         if (last) { last.focus(); last.select(); }
     });
 
-    const close = () => overlay.remove();
-    closeBtn.addEventListener('click', close);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-
     renderRows();
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-    fptApplyThemeSurface(modal);
+    document.body.appendChild(win.scrim);
+    fptWindow.open(win.scrim);
 }
 
 /* ------------------------------------------------------------------ */

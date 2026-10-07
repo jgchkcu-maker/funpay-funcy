@@ -15,7 +15,7 @@
 //   • порядок: СНАЧАЛА ВСЕ ФОТО → ПОТОМ ТЕКСТ-подпись.
 //
 // Отправка через существующие background-экшены 'fptSendImage' / 'fptSendChatText'.
-// Стиль - нейтральный тёмный + оранжевый акцент FunPay (никакого фиолетового).
+// Окна отправки и редактора - общий каркас окон расширения (content/ui/page_windows.js).
 // =============================================================================
 
 (function () {
@@ -84,13 +84,10 @@
         console[isError ? 'error' : 'log']('FunPay Funcy: ' + text);
     }
 
-    // Фон/текст окна - как у самой страницы (FunPay, кастомная или светлая тема),
-    // но всегда плотный: иначе чат просвечивает сквозь окно и мини-меню.
+    // Мини-меню карточки живёт вне окна, поэтому палитру меню расширения ставим ему отдельно.
     function applyThemeSurface(el) {
         if (!el) return;
-        const { bg, color } = fptSolidSurface(['.chat-contacts', '.chat', '.content-with-cd-wide', document.body]);
-        el.style.backgroundColor = bg;
-        el.style.color = color;
+        fptWindow.paint(el);
     }
 
     function plural(n) {
@@ -144,33 +141,33 @@
 
     // ───────────────────────── модалка ─────────────────────────
 
+    // Окно отправки - общий каркас окон расширения (content/ui/page_windows.js).
     function openModal() {
         if (modalEl) return;
-        modalEl = document.createElement('div');
-        modalEl.className = 'fpt-tg-overlay';
-        modalEl.innerHTML = `
-            <div class="fpt-tg-modal" role="dialog" aria-label="Отправка изображений">
-                <div class="fpt-tg-head">
-                    <span class="fpt-tg-title" id="fptTgTitle"></span>
-                    <button type="button" class="fpt-tg-x" title="Закрыть">
-                        <span class="material-symbols-rounded">close</span>
-                    </button>
-                </div>
-                <div class="fpt-tg-grid" id="fptTgGrid"></div>
-                <div class="fpt-tg-caption">
-                    <textarea class="fpt-tg-msg" id="fptTgMsg" rows="1" placeholder="Сообщение..."></textarea>
-                </div>
-                <div class="fpt-tg-foot">
-                    <button type="button" class="fpt-tg-btn fpt-tg-add">Добавить</button>
-                    <button type="button" class="fpt-tg-btn fpt-tg-cancel">Отмена</button>
-                    <button type="button" class="fpt-tg-btn fpt-tg-send btn btn-gray">Отправить</button>
-                </div>
+        const win = fptWindow.create({
+            id: 'fpt-tg-window',
+            title: 'Отправка изображений',
+            subtitle: 'Сначала уйдут картинки, затем подпись.',
+            icon: 'photo_library',
+            size: 'sm',
+            removeOnClose: true,
+            // крестик, Esc и клик по фону закрывают окно без отправки
+            onClose: () => { if (modalEl === win.scrim) finishClose(false); }
+        });
+        win.dialog.classList.add('fpt-tg-modal');
+        win.body.innerHTML = `
+            <div class="fpt-tg-grid" id="fptTgGrid"></div>
+            <div class="fpt-tg-caption">
+                <textarea class="fpt-win-input fpt-tg-msg" id="fptTgMsg" rows="1" placeholder="Подпись к картинкам..." aria-label="Подпись"></textarea>
             </div>`;
+        win.foot.innerHTML = `
+            <button type="button" class="fpt-win-btn fpt-win-btn--sm fpt-win-btn--quiet fpt-tg-add"><span class="material-symbols-rounded" aria-hidden="true">add_photo_alternate</span>Добавить</button>
+            <div class="fpt-win-actions">
+                <button type="button" class="fpt-win-btn fpt-win-btn--quiet fpt-tg-cancel">Отмена</button>
+                <button type="button" class="fpt-win-btn fpt-win-btn--primary fpt-tg-send"><span class="material-symbols-rounded" aria-hidden="true">send</span>Отправить</button>
+            </div>`;
+        modalEl = win.scrim;
         document.body.appendChild(modalEl);
-
-        // фон и цвет окна берём от страницы (FunPay/кастомная тема), чтобы
-        // элементы не были «чёрными на белом» - поддержка любой темы.
-        applyThemeSurface(modalEl.querySelector('.fpt-tg-modal'));
 
         const msg = modalEl.querySelector('#fptTgMsg');
 
@@ -184,33 +181,23 @@
             nativeInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
 
-        const grow = () => { msg.style.height = 'auto'; msg.style.height = Math.min(msg.scrollHeight, 120) + 'px'; };
+        const grow = () => { msg.style.height = 'auto'; msg.style.height = Math.min(msg.scrollHeight + 2, 120) + 'px'; };
         msg.addEventListener('input', grow);
         requestAnimationFrame(grow);
         msg.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doSend(); }
         });
 
-        modalEl.querySelector('.fpt-tg-x').addEventListener('click', closeModal);
         modalEl.querySelector('.fpt-tg-cancel').addEventListener('click', closeModal);
         modalEl.querySelector('.fpt-tg-add').addEventListener('click', () => pickFiles(true));
         modalEl.querySelector('.fpt-tg-send').addEventListener('click', doSend);
-        modalEl.addEventListener('mousedown', (e) => { if (e.target === modalEl) closeModal(); });
-        document.addEventListener('keydown', escClose);
 
-        requestAnimationFrame(() => { modalEl.classList.add('open'); msg.focus(); });
+        fptWindow.open(modalEl, { focus: msg });
     }
 
-    function escClose(e) {
-        // не закрываем модалку, если открыт редактор (у него свой Esc)
-        if (e.key === 'Escape' && modalEl && !document.querySelector('.fpt-ed-overlay')) closeModal();
-    }
-
-    function closeModal(opts) {
-        if (!modalEl) return;
-        document.removeEventListener('keydown', escClose);
+    function finishClose(sent) {
         // если закрыли БЕЗ отправки - вернём забранный текст обратно в поле «Написать...»
-        if (!(opts && opts.sent) && borrowedText) {
+        if (!sent && borrowedText) {
             const ni = document.querySelector('.chat-form-input textarea, .chat-form textarea[name="content"]');
             if (ni) { ni.value = borrowedText; ni.dispatchEvent(new Event('input', { bubbles: true })); }
         }
@@ -219,15 +206,21 @@
         // следующем открытии всплывут старые (баг: «остались 6 картинок»).
         basket = [];
         pendingReplaceId = null;
-        const el = modalEl; modalEl = null;
-        el.classList.remove('open');
-        setTimeout(() => el.remove(), 150);
+        closeCellMenu();
+        modalEl = null;
+    }
+
+    function closeModal(opts) {
+        if (!modalEl) return;
+        const el = modalEl;
+        finishClose(!!(opts && opts.sent));
+        fptWindow.close(el);
     }
 
     function renderGrid() {
         if (!modalEl) return;
         const grid = modalEl.querySelector('#fptTgGrid');
-        const title = modalEl.querySelector('#fptTgTitle');
+        const title = modalEl.querySelector('.fpt-win-title');
         const n = basket.length;
         title.textContent = `Выбрано ${n} ${plural(n)}`;
 
@@ -304,36 +297,49 @@
         const item = basket.find(b => b.id === id);
         if (!item) return;
 
-        const ov = document.createElement('div');
-        ov.className = 'fpt-ed-overlay';
-        ov.innerHTML = `
+        const win = fptWindow.create({
+            id: 'fpt-ed-window',
+            title: 'Редактирование изображения',
+            subtitle: 'Рисуйте, стирайте штрихи или обрежьте картинку.',
+            icon: 'brush',
+            size: 'xl',
+            tall: true,
+            flushBody: true,
+            removeOnClose: true,
+            onClose: () => cleanupEditor()
+        });
+        const ov = win.scrim;
+        ov.classList.add('fpt-ed-overlay');
+        win.body.innerHTML = `
             <div class="fpt-ed">
                 <div class="fpt-ed-toolbar">
-                    <div class="fpt-ed-tools">
-                        <button class="fpt-ed-tool active" data-tool="pen" title="Карандаш"><span class="material-symbols-rounded">edit</span></button>
-                        <button class="fpt-ed-tool" data-tool="eraser" title="Ластик"><span class="material-symbols-rounded">ink_eraser</span></button>
-                        <button class="fpt-ed-tool" data-tool="crop" title="Обрезка"><span class="material-symbols-rounded">crop</span></button>
+                    <div class="fpt-win-seg fpt-ed-tools" role="toolbar" aria-label="Инструменты">
+                        <button type="button" class="fpt-win-seg-btn fpt-ed-tool active" data-tool="pen" title="Карандаш"><span class="material-symbols-rounded" aria-hidden="true">edit</span>Кисть</button>
+                        <button type="button" class="fpt-win-seg-btn fpt-ed-tool" data-tool="eraser" title="Ластик"><span class="material-symbols-rounded" aria-hidden="true">ink_eraser</span>Ластик</button>
+                        <button type="button" class="fpt-win-seg-btn fpt-ed-tool" data-tool="crop" title="Обрезка"><span class="material-symbols-rounded" aria-hidden="true">crop</span>Обрезка</button>
                     </div>
-                    <div class="fpt-ed-colors" id="fptEdColors"></div>
-                    <div class="fpt-ed-size">
-                        <span class="material-symbols-rounded">line_weight</span>
-                        <input type="range" id="fptEdSize" min="2" max="40" value="6">
-                    </div>
-                    <div class="fpt-ed-actions">
-                        <button class="fpt-ed-mini" data-act="undo" title="Отменить"><span class="material-symbols-rounded">undo</span></button>
-                        <button class="fpt-ed-apply-crop" data-act="applycrop" style="display:none">Обрезать</button>
-                        <button class="fpt-ed-cancel" data-act="cancel">Отмена</button>
-                        <button class="fpt-ed-save" data-act="save">Готово</button>
-                    </div>
+                    <div class="fpt-ed-colors" id="fptEdColors" role="group" aria-label="Цвет кисти"></div>
+                    <label class="fpt-ed-size">
+                        <span class="material-symbols-rounded" aria-hidden="true">line_weight</span>
+                        <input type="range" class="fpt-win-range" id="fptEdSize" min="2" max="40" value="6" aria-label="Толщина кисти">
+                    </label>
                 </div>
                 <div class="fpt-ed-stage" id="fptEdStage">
                     <canvas id="fptEdCanvas"></canvas>
                     <div class="fpt-ed-crop" id="fptEdCrop" style="display:none"></div>
                 </div>
             </div>`;
+        win.foot.innerHTML = `
+            <div class="fpt-ed-actions">
+                <button type="button" class="fpt-win-btn fpt-win-btn--sm fpt-win-btn--quiet" data-act="undo" title="Отменить последний штрих"><span class="material-symbols-rounded" aria-hidden="true">undo</span>Отменить шаг</button>
+                <div class="fpt-win-actions">
+                    <button type="button" class="fpt-win-btn fpt-ed-apply-crop" data-act="applycrop" style="display:none"><span class="material-symbols-rounded" aria-hidden="true">crop</span>Обрезать</button>
+                    <button type="button" class="fpt-win-btn fpt-win-btn--quiet" data-act="cancel">Отмена</button>
+                    <button type="button" class="fpt-win-btn fpt-win-btn--primary" data-act="save">Готово</button>
+                </div>
+            </div>`;
         document.body.appendChild(ov);
-        applyThemeSurface(ov.querySelector('.fpt-ed'));
-        requestAnimationFrame(() => ov.classList.add('open'));
+        fptWindow.open(ov);
 
         const canvas = ov.querySelector('#fptEdCanvas');
         const ctx = canvas.getContext('2d');
@@ -352,7 +358,9 @@
         const colorsWrap = ov.querySelector('#fptEdColors');
         PALETTE.forEach((c, i) => {
             const sw = document.createElement('button');
+            sw.type = 'button';
             sw.className = 'fpt-ed-color' + (c === color ? ' active' : '');
+            sw.setAttribute('aria-label', 'Цвет ' + c);
             sw.style.background = c;
             sw.addEventListener('click', () => {
                 color = c;
@@ -618,14 +626,10 @@
             }
         });
 
-        function edEsc(ev) { if (ev.key === 'Escape') closeEditor(); }
-        document.addEventListener('keydown', edEsc);
-        function closeEditor() {
+        function closeEditor() { fptWindow.close(ov); }
+        function cleanupEditor() {
             window.removeEventListener('resize', fitStage);
             window.removeEventListener('mousemove', cropMove);
-            document.removeEventListener('keydown', edEsc);
-            ov.classList.remove('open');
-            setTimeout(() => ov.remove(), 150);
         }
     }
 

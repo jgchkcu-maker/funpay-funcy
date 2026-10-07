@@ -531,52 +531,46 @@ if (typeof window !== 'undefined') {
 function _showStatsAccuracyPopup(lastUpd, ordersCount, updateBtn) {
     document.getElementById('fpt-stats-accuracy-overlay')?.remove();
 
-    const overlay = document.createElement('div');
-    overlay.id = 'fpt-stats-accuracy-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;';
-
-    const box = document.createElement('div');
-    box.id = 'fpt-stats-accuracy-box';
-    // Парсинговые цвета (как окно копирования лота): свой непрозрачный фон + тёмный
-    // скрим оверлея, поэтому окно нормально читается и на светлой, и на тёмной теме
-    // FunPay, не сливаясь с фоном. Переменные --fp-* адаптируются к теме страницы.
-    box.style.cssText = 'max-width:440px;width:100%;background:var(--fp-bg-card, #1e1e1e);border:1px solid var(--fp-border-color, #333);border-radius:14px;padding:18px 20px;color:var(--fp-text-primary, #e0e0e0);font-size:13px;line-height:1.5;box-shadow:0 12px 48px rgba(0,0,0,.45);max-height:88vh;overflow:auto;scrollbar-width:none;-ms-overflow-style:none;';
+    const win = fptWindow.create({
+        id: 'fpt-stats-accuracy-overlay',
+        dialogId: 'fpt-stats-accuracy-box',
+        title: 'Стойте, это не точные данные?',
+        subtitle: 'Статистика считается расширением по вашей истории заказов на FunPay.',
+        icon: 'warning',
+        size: 'md',
+        removeOnClose: true
+    });
+    win.head.querySelector('.fpt-win-emblem')?.setAttribute('data-kind', 'warning');
 
     const infoLine = (lastUpd || ordersCount)
-        ? `<div style="margin:12px 0;padding:10px 12px;background:var(--fp-bg-main, rgba(0,0,0,.15));border:1px solid var(--fp-border-color, #333);border-radius:8px;font-size:13px;color:var(--fp-text-secondary, #a0a0a0);">
-                Загружено заказов в кэше: <b style="color:var(--fp-text-primary,#e0e0e0);">${ordersCount}</b>${lastUpd ? `<br>Последнее обновление: <b style="color:var(--fp-text-primary,#e0e0e0);">${lastUpd}</b>` : ''}
-           </div>`
+        ? `<dl class="fpt-win-kv" style="margin-top:14px;">
+                <div class="fpt-win-kv-row"><dt class="fpt-win-kv-key">Загружено заказов в кэше</dt><dd class="fpt-win-kv-value" style="margin:0;">${ordersCount}</dd></div>
+                ${lastUpd ? `<div class="fpt-win-kv-row"><dt class="fpt-win-kv-key">Последнее обновление</dt><dd class="fpt-win-kv-value" style="margin:0;">${lastUpd}</dd></div>` : ''}
+           </dl>`
         : '';
 
-    box.innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-            <span class="material-symbols-rounded" style="color:#f0a040;font-size:26px;">warning</span>
-            <h3 style="margin:0;font-size:18px;color:var(--fp-text-primary, #e0e0e0);">Стойте, это не точные данные?</h3>
-        </div>
-        <p style="margin:10px 0;color:var(--fp-text-secondary, #a0a0a0);">
-            Статистика собирается из вашей истории заказов на FunPay и считается на стороне расширения.
-            Поэтому цифры могут немного отличаться от того, что вы ожидаете. Основные причины:
-        </p>
-        <ul style="margin:10px 0;padding-left:18px;color:var(--fp-text-primary, #c2c5db);">
-            <li style="margin-bottom:7px;"><b>"Оплаченные" (в ожидании) входят в сумму.</b> Заказы со статусом "оплачен, но не подтверждён" учитываются в "Всего заработано". Деньги по ним ещё не получены и могут уйти в возврат. Чтобы увидеть только реально завершённое - в фильтрах оставьте лишь "Закрытые".</li>
-            <li style="margin-bottom:7px;"><b>Часовой пояс.</b> День заказа определяется по Москве (как на FunPay). "За сегодня/вчера" теперь считается по МSK - если ваш пояс другой, границы суток всё равно совпадут с FunPay.</li>
-            <li style="margin-bottom:7px;"><b>Глубина истории.</b> Если "За месяц" и "За всё время" совпадают - значит расширение ещё не докачало старые заказы (или FunPay отдаёт ограниченную историю). Нажмите "Пересобрать", чтобы дотянуть всю доступную историю.</li>
-            <li style="margin-bottom:7px;"><b>Возвраты и валюты.</b> Возвраты и заказы в разных валютах считаются по своим правилам - переключайте фильтры статусов, чтобы сверить.</li>
+    win.body.innerHTML = `
+        <p class="fpt-win-lead">Поэтому цифры могут немного отличаться от того, что вы ожидаете. Основные причины:</p>
+        <ul class="fpt-stats-reasons">
+            <li><b>«Оплаченные» (в ожидании) входят в сумму.</b> Заказы со статусом «оплачен, но не подтверждён» учитываются в «Всего заработано». Деньги по ним ещё не получены и могут уйти в возврат. Чтобы увидеть только реально завершённое - в фильтрах оставьте лишь «Закрытые».</li>
+            <li><b>Часовой пояс.</b> День заказа определяется по Москве (как на FunPay). «За сегодня/вчера» считается по МСК - если ваш пояс другой, границы суток всё равно совпадут с FunPay.</li>
+            <li><b>Глубина истории.</b> Если «За месяц» и «За всё время» совпадают - значит расширение ещё не докачало старые заказы (или FunPay отдаёт ограниченную историю). Нажмите «Пересобрать», чтобы дотянуть всю доступную историю.</li>
+            <li><b>Возвраты и валюты.</b> Возвраты и заказы в разных валютах считаются по своим правилам - переключайте фильтры статусов, чтобы сверить.</li>
         </ul>
         ${infoLine}
-        <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end;">
-            <button id="fpt-acc-rebuild" class="btn btn-default" style="padding:7px 14px;">Пересобрать данные</button>
-            <button id="fpt-acc-close" class="btn" style="padding:7px 14px;background:var(--fp-accent, #1b75bb);border-color:var(--fp-accent, #1b75bb);color:#fff;">Понятно</button>
+    `;
+    win.foot.innerHTML = `
+        <div class="fpt-win-actions">
+            <button type="button" id="fpt-acc-rebuild" class="fpt-win-btn"><span class="material-symbols-rounded" aria-hidden="true">refresh</span>Пересобрать данные</button>
+            <button type="button" id="fpt-acc-close" class="fpt-win-btn fpt-win-btn--primary">Понятно</button>
         </div>
     `;
+    document.body.appendChild(win.scrim);
+    fptWindow.open(win.scrim);
 
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-
-    const close = () => overlay.remove();
-    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-    box.querySelector('#fpt-acc-close').addEventListener('click', close);
-    box.querySelector('#fpt-acc-rebuild').addEventListener('click', async () => {
+    const close = () => win.close();
+    win.foot.querySelector('#fpt-acc-close').addEventListener('click', close);
+    win.foot.querySelector('#fpt-acc-rebuild').addEventListener('click', async () => {
         close();
         if (updateBtn && chrome.runtime?.id) {
             updateBtn.disabled = true;

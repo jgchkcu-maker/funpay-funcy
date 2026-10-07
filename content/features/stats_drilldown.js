@@ -209,44 +209,6 @@
         const css = document.createElement('style');
         css.id = 'fpt-dd-styles';
         css.textContent = `
-        .fpt-dd-overlay{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;
-            justify-content:center;background:rgba(8,9,14,0.62);backdrop-filter:blur(3px);
-            animation:fptDdFade .15s ease;}
-        @keyframes fptDdFade{from{opacity:0}to{opacity:1}}
-        .fpt-dd-modal{width:min(680px,94vw);max-height:86vh;display:flex;flex-direction:column;
-            background:var(--fpt-surface,#171922);color:var(--fpt-text,#e7e9f3);
-            border:1px solid var(--fpt-border,rgba(255,255,255,0.1));border-radius:16px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.5);overflow:hidden;}
-        .fpt-custom-theme-off .fpt-dd-modal{background:#fff;color:#1a1a1a;border-color:rgba(0,0,0,0.12);}
-        .fpt-dd-head{display:flex;align-items:center;justify-content:space-between;gap:12px;
-            padding:16px 18px;border-bottom:1px solid var(--fpt-border,rgba(255,255,255,0.08));}
-        .fpt-dd-title{font-size:15px;font-weight:700;}
-        .fpt-dd-sub{font-size:12px;color:var(--fpt-text-muted,#9099b8);margin-top:2px;}
-        .fpt-dd-close{background:none;border:none;color:inherit;font-size:22px;line-height:1;
-            cursor:pointer;opacity:.7;}
-        .fpt-dd-close:hover{opacity:1;}
-        .fpt-dd-tools{display:flex;gap:8px;padding:10px 18px 0;}
-        .fpt-dd-search{flex:1;padding:8px 10px;border-radius:8px;font-size:13px;
-            background:var(--fpt-surface-2,#20222e);color:var(--fpt-text,#fff);
-            border:1px solid var(--fpt-border,#22253a);}
-        .fpt-custom-theme-off .fpt-dd-search{background:#f3f3f5;color:#1a1a1a;border-color:#ddd;}
-        .fpt-dd-sort{padding:8px 10px;border-radius:8px;font-size:13px;
-            background:var(--fpt-surface-2,#20222e);color:var(--fpt-text,#fff);
-            border:1px solid var(--fpt-border,#22253a);cursor:pointer;}
-        .fpt-custom-theme-off .fpt-dd-sort{background:#f3f3f5;color:#1a1a1a;border-color:#ddd;}
-        .fpt-dd-list{padding:12px 18px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
-        .fpt-dd-row{display:block;text-decoration:none;background:var(--fpt-surface-2,#20222e);
-            border:1px solid var(--fpt-border,#22253a);border-radius:10px;padding:9px 11px;color:inherit;}
-        .fpt-custom-theme-off .fpt-dd-row{background:#f7f7f9;border-color:#e3e3e8;}
-        a.fpt-dd-row:hover{border-color:var(--fpt-accent,#ff6d15);}
-        .fpt-dd-row-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
-        .fpt-dd-row-title{font-size:12.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .fpt-dd-row-price{font-size:12.5px;font-weight:700;color:var(--fpt-accent,#ff6d15);white-space:nowrap;}
-        .fpt-dd-row-meta{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:5px;font-size:11px;
-            color:var(--fpt-text-muted,#9099b8);}
-        .fpt-dd-st{font-weight:600;}
-        .fpt-dd-st-closed{color:#3ad07a;} .fpt-dd-st-paid{color:#4aa3ff;} .fpt-dd-st-refunded{color:#ff6b6b;}
-        .fpt-dd-empty{padding:24px;text-align:center;color:var(--fpt-text-muted,#9099b8);font-size:13px;}
         .fp-stat-card{cursor:pointer;transition:transform .08s ease,box-shadow .12s ease;}
         .fp-stat-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,0.18);}
         .fp-s3.fpt-clickable{cursor:pointer;}
@@ -307,6 +269,8 @@
             : `<div class="fpt-dd-empty">Ничего не найдено.</div>`;
     }
 
+    // Окно списка - общий каркас окон расширения (content/ui/page_windows.js); строки списка
+    // оформлены токенами того же окна в css/page_windows.css.
     function openModal(title, subtitle, list) {
         ensureStyles();
         _list = Array.isArray(list) ? list : [];
@@ -314,52 +278,40 @@
         const old = document.getElementById('fpt-dd-overlay');
         if (old) old.remove();
 
-        const overlay = document.createElement('div');
-        overlay.id = 'fpt-dd-overlay';
-        overlay.className = 'fpt-dd-overlay';
-        overlay.innerHTML = `
-            <div class="fpt-dd-modal" role="dialog" aria-modal="true">
-                <div class="fpt-dd-head">
-                    <div>
-                        <div class="fpt-dd-title">${esc(title)}</div>
-                        <div class="fpt-dd-sub">${esc(subtitle)}</div>
-                    </div>
-                    <button class="fpt-dd-close" title="Закрыть">×</button>
-                </div>
-                <div class="fpt-dd-tools">
-                    <input class="fpt-dd-search" type="text" placeholder="Поиск: товар, продавец, категория…" autocomplete="off">
-                    <select class="fpt-dd-sort">
-                        <option value="date-desc">Сначала новые</option>
-                        <option value="date-asc">Сначала старые</option>
-                        <option value="price-desc">Дороже сверху</option>
-                        <option value="price-asc">Дешевле сверху</option>
-                        <option value="profit-desc">Больше прибыль</option>
-                        <option value="profit-asc">Меньше прибыль</option>
-                    </select>
-                </div>
-                <div class="fpt-dd-list" id="fpt-dd-list"></div>
-            </div>`;
-        document.body.appendChild(overlay);
+        const win = window.fptWindow.create({
+            id: 'fpt-dd-overlay',
+            title,
+            subtitle,
+            icon: 'list_alt',
+            size: 'md',
+            tall: true,
+            footer: false,
+            removeOnClose: true
+        });
+        win.body.innerHTML = `
+            <div class="fpt-win-toolbar">
+                <input class="fpt-win-input fpt-dd-search" type="search" placeholder="Поиск: товар, продавец, категория…" aria-label="Поиск" autocomplete="off">
+                <select class="fpt-win-input fpt-dd-sort" aria-label="Сортировка">
+                    <option value="date-desc">Сначала новые</option>
+                    <option value="date-asc">Сначала старые</option>
+                    <option value="price-desc">Дороже сверху</option>
+                    <option value="price-asc">Дешевле сверху</option>
+                    <option value="profit-desc">Больше прибыль</option>
+                    <option value="profit-asc">Меньше прибыль</option>
+                </select>
+            </div>
+            <div class="fpt-dd-list" id="fpt-dd-list"></div>`;
+        document.body.appendChild(win.scrim);
+        window.fptWindow.open(win.scrim);
 
-        const listEl = overlay.querySelector('#fpt-dd-list');
-        const searchEl = overlay.querySelector('.fpt-dd-search');
-        const sortEl = overlay.querySelector('.fpt-dd-sort');
+        const listEl = win.body.querySelector('#fpt-dd-list');
+        const searchEl = win.body.querySelector('.fpt-dd-search');
+        const sortEl = win.body.querySelector('.fpt-dd-sort');
         const rerender = () => renderList(listEl, _list, sortEl.value, searchEl.value.trim());
         rerender();
 
         searchEl.addEventListener('input', rerender);
         sortEl.addEventListener('change', rerender);
-
-        const close = () => {
-            document.removeEventListener('keydown', onEsc);
-            overlay.remove();
-        };
-        function onEsc(e) {
-            if (e.key === 'Escape') close();
-        }
-        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-        overlay.querySelector('.fpt-dd-close').addEventListener('click', close);
-        document.addEventListener('keydown', onEsc);
     }
 
     // Собирает заказы по предикату + период + (опц.) фильтры статусов.

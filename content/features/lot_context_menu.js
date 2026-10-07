@@ -49,7 +49,7 @@
 
         const menu = document.createElement('div');
         menu.id = MENU_ID;
-        menu.style.cssText = `position:fixed;left:${x}px;top:${y}px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,0.5);z-index:100000;min-width:210px;padding:4px 0;font-family:Inter,'Segoe UI',sans-serif;font-size:13px;color:var(--fpt-text, #16181d);`;
+        menu.style.cssText = `position:fixed;left:${x}px;top:${y}px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fptm-nav-border, rgba(0,0,0,0.12));border-radius:14px;box-shadow:0 16px 40px var(--fpt-shadow, rgba(0,0,0,0.3));z-index:100000;min-width:210px;padding:5px;font-family:Inter,'Segoe UI',sans-serif;font-size:13px;color:var(--fpt-text, #16181d);`;
 
         const items = [
             { icon: isPinned ? '📌' : '📍', label: isPinned ? 'Открепить из таблицы' : 'Закрепить в таблице', action: 'pin', enabled: !!lot.offerId },
@@ -70,11 +70,11 @@
         items.forEach(item => {
             if (item.sep) { const d = document.createElement('div'); d.style.cssText = 'height:1px;background:var(--fpt-border, rgba(22,24,29,0.12));margin:4px 0;'; menu.appendChild(d); return; }
             const row = document.createElement('div');
-            row.style.cssText = `display:flex;align-items:center;gap:10px;padding:8px 14px;border-radius:4px;margin:0 4px;${item.hint ? 'opacity:0.4;cursor:default;font-size:11px;' : item.enabled ? 'cursor:pointer;' : 'opacity:0.4;cursor:default;'}`;
-            const tooltipHtml = item.tooltip ? `<span style="font-size:10px;color:#4a5070;margin-left:auto;max-width:120px;text-align:right;white-space:normal;line-height:1.3;">${item.tooltip}</span>` : '';
+            row.style.cssText = `display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;${item.hint ? 'opacity:0.4;cursor:default;font-size:11px;' : item.enabled ? 'cursor:pointer;' : 'opacity:0.4;cursor:default;'}`;
+            const tooltipHtml = item.tooltip ? `<span style="font-size:10px;color:var(--fpt-text-muted, #4a5070);margin-left:auto;max-width:120px;text-align:right;white-space:normal;line-height:1.3;">${item.tooltip}</span>` : '';
             row.innerHTML = `<span style="width:18px;text-align:center;">${item.icon}</span><span>${item.label}</span>${tooltipHtml}`;
             if (item.enabled) {
-                row.addEventListener('mouseenter', () => row.style.background = 'var(--fpt-hover, rgba(22,24,29,0.08))');
+                row.addEventListener('mouseenter', () => row.style.background = 'var(--fpt-accent-soft, rgba(22,24,29,0.08))');
                 row.addEventListener('mouseleave', () => row.style.background = '');
                 row.addEventListener('click', () => { removeMenu(); handleAction(item.action, lot); });
             }
@@ -89,6 +89,7 @@
         }
         menu.style.animation = 'fpCtxIn 0.1s ease';
         document.body.appendChild(menu);
+        if (window.fptWindow) window.fptWindow.paint(menu);
 
         const r = menu.getBoundingClientRect();
         if (r.right  > window.innerWidth)  menu.style.left = `${x - r.width}px`;
@@ -125,22 +126,23 @@
         removeChatPanel();
         const panel = document.createElement('div');
         panel.id = CHAT_ID;
-        panel.style.cssText = 'position:fixed;bottom:24px;right:24px;width:320px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,0.6);z-index:100001;overflow:hidden;font-family:Inter,sans-serif;font-size:13px;color:var(--fpt-text, #16181d);animation:fpCtxIn 0.15s ease;';
+        panel.style.cssText = 'position:fixed;bottom:24px;right:24px;width:320px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:18px;box-shadow:0 20px 50px var(--fpt-shadow, rgba(0,0,0,0.3));z-index:100001;overflow:hidden;font-family:Inter,\'Segoe UI\',system-ui,sans-serif;font-size:13px;color:var(--fpt-text, #16181d);animation:fpCtxIn 0.15s ease;';
         panel.innerHTML = `
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--fpt-border, rgba(22,24,29,0.12));background:var(--fpt-surface, #f5f7fa);">
-                <span style="font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${lot.sellerName ? `Написать ${lot.sellerName}` : 'Написать'}</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--fpt-border, rgba(22,24,29,0.12));background:transparent;">
+                <span style="font-weight:650;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${lot.sellerName ? `Написать ${lot.sellerName}` : 'Написать'}</span>
                 <button id="fp-ctx-chat-close" style="background:none;border:none;color:var(--fpt-text-muted, #676a73);cursor:pointer;font-size:18px;padding:0 0 0 8px;line-height:1;">✕</button>
             </div>
             <div style="padding:10px 14px;">
                 <div style="font-size:11px;color:var(--fpt-text-muted, #676a73);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Лот: ${lot.title}</div>
-                <textarea id="fp-ctx-chat-text" placeholder="Сообщение... (Ctrl+Enter отправить)" style="width:100%;height:80px;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:6px;color:var(--fpt-text, #16181d);font-size:13px;padding:8px;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
+                <textarea id="fp-ctx-chat-text" placeholder="Сообщение... (Ctrl+Enter отправить)" style="width:100%;height:80px;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:12px;color:var(--fpt-text, #16181d);font-size:13px;padding:10px 12px;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
                 <div style="display:flex;gap:8px;margin-top:8px;">
-                    <button id="fp-ctx-chat-send" style="flex:1;background:#1b75bb;color:#fff;border:none;border-radius:6px;padding:9px;font-size:13px;font-weight:600;cursor:pointer;">Отправить</button>
-                    <a href="https://funpay.com/chat/?node=" id="fp-ctx-open-chat-link" target="_blank" style="display:flex;align-items:center;padding:0 10px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fpt-border, rgba(22,24,29,0.12));border-radius:6px;color:var(--fpt-text-muted, #676a73);text-decoration:none;font-size:12px;white-space:nowrap;">Открыть чат</a>
+                    <button id="fp-ctx-chat-send" style="flex:1;background:var(--fpt-accent, #7663f6);color:#fff;border:none;border-radius:12px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Отправить</button>
+                    <a href="https://funpay.com/chat/?node=" id="fp-ctx-open-chat-link" target="_blank" style="display:flex;align-items:center;padding:0 10px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fpt-accent-border, rgba(22,24,29,0.12));border-radius:12px;color:var(--fpt-accent, #676a73);text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap;">Открыть чат</a>
                 </div>
                 <div id="fp-ctx-chat-status" style="font-size:11px;color:var(--fpt-text-muted, #8a90a6);margin-top:6px;min-height:16px;"></div>
             </div>`;
         document.body.appendChild(panel);
+        if (window.fptWindow) window.fptWindow.paint(panel);
 
         document.getElementById('fp-ctx-chat-close').addEventListener('click', removeChatPanel);
         const ta     = document.getElementById('fp-ctx-chat-text');

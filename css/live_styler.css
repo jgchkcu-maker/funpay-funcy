@@ -241,87 +241,48 @@ body.fp-tools-magic-stick-active #ms-selector-modal * {
 }
 
 /* --- Модальные окна --- */
-#ms-my-styles-modal, #ms-selector-modal {
-    display: none;
-    position: fixed;
-    z-index: 100000;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6);
-    backdrop-filter: blur(2px);
-    justify-content: center;
-    align-items: center;
-}
-.ms-modal-content {
-    background: var(--fpt-bg, #fff);
-    color: var(--fpt-text, #16181d);
-    color-scheme: var(--fpt-color-scheme, light);
-    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
-    border-radius: 12px;
-    width: 90%;
-    max-width: 700px;
-    max-height: 80vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 30px var(--ms-shadow);
-}
-.ms-modal-header { display: flex; justify-content: space-between; padding: 15px 20px; border-bottom: 1px solid var(--fpt-border, rgba(22,24,29,0.12)); }
-.ms-modal-header h3 { margin: 0; font-size: 18px; }
-.ms-modal-close { background: none; border: none; color: var(--fpt-text-muted, #676a73); font-size: 24px; cursor: pointer; }
-
-.ms-styles-list { padding: 20px; overflow-y: auto; }
-.ms-styles-empty { text-align: center; color: var(--fpt-text-muted, #676a73); }
+/* «Мои стили» и выбор селектора - общий каркас окон (css/page_windows.css); поверх панели. */
+#ms-my-styles-modal, #ms-selector-modal { z-index: 100000; }
 .ms-style-item {
     display: flex;
-    align-items: center;
-    background: var(--fpt-surface, #f5f7fa);
-    padding: 10px 15px;
-    border-radius: 6px;
-    margin-bottom: 10px;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 12px 12px 12px 14px;
+    border: 1px solid var(--fptm-nav-border);
+    border-radius: 14px;
+    background: var(--fptm-nav-surface);
 }
+.ms-style-item + .ms-style-item { margin-top: 8px; }
 .ms-style-selector {
-    font-family: monospace;
-    color: #1b75bb;
-    flex-basis: 40%;
-    overflow-wrap: break-word;
+    flex: 0 0 38%;
+    min-width: 0;
+    color: var(--fptm-accent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
 }
 .ms-style-props {
-    flex-grow: 1;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-left: 14px;
+    border-left: 1px solid var(--fptm-nav-border);
+    color: var(--fptm-muted);
+    font-size: 12.5px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+.fpt-win-scrim .ms-style-props code { padding: 0; color: var(--fptm-text); background: none; font-size: 12px; }
+.fpt-win-scrim .fpt-win-btn.ms-style-delete-btn { flex: 0 0 auto; margin: -4px -4px 0 auto; }
+.fpt-win-scrim .fpt-win-btn.ms-style-delete-btn:hover:not(:disabled) { color: var(--fptm-danger); background: var(--fptm-danger-soft); }
+.fpt-win-scrim .fpt-win-item.ms-selector-option {
+    border-color: var(--fptm-nav-border);
+    background: var(--fptm-nav-surface);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-size: 13px;
-    color: var(--fpt-text-muted, #676a73);
-    padding-left: 15px;
-    border-left: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
-    margin-left: 15px;
+    overflow-wrap: anywhere;
 }
-.ms-style-props code { color: #f4d03f; }
-.ms-style-delete-btn {
-    background: none; border: none; color: #ff6b6b; font-size: 20px; cursor: pointer; margin-left: auto;
-}
-
-.ms-selector-list {
-    padding: 15px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.ms-selector-option {
-    width: 100%;
-    background: var(--fpt-surface, #f5f7fa);
-    border: 1px solid var(--fpt-border, rgba(22,24,29,0.12));
-    color: var(--fpt-text, #16181d);
-    padding: 12px 15px;
-    border-radius: 6px;
-    font-family: monospace;
-    font-size: 14px;
-    text-align: left;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-.ms-selector-option:hover {
-    background: var(--fpt-hover, rgba(22,24,29,0.08));
-    border-color: var(--fpt-accent, #1b75bb);
-    color: var(--fpt-text, #16181d);
-}
+.fpt-win-scrim .fpt-win-item.ms-selector-option:hover { border-color: var(--fptm-accent-border); background: var(--fptm-accent-soft); color: var(--fptm-accent); }
 
 /* Моментальные кастомные тултипы */
 [data-title] {
