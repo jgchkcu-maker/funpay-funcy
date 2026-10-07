@@ -2372,14 +2372,10 @@ body.funpay-redesigned .promo-games {
     margin-top: 10px;
 }
 
-.fp-tools-font-controls .font-selector {
-    flex-grow: 1;
-}
-
-.fp-tools-font-controls label {
-    margin-bottom: 5px;
-    font-size: 14px;
-    color: var(--fpt-text-muted, #ccc);
+/* Поля описания и сообщения покупателю на странице лота: без изменения размера */
+.lot-fields-multilingual textarea,
+textarea.lot-field-input {
+    resize: none !important;
 }
 
 .fp-tools-font-controls .btn {
