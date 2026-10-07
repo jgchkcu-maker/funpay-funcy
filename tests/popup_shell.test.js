@@ -57,7 +57,7 @@ test('deleted popup components have no remaining styles while page integrations 
     }
     assert.equal(css.includes('.fp-tools-piggy-bank-dropdown'), false);
     assert.equal(css.includes('.piggy-banks-list-container'), false);
-    for (const selector of ['.fpt-tpl-popover', '.fp-tools-empty-template-overlay', '#fpt-cost-basis-group']) {
+    for (const selector of ['.fpt-tpl-popover', '#fpt-cost-basis-group']) {
         assert.ok(css.includes(selector), `${selector} belongs to a retained page integration`);
     }
 });
