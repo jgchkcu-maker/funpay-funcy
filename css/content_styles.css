@@ -1788,9 +1788,6 @@ body.funpay-redesigned .promo-games {
     display: flex;
     align-items: flex-end;
     gap: 15px;
-    padding: 15px;
-    background-color: var(--fpt-surface, #f5f7fa);
-    border-radius: 8px;
     margin-top: 10px;
 }
 

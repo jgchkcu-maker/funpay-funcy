@@ -88,7 +88,7 @@ class ImageGenerator {
                         <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="text" aria-selected="false">Текст</button>
                         <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="background" aria-selected="false">Фон</button>
                         <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="icon" aria-selected="false">Иконка</button>
-                        <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="symbols" id="fpToolsKeyboardToggleBtn" aria-selected="false">Символы</button>
+                        <button type="button" class="fpt-win-seg-btn fp-tools-ig-tab" data-tab="symbols" aria-selected="false">Символы</button>
                     </div>
                     <div class="fp-tools-ig-panels">
                         <div class="fp-tools-ig-panel fpt-win-pane" data-panel="themes">
