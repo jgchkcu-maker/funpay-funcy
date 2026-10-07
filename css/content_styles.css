@@ -1104,11 +1104,8 @@
     flex-wrap: nowrap;            /* no line-breaks - scroll instead */
     align-items: center;
     gap: 4px;
-    padding: 6px 8px;
-    background: var(--fpt-accent-soft, rgba(27,117,187,0.05));
-    border-radius: 8px;
+    padding: 0 0 4px;             /* room for the scrollbar, no plate behind the buttons */
     margin-bottom: 6px;
-    border: 1px solid var(--fpt-accent-soft, rgba(27,117,187,0.12));
     overflow-x: auto;             /* mouse-wheel / drag scrolls horizontally */
     overflow-y: hidden;
     scrollbar-width: thin;        /* Firefox: thin but present */
