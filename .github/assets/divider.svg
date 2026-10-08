@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="24" viewBox="0 0 1280 24" fill="none">
+<defs>
+  <linearGradient id="l" x1="0" x2="1"><stop offset="0" stop-color="#4f7cff" stop-opacity="0"/><stop offset=".5" stop-color="#4f7cff" stop-opacity=".45"/><stop offset="1" stop-color="#7663f6" stop-opacity="0"/></linearGradient>
+  <linearGradient id="s" x1="0" x2="1"><stop offset="0" stop-color="#7cc4ff" stop-opacity="0"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#7663f6" stop-opacity="0"/></linearGradient>
+</defs>
+<style>.s{animation:s 4.5s ease-in-out infinite}@keyframes s{from{transform:translateX(-260px)}to{transform:translateX(1280px)}}</style>
+<rect y="11" width="1280" height="2" rx="1" fill="url(#l)"/>
+<rect class="s" y="11" width="260" height="2" rx="1" fill="url(#s)"/>
+<circle cx="640" cy="12" r="4" fill="#4f7cff"><animate attributeName="r" values="3;5;3" dur="2.4s" repeatCount="indefinite"/></circle>
+</svg>
