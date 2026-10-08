@@ -1,0 +1,35 @@
+name: 🐞 Баг
+description: Что-то работает не так
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Что случилось
+      description: Опишите проблему и что вы ожидали увидеть.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить
+      placeholder: |
+        1. Открыть ...
+        2. Нажать ...
+        3. Увидеть ошибку
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Версия расширения
+      placeholder: 2.9.9
+  - type: input
+    id: browser
+    attributes:
+      label: Браузер
+      placeholder: Chrome 130 / Yandex / Edge
+  - type: textarea
+    id: extra
+    attributes:
+      label: Скриншоты и ошибки из консоли

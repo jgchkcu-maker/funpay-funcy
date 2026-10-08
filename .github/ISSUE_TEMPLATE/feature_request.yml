@@ -1,0 +1,17 @@
+name: 💡 Идея
+description: Предложить новую функцию или улучшение
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую задачу решает
+      description: Что сейчас неудобно или занимает много времени?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Как это должно работать
+    validations:
+      required: true
