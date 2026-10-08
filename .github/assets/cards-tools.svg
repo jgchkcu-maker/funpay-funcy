@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="376" viewBox="0 0 1200 376" fill="none">
+<defs>
+  <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#c084fc"/><stop offset=".5" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/>
+  </linearGradient>
+  <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#140a24"/><stop offset="1" stop-color="#0a0612"/>
+  </linearGradient>
+  <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="50"/></filter>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><radialGradient id="corner" cx="0" cy="0" r="1"><stop offset="0" stop-color="#a855f7" stop-opacity=".18"/><stop offset=".6" stop-color="#a855f7" stop-opacity="0"/></radialGradient></defs>
+<style>
+  text { font-family: 'Segoe UI', Inter, -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+  .fx { transform-box: fill-box; transform-origin: center; }
+  @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .card { animation: up .8s cubic-bezier(.2,.8,.2,1) both; }
+  .run { animation: run 6s linear infinite; }
+  @keyframes run { to { stroke-dashoffset: -100; } }</style>
+<g class="fx card" style="animation-delay:0s">
+    <rect x="0.5" y="0.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="0.5" y="0.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:0s" x="0.5" y="0.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="22" y="22" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(33 33) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M4 15v5h16v-5"/></g>
+    <text x="86" y="53" font-size="19" font-weight="700" fill="#f3e8ff">Экспорт и импорт лотов</text>
+    <text x="24" y="102" font-size="15" fill="#b8a9d4">Все лоты в один файл: перенос между</text>
+    <text x="24" y="124" font-size="15" fill="#b8a9d4">аккаунтами и восстановление.</text></g>
+<g class="fx card" style="animation-delay:0.1s">
+    <rect x="408.5" y="0.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="408.5" y="0.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-1.3s" x="408.5" y="0.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="430" y="22" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(441 33) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="8" y="8" width="13" height="13" rx="3"/><path d="M16 8V5.5A2.5 2.5 0 0 0 13.5 3h-8A2.5 2.5 0 0 0 3 5.5v8A2.5 2.5 0 0 0 5.5 16H8"/></g>
+    <text x="494" y="53" font-size="19" font-weight="700" fill="#f3e8ff">Копирование лота</text>
+    <text x="432" y="102" font-size="15" fill="#b8a9d4">Кнопка «Копировать» на странице любого</text>
+    <text x="432" y="124" font-size="15" fill="#b8a9d4">лота, даже чужого.</text></g>
+<g class="fx card" style="animation-delay:0.2s">
+    <rect x="816.5" y="0.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="816.5" y="0.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-2.6s" x="816.5" y="0.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="838" y="22" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(849 33) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></g>
+    <text x="902" y="53" font-size="19" font-weight="700" fill="#f3e8ff">Поиск продавца</text>
+    <text x="840" y="102" font-size="15" fill="#b8a9d4">Выручка, отзывы, средний чек и</text>
+    <text x="840" y="124" font-size="15" fill="#b8a9d4">топ-категории по нику.</text></g>
+<g class="fx card" style="animation-delay:0.30000000000000004s">
+    <rect x="0.5" y="200.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="0.5" y="200.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-3.9000000000000004s" x="0.5" y="200.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="22" y="222" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(33 233) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M4 8h15l-4-4"/><path d="M20 16H5l4 4"/></g>
+    <text x="86" y="253" font-size="19" font-weight="700" fill="#f3e8ff">Менеджер аккаунтов</text>
+    <text x="24" y="302" font-size="15" fill="#b8a9d4">Переключение между аккаунтами мгновенно</text>
+    <text x="24" y="324" font-size="15" fill="#b8a9d4">и без сброса сессий.</text></g>
+<g class="fx card" style="animation-delay:0.4s">
+    <rect x="408.5" y="200.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="408.5" y="200.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-5.2s" x="408.5" y="200.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="430" y="222" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(441 233) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 7h18v3.2a2 2 0 0 0 0 3.6V17H3v-3.2a2 2 0 0 0 0-3.6z"/><path d="M14 7v10"/></g>
+    <text x="494" y="253" font-size="19" font-weight="700" fill="#f3e8ff">Тикеты в меню</text>
+    <text x="432" y="302" font-size="15" fill="#b8a9d4">Обращения в поддержку без захода на</text>
+    <text x="432" y="324" font-size="15" fill="#b8a9d4">support.funpay.com.</text></g>
+<g class="fx card" style="animation-delay:0.5s">
+    <rect x="816.5" y="200.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="816.5" y="200.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-6.5s" x="816.5" y="200.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="838" y="222" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(849 233) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></g>
+    <text x="902" y="253" font-size="19" font-weight="700" fill="#f3e8ff">Чёрный список</text>
+    <text x="840" y="302" font-size="15" fill="#b8a9d4">Отключайте автовыдачу и автоответы для</text>
+    <text x="840" y="324" font-size="15" fill="#b8a9d4">конкретных людей.</text></g>
+</svg>

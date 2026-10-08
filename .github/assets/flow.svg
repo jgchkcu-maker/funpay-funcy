@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="300" viewBox="0 0 1200 300" fill="none">
+<defs>
+  <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#c084fc"/><stop offset=".5" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/>
+  </linearGradient>
+  <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#140a24"/><stop offset="1" stop-color="#0a0612"/>
+  </linearGradient>
+  <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="50"/></filter>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<style>
+  text { font-family: 'Segoe UI', Inter, -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+  .fx { transform-box: fill-box; transform-origin: center; }
+  @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }</style>
+
+<rect x=".5" y=".5" width="1199" height="299" rx="28" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".35"/>
+<text x="600" y="46" text-anchor="middle" font-size="15" font-weight="700" letter-spacing="4" fill="#a78bfa">ПОКА ВЫ СПИТЕ</text>
+<path d="M140 150 L1060 150" stroke="#a855f7" stroke-opacity=".25" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round"/>
+<path d="M140 150 L1060 150" stroke="url(#brand)" stroke-width="3" stroke-linecap="round" pathLength="100" stroke-dasharray="100 100">
+  <animate attributeName="stroke-dashoffset" values="100;0;0" keyTimes="0;.85;1" dur="7.5s" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="1;1;0" keyTimes="0;.9;1" dur="7.5s" repeatCount="indefinite"/></path>
+<g>
+    <circle cx="140" cy="150" r="52" fill="#a855f7" opacity="0" filter="url(#glow)">
+      <animate attributeName="opacity" values="0;0;.55;0;0" keyTimes="0.000;0.000;0.000;0.120;1.000" dur="7.5s" repeatCount="indefinite"/></circle>
+    <circle cx="140" cy="150" r="44" fill="url(#panel)" stroke="url(#brand)" stroke-width="2"/>
+    <g transform="translate(121 131) scale(1.5833333333333333)" stroke="#f5d0fe" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="2.5" y="5.5" width="19" height="13" rx="3"/><path d="M2.5 10h19"/><path d="M6 15h4"/></g>
+    <text x="140" y="230" text-anchor="middle" font-size="18" font-weight="700" fill="#f3e8ff">Покупатель</text>
+    <text x="140" y="254" text-anchor="middle" font-size="14" fill="#a78bfa">оплатил заказ</text></g><g>
+    <circle cx="370" cy="150" r="52" fill="#a855f7" opacity="0" filter="url(#glow)">
+      <animate attributeName="opacity" values="0;0;.55;0;0" keyTimes="0.000;0.211;0.212;0.333;1.000" dur="7.5s" repeatCount="indefinite"/></circle>
+    <circle cx="370" cy="150" r="44" fill="url(#panel)" stroke="url(#brand)" stroke-width="2"/>
+    <g transform="translate(351 131) scale(1.5833333333333333)" stroke="#f5d0fe" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 7.5l9-4.5 9 4.5v9l-9 4.5-9-4.5z"/><path d="M3 7.5l9 4.5 9-4.5"/><path d="M12 12v9"/></g>
+    <text x="370" y="230" text-anchor="middle" font-size="18" font-weight="700" fill="#f3e8ff">Автовыдача</text>
+    <text x="370" y="254" text-anchor="middle" font-size="14" fill="#a78bfa">товар отправлен</text></g><g>
+    <circle cx="600" cy="150" r="52" fill="#a855f7" opacity="0" filter="url(#glow)">
+      <animate attributeName="opacity" values="0;0;.55;0;0" keyTimes="0.000;0.424;0.425;0.545;1.000" dur="7.5s" repeatCount="indefinite"/></circle>
+    <circle cx="600" cy="150" r="44" fill="url(#panel)" stroke="url(#brand)" stroke-width="2"/>
+    <g transform="translate(581 131) scale(1.5833333333333333)" stroke="#f5d0fe" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M4 5h16v11H10l-6 4z"/><path d="M8 9.5h8M8 12.5h5"/></g>
+    <text x="600" y="230" text-anchor="middle" font-size="18" font-weight="700" fill="#f3e8ff">Автоответ</text>
+    <text x="600" y="254" text-anchor="middle" font-size="14" fill="#a78bfa">спасибо за покупку</text></g><g>
+    <circle cx="830" cy="150" r="52" fill="#a855f7" opacity="0" filter="url(#glow)">
+      <animate attributeName="opacity" values="0;0;.55;0;0" keyTimes="0.000;0.636;0.637;0.757;1.000" dur="7.5s" repeatCount="indefinite"/></circle>
+    <circle cx="830" cy="150" r="44" fill="url(#panel)" stroke="url(#brand)" stroke-width="2"/>
+    <g transform="translate(811 131) scale(1.5833333333333333)" stroke="#f5d0fe" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M12 3l2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9z"/></g>
+    <text x="830" y="230" text-anchor="middle" font-size="18" font-weight="700" fill="#f3e8ff">Отзыв 5★</text>
+    <text x="830" y="254" text-anchor="middle" font-size="14" fill="#a78bfa">ответ от ИИ</text></g><g>
+    <circle cx="1060" cy="150" r="52" fill="#a855f7" opacity="0" filter="url(#glow)">
+      <animate attributeName="opacity" values="0;0;.55;0;0" keyTimes="0.000;0.849;0.850;0.970;1.000" dur="7.5s" repeatCount="indefinite"/></circle>
+    <circle cx="1060" cy="150" r="44" fill="url(#panel)" stroke="url(#brand)" stroke-width="2"/>
+    <g transform="translate(1041 131) scale(1.5833333333333333)" stroke="#f5d0fe" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="3" y="8" width="18" height="4" rx="1.5"/><path d="M5 12v9h14v-9"/><path d="M12 8v13"/><path d="M12 8C10 4 6.5 4.5 7.5 7.2 8 8 12 8 12 8zM12 8c2-4 5.5-3.5 4.5-.8C16 8 12 8 12 8z"/></g>
+    <text x="1060" y="230" text-anchor="middle" font-size="18" font-weight="700" fill="#f3e8ff">Бонус</text>
+    <text x="1060" y="254" text-anchor="middle" font-size="14" fill="#a78bfa">промокод в чат</text></g>
+<circle r="7" fill="#fff" filter="url(#glow)">
+  <animateMotion path="M140 150 L1060 150" dur="7.5s" keyPoints="0;1;1" keyTimes="0;.85;1" calcMode="linear" repeatCount="indefinite"/>
+  <animate attributeName="opacity" values="1;1;0" keyTimes="0;.9;1" dur="7.5s" repeatCount="indefinite"/></circle>
+</svg>

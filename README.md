@@ -1,249 +1,137 @@
 <div align="center">
 
-<img src="https://capsule-render.vercel.app/api?type=waving&height=230&color=0:1a0b2e,50:6d28d9,100:c084fc&text=FunPay%20Funcy&fontColor=ffffff&fontSize=64&fontAlignY=36&desc=Лучшее%20расширение%20для%20продавцов%20FunPay&descSize=18&descAlignY=56&animation=fadeIn" width="100%" alt="FunPay Funcy"/>
-
-<img src="icons/funcy-logo.png" width="120" alt="logo"/>
-
-<br/>
-
-<a href="https://github.com/jgchkcu-maker/funpay-funcy">
-  <img src="https://readme-typing-svg.herokuapp.com?font=Inter&weight=600&size=20&pause=1200&color=C084FC&center=true&vCenter=true&width=640&lines=ИИ-ассистент+%E2%80%A2+Автоответчик+%E2%80%A2+Автовыдача;Автоподнятие+%E2%80%A2+Аналитика+%E2%80%A2+Темы;Бесплатно+%E2%80%A2+Open+Source+%E2%80%A2+Для+продавцов" alt="typing"/>
-</a>
+<img src=".github/assets/hero.svg" width="100%" alt="FunPay Funcy — лучшее расширение для продавцов FunPay"/>
 
 <br/><br/>
 
-<a href="https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/"><img src="https://img.shields.io/badge/Chrome_Web_Store-Установить-a855f7?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=1a1a2e" alt="Chrome Web Store"/></a>
-<img src="https://img.shields.io/badge/версия-2.9.9-a855f7?style=for-the-badge&labelColor=1a1a2e" alt="version"/>
-<img src="https://img.shields.io/badge/Manifest-V3-a855f7?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=1a1a2e" alt="MV3"/>
-<a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-a855f7?style=for-the-badge&labelColor=1a1a2e" alt="MIT"/></a>
-
-<a href="https://github.com/jgchkcu-maker/funpay-funcy/stargazers"><img src="https://img.shields.io/github/stars/jgchkcu-maker/funpay-funcy?style=flat-square&color=c084fc&labelColor=1a1a2e&logo=github" alt="stars"/></a>
-<a href="https://github.com/jgchkcu-maker/funpay-funcy/commits/main"><img src="https://img.shields.io/github/last-commit/jgchkcu-maker/funpay-funcy?style=flat-square&color=c084fc&labelColor=1a1a2e" alt="last commit"/></a>
-<a href="https://github.com/jgchkcu-maker/funpay-funcy/commits/main"><img src="https://img.shields.io/github/commit-activity/m/jgchkcu-maker/funpay-funcy?style=flat-square&color=c084fc&labelColor=1a1a2e" alt="activity"/></a>
-<img src="https://img.shields.io/badge/JavaScript-vanilla-f7df1e?style=flat-square&logo=javascript&logoColor=f7df1e&labelColor=1a1a2e" alt="js"/>
+<a href="https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/"><img src=".github/assets/btn-install.svg" height="64" alt="Установить в Chrome"/></a>
+&nbsp;
+<a href="#-для-разработчиков"><img src=".github/assets/btn-source.svg" height="64" alt="Исходный код"/></a>
 
 <br/><br/>
 
-**[Возможности](#-возможности)** · **[Установка](#-установка)** · **[Для разработчиков](#-для-разработчиков)** · **[FAQ](#-faq)** · **[Лицензия](#-лицензия)**
+<img src="https://img.shields.io/badge/v2.9.9-0a0612?style=for-the-badge&logo=googlechrome&logoColor=c084fc" alt="v2.9.9"/>
+<img src="https://img.shields.io/badge/MIT-0a0612?style=for-the-badge&logo=opensourceinitiative&logoColor=c084fc" alt="MIT"/>
+<img src="https://img.shields.io/github/stars/jgchkcu-maker/funpay-funcy?style=for-the-badge&logo=github&logoColor=c084fc&label=&color=0a0612" alt="stars"/>
+<img src="https://img.shields.io/github/last-commit/jgchkcu-maker/funpay-funcy?style=for-the-badge&logo=git&logoColor=c084fc&label=&color=0a0612" alt="last commit"/>
+
+<br/><br/>
+
+<img src=".github/assets/stats.svg" width="100%" alt="299+ инструментов · 360+ автотестов · 0 зависимостей · Manifest V3"/>
+
+<br/><br/>
+
+<img src=".github/assets/flow.svg" width="100%" alt="Покупатель оплатил → автовыдача → автоответ → ответ на отзыв → бонус"/>
+
+<br/><br/>
+
+<img src=".github/assets/h-ai.svg" width="100%" alt="Искусственный интеллект"/>
+<img src=".github/assets/cards-ai.svg" width="100%" alt="Ассистент в чате, генератор лотов, ответ на отзывы, переводчик, генератор превью"/>
+
+<br/><br/>
+
+<img src=".github/assets/h-auto.svg" width="100%" alt="Автоматизация"/>
+<img src=".github/assets/cards-auto.svg" width="100%" alt="Автоподнятие, автовыдача, автоответчик, статистика продаж, аналитика рынка, таймер заказов"/>
 
 </div>
 
+<details>
+<summary>&nbsp;<b>🤖 Всё, что умеет автоответчик</b></summary>
 <br/>
 
-> [!TIP]
-> **FunPay Funcy** — бесплатное расширение с открытым кодом для продавцов на FunPay. ИИ пишет за вас ответы и описания, бот отвечает покупателям и выдаёт товар, лоты поднимаются сами, а сайт выглядит так, как хотите вы.
+| | |
+| :--- | :--- |
+| **Фоновая работа** | Отдельный движок с защитой от сна — работает даже при свёрнутом браузере |
+| **Авто-приветствие** | Новым покупателям, с кулдауном и фильтром системных сообщений |
+| **Триггеры** | Оплата заказа и подтверждение получения |
+| **Отзывы** | Свой шаблон на каждую оценку от 1 до 5★ и бонус за 5★ |
+| **Команды** | `!реквизиты` и любые свои триггеры |
+| **Переменные** | `{buyername}` `{lotname}` `{orderid}` `{orderlink}` `{ai:пожелай хорошего дня}` |
+| **Картинки** | В шаблонах, с выбором порядка: текст или фото первым |
+| **Естественность** | Имитация набора текста перед отправкой |
+| **Анти-спам** | Не отвечает сам себе, не флудит, игнорирует рассылки FunPay |
+
+</details>
 
 <div align="center">
 
-<table>
-  <tr>
-    <td align="center" width="25%"><h2>🤖</h2><b>ИИ</b><br/><sub>ассистент, лоты, отзывы, перевод</sub></td>
-    <td align="center" width="25%"><h2>⚡</h2><b>Автоматизация</b><br/><sub>автоответ, автовыдача, автоподнятие</sub></td>
-    <td align="center" width="25%"><h2>📊</h2><b>Аналитика</b><br/><sub>продажи, рынок, покупатели</sub></td>
-    <td align="center" width="25%"><h2>🎨</h2><b>Кастомизация</b><br/><sub>темы, фоны, Live Styler</sub></td>
-  </tr>
-</table>
+<br/>
+
+<img src=".github/assets/h-chat.svg" width="100%" alt="Чат"/>
+<img src=".github/assets/cards-chat.svg" width="100%" alt="Фото с текстом, фоторедактор, лайтбокс, поиск по чату, автоперевод, слеш-команды"/>
 
 </div>
 
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=0:1a0b2e,50:a855f7,100:1a0b2e" width="100%"/>
-
-## ✨ Возможности
-
-### 🤖 ИИ-функции
-
-| | Функция | Что делает |
-| :---: | :--- | :--- |
-| ✍️ | **Ассистент в чате** | Превращает черновик в вежливое сообщение: «ку ща выдам» → «Здравствуйте! Сейчас выдам товар, одну минуту.» |
-| 🏷️ | **Генератор лотов** | Пишет названия и описания в вашем стиле, анализируя ваши лоты. Достаточно описать идею. |
-| ⭐ | **Ответ на отзывы** | Кнопка «Ответить» у отзыва — уместный ответ с упоминанием купленного товара. |
-| 🌍 | **Переводчик** | Перевод названий, описаний и сообщений покупателю. |
-| 🖼️ | **Генератор превью** | Обложки для лотов по описанию: иконка, фон и стиль подбираются сами. |
-
-### ⚙️ Автоматизация
-
-| | Функция | Что делает |
-| :---: | :--- | :--- |
-| 🚀 | **Умное автоподнятие** | Читает ответ FunPay («подождите ещё 12 минут») и ставит таймер секунда в секунду. Фильтры по категориям и автовыдаче. |
-| 📦 | **Автовыдача** | Лоты сгруппированы по категориям, виден остаток. Товар кончился — лот отключается, пополнили — включается обратно. |
-| 📈 | **Статистика продаж** | 5 режимов: карточки, графики по дням, диаграммы, топ-10, «всё сразу». Клик по столбцу или покупателю показывает именно эти заказы. Защита от ошибки 429. |
-| 🔎 | **Аналитика рынка** | Сводка по категории: лоты, продавцы, средняя цена, конкуренты онлайн. |
-| ⏱️ | **Таймер заказов** | Обратный отсчёт у каждого оплаченного заказа, краснеет при остатке меньше 6 часов. |
-| 🏷️ | **Метки заказов** | Тип заказа сразу виден: 🟢 Сделка / 🟣 Обычный. |
-| 💾 | **Настройки в файл** | Всё в один `.fpconfig`, плюс точечный сброс (например, только память автоответчика). |
-
 <details>
-<summary><b>🤖 Автоответчик — подробнее</b></summary>
+<summary>&nbsp;<b>💬 И ещё в чате</b></summary>
 <br/>
 
-- **Новый фоновый движок** с 5-уровневой защитой от сна — работает даже при свёрнутом браузере.
-- **Авто-приветствие** новых покупателей: кулдаун, режим «только новые чаты», фильтр системных сообщений.
-- **Триггеры** на оплату заказа и подтверждение получения.
-- **Ответы на отзывы** — свой шаблон для каждой оценки от 1 до 5★.
-- **Бонус за 5★** — текст, промокод или картинка автоматически.
-- **Команды** вроде `!реквизиты` для мгновенных ответов.
-- **Переменные** `{buyername}`, `{lotname}`, `{orderid}`, `{orderlink}` и ИИ-вставки `{ai:пожелай хорошего дня}`.
-- **Картинки в шаблонах** с выбором, что уйдёт первым — текст или фото.
-- **Имитация набора текста** перед отправкой.
-- **Русский и английский** — понимает системные сообщения на обоих языках.
-- **Анти-спам** — не отвечает сам себе, не флудит и игнорирует рассылки FunPay.
-- **Чёрный список** — автоответы и автовыдачу можно отключить для конкретного человека.
+Черновики не теряются между чатами · история покупок собеседника · экспорт переписки в `.txt` · ответы на конкретные сообщения · заметки с автосохранением · «Прочитать всё» одним кликом · цветные метки покупателей · метка «Свой-Чужой» для пользователей Funcy
 
 </details>
 
-### 🛠️ Инструменты продавца
+<div align="center">
 
-| | Функция | Что делает |
-| :---: | :--- | :--- |
-| 📤 | **Экспорт и импорт лотов** | Резервная копия всех лотов в один файл: перенос между аккаунтами или восстановление. |
-| ⏸️ | **Умный импорт** | Упёрлись в лимит FunPay — отложите на 24 часа и продолжите. Отдельные лоты можно пропускать. |
-| 📋 | **Копирование лота** | Кнопка «Копировать» на странице любого лота, даже чужого. |
-| 🔍 | **Поиск по лотам** | Фильтрация без перезагрузки, Esc сбрасывает. |
-| 👤 | **Поиск продавца** | Карточка по нику: выручка, отзывы, средний чек, топ-3 категории. |
-| 🏷️ | **Заметки о пользователях** | Цветные метки в чате и фильтр чатов по ним. |
-| 🔄 | **Конвертер Cardinal** | Перенос лотов из Cardinal в один клик, включая поля автовыдачи. |
-
-<details>
-<summary><b>💬 Чат — подробнее</b></summary>
 <br/>
 
-- **Несколько фото + текст** в одном сообщении (на FunPay по умолчанию — одно фото без подписи).
-- **Фоторедактор** перед отправкой: обрезка, кисть, ластик.
-- **Альбомы-мозаики** вместо простыни картинок.
-- **Лайтбокс** — фото на весь экран, листание, зум, поворот.
-- **Поиск по чату** с переходом между совпадениями.
-- **Черновики** сохраняются при переходе между чатами.
-- **История покупок** собеседника: число заказов, сумма, что и когда.
-- **Автоперевод** входящих не на русском прямо под оригиналом.
-- **Экспорт переписки** в `.txt`.
-- **Ответы на сообщения** и цитаты фрагментов.
-- **Слеш-команды** — `/команда` вставляет готовый текст.
-- **Заметки** с автосохранением прямо в меню.
-- **«Прочитать всё»** одним кликом.
+<img src=".github/assets/h-tools.svg" width="100%" alt="Инструменты продавца"/>
+<img src=".github/assets/cards-tools.svg" width="100%" alt="Экспорт и импорт лотов, копирование лота, поиск продавца, менеджер аккаунтов, тикеты, чёрный список"/>
 
-</details>
+<br/><br/>
 
-### 🎨 Кастомизация
+<img src=".github/assets/h-style.svg" width="100%" alt="Кастомизация"/>
+<img src=".github/assets/cards-style.svg" width="100%" alt="Настройка словами, темы и фоны, тёмная тема, Live Styler, шрифты, звук уведомлений"/>
 
-| | Функция | Что делает |
-| :---: | :--- | :--- |
-| 🧠 | **Настройка интерфейса словами** | «Убери скрепку в чате» — и нужные элементы скрыты. Есть и ручной каталог с предпросмотром. |
-| 🌑 | **Новое меню** | Тёмное, быстрое, с локальными иконками и единым лавандовым акцентом. |
-| 🖼️ | **Темы и фоны** | GIF и статичные фоны, цвета, прозрачность, 10+ готовых тем. Работает и на support.funpay.com. |
-| 🌙 | **Тёмная тема** | В один клик, без белой вспышки при загрузке. |
-| 🪄 | **Live Styler** | Меняйте цвет, размер и видимость любого элемента сайта в реальном времени. |
-| 🔤 | **Шрифты и символы** | Unicode-шрифты и клавиатура символов для оформления лотов. |
-| ✨ | **Эффекты курсора** | Частицы или свой курсор, оптимизировано для слабых ПК. |
-| 🎁 | **Обмен темами** | Экспорт и импорт темы одним файлом. |
-| 🔔 | **Свой звук уведомлений** | Загрузите свой звук и обрежьте его прямо в редакторе. |
+<br/><br/>
 
-### 👥 Аккаунты и поддержка
+<img src=".github/assets/h-install.svg" width="100%" alt="Установка"/>
+<a href="https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/"><img src=".github/assets/install.svg" width="100%" alt="1. Открыть Chrome Web Store 2. Установить 3. Зайти на FunPay"/></a>
 
-| | Функция | Что делает |
-| :---: | :--- | :--- |
-| 🔀 | **Менеджер аккаунтов** | Мгновенное переключение между аккаунтами без сброса сессий. |
-| 🎫 | **Тикеты в меню** | Обращения в поддержку с цветными статусами — создание, переписка и закрытие без support.funpay.com. |
-| 🚫 | **Чёрный список** | Для каждого человека отдельно отключаются автовыдача и автоответы. |
-| 🤝 | **«Свой-Чужой»** | Метка в шапке чата, если собеседник тоже пользуется FunPay Funcy. |
+<br/><br/>
 
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=0:1a0b2e,50:a855f7,100:1a0b2e" width="100%"/>
+<a id="-для-разработчиков"></a>
+<img src=".github/assets/h-dev.svg" width="100%" alt="Для разработчиков"/>
 
-## 📥 Установка
+</div>
 
-<table>
-<tr>
-<td width="50%" valign="top">
+```bash
+git clone https://github.com/jgchkcu-maker/funpay-funcy.git
+```
 
-### 🛒 Из Chrome Web Store
-
-1. Откройте [**страницу расширения**](https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/).
-2. Нажмите **«Установить»**.
-3. Зайдите на [funpay.com](https://funpay.com/) — в шапке появится кнопка **FunPay Funcy**.
-
-</td>
-<td width="50%" valign="top">
-
-### 🧩 Из исходников
-
-1. Скачайте репозиторий (**Code → Download ZIP**) или:
-   ```bash
-   git clone https://github.com/jgchkcu-maker/funpay-funcy.git
-   ```
-2. Откройте `chrome://extensions` и включите **режим разработчика**.
-3. **«Загрузить распакованное»** → выберите папку проекта.
-
-</td>
-</tr>
-</table>
-
-## 🧑‍💻 Для разработчиков
-
-Чистый JavaScript без сборки — правите файл, перезагружаете расширение, готово.
+Откройте `chrome://extensions` → включите **режим разработчика** → **«Загрузить распакованное»** → выберите папку проекта. Правите файл — нажимаете ↻ у расширения — готово.
 
 ```text
 funpay-funcy/
-├── background/   # service worker: автоответчик, автоподнятие, автовыдача, планировщик
-├── content/      # скрипты на страницах FunPay: фичи, UI меню, темы
-├── popup/        # окно расширения
-├── offscreen/    # offscreen-документ для парсинга HTML в фоне
-├── css/          # стили и темы
-├── icons/ fonts/ sounds/
-└── tests/        # 110+ тестов на node:test
+├── background/   service worker: автоответчик, автоподнятие, автовыдача, планировщик
+├── content/      всё, что работает на страницах FunPay: фичи, меню, темы
+├── popup/        окно расширения
+├── offscreen/    парсинг HTML в фоне
+├── css/          стили и темы
+├── tests/        автотесты на node:test
+└── manifest.json
 ```
-
-Запуск тестов (нужен Node.js 18+):
 
 ```bash
-node --test tests/
+node --test tests/*.test.js
 ```
-
-Нашли баг или есть идея — [откройте issue](https://github.com/jgchkcu-maker/funpay-funcy/issues/new/choose). Pull request'ы приветствуются.
-
-## ❓ FAQ
-
-<details>
-<summary><b>Это бесплатно?</b></summary>
-<br/>
-Да, полностью. Код открыт под лицензией MIT.
-</details>
-
-<details>
-<summary><b>Автоответчик работает, если вкладка FunPay закрыта?</b></summary>
-<br/>
-Да. Он живёт в фоновом service worker'е, достаточно открытого браузера.
-</details>
-
-<details>
-<summary><b>Можно перенести настройки на другой компьютер?</b></summary>
-<br/>
-Да: настройки выгружаются в файл <code>.fpconfig</code>, лоты — отдельным файлом экспорта.
-</details>
-
-<details>
-<summary><b>Я пользовался Cardinal — можно перенести лоты?</b></summary>
-<br/>
-Да, во встроенном конвертере Cardinal, вместе с полями автовыдачи.
-</details>
-
-<img src="https://capsule-render.vercel.app/api?type=rect&height=2&color=0:1a0b2e,50:a855f7,100:1a0b2e" width="100%"/>
 
 <div align="center">
 
-### ⭐ Помогло заработать? Поставьте звезду!
+<br/>
 
-Расширение развивается на энтузиазме — звезда и рассказ друзьям лучше всего мотивируют.
+<a href="https://github.com/jgchkcu-maker/funpay-funcy/issues/new/choose"><img src="https://img.shields.io/badge/Нашли_баг%3F-Откройте_issue-0a0612?style=for-the-badge&logo=github&logoColor=c084fc&labelColor=a855f7" alt="issue"/></a>
+
+<br/><br/>
 
 <a href="https://star-history.com/#jgchkcu-maker/funpay-funcy&Date">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=jgchkcu-maker/funpay-funcy&type=Date&theme=dark"/>
-    <img src="https://api.star-history.com/svg?repos=jgchkcu-maker/funpay-funcy&type=Date" width="600" alt="Star history"/>
+    <img src="https://api.star-history.com/svg?repos=jgchkcu-maker/funpay-funcy&type=Date" width="640" alt="Star history"/>
   </picture>
 </a>
 
-## 📄 Лицензия
+<sub>Помогло заработать — поставьте ⭐ · Лицензия <a href="LICENSE">MIT</a></sub>
 
-Распространяется под лицензией [MIT](LICENSE).
-
-<img src="https://capsule-render.vercel.app/api?type=waving&height=120&section=footer&color=0:1a0b2e,50:6d28d9,100:c084fc" width="100%"/>
+<img src=".github/assets/footer.svg" width="100%" alt=""/>
 
 </div>

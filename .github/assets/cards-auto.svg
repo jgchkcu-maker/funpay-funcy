@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1200" height="376" viewBox="0 0 1200 376" fill="none">
+<defs>
+  <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#c084fc"/><stop offset=".5" stop-color="#a855f7"/><stop offset="1" stop-color="#ec4899"/>
+  </linearGradient>
+  <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#140a24"/><stop offset="1" stop-color="#0a0612"/>
+  </linearGradient>
+  <filter id="blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="50"/></filter>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><radialGradient id="corner" cx="0" cy="0" r="1"><stop offset="0" stop-color="#a855f7" stop-opacity=".18"/><stop offset=".6" stop-color="#a855f7" stop-opacity="0"/></radialGradient></defs>
+<style>
+  text { font-family: 'Segoe UI', Inter, -apple-system, 'Helvetica Neue', Arial, sans-serif; }
+  .fx { transform-box: fill-box; transform-origin: center; }
+  @keyframes up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .card { animation: up .8s cubic-bezier(.2,.8,.2,1) both; }
+  .run { animation: run 6s linear infinite; }
+  @keyframes run { to { stroke-dashoffset: -100; } }</style>
+<g class="fx card" style="animation-delay:0s">
+    <rect x="0.5" y="0.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="0.5" y="0.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:0s" x="0.5" y="0.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="22" y="22" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(33 33) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="12" r="9"/><path d="M12 16.5V7.5"/><path d="M8 11l4-4 4 4"/></g>
+    <text x="86" y="53" font-size="19" font-weight="700" fill="#f3e8ff">Умное автоподнятие</text>
+    <text x="24" y="102" font-size="15" fill="#b8a9d4">Читает ответ FunPay и ставит таймер</text>
+    <text x="24" y="124" font-size="15" fill="#b8a9d4">секунда в секунду. Фильтры по</text>
+    <text x="24" y="146" font-size="15" fill="#b8a9d4">категориям.</text></g>
+<g class="fx card" style="animation-delay:0.1s">
+    <rect x="408.5" y="0.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="408.5" y="0.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-1.3s" x="408.5" y="0.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="430" y="22" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(441 33) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 7.5l9-4.5 9 4.5v9l-9 4.5-9-4.5z"/><path d="M3 7.5l9 4.5 9-4.5"/><path d="M12 12v9"/></g>
+    <text x="494" y="53" font-size="19" font-weight="700" fill="#f3e8ff">Автовыдача</text>
+    <text x="432" y="102" font-size="15" fill="#b8a9d4">Товар кончился — лот отключается.</text>
+    <text x="432" y="124" font-size="15" fill="#b8a9d4">Пополнили — включается обратно.</text></g>
+<g class="fx card" style="animation-delay:0.2s">
+    <rect x="816.5" y="0.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="816.5" y="0.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-2.6s" x="816.5" y="0.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="838" y="22" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(849 33) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><rect x="4" y="8" width="16" height="12" rx="4"/><path d="M12 8V4"/><circle cx="12" cy="3" r="1"/><circle cx="9" cy="14" r="0.8"/><circle cx="15" cy="14" r="0.8"/><path d="M2 13v3M22 13v3"/></g>
+    <text x="902" y="53" font-size="19" font-weight="700" fill="#f3e8ff">Автоответчик</text>
+    <text x="840" y="102" font-size="15" fill="#b8a9d4">Приветствия, команды, ответы на оплату и</text>
+    <text x="840" y="124" font-size="15" fill="#b8a9d4">отзывы, бонус за 5★.</text></g>
+<g class="fx card" style="animation-delay:0.30000000000000004s">
+    <rect x="0.5" y="200.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="0.5" y="200.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-3.9000000000000004s" x="0.5" y="200.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="22" y="222" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(33 233) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><path d="M3 21h18"/><path d="M6 21V12"/><path d="M11 21V5"/><path d="M16 21v-6"/><path d="M21 21V9"/></g>
+    <text x="86" y="253" font-size="19" font-weight="700" fill="#f3e8ff">Статистика продаж</text>
+    <text x="24" y="302" font-size="15" fill="#b8a9d4">Графики, диаграммы, топ-10 покупателей и</text>
+    <text x="24" y="324" font-size="15" fill="#b8a9d4">товаров, любой период.</text></g>
+<g class="fx card" style="animation-delay:0.4s">
+    <rect x="408.5" y="200.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="408.5" y="200.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-5.2s" x="408.5" y="200.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="430" y="222" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(441 233) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="11" cy="11" r="6.5"/><path d="M20.5 20.5l-4.8-4.8"/></g>
+    <text x="494" y="253" font-size="19" font-weight="700" fill="#f3e8ff">Аналитика рынка</text>
+    <text x="432" y="302" font-size="15" fill="#b8a9d4">Лоты, продавцы, средняя цена и</text>
+    <text x="432" y="324" font-size="15" fill="#b8a9d4">конкуренты онлайн по категории.</text></g>
+<g class="fx card" style="animation-delay:0.5s">
+    <rect x="816.5" y="200.5" width="383" height="175" rx="22" fill="url(#panel)" stroke="#a855f7" stroke-opacity=".28"/>
+    <rect x="816.5" y="200.5" width="383" height="175" rx="22" fill="url(#corner)"/>
+    <rect class="run" style="animation-delay:-6.5s" x="816.5" y="200.5" width="383" height="175" rx="22" stroke="url(#brand)" stroke-width="1.6" pathLength="100" stroke-dasharray="12 88"/>
+    <rect x="838" y="222" width="48" height="48" rx="14" fill="url(#brand)" opacity=".2"/>
+    <g transform="translate(849 233) scale(1.0833333333333333)" stroke="#f5d0fe" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 2"/><path d="M9.5 2.5h5"/><path d="M19 6l1.5-1.5"/></g>
+    <text x="902" y="253" font-size="19" font-weight="700" fill="#f3e8ff">Таймер заказов</text>
+    <text x="840" y="302" font-size="15" fill="#b8a9d4">Обратный отсчёт у каждого заказа,</text>
+    <text x="840" y="324" font-size="15" fill="#b8a9d4">краснеет при остатке меньше 6 часов.</text></g>
+</svg>
