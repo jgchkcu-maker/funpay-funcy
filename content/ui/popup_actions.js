@@ -2,9 +2,9 @@
 // register(pageId, actionId, handler); run(pageId, actionId, payload) -> Promise.
 (function (root) {
     'use strict';
-    const pages = new Set(['general', 'accounts', 'needs', 'telegram', 'templates', 'auto_review',
-        'auto_reply', 'lot_io', 'finance_hub', 'theme', 'autobump', 'global_chat',
-        'effects', 'settings_io', 'blacklist', 'auto_delivery', 'tickets', 'support']);
+    const pages = new Set(['general', 'accounts', 'needs', 'templates', 'auto_review',
+        'auto_reply', 'lot_io', 'finance_hub', 'theme', 'autobump',
+        'effects', 'settings_io', 'blacklist', 'auto_delivery', 'tickets', 'sounds']);
     const actions = new Map();
     let writeQueue = Promise.resolve();
     const object = value => value && typeof value === 'object' && !Array.isArray(value);

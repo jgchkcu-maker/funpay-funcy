@@ -987,72 +987,6 @@
     display: none !important;
 }
 
-/* The rating route stays visible beside the accent picker. */
-.fp-tools-popup .fp-tools-nav .fpt-nav-footer {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-}
-.fp-tools-popup .fp-tools-nav .fpt-nav-quick-actions {
-    display: flex;
-    flex: 0 0 auto;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 2px;
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action { min-width: 0; max-width: 100%; }
-.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a {
-    box-sizing: border-box;
-    width: 100%;
-    min-width: 0;
-    min-height: 40px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
-    border-radius: 12px !important;
-    background: transparent !important;
-    text-decoration: none;
-}
-.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a:hover,
-.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a:focus-visible {
-    background: var(--fptm-nav-field, #f4f3ff) !important;
-}
-.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a > span:last-child {
-    min-width: 0;
-    max-width: 180px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.fp-tools-popup .fp-tools-nav.is-nav-collapsed .fpt-nav-footer { align-items: center; }
-.fp-tools-popup .fp-tools-nav.is-nav-collapsed .fpt-nav-quick-actions { width: 44px; align-items: center; gap: 4px; }
-.fp-tools-popup .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action { width: 44px; max-width: 44px; }
-.fp-tools-popup .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action > a {
-    width: 44px;
-    height: 44px;
-    min-height: 44px;
-    justify-content: center;
-    gap: 0;
-    padding: 0;
-}
-.fp-tools-popup .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action > a > span:last-child {
-    width: 0;
-    max-width: 0;
-    opacity: 0;
-    visibility: hidden;
-}
-@media (prefers-reduced-motion: reduce) {
-    .fp-tools-popup .fp-tools-nav .fpt-nav-quick-actions,
-    .fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a,
-    .fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action > a > span:last-child {
-        transition-duration: .01ms !important;
-    }
-}
 .fp-tools-popup button:not(.fpt-nav-group-toggle):not(:disabled):hover,
 .fp-tools-popup .fp-tools-nav .btn:not(:disabled):hover {
     box-shadow: 0 12px 25px rgba(0, 0, 0, 0.3);
@@ -2591,26 +2525,40 @@ html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) .fp-tools-stats-container {
     vertical-align: middle; 
 }
 
-@keyframes redPulse {
-  0%   { background: rgba(255, 0, 0, 0.05); }
-  50%  { background: rgba(255, 0, 0, 0.08); }
-  100% { background: rgba(255, 0, 0, 0.05); }
+/* Строки FunPay с .warning (возвраты в заказах, неактивные лоты). Фон строки не трогаем -
+   он остаётся как у остальных строк темы; отметка только точечными акцентами. */
+:root { --fpt-refund: #d9474c; }
+html.fpt-theme-dark { --fpt-refund: #f07a7e; }
+
+/* Возврат: тонкая полоска слева, статус с точкой, сумма приглушена и зачёркнута */
+.tc-item.warning:has(.tc-order) {
+    box-shadow: inset 2px 0 0 color-mix(in srgb, var(--fpt-refund) 55%, transparent);
+}
+.tc-item.warning:has(.tc-order) .tc-status {
+    color: var(--fpt-refund) !important;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.tc-item.warning:has(.tc-order) .tc-status::before {
+    content: '';
+    display: inline-block;
+    width: 6px; height: 6px;
+    margin: 0 7px 1px 0;
+    vertical-align: middle;
+    border-radius: 50%;
+    background: var(--fpt-refund);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fpt-refund) 20%, transparent);
+}
+.tc-item.warning:has(.tc-order) .tc-price {
+    color: var(--fpt-text-muted, #8a8f98) !important;
+    text-decoration: line-through;
+    text-decoration-thickness: 1px;
+    text-decoration-color: color-mix(in srgb, var(--fpt-refund) 60%, transparent);
 }
 
-.warning {
-    animation: redPulse 6s ease-in-out infinite;
-    backdrop-filter: blur(6px); 
-    border-radius: 16px;
-    border: 1px solid rgba(255, 0, 0, 0.4);
-    padding: 14px 18px;
-    color: #822;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.warning:hover {
-    box-shadow: 0 0 12px 2px rgba(255, 0, 0, 0.4), 0 0 24px 4px rgba(255, 0, 0, 0.1) inset;
-    transform: scale(1.02);
-}
+/* Неактивный лот - не ошибка: просто приглушаем, на наведении возвращаем */
+.tc-item.warning:not(:has(.tc-order)) > * { opacity: .6; transition: opacity .2s ease; }
+.tc-item.warning:not(:has(.tc-order)):hover > * { opacity: 1; }
 /* Кнопки "творчества" (верхний ряд, 2 колонки) */
 
 /* Кнопка "Поделиться" (средний ряд, полная ширина) */
@@ -3505,24 +3453,6 @@ html.fpt-custom-theme-on .price-editor-instructions code {
 }
 
 
-/* Свечение и анимация для непрочитанных */
-
-@keyframes glowing-border {
-    0% { box-shadow: 0 0 5px rgba(255,107,107,0), 0 0 5px rgba(255,107,107,0) inset; }
-    50% { box-shadow: 0 0 15px rgba(255,107,107,0.7), 0 0 10px rgba(255,107,107,0.5) inset; }
-    100% { box-shadow: 0 0 5px rgba(255,107,107,0), 0 0 5px rgba(255,107,107,0) inset; }
-}
-/* Значок уведомлений */
-/* Стили для содержимого вкладки объявлений */
-
-
-#announcements-content-area {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-
 /* === НОВЫЕ СТИЛИ ДЛЯ ПРЕДУПРЕЖДЕНИЯ === */
 
 
@@ -3954,9 +3884,6 @@ html.fpt-custom-theme-on #autobump-category-search {
     border-color: var(--fpt-border, #444);
     color: #fff;
 }
-/* ── Notification badge (announcement) ──────────────────────────── */
-
-
 /* ===================================================
    BUYER HISTORY BUTTON & PANEL
    =================================================== */
@@ -4295,13 +4222,24 @@ html.fpt-custom-theme-on #autobump-category-search {
 .chat-form .chat-btn-image,
 #fpt-tpl-popover-btn,
 #aiModeToggleBtn{
-    /* 40px - как родная кнопка отправки (.btn-round у FunPay) в том же ряду */
-    width:40px !important;height:40px !important;min-width:40px;padding:0 !important;
+    /* 36px с ровным шагом 6px между кнопками; отправка (40px) отделена чуть большим отступом */
+    width:36px !important;height:36px !important;min-width:36px;padding:0 !important;
     display:inline-flex !important;align-items:center;justify-content:center;
-    border-radius:50% !important;flex-shrink:0;align-self:center;margin:0 2px !important;
-    box-sizing:border-box;
+    border-radius:50% !important;flex-shrink:0;align-self:center;margin:0 3px !important;
+    box-sizing:border-box;border:none !important;box-shadow:none !important;
+    background:rgba(255,255,255,.06) !important;
+    transition:background .15s;
 }
-.chat-form-attach{ display:flex;align-items:center; }
+.chat-form .chat-btn-image:hover,
+#fpt-tpl-popover-btn:hover,
+#aiModeToggleBtn:hover,
+#aiModeToggleBtn.active{ background:var(--fpt-accent-soft, rgba(27,117,187,.18)) !important; }
+/* одинаковый размер иконок во всех трёх кнопках */
+#fpt-tpl-popover-btn .material-symbols-rounded{ font-size:20px; }
+.chat-form .chat-btn-image > i,
+.chat-form .chat-btn-image .fa{ font-size:17px; }
+.chat-form-attach{ display:flex;align-items:center;padding:0 !important;margin:0 !important; }
+.chat-form-btn{ padding-left:7px !important; }
 /* иконка-скрепка по центру кружка */
 .chat-form .chat-btn-image > i,
 .chat-form .chat-btn-image .fa{ margin:0;line-height:1; }
@@ -4560,23 +4498,6 @@ body.fpt-dnd-active .chat{ position:relative; }
     box-shadow:inset 0 0 0 1px color-mix(in srgb, currentColor 40%, transparent);
     transition:background .3s ease;
 }
-/* =============================================================================
-   FPT GLOBAL CHAT - «Общий чат»  (minimal, Telegram-like)
-   ========================================================================== */
-
-/* when active, fill the content area so the composer sits at the bottom */
-
-
-@keyframes fpt-dev-sweep {
-    0%, 70% { left: -100%; }
-    100% { left: 200%; }
-}
-
-@keyframes fpt-dev-shine {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(15deg); }
-}
-
 /* ════════════════════════════════════════════════════════════════════════
    FPT - МЕТКИ И ЗАКРЕП (user_notes.js) - цвета от темы, без форс-хекса
    ════════════════════════════════════════════════════════════════════════ */
@@ -4693,15 +4614,6 @@ a.contact-item.fp-tools-pinned:not(.active){
 
 /* === 3.1: reply answer text under the clickable reply card === */
 .fpt-reply-rest{white-space:pre-wrap;word-break:break-word;}
-
-/* === 3.1: Telegram commands list === */
-.fpt-tg-cmd-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;}
-.fpt-tg-cmd-list li{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-.fpt-tg-cmd-list li code{
-    background:var(--fpt-surface, #0e0f16);border:1px solid var(--fpt-border, #2a2d3f);color:var(--fpt-accent, #1b75bb);
-    border-radius:6px;padding:2px 8px;font-size:12px;font-family:'JetBrains Mono','Consolas',monospace;
-}
-.fpt-tg-cmd-list li span{color:var(--fpt-text-muted, #9099b8);font-size:12.5px;}
 
 /* FIX 2.8.8 (№1): скрываем скроллбар у попапа точности статистики (Chrome/WebKit) */
 #fpt-stats-accuracy-box::-webkit-scrollbar { width: 0; height: 0; display: none; }

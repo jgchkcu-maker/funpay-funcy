@@ -10,7 +10,6 @@
     "cookies",
     "alarms",
     "offscreen",
-    "notifications",
     "background"
   ],
   "host_permissions": [
@@ -23,13 +22,11 @@
     "https://funpay.tools/*",
     "https://cdn.jsdelivr.net/*",
     "https://raw.githubusercontent.com/*",
-    "https://fpt-chat.starobinskiy01.workers.dev/*",
     "https://fpt-descs.starobinskiy01.workers.dev/*",
     "https://fonts.googleapis.com/*",
     "https://translate.googleapis.com/*",
     "https://fonts.gstatic.com/*",
-    "https://support.funpay.com/*",
-    "https://api.telegram.org/*"
+    "https://support.funpay.com/*"
   ],
   "action": {
     "default_popup": "popup/popup.html",
@@ -115,13 +112,12 @@
         "content/features/ui_enhancements.js",
         "content/features/review_sorter.js",
         "content/features/ai_lot_creator.js",
-        "content/features/global_chat.js",
         "content/features/magicstick.js",
         "content/features/lot_io.js",
         "content/features/auto_review.js",
         "content/features/fpt_identifier.js",
         "content/features/needs_tab.js",
-        "content/features/slash_telegram_ui.js",
+        "content/features/slash_commands_ui.js",
         "content/features/finance_hub.js",
         "content/ui/popup_metadata.js",
         "content/ui/main_popup.js",
@@ -140,9 +136,11 @@
         "content/features/theme_gallery.js",
         "content/ui/theme_page.js",
         "content/ui/effects_page.js",
+        "content/ui/notification_sound_page.js",
         "content/ui/support_page.js",
         "content/ui/header_button_styler.js",
         "content/features/lot_context_menu.js",
+        "background/retired_integrations.js",
         "content/features/settings_io.js",
         "content/features/bulk_lot_editor.js",
         "content/features/buyer_history.js",
@@ -152,6 +150,7 @@
         "content/features/chat_search.js",
         "content/features/order_enhancements.js",
         "content/features/blacklist.js",
+        "content/ui/blacklist_page.js",
         "content/features/auto_delivery_ui.js",
         "content/features/rmthub_search.js",
         "content/features/new_chat_starter.js",
@@ -189,11 +188,11 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "sounds/*.mp3",
         "background/remake.html",
         "background/remake.js",
         "icons/*.png",
-        "fonts/*.woff2"
+        "fonts/*.woff2",
+        "sounds/*.mp3"
       ],
       "matches": [
         "https://funpay.com/*",

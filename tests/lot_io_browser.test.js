@@ -107,6 +107,18 @@ test('lot management keeps its help button after the page mounts', async () => {
         await helpButton.click();
         assert.equal(await page.locator('.fpt-lot-help-popover').isVisible(), true);
         assert.equal(await helpButton.getAttribute('aria-expanded'), 'true');
+        assert.equal(await helpButton.getAttribute('aria-controls'), 'fpt-lot-help');
+        for (const width of [1204, 760, 420]) {
+            await page.setViewportSize({ width, height: 789 });
+            const buttonBox = await helpButton.boundingBox();
+            const panelBox = await page.locator('.fpt-lot-help-popover').boundingBox();
+            assert.ok(Math.abs(panelBox.x + panelBox.width - buttonBox.x - buttonBox.width) <= 1,
+                `help should align with the button's right edge at ${width}px`);
+            assert.ok(Math.abs(panelBox.y - buttonBox.y - buttonBox.height - 8) <= 1,
+                `help should open 8px below the button at ${width}px`);
+            assert.ok(panelBox.x >= 0 && panelBox.x + panelBox.width <= width,
+                `help should stay within the viewport at ${width}px`);
+        }
     } finally {
         await browser.close();
     }

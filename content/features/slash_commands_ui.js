@@ -20,22 +20,6 @@ function fptSlashNormalizeTrigger(t) {
     return t;
 }
 
-const FPT_TG_KEY = 'fpToolsTelegram';
-const FPT_TG_DEFAULTS = {
-    enabled: false, token: '', chatId: '',
-    notifyMessages: true, notifyOrders: true, allowControl: true, pollInterval: 1, lastUpdateId: 0
-};
-let _fptTgCfg = null;
-
-async function fptTgLoad() {
-    const r = await chrome.storage.local.get(FPT_TG_KEY);
-    _fptTgCfg = Object.assign({}, FPT_TG_DEFAULTS, r[FPT_TG_KEY] || {});
-    return _fptTgCfg;
-}
-async function fptTgSave() {
-    await chrome.storage.local.set({ [FPT_TG_KEY]: _fptTgCfg });
-}
-
 if (typeof window !== 'undefined' && window.fptPopupActions) {
     window.fptPopupActions.register('templates', 'fptSlashAddBtn', async p => {
         const result = await window.fptPopupActions.updateSettings(FPT_SLASH_KEY, current => {
@@ -63,15 +47,4 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
         });
         return result[FPT_SLASH_KEY];
     });
-    window.fptPopupActions.register('telegram', 'fptTgConnectBtn', async p => {
-        const token = String(p.token || '').trim();
-        if (!token) throw new Error('Введите токен бота.');
-        const response = await chrome.runtime.sendMessage({ action: 'telegramValidate', token });
-        if (!response?.ok) throw new Error(response?.error || 'Неверный токен');
-        await window.fptPopupActions.run('telegram', 'saveSettings', { settings: { fpToolsTelegram: {
-            token, enabled: true, ...(response.chatId ? { chatId: response.chatId } : {})
-        } } });
-        return response;
-    });
-    window.fptPopupActions.register('telegram', 'fptTgTestBtn', () => chrome.runtime.sendMessage({ action: 'telegramTest' }));
 }

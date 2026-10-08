@@ -2,9 +2,7 @@
 
 const FPT_MENU_ASSET_PATHS = Object.freeze({
     'funcy-logo': 'icons/funcy-logo.png',
-    cloud: 'icons/cloud.png',
-    discord: 'icons/discord.png',
-    telegram: 'icons/telegram.png'
+    cloud: 'icons/cloud.png'
 });
 
 const FPT_NAV_ICON_ASSETS = Object.freeze({
@@ -98,16 +96,15 @@ function createMainPopup() {
                     <li data-page="general"><a><span class="nav-icon material-symbols-rounded">settings</span><span>Отображение FunPay</span></a></li>
                     <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>
                     <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>
-                    <li data-page="telegram"><a><span class="nav-icon material-symbols-rounded">send</span><span>Уведомления и интеграции</span></a></li>
                     <li class="fp-nav-divider">Интерфейс</li>
                     <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>
                     <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>
                     <li class="fp-nav-divider">Чат и продажи</li>
-                    <li data-page="global_chat"><a><span class="nav-icon material-symbols-rounded">forum</span><span>Чат сообщества</span></a></li>
                     <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>
                     <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>
                     <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>
                     <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>
+                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>
                     <li class="fp-nav-divider">Торговля</li>
                     <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>
                     <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>
@@ -118,18 +115,13 @@ function createMainPopup() {
 
                     <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>
                     <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>
-                    <li data-page="support"><a><span class="nav-icon material-symbols-rounded">favorite</span><span>Оценить расширение</span></a></li>
                 </ul>
                 <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>
-                <div class="fpt-nav-footer">
-                    <ul class="fpt-nav-quick-actions" aria-label="Быстрые действия"></ul>
-                </div>
             </nav>
             <main class="fp-tools-content">
                 <div class="fp-tools-page-content" data-page="general"></div>
                 <div class="fp-tools-page-content" data-page="accounts"></div>
                 <div class="fp-tools-page-content" data-page="needs"></div>
-                <div class="fp-tools-page-content" data-page="telegram"></div>
                 <div class="fp-tools-page-content" data-page="templates"></div>
                 <div class="fp-tools-page-content" data-page="auto_review"></div>
                 <div class="fp-tools-page-content" data-page="auto_reply"></div>
@@ -137,13 +129,12 @@ function createMainPopup() {
                 <div class="fp-tools-page-content" data-page="finance_hub"></div>
                 <div class="fp-tools-page-content" data-page="theme"></div>
                 <div class="fp-tools-page-content" data-page="autobump"></div>
-                <div class="fp-tools-page-content" data-page="global_chat"></div>
                 <div class="fp-tools-page-content" data-page="effects"></div>
                 <div class="fp-tools-page-content" data-page="settings_io"></div>
                 <div class="fp-tools-page-content" data-page="blacklist"></div>
                 <div class="fp-tools-page-content" data-page="auto_delivery"></div>
                 <div class="fp-tools-page-content" data-page="tickets"></div>
-                <div class="fp-tools-page-content" data-page="support"></div>
+                <div class="fp-tools-page-content" data-page="sounds"></div>
             </main>
         </div>
     `;
@@ -159,7 +150,7 @@ function createMainPopup() {
         }
     }, true);
 
-    // Подставляем локальные иконки бренда и интеграций из папки icons.
+    // Подставляем локальные иконки бренда из папки icons.
     try {
         toolsPopup.querySelectorAll('img[data-icon]').forEach(img => {
             const key = img.getAttribute('data-icon');
@@ -434,32 +425,6 @@ const FPT_MENU_THEME_CSS = `
     opacity:1; transform:translateY(0);
     transition-delay:0s, var(--fpt-nav-child-delay, 0ms), var(--fpt-nav-child-delay, 0ms);
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-footer{
-    flex:0 0 auto; display:flex; flex-direction:column; align-items:stretch; justify-content:flex-start; gap:6px; min-height:62px; margin-top:auto;
-    padding-top:14px; padding-left:0; border-top:1px solid var(--fptm-nav-border); transition:padding-left .38s cubic-bezier(.4,0,.2,1);
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-actions{
-    flex:0 0 auto; display:flex; flex-direction:column; align-items:stretch; gap:2px; min-width:0; margin:0; padding:0; list-style:none;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action{ flex:0 1 auto; min-width:0; max-width:100%; }
-.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a{
-    box-sizing:border-box; width:100%; min-width:0; min-height:40px; display:flex; align-items:center; gap:8px;
-    margin:0; padding:7px 10px; border:1px solid transparent !important; border-radius:12px !important;
-    background:transparent !important; color:var(--fptm-text); font-size:13px; font-weight:500; text-decoration:none;
-    transition:background-color .18s ease, color .18s ease;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a:hover,
-.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a:focus-visible{
-    background:var(--fptm-nav-field) !important; color:var(--fptm-text); outline:none;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a .nav-icon{
-    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; flex:0 0 22px;
-    color:var(--fptm-muted); font-size:20px; line-height:1;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a > span:last-child{
-    min-width:0; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-action.active a{ color:var(--fptm-text) !important; font-weight:600; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed{ width:104px; flex:0 0 104px; padding-right:10px; padding-left:10px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-brand{ gap:0; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-brand-title,
@@ -481,11 +446,6 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active .fpt-nav-group-icon{ filter:brightness(0) invert(0) opacity(.82); }
 .fp-tools-popup.fptm-themed.fptm-dark .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(.85); }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-icon{ width:34px; height:34px; flex-basis:34px; }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-footer{ align-items:center; padding-left:0; }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-quick-actions{ width:44px; align-items:center; gap:4px; }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action{ width:44px; max-width:44px; }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action a{ width:44px; height:44px; min-height:44px; justify-content:center; gap:0; padding:0; }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action a > span:last-child{ width:0; max-width:0; opacity:0; visibility:hidden; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-child a{ width:44px; min-height:44px; justify-content:center; gap:0; margin:0 auto; padding:0; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-child a .nav-icon{ width:22px; flex:0 0 22px; margin:0; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-child a > span:last-child{ width:0; max-width:0; flex:0 0 0; overflow:hidden; opacity:0; visibility:hidden; }
@@ -505,11 +465,7 @@ const FPT_MENU_THEME_CSS = `
     .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-brand-title,
     .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title,
     .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse,
-    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse svg,
-    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-footer{ transition-duration:.01ms !important; }
-    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-actions,
-    .fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a,
-    .fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action a > span:last-child{ transition-duration:.01ms !important; }
+    .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-collapse svg{ transition-duration:.01ms !important; }
     .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child{ transition-delay:0ms !important; }
 }
 
@@ -682,11 +638,11 @@ let _fpThemeCatalogLoaded = false;
 
 const FPT_NAV_SECTIONS = Object.freeze([
     { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump']) },
-    { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist']) },
+    { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds']) },
     { id: 'finance', label: 'Финансы', icon: 'analytics', pages: Object.freeze(['finance_hub']) },
     { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'needs']) },
-    { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['accounts', 'general', 'telegram', 'settings_io']) },
-    { id: 'help', label: 'Справка', icon: 'help', pages: Object.freeze(['tickets', 'global_chat']) }
+    { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['accounts', 'general', 'settings_io']) },
+    { id: 'help', label: 'Справка', icon: 'help', pages: Object.freeze(['tickets']) }
 ]);
 
 const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
@@ -697,20 +653,17 @@ const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     auto_review: 'Отзывы и бонусы',
     templates: 'Быстрые ответы',
     blacklist: 'Чёрный список',
+    sounds: 'Звук уведомлений',
     finance_hub: 'Обзор и аналитика',
     theme: 'Темы',
     effects: 'Эффекты',
     needs: 'Элементы интерфейса',
     accounts: 'Аккаунты',
     general: 'Отображение FunPay',
-    telegram: 'Уведомления и интеграции',
     settings_io: 'Перенос настроек',
     tickets: 'Поддержка FunPay',
-    global_chat: 'Чат сообщества',
-    support: 'Оценить расширение'
 });
 
-const FPT_NAV_QUICK_ACTIONS = Object.freeze(['support']);
 const FPT_NAV_EXPANDED_STORAGE_KEY = 'fpToolsNavExpandedSectionsV2';
 const FPT_NAV_COLLAPSED_STORAGE_KEY = 'fpToolsNavCollapsed';
 const FPT_NAV_AUTO_COLLAPSE_MAX_WIDTH = 740;
@@ -726,22 +679,17 @@ function setupNavigationSections(toolsPopup) {
 
     const sectionById = new Map(FPT_NAV_SECTIONS.map(section => [section.id, section]));
     const pageToSection = new Map();
-    const quickActionIds = new Set(FPT_NAV_QUICK_ACTIONS);
     FPT_NAV_SECTIONS.forEach(section => {
         section.pages.forEach(pageId => pageToSection.set(pageId, section.id));
     });
 
     const pageItems = Array.from(legacyList.querySelectorAll('li[data-page]'));
-    const quickActionList = nav.querySelector('.fpt-nav-quick-actions');
     pageItems.forEach(item => {
         const pageId = item.dataset.page;
         const sectionId = pageToSection.get(pageId);
         if (sectionId) {
             item.dataset.navSection = sectionId;
             item.classList.add('fpt-nav-child');
-        } else if (quickActionIds.has(pageId)) {
-            delete item.dataset.navSection;
-            item.classList.add('fpt-nav-quick-action');
         } else {
             item.hidden = true;
             item.setAttribute('aria-hidden', 'true');
@@ -758,9 +706,6 @@ function setupNavigationSections(toolsPopup) {
         if (anchor) {
             anchor.title = accessibleLabel;
             anchor.setAttribute('aria-label', accessibleLabel);
-        }
-        if (quickActionIds.has(pageId)) {
-            item.title = accessibleLabel;
         }
     });
 
@@ -833,13 +778,6 @@ function setupNavigationSections(toolsPopup) {
         groupRefs.set(section.id, { group, toggle, collapse, items, icon: navIcon });
     });
 
-    if (quickActionList) {
-        FPT_NAV_QUICK_ACTIONS.forEach(pageId => {
-            const item = pageItems.find(entry => entry.dataset.page === pageId);
-            if (item) quickActionList.appendChild(item);
-        });
-    }
-
     const activePage = pageItems.find(item => item.classList.contains('active'));
     let activeSection = activePage?.dataset.navSection || pageToSection.get('lot_io') || FPT_NAV_SECTIONS[0].id;
     let focusedSection = null;
@@ -874,6 +812,7 @@ function setupNavigationSections(toolsPopup) {
 
     function setNavCollapsed(collapsed, persist = true) {
         if (typeof collapsed !== 'boolean') return;
+        cancelNavReveal();
         if (pendingCompactSection && collapsed) cancelPendingCompactSection();
         navCollapsed = collapsed;
         nav.classList.toggle('is-nav-collapsed', navCollapsed);
@@ -914,13 +853,24 @@ function setupNavigationSections(toolsPopup) {
         });
     }
 
+    function cancelNavReveal() {
+        if (navRevealTimer !== null) window.clearTimeout(navRevealTimer);
+        navRevealTimer = null;
+    }
+
+    // A delayed route reveal must yield when the user interacts with the sidebar.
+    for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown']) {
+        nav.addEventListener(type, cancelNavReveal, { capture: true, passive: true });
+    }
+    scroll.addEventListener('scroll', cancelNavReveal, { passive: true });
+
     function revealNavElement(element) {
         if (!element || !scroll) return;
-        if (navRevealTimer !== null) window.clearTimeout(navRevealTimer);
+        cancelNavReveal();
         const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 350;
         navRevealTimer = window.setTimeout(() => {
             navRevealTimer = null;
-            if (!element.isConnected) return;
+            if (!element.isConnected || !toolsPopup.classList.contains('active')) return;
             const viewport = scroll.getBoundingClientRect();
             const bounds = element.getBoundingClientRect();
             const margin = 12;
@@ -932,6 +882,7 @@ function setupNavigationSections(toolsPopup) {
     }
 
     function setExpandedSections(next, persist = true) {
+        cancelNavReveal();
         expandedSections = new Set(normalizeSectionIds(next));
         renderExpandedSections();
         if (persist) {
@@ -967,11 +918,11 @@ function setupNavigationSections(toolsPopup) {
 
     function toggleSection(sectionId) {
         if (!sectionById.has(sectionId)) return;
+        cancelNavReveal();
         focusedSection = null;
         if (expandedSections.has(sectionId)) expandedSections.delete(sectionId);
         else expandedSections.add(sectionId);
         renderExpandedSections();
-        if (expandedSections.has(sectionId)) revealNavElement(groupRefs.get(sectionId)?.group);
         expandedSectionsUserChanged = true;
         persistExpandedSections();
     }
@@ -1019,6 +970,7 @@ function setupNavigationSections(toolsPopup) {
         }),
         restoreNavStateSnapshot(snapshot) {
             if (!snapshot || typeof snapshot !== 'object') return;
+            cancelNavReveal();
             setNavCollapsed(snapshot.collapsed === true, false);
             expandedSections = new Set(normalizeSectionIds(snapshot.expandedSections));
             focusedSection = sectionById.has(snapshot.focusedSection) ? snapshot.focusedSection : null;
@@ -1026,8 +978,7 @@ function setupNavigationSections(toolsPopup) {
         },
         resetForInitialOpen() {
             cancelPendingCompactSection();
-            if (navRevealTimer !== null) window.clearTimeout(navRevealTimer);
-            navRevealTimer = null;
+            cancelNavReveal();
             scroll.scrollTop = 0;
             collapsedUserChanged = true;
             expandedSectionsUserChanged = true;
@@ -1175,15 +1126,11 @@ function getPopupNavigationActions(toolsPopup) {
 }
 
 function isPopupPageAvailable(toolsPopup, pageId) {
-    if (pageId !== 'global_chat') return true;
-    const navItem = getPopupNavigationActions(toolsPopup).find(item => item.dataset.page === pageId);
-    return toolsPopup._fptGlobalChatDisplay !== false && !navItem?.hidden && navItem?.style?.display !== 'none';
+    return Boolean(findPopupPage(toolsPopup, pageId));
 }
 
 function isPopupPageSearchable(toolsPopup, pageId) {
-    if (pageId !== 'global_chat') return true;
-    const pageNode = findPopupPage(toolsPopup, pageId);
-    return isPopupPageAvailable(toolsPopup, pageId) && pageNode?.dataset?.fptSearchExcluded !== 'true';
+    return isPopupPageAvailable(toolsPopup, pageId);
 }
 
 function enqueuePopupNavigationWrite(toolsPopup, write) {
@@ -1323,41 +1270,6 @@ async function openPopupPage(pageId, options = {}) {
     return true;
 }
 
-function setupGlobalChatVisibilityHandoff(toolsPopup) {
-    if (!toolsPopup || toolsPopup.dataset.fptGlobalChatVisibilityBound) return;
-    toolsPopup.dataset.fptGlobalChatVisibilityBound = '1';
-    window.addEventListener('fpt:global-chat-visibility', event => {
-        const detail = event?.detail || {};
-        const display = detail.display !== false;
-        const active = detail.active !== false;
-        const changed = toolsPopup._fptGlobalChatDisplay !== display || toolsPopup._fptGlobalChatActive !== active;
-        toolsPopup._fptGlobalChatDisplay = display;
-        toolsPopup._fptGlobalChatActive = active;
-
-        const navItem = getPopupNavigationActions(toolsPopup).find(item => item.dataset.page === 'global_chat');
-        const pageNode = findPopupPage(toolsPopup, 'global_chat');
-        if (navItem) {
-            navItem.hidden = !display;
-            navItem.style.display = display ? '' : 'none';
-            navItem.setAttribute('aria-hidden', display ? 'false' : 'true');
-            navItem.setAttribute('aria-disabled', active ? 'false' : 'true');
-            navItem.classList.toggle('fpt-nav-disabled', !active);
-        }
-        if (pageNode) {
-            pageNode.dataset.fptSearchExcluded = display ? 'false' : 'true';
-            pageNode.classList.toggle('fpt-page-disabled', !active);
-        }
-        if (!changed) return;
-
-        if (toolsPopup._fptNavSearch && typeof toolsPopup._fptNavSearch.refreshVisibility === 'function') {
-            toolsPopup._fptNavSearch.refreshVisibility();
-        }
-        if (!display && toolsPopup._fptCurrentPageId === 'global_chat') {
-            openPopupPage('lot_io');
-        }
-    });
-}
-
 if (typeof window !== 'undefined') {
     window.__fptPopupRouteAliases ||= FPT_POPUP_ROUTE_ALIASES;
     window.__fptPopupPageModeHandlers ||= FPT_POPUP_PAGE_MODE_HANDLERS;
@@ -1380,7 +1292,6 @@ function setupPopupNavigation() {
     if (!toolsPopup) return;
     const navSections = setupNavigationSections(toolsPopup);
     const navItems = getPopupNavigationActions(toolsPopup);
-    setupGlobalChatVisibilityHandoff(toolsPopup);
 
     navItems.forEach(item => {
         if (!item.dataset.page) return;
@@ -1390,24 +1301,10 @@ function setupPopupNavigation() {
         });
     });
 
-    const promoLink = document.querySelector('a[data-nav-to="support"]');
-    if (promoLink) {
-        promoLink.addEventListener('click', event => {
-            event.preventDefault();
-            openPopupPage('support');
-        });
-    }
-
     setupNavSearch(toolsPopup);
     setupPopupPageModes(toolsPopup);
 
-    // Общий чат: подтянуть удалённый конфиг и сразу применить видимость вкладки.
-    // Если чат выключен/скрыт на GitHub - юзер увидит это без обновления расширения.
-    if (typeof fptGcRefreshConfig === 'function') {
-        Promise.resolve(fptGcRefreshConfig(false)).then(() => {
-            if (typeof fptGcApplyVisibility === 'function') fptGcApplyVisibility();
-        }).catch(() => {});
-    }
+
 }
 
 function setupPopupPageModes(toolsPopup) {
@@ -1488,7 +1385,7 @@ function setupNavSearch(toolsPopup) {
     }
 
     const searchableFeatureSelector = 'h3, h4, h5, label > span, .setting-group > h4';
-    const searchableModePaneSelector = '[data-quick-replies-pane], .fpt-fin-tab-pane[data-subtab], [data-notification-pane], [data-route-mode]';
+    const searchableModePaneSelector = '[data-quick-replies-pane], .fpt-fin-tab-pane[data-subtab], [data-route-mode]';
     const legacySearchAliases = Object.freeze({
         lot_io: [{ mode: null, aliases: ['Импорт / экспорт'] }],
         templates: [
@@ -1498,7 +1395,6 @@ function setupNavSearch(toolsPopup) {
         theme: [{ mode: null, aliases: ['Кастомизация'] }],
         tickets: [{ mode: null, aliases: ['Тикеты'] }],
         settings_io: [{ mode: null, aliases: ['Импорт / экспорт'] }],
-        support: [{ mode: null, aliases: ['оценить', 'отзыв о расширении', 'поддержать разработчика'] }]
     });
 
     function getSearchableModePanes(page) {
@@ -1507,7 +1403,7 @@ function setupNavSearch(toolsPopup) {
 
     function getSearchMode(pane) {
         const data = pane?.dataset || {};
-        return data.routeMode || data.quickRepliesPane || data.subtab || data.notificationPane || null;
+        return data.routeMode || data.quickRepliesPane || data.subtab || null;
     }
 
     function getLegacyAliases(pageId, mode) {
@@ -1884,7 +1780,6 @@ function makePopupResponsive(popupEl) {
 if (typeof window !== 'undefined' && window.fptPopupActions) {
     const modeActions = {
         templates: { fptQuickRepliesTemplatesTab: 'templates', fptQuickRepliesCommandsTab: 'commands' },
-        telegram: { fptNotificationBrowserTab: 'browser', fptNotificationTelegramTab: 'telegram', fptNotificationDiscordTab: 'discord' },
         finance_hub: { fptFinTabOverview: 'overview', fptFinTabSales: 'sales', fptFinTabPurchases: 'purchases',
             fptFinTabProfit: 'profit', fptFinTabPotential: 'potential', fptFinTabOperations: 'operations' }
     };

@@ -79,6 +79,7 @@
 
         const view = node('div', 'fpt-lot-io');
         const helpPanel = node('aside', 'fpt-lot-help-popover');
+        helpPanel.id = 'fpt-lot-help';
         helpPanel.hidden = true;
         helpPanel.setAttribute('role', 'region');
         helpPanel.setAttribute('aria-label', 'Справка по управлению лотами');
@@ -99,7 +100,10 @@
                 event.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
             }
         });
-        view.append(helpPanel);
+        const helpAnchor = node('span', 'fpt-ad-help-anchor');
+        header.helpButton.setAttribute('aria-controls', helpPanel.id);
+        header.helpButton.before(helpAnchor);
+        helpAnchor.append(header.helpButton, helpPanel);
 
         const metric = (iconName, label) => {
             const element = node('div', 'fpt-qr-metric fpt-lot-metric');

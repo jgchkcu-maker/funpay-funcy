@@ -26,7 +26,7 @@ async function mutatePopupBlacklist(action, p) {
     if (action === 'add') {
         if (index >= 0) throw new Error('Уже в списке');
         fpToolsBlacklist.push({ username, note: p.note || '', blockDelivery: true, blockResponse: true,
-            blockNotification: false, addedAt: Date.now() });
+            addedAt: Date.now() });
     } else {
         if (index < 0) throw new Error('Пользователь не найден.');
         if (action === 'remove') fpToolsBlacklist.splice(index, 1);

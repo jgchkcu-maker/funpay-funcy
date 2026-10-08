@@ -1,4 +1,4 @@
-// Headless audio decoding, selection, preview and WAV persistence for new views.
+// Headless audio decoding, selection, preview and WAV persistence for the "Звук уведомлений" page.
 (function () {
     let clipSeconds = 5, selStart = 0, decodedBuffer = null, audioCtx = null, previewSource = null;
     const STORE_DATA = 'fpToolsCustomSoundData', STORE_META = 'fpToolsCustomSoundMeta';
@@ -71,36 +71,93 @@
         if (p.start !== undefined) selStart = Math.max(0, Math.min(Number(p.start) || 0, Math.max(0, duration - Math.min(clipSeconds, duration))));
         return { start: selStart, length: Math.min(clipSeconds, duration), duration };
     }
+    // Min/max pairs per column of the waveform, folded across channels, in the -1..1 range.
+    function waveform(points) {
+        const count = Math.max(16, Math.min(2000, Math.round(Number(points) || 300)));
+        const channels = [];
+        for (let c = 0; c < decodedBuffer.numberOfChannels; c++) channels.push(decodedBuffer.getChannelData(c));
+        const step = Math.max(1, Math.floor(decodedBuffer.length / count));
+        const peaks = [];
+        for (let i = 0; i < count; i++) {
+            let min = 0, max = 0;
+            const from = i * step, to = Math.min(decodedBuffer.length, from + step);
+            for (const data of channels) {
+                for (let j = from; j < to; j++) {
+                    const v = data[j];
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+            peaks.push([min, max]);
+        }
+        return peaks;
+    }
+
+    function stopPreview() {
+        if (!previewSource) return;
+        const source = previewSource;
+        previewSource = null;
+        try { source.stop(); } catch (_) {}
+    }
+
+    const MAX_FILE_BYTES = 30 * 1024 * 1024;
     if (!window.fptPopupActions) return;
-    const register = (id, fn) => window.fptPopupActions.register('telegram', id, fn);
+    const register = (id, fn) => window.fptPopupActions.register('sounds', id, fn);
     register('fptCustomSoundUploadBtn', async p => {
         if (!p.file) throw new Error('Выберите аудиофайл.');
-        decodedBuffer = await getCtx().decodeAudioData(await p.file.arrayBuffer());
+        if (p.file.size > MAX_FILE_BYTES) throw new Error('Файл больше 30 МБ. Выберите трек поменьше.');
+        stopPreview();
+        try {
+            decodedBuffer = await getCtx().decodeAudioData(await p.file.arrayBuffer());
+        } catch (_) {
+            decodedBuffer = null;
+            throw new Error('Не удалось прочитать звук. Подойдут MP3, WAV, OGG, M4A или WebM.');
+        }
         selStart = 0;
         return { ...select(), name: p.file.name, sampleRate: decodedBuffer.sampleRate, channels: decodedBuffer.numberOfChannels };
+    });
+    register('getAudioWaveform', p => {
+        if (!decodedBuffer) throw new Error('Сначала загрузите аудио.');
+        return { peaks: waveform(p.points), duration: decodedBuffer.duration };
     });
     register('selectAudioClip', select);
     register('fptClipSecUp', () => select({ seconds: clipSeconds + 1 }));
     register('fptClipSecDown', () => select({ seconds: clipSeconds - 1 }));
+    // Resolves when the selected fragment has played to the end or was stopped.
     register('fptCustomSoundPreviewBtn', async p => {
         if (!decodedBuffer) throw new Error('Сначала загрузите аудио.');
         select(p);
         const context = getCtx();
         await context.resume();
-        previewSource?.stop();
-        previewSource = context.createBufferSource();
-        previewSource.buffer = decodedBuffer;
+        stopPreview();
+        const source = context.createBufferSource();
+        source.buffer = decodedBuffer;
         const gain = context.createGain();
         gain.gain.value = Math.max(0, Math.min(1, p.volume ?? 1));
-        previewSource.connect(gain); gain.connect(context.destination);
-        previewSource.start(0, selStart, Math.min(clipSeconds, decodedBuffer.duration));
+        source.connect(gain); gain.connect(context.destination);
+        const ended = new Promise(resolve => { source.onended = resolve; });
+        previewSource = source;
+        source.start(0, selStart, Math.min(clipSeconds, decodedBuffer.duration));
+        await ended;
+        if (previewSource === source) previewSource = null;
         return select();
     });
+    register('fptCustomSoundStopBtn', () => stopPreview());
     register('fptCustomSoundSaveBtn', async p => {
         if (!decodedBuffer) throw new Error('Сначала загрузите аудио.');
         select(p);
-        const result = { [STORE_DATA]: sliceToWav(), [STORE_META]: { length: Math.min(clipSeconds, decodedBuffer.duration) }, notificationSound: 'custom' };
-        await chrome.storage.local.set(result);
-        return result;
+        const meta = { length: Math.min(clipSeconds, decodedBuffer.duration) };
+        if (typeof p.name === 'string' && p.name) meta.name = p.name.slice(0, 120);
+        const result = { [STORE_DATA]: sliceToWav(), [STORE_META]: meta, notificationSound: 'custom' };
+        await window.fptPopupActions.updateSettings(Object.keys(result), () => result);
+        return { meta, notificationSound: 'custom' };
+    });
+    // Forgets the saved fragment; a custom selection falls back to the FunPay sound.
+    register('fptCustomSoundRemoveBtn', async () => {
+        await window.fptPopupActions.removeSettings([STORE_DATA, STORE_META]);
+        const next = await window.fptPopupActions.updateSettings(['notificationSound'], current => ({
+            notificationSound: current.notificationSound === 'custom' ? 'default' : (current.notificationSound || 'default')
+        }));
+        return { notificationSound: next.notificationSound };
     });
 })();

@@ -7,10 +7,10 @@ const vm = require('node:vm');
 const { context } = require('./helpers/popup_actions_harness');
 
 test('actions persist only explicit settings and never read deleted controls', async () => {
-    const h = context({ hideBalance: true, showSalesStats: false, fpToolsDiscord: { enabled: true, webhookUrl: 'saved' } });
+    const h = context({ hideBalance: true, showSalesStats: false, fpToolsTheme: { enabled: true, accent: 'saved' } });
     assert.ok(h.api, 'headless action interface must be available');
     await h.api.run('general', 'saveSettings', { settings: { hideBalance: false } });
-    assert.deepEqual(h.saved, { hideBalance: false, showSalesStats: false, fpToolsDiscord: { enabled: true, webhookUrl: 'saved' } });
+    assert.deepEqual(h.saved, { hideBalance: false, showSalesStats: false, fpToolsTheme: { enabled: true, accent: 'saved' } });
     assert.deepEqual(h.messages, []);
 });
 
@@ -26,11 +26,11 @@ test('auto-reply changes use the existing atomic store and propagate storage fai
     await assert.rejects(h.api.run('auto_review', 'saveSettings', { patch: { set: { autoReviewEnabled: false } } }), /storage unavailable/);
 });
 
-test('partial nested settings updates retain saved integration fields', async () => {
-    const h = context({ fpToolsTelegram: { token: 'existing', enabled: false, chatId: '42' } });
+test('partial nested settings updates retain saved theme fields', async () => {
+    const h = context({ fpToolsTheme: { accent: 'existing', enabled: false, name: 'Custom' } });
     assert.ok(h.api);
-    await h.api.run('telegram', 'saveSettings', { settings: { fpToolsTelegram: { enabled: true } } });
-    assert.deepEqual(h.saved.fpToolsTelegram, { token: 'existing', enabled: true, chatId: '42' });
+    await h.api.run('theme', 'saveSettings', { settings: { fpToolsTheme: { enabled: true } } });
+    assert.deepEqual(h.saved.fpToolsTheme, { accent: 'existing', enabled: true, name: 'Custom' });
 });
 
 test('opening data actions never writes settings and invalid actions reject', async () => {

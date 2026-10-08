@@ -1,24 +1,61 @@
 // content/features/custom_sound.js
+// Replaces FunPay's new-message sound. The preset catalogue is shared with the "Звук уведомлений" page.
 
-const soundMap = {
-    vk: 'vk.mp3',
-    tg: 'telegram.mp3',
-    iphone: 'iphone.mp3',
-    discord: 'discord.mp3',
-    whatsapp: 'whatsapp.mp3'
-};
+const FUNPAY_DEFAULT_SOUND_URL = 'https://funpay.com/audio/chat_loud.mp3';
+
+window.FPTNotificationSounds = (() => {
+    const groups = Object.freeze([
+        { id: 'funpay', label: 'FunPay' },
+        { id: 'messengers', label: 'Мессенджеры' },
+        { id: 'custom', label: 'Своя' }
+    ]);
+    const presets = Object.freeze([
+        { id: 'default', group: 'funpay', label: 'Стандартный', hint: 'Звук FunPay', icon: 'storefront' },
+        { id: 'vk', group: 'messengers', label: 'ВКонтакте', hint: 'Сообщение VK', icon: 'forum', file: 'vk.mp3' },
+        { id: 'tg', group: 'messengers', label: 'Telegram', hint: 'Сообщение Telegram', icon: 'send', file: 'telegram.mp3' },
+        { id: 'iphone', group: 'messengers', label: 'iPhone', hint: 'Уведомление iOS', icon: 'smartphone', file: 'iphone.mp3' },
+        { id: 'discord', group: 'messengers', label: 'Discord', hint: 'Сообщение Discord', icon: 'headset_mic', file: 'discord.mp3' },
+        { id: 'whatsapp', group: 'messengers', label: 'WhatsApp', hint: 'Сообщение WhatsApp', icon: 'call', file: 'whatsapp.mp3' },
+        { id: 'custom', group: 'custom', label: 'Своя мелодия', hint: 'Загруженный отрывок', icon: 'library_music' }
+    ].map(Object.freeze));
+    const byId = new Map(presets.map(preset => [preset.id, preset]));
+    const normalizeId = id => byId.has(id) ? id : 'default';
+    const normalizeVolume = value => {
+        const number = Number(value);
+        return Number.isFinite(number) ? Math.max(0, Math.min(1, number)) : 1;
+    };
+    // URL of a bundled preset; null for "custom" (stored in chrome.storage) and unknown ids.
+    function urlFor(id) {
+        if (!id || id === 'default') return FUNPAY_DEFAULT_SOUND_URL;
+        const preset = byId.get(id);
+        return preset && preset.file ? chrome.runtime.getURL(`sounds/${preset.file}`) : null;
+    }
+    return Object.freeze({ groups, presets, get: id => byId.get(id) || null, normalizeId, normalizeVolume, urlFor });
+})();
+
+// Decodes the stored clip locally: fetch() of a data: URL could be refused by the site's connect-src.
+function dataUrlToBlob(dataUrl) {
+    const match = /^data:([^;,]+)?(;base64)?,(.*)$/s.exec(String(dataUrl));
+    if (!match || !match[2]) throw new Error('Unsupported sound data');
+    const binary = atob(match[3]);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new Blob([bytes], { type: match[1] || 'audio/wav' });
+}
 
 async function applyNotificationSound() {
+    const sounds = window.FPTNotificationSounds;
     const { notificationSound, notificationVolume, fpToolsCustomSoundData } = await chrome.storage.local.get(['notificationSound', 'notificationVolume', 'fpToolsCustomSoundData']);
-    const selectedSound = notificationSound || 'default';
-    const vol = (typeof notificationVolume === 'number') ? Math.max(0, Math.min(1, notificationVolume)) : 1;
+    const selectedSound = sounds.normalizeId(notificationSound);
+    const vol = sounds.normalizeVolume(notificationVolume ?? 1);
 
-    const audioSource = document.querySelector("source[src='/audio/chat_loud.mp3'], source[src^='chrome-extension://'], source[src^='data:audio'], source[src^='blob:']");
+    // The player is found by its class: once we change <source src>, a selector on the original
+    // relative path would stop matching and later changes would be silently skipped.
     const audioPlayer = document.querySelector("audio.loud");
-
-    if (!audioSource || !audioPlayer) {
+    if (!audioPlayer) {
         return;
     }
+    const audioSource = audioPlayer.querySelector('source');
 
     // 3.0: volume control
     audioPlayer.volume = vol;
@@ -27,31 +64,26 @@ async function applyNotificationSound() {
     // проигрывает звук, выставляя audioPlayer.src НАПРЯМУЮ или уже забуферив
     // оригинал - тогда наш <source> игнорировался и звук оставался «фпшным».
     // Теперь: (1) вычисляем нужный src, (2) ставим его И на <source>, И на сам
-    // audioPlayer, (3) перехватываем play(), чтобы перед каждым воспроизведением
-    // принудительно ставить наш src и громкость (FunPay не сможет «вернуть своё»).
+    // audioPlayer, (3) перед каждым воспроизведением возвращаем наш src и громкость.
     const setSrc = (newSrc) => {
         if (!newSrc) return;
-        if (audioSource.src !== newSrc) audioSource.src = newSrc;
+        if (audioSource && audioSource.src !== newSrc) audioSource.src = newSrc;
         if (audioPlayer.src !== newSrc) {
             audioPlayer.src = newSrc;
             audioPlayer.load();
         }
     };
 
-    // запоминаем выбранный src на самом элементе, чтобы перехватчик play() знал что ставить
+    // запоминаем выбранный src на самом элементе, чтобы обработчик play знал что ставить
     let chosenSrc = null;
 
-    if (selectedSound === 'default') {
-        chosenSrc = 'https://funpay.com/audio/chat_loud.mp3';
-        setSrc(chosenSrc);
-    } else if (selectedSound === 'custom') {
+    if (selectedSound === 'custom') {
         // Своя загруженная мелодия (обрезанный отрезок). Преобразуем data URL в
         // blob: URL - он не попадает под ограничения CSP на data:-медиа.
         if (fpToolsCustomSoundData) {
             try {
                 if (!window.__fptCustomSoundBlobUrl || window.__fptCustomSoundBlobSrc !== fpToolsCustomSoundData) {
-                    const resp = await fetch(fpToolsCustomSoundData);
-                    const blob = await resp.blob();
+                    const blob = dataUrlToBlob(fpToolsCustomSoundData);
                     if (window.__fptCustomSoundBlobUrl) { try { URL.revokeObjectURL(window.__fptCustomSoundBlobUrl); } catch (_) {} }
                     window.__fptCustomSoundBlobUrl = URL.createObjectURL(blob);
                     window.__fptCustomSoundBlobSrc = fpToolsCustomSoundData;
@@ -64,51 +96,81 @@ async function applyNotificationSound() {
                 setSrc(chosenSrc);
             }
         } else {
-            chosenSrc = 'https://funpay.com/audio/chat_loud.mp3';
+            chosenSrc = FUNPAY_DEFAULT_SOUND_URL;
             setSrc(chosenSrc);
         }
     } else {
-        const soundFile = soundMap[selectedSound];
-        if (soundFile) {
-            chosenSrc = chrome.runtime.getURL(`sounds/${soundFile}`);
-            setSrc(chosenSrc);
-        }
+        chosenSrc = sounds.urlFor(selectedSound);
+        setSrc(chosenSrc);
     }
 
-    // FIX 2.8.2 (№6): перехват play() - гарантирует наш src/громкость при каждом
-    // воспроизведении, даже если FunPay переустановил источник между уведомлениями.
-    if (chosenSrc && !audioPlayer.__fptPlayPatched) {
-        audioPlayer.__fptPlayPatched = true;
-        const origPlay = audioPlayer.play.bind(audioPlayer);
-        audioPlayer.play = function () {
+    // FIX 2.8.2 (№6): FunPay вызывает play() из своего скрипта, а патч метода из
+    // изолированного мира расширения его не видит. Событие play общее для обоих миров:
+    // если FunPay успел вернуть свой src, перезапускаем воспроизведение с нашим.
+    if (!audioPlayer.__fptPlayGuard) {
+        audioPlayer.__fptPlayGuard = true;
+        audioPlayer.addEventListener('play', () => {
             try {
                 const want = audioPlayer.__fptChosenSrc;
-                if (want && audioPlayer.src !== want) { audioPlayer.src = want; audioPlayer.load(); }
                 if (typeof audioPlayer.__fptVol === 'number') audioPlayer.volume = audioPlayer.__fptVol;
+                if (want && audioPlayer.src !== want) {
+                    audioPlayer.src = want;
+                    audioPlayer.load();
+                    audioPlayer.play().catch(() => {});
+                }
             } catch (_) {}
-            return origPlay();
-        };
+        });
     }
     audioPlayer.__fptChosenSrc = chosenSrc;
     audioPlayer.__fptVol = vol;
 }
 
-// 3.0: preview the currently-selected sound at the selected volume (used by the popup button).
+// One preview at a time: starting another sound or pressing stop cuts the previous one.
+let previewAudio = null;
+let previewBlobUrl = null;
+
+function stopNotificationPreview() {
+    if (previewAudio) {
+        previewAudio.pause();
+        previewAudio.dispatchEvent(new Event('ended'));
+        previewAudio = null;
+    }
+    if (previewBlobUrl) {
+        URL.revokeObjectURL(previewBlobUrl);
+        previewBlobUrl = null;
+    }
+}
+
+// Resolves when the sound finishes or is stopped, so the popup can animate the play button meanwhile.
 async function previewNotificationSound(soundValue, volume) {
+    const sounds = window.FPTNotificationSounds;
+    stopNotificationPreview();
+    let url;
+    if (soundValue === 'custom') {
+        const { fpToolsCustomSoundData } = await chrome.storage.local.get('fpToolsCustomSoundData');
+        if (!fpToolsCustomSoundData) throw new Error('Своя мелодия ещё не сохранена. Загрузите файл ниже.');
+        // A blob: URL is not affected by the site's CSP on data: media.
+        previewBlobUrl = URL.createObjectURL(dataUrlToBlob(fpToolsCustomSoundData));
+        url = previewBlobUrl;
+    } else {
+        url = sounds.urlFor(sounds.normalizeId(soundValue));
+    }
+    const audio = new Audio(url);
+    audio.volume = sounds.normalizeVolume(volume ?? 1);
+    previewAudio = audio;
+    const finished = new Promise(resolve => {
+        audio.addEventListener('ended', resolve, { once: true });
+        audio.addEventListener('error', resolve, { once: true });
+    });
     try {
-        let url;
-        if (!soundValue || soundValue === 'default') url = 'https://funpay.com/audio/chat_loud.mp3';
-        else if (soundValue === 'custom') {
-            const { fpToolsCustomSoundData } = await chrome.storage.local.get('fpToolsCustomSoundData');
-            if (!fpToolsCustomSoundData) { if (typeof showNotification === 'function') showNotification('Своя мелодия ещё не сохранена.', true); return; }
-            url = fpToolsCustomSoundData;
-        }
-        else if (soundMap[soundValue]) url = chrome.runtime.getURL(`sounds/${soundMap[soundValue]}`);
-        else return;
-        const a = new Audio(url);
-        a.volume = (typeof volume === 'number') ? Math.max(0, Math.min(1, volume)) : 1;
-        await a.play().catch(() => {});
-    } catch (_) {}
+        await audio.play();
+    } catch (error) {
+        if (previewAudio === audio) previewAudio = null;
+        throw new Error('Браузер не дал воспроизвести звук. Кликните по странице и попробуйте ещё раз.');
+    }
+    await finished;
+    if (previewAudio === audio) stopNotificationPreview();
+    return { played: soundValue };
 }
 
 function initializeCustomSound() {
@@ -162,5 +224,6 @@ if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged)
     });
 }
 if (typeof window !== 'undefined' && window.fptPopupActions) {
-    window.fptPopupActions.register('telegram', 'previewNotificationBtn', p => previewNotificationSound(p.sound, p.volume));
+    window.fptPopupActions.register('sounds', 'previewNotificationBtn', p => previewNotificationSound(p.sound, p.volume));
+    window.fptPopupActions.register('sounds', 'stopNotificationPreview', () => stopNotificationPreview());
 }

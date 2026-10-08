@@ -78,124 +78,6 @@ window.FPTPopupMetadata = Object.freeze({
         "fptNeedsAskBtn"
       ]
     },
-    "telegram": {
-      "features": [
-        {
-          "text": "Уведомления и интеграции"
-        },
-        {
-          "text": "Звук уведомления в браузере",
-          "mode": "browser"
-        },
-        {
-          "text": "Стандартный",
-          "mode": "browser"
-        },
-        {
-          "text": "VK",
-          "mode": "browser"
-        },
-        {
-          "text": "Telegram",
-          "mode": "browser"
-        },
-        {
-          "text": "iPhone",
-          "mode": "browser"
-        },
-        {
-          "text": "Discord",
-          "mode": "browser"
-        },
-        {
-          "text": "WhatsApp",
-          "mode": "browser"
-        },
-        {
-          "text": "Своя мелодия",
-          "mode": "browser"
-        },
-        {
-          "text": "Громкость уведомлений:",
-          "mode": "browser"
-        },
-        {
-          "text": "Уведомления и интеграции",
-          "mode": "telegram"
-        },
-        {
-          "text": "Включить интеграцию с Telegram",
-          "mode": "telegram"
-        },
-        {
-          "text": "Токен бота:",
-          "mode": "telegram"
-        },
-        {
-          "text": "Chat ID (определяется автоматически):",
-          "mode": "telegram"
-        },
-        {
-          "text": "Уведомления",
-          "mode": "telegram"
-        },
-        {
-          "text": "Новые заказы",
-          "mode": "telegram"
-        },
-        {
-          "text": "Новые сообщения в чатах",
-          "mode": "telegram"
-        },
-        {
-          "text": "Управление из бота",
-          "mode": "telegram"
-        },
-        {
-          "text": "Разрешить команды управления из бота",
-          "mode": "telegram"
-        },
-        {
-          "text": "Уведомления в Discord",
-          "mode": "discord"
-        },
-        {
-          "text": "Включить уведомления о новых сообщениях",
-          "mode": "discord"
-        },
-        {
-          "text": "Webhook URL:",
-          "mode": "discord"
-        },
-        {
-          "text": "Пинговать @everyone",
-          "mode": "discord"
-        },
-        {
-          "text": "Пинговать @here",
-          "mode": "discord"
-        }
-      ],
-      "modes": [
-        "browser",
-        "telegram",
-        "discord"
-      ],
-      "defaultMode": "telegram",
-      "buttons": [
-        "fptNotificationBrowserTab",
-        "fptNotificationTelegramTab",
-        "fptNotificationDiscordTab",
-        "fptCustomSoundUploadBtn",
-        "fptClipSecUp",
-        "fptClipSecDown",
-        "fptCustomSoundPreviewBtn",
-        "fptCustomSoundSaveBtn",
-        "previewNotificationBtn",
-        "fptTgConnectBtn",
-        "fptTgTestBtn"
-      ]
-    },
     "templates": {
       "features": [
         {
@@ -724,18 +606,6 @@ window.FPTPopupMetadata = Object.freeze({
         "autoBumpLogToggle"
       ]
     },
-    "global_chat": {
-      "features": [
-        {
-          "text": "Чат сообщества"
-        }
-      ],
-      "modes": [],
-      "defaultMode": null,
-      "buttons": [
-        "fpt-gc-send"
-      ]
-    },
     "effects": {
       "features": [
         {
@@ -789,6 +659,33 @@ window.FPTPopupMetadata = Object.freeze({
         "removeCursorImageBtn"
       ]
     },
+    "sounds": {
+      "features": [
+        { "text": "Звук уведомлений" },
+        { "text": "Звук нового сообщения" },
+        { "text": "Мелодия уведомления" },
+        { "text": "Стандартный звук FunPay" },
+        { "text": "ВКонтакте" },
+        { "text": "Telegram" },
+        { "text": "iPhone" },
+        { "text": "Discord" },
+        { "text": "WhatsApp" },
+        { "text": "Громкость уведомлений" },
+        { "text": "Своя мелодия" },
+        { "text": "Обрезать мелодию" }
+      ],
+      "modes": [],
+      "defaultMode": null,
+      "buttons": [
+        "previewNotificationBtn",
+        "fptCustomSoundUploadBtn",
+        "fptClipSecUp",
+        "fptClipSecDown",
+        "fptCustomSoundPreviewBtn",
+        "fptCustomSoundSaveBtn",
+        "fptCustomSoundRemoveBtn"
+      ]
+    },
     "settings_io": {
       "features": [
         {
@@ -824,7 +721,13 @@ window.FPTPopupMetadata = Object.freeze({
           "text": "Причина"
         },
         {
-          "text": "Покупатели в списке 0"
+          "text": "Покупатели в списке"
+        },
+        {
+          "text": "Отключить автовыдачу"
+        },
+        {
+          "text": "Отключить автоответы"
         }
       ],
       "modes": [],
@@ -888,16 +791,6 @@ window.FPTPopupMetadata = Object.freeze({
         "fp-new-ticket-close",
         "fp-new-ticket-submit"
       ]
-    },
-    "support": {
-      "features": [
-        {
-          "text": "Оценить расширение star"
-        }
-      ],
-      "modes": [],
-      "defaultMode": null,
-      "buttons": []
     }
   }
 });

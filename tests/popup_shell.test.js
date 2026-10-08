@@ -24,8 +24,8 @@ test('popup creation leaves every category empty, retains navigation, and omits 
     const popup = context.createMainPopup();
     const main = popup.innerHTML.match(/<main class="fp-tools-content">([\s\S]*?)<\/main>/)[1];
     const pages = [...main.matchAll(/<div class="fp-tools-page-content[^>]*data-page="([^"]+)"[^>]*>\s*<\/div>/g)];
-    assert.equal(pages.length, 18, 'only active routes need an empty container');
-    for (const pageId of ['piggy_banks', 'calculator']) {
+    assert.equal(pages.length, 16, 'only active routes need an empty container');
+    for (const pageId of ['piggy_banks', 'calculator', 'global_chat']) {
         assert.equal(pages.some(([, id]) => id === pageId), false, `${pageId} has been removed`);
         assert.equal(popup.innerHTML.includes(`data-page="${pageId}"`), false, `${pageId} has no navigation entry`);
     }

@@ -26,7 +26,7 @@ test('review help follows shared page typography, fits both themes and closes by
                 await trigger.click();
                 assert.equal(await panel.isVisible(), false);
                 await trigger.click();
-                await page.locator('.fpt-rv-intro').click({ position: { x: 1, y: 1 } });
+                await page.mouse.click(box.x + 12, box.y + box.height + 12);
                 assert.equal(await panel.isVisible(), false);
                 await trigger.click();
                 await page.keyboard.press('Escape');
@@ -38,14 +38,15 @@ test('review help follows shared page typography, fits both themes and closes by
     } finally { await browser.close(); }
 });
 
-test('review selectors align with bonus modes and stars reflect saved answers', async () => {
+test('rating rail sits beside the editor and stars reflect saved answers', async () => {
     const browser = await launch();
     try {
         const { page } = await openReviews(browser, { reviewTemplates: { 4: 'Сохранённый ответ' } }, { width: 1440, height: 1000 });
-        const ratings = await page.locator('.fpt-rv-ratings').boundingBox();
-        const modes = await page.locator('.fpt-rv-modes').boundingBox();
-        assert.ok(Math.abs(ratings.y - modes.y) < 1, 'selector top edges align');
-        assert.ok(Math.abs(ratings.height - modes.height) < 1, 'selector heights align');
+        const boxes = await page.locator('.fpt-rv-rating').evaluateAll(els => els.map(el => el.getBoundingClientRect().toJSON()));
+        assert.ok(boxes.every((box, index) => !index || box.top >= boxes[index - 1].bottom), 'ratings stack vertically');
+        const editor = await page.locator('#fpt-rv-review-text').boundingBox();
+        assert.ok(boxes[0].right <= editor.x, 'rail sits left of the editor');
+        assert.equal(await page.locator('[data-rating="4"] .fpt-rv-rating-meta').innerText(), 'Сохранённый ответ');
         await page.locator('#fpt-rv-review-text').fill('Новый ответ');
         assert.equal(await page.locator('[data-rating="5"]').getAttribute('data-saved'), 'false');
         await page.getByRole('button', { name: 'Сохранить ответы', exact: true }).click();
@@ -223,8 +224,8 @@ test('reviews: both themes, responsive stacking, transparent header and keyboard
         for (const dark of [true, false]) {
             const { page, errors } = await openReviews(browser, {}, { dark });
             assert.ok(await page.locator('#fpt-rv-review-text').evaluate(el => el.getBoundingClientRect().height >= 112), 'review editor keeps a usable height after shared control normalization');
-            assert.equal(await page.locator('.fpt-rv-card--reviews').evaluate(el => Math.round(el.getBoundingClientRect().top)),
-                await page.locator('.fpt-rv-card--bonuses').evaluate(el => Math.round(el.getBoundingClientRect().top)));
+            assert.ok(await page.locator('.fpt-rv-card--bonuses').evaluate(el => el.getBoundingClientRect().top)
+                >= await page.locator('.fpt-rv-card--reviews').evaluate(el => el.getBoundingClientRect().bottom), 'bonus card follows the reviews card');
             assert.equal(await page.locator('[data-page="auto_review"] .fpt-category-header').evaluate(el => getComputedStyle(el).backgroundColor), 'rgba(0, 0, 0, 0)');
             await page.locator('[data-rating="5"]').focus(); await page.keyboard.press('ArrowRight');
             assert.equal(await page.locator('[data-rating="4"]').getAttribute('aria-checked'), 'true');

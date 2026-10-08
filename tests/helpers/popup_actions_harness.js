@@ -22,6 +22,7 @@ function context(initial = {}) {
     };
     const ctx = vm.createContext(sandbox);
     const load = file => vm.runInContext(fs.readFileSync(path.join(__dirname, '../..', file), 'utf8'), ctx, { filename: file });
+    load('background/retired_integrations.js');
     const source = path.join(__dirname, '../..', 'content/ui/popup_actions.js');
     if (fs.existsSync(source)) load('content/ui/popup_actions.js');
     return { ctx, load, saved, messages, api: sandbox.window.fptPopupActions };

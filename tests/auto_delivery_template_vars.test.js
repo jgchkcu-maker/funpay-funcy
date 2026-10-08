@@ -7,17 +7,21 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../background/autoresponder.js'), 'utf8');
 const variablesStart = source.indexOf('function applyVariables(template, vars = {}) {');
 const variablesEnd = source.indexOf('\nasync function atomicUpdate', variablesStart);
-const deliveryStart = source.indexOf('\nasync function handleAutoDelivery(msg, auth, settings) {') + 1;
+// From the order-journal helpers (orderIdOf, getOrderDetails, delivery ops) through handleAutoDelivery.
+const deliveryStart = source.indexOf('// --- Журнал заказов (этап 0)');
 const deliveryEnd = source.indexOf('\nasync function notifyDearVendors', deliveryStart);
 const testedSource = [
     source.slice(variablesStart, variablesEnd),
-    source.slice(deliveryStart, deliveryEnd),
+    source.slice(deliveryStart, deliveryEnd).replace(/^export /gm, ''),
     'globalThis.runDelivery = handleAutoDelivery;'
 ].join('\n');
 
 test('auto-delivery templates receive the parsed lot name', async () => {
+    assert.ok(deliveryStart > 0, 'order journal helpers must precede handleAutoDelivery');
+    const { createOrderDetailsLoader } = await import(require('node:url').pathToFileURL(path.join(__dirname, '../background/order_details.js')).href);
     const sent = [];
     const sandbox = {
+        createOrderDetailsLoader,
         RX: { ORDER_ID: /#([A-Z0-9]{8})/ },
         getMessageType: () => 'ORDER_PURCHASED',
         isBlacklisted: async () => false,

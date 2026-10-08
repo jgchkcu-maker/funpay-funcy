@@ -102,17 +102,6 @@ document.addEventListener('DOMContentLoaded', async function () {
         } catch (_) {}
     });
 
-    // ─── Review ──────────────────────────────────────────────────────
-    document.getElementById('reviewBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        try {
-            if (typeof chrome !== 'undefined' && chrome.tabs?.create) {
-                chrome.tabs.create({ url: 'https://chromewebstore.google.com/detail/funpay-tools/pibmnjjfpojnakckilflcboodkndkibb/reviews' });
-                window.close();
-            }
-        } catch (_) {}
-    });
-
     // ─── Changelog toggle ────────────────────────────────────────────
     const changelogPanel = document.getElementById('changelog-panel');
     document.getElementById('changelogBtn')?.addEventListener('click', (e) => {

@@ -486,55 +486,6 @@ button.add-image-btn .material-symbols-rounded {
     padding-right: 12px !important;
 }
 
-/* ---------- 14. Compact notification volume panel ---------- */
-#notificationVolume {
-    height: 4px;
-    -webkit-appearance: none;
-    appearance: none;
-    background: var(--fptm-surface, #20202a);
-    border-radius: 3px;
-    outline: none;
-}
-#notificationVolume::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: #a09af8;
-    cursor: pointer;
-    border: none;
-}
-#notificationVolumeValue {
-    font-size: 12px;
-    color: var(--fptm-muted, #b8b8c4);
-    min-width: 38px;
-    text-align: right;
-}
-#previewNotificationBtn {
-    width: 30px !important;
-    height: 30px !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    background: rgba(27,117,187,0.15) !important;
-    border: 1px solid rgba(27,117,187,0.4) !important;
-    border-radius: 7px !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    box-shadow: none !important;
-    flex: 0 0 30px;
-    transition: background-color 0.13s linear !important;
-}
-#previewNotificationBtn:hover {
-    background: rgba(27,117,187,0.28) !important;
-    transform: none !important;
-}
-#previewNotificationBtn .material-symbols-rounded {
-    font-size: 18px;
-    color:var(--fptm-text, #e9e7ff);
-}
-
 /* ---------- 15. Clean template editor rows ---------- */
 .fp-tools-popup .template-item {
     background: var(--fptm-surface-2, #0c0c10);
@@ -1443,35 +1394,6 @@ button.add-image-btn .material-symbols-rounded {
     outline: none !important;
     box-shadow: none !important;
 }
-
-.fp-tools-nav .fpt-nav-footer {
-    flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 6px; min-height: 62px;
-    margin-top: auto; padding-top: 14px; padding-left: 0; border-top: 1px solid var(--fptm-nav-border, rgba(119,99,246,.16));
-    transition: padding-left .38s cubic-bezier(.4,0,.2,1);
-}
-.fp-tools-nav .fpt-nav-quick-actions {
-    flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 2px; min-width: 0;
-    margin: 0; padding: 0; list-style: none;
-}
-.fp-tools-nav li.fpt-nav-quick-action { flex: 0 1 auto; min-width: 0; max-width: 100%; }
-.fp-tools-nav li.fpt-nav-quick-action a {
-    box-sizing: border-box; width: 100%; min-width: 0; min-height: 40px; display: flex; align-items: center; gap: 8px;
-    margin: 0; padding: 7px 10px; border: 1px solid transparent !important; border-radius: 12px !important;
-    background: transparent !important; color: var(--fptm-text, #141b2e); font-size: 13px; font-weight: 500; text-decoration: none;
-    transition: background-color .18s ease, color .18s ease;
-}
-.fp-tools-nav li.fpt-nav-quick-action a:hover,
-.fp-tools-nav li.fpt-nav-quick-action a:focus-visible {
-    background: var(--fptm-nav-field, #f4f3ff) !important; color: var(--fptm-text, #141b2e); outline: none;
-}
-.fp-tools-nav li.fpt-nav-quick-action a .nav-icon {
-    display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; flex: 0 0 22px;
-    color: var(--fptm-muted, #52627a); font-size: 20px; line-height: 1;
-}
-.fp-tools-nav li.fpt-nav-quick-action a > span:last-child {
-    min-width: 0; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.fp-tools-nav .fpt-nav-quick-action.active a { color: var(--fptm-text, #141b2e) !important; font-weight: 600; }
 .fp-tools-nav.is-nav-collapsed { box-sizing: border-box; width: 104px; flex: 0 0 104px; padding-right: 10px; padding-left: 10px; }
 .fp-tools-nav.is-nav-collapsed .fpt-nav-brand { gap: 0; }
 .fp-tools-nav.is-nav-collapsed .fpt-nav-brand-title,
@@ -1498,11 +1420,6 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active .fpt-nav-group-icon { filter: brightness(0) invert(0) opacity(.82); }
 .fptm-dark .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active .fpt-nav-group-icon { filter: brightness(0) invert(1) opacity(.85); }
 .fp-tools-nav.is-nav-collapsed .fpt-nav-group-icon { width: 34px; height: 34px; flex-basis: 34px; }
-.fp-tools-nav.is-nav-collapsed .fpt-nav-footer { align-items: center; padding-left: 0; }
-.fp-tools-nav.is-nav-collapsed .fpt-nav-quick-actions { width: 44px; align-items: center; gap: 4px; }
-.fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action { width: 44px; max-width: 44px; }
-.fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action a { width: 44px; height: 44px; min-height: 44px; justify-content: center; gap: 0; padding: 0; }
-.fp-tools-nav.is-nav-collapsed li.fpt-nav-quick-action a > span:last-child { width: 0; max-width: 0; opacity: 0; visibility: hidden; }
 
 @media (prefers-reduced-motion: reduce) {
     .fp-tools-nav,
@@ -1519,11 +1436,7 @@ button.add-image-btn .material-symbols-rounded {
     .fp-tools-nav .fpt-nav-brand-title,
     .fp-tools-nav .fpt-nav-group-title,
     .fp-tools-nav .fpt-nav-collapse,
-    .fp-tools-nav .fpt-nav-collapse svg,
-    .fp-tools-nav .fpt-nav-footer { transition-duration: .01ms !important; }
-    .fp-tools-nav .fpt-nav-quick-actions,
-    .fp-tools-nav li.fpt-nav-quick-action a,
-    .fp-tools-nav li.fpt-nav-quick-action a > span:last-child { transition-duration: .01ms !important; }
+    .fp-tools-nav .fpt-nav-collapse svg{ transition-duration: .01ms !important; }
     .fp-tools-nav .fpt-nav-child { transition-delay: 0ms !important; }
 }
 

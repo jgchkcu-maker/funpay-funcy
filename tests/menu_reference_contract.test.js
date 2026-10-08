@@ -68,11 +68,10 @@ function testHeaderAndSearchMatchReference() {
     const navEnd = source.indexOf('</nav>', navStart);
     const navMarkup = source.slice(navStart, navEnd);
     assert.match(navMarkup, /<div class="fpt-nav-brand">[\s\S]*?<img class="fp-tools-brand-logo"[^>]+data-icon="funcy-logo"[\s\S]*?<span class="fpt-nav-brand-title">FunPay Funcy<\/span>[\s\S]*?<button[^>]+id="fptNavCollapse"/, 'brand, title, and collapse control must live in the reference sidebar header');
-    assert.match(navMarkup, /<div class="fpt-nav-footer">[\s\S]*?<ul class="fpt-nav-quick-actions"[^>]*>/, 'footer routes must remain in the sidebar footer');
+    assert.doesNotMatch(navMarkup, /fpt-nav-footer|fpt-nav-quick-actions/);
     assert.doesNotMatch(navMarkup, /fptAccentBtn|fptAccentInput/, 'the sidebar must not expose a button-color picker');
     assert.match(source, /const accent = '#7663f6'/, 'the menu accent must use the fixed lavender color');
-    assert.match(source, /const FPT_NAV_QUICK_ACTIONS = Object\.freeze\(\['support'\]\)/,
-        'support must be the footer route action');
+    assert.doesNotMatch(source, /FPT_NAV_QUICK_ACTIONS/);
     assert.doesNotMatch(source, /class="close-btn" aria-label="Закрыть"/, 'the popup must not expose a close button');
     assert.match(
         source,
@@ -319,16 +318,8 @@ function testMenuHasIndependentReferenceSurface() {
 
 function testFooterActionsMatchExpandedAndCompactNavigation() {
     const runtimeCss = getRuntimeThemeCss();
-    for (const [name, stylesheet, selectors] of [
-        ['static stylesheet', css, ['.fp-tools-nav .fpt-nav-quick-actions', '.fp-tools-nav li.fpt-nav-quick-action']],
-        ['runtime theme', runtimeCss, ['.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-quick-actions', '.fp-tools-popup.fptm-themed .fp-tools-nav li.fpt-nav-quick-action']],
-        ['scoped popup stylesheet', popupCss, ['.fp-tools-popup .fp-tools-nav .fpt-nav-quick-actions', '.fp-tools-popup .fp-tools-nav li.fpt-nav-quick-action']]
-    ]) {
-        for (const selector of selectors) {
-            assert.ok(stylesheet.includes(selector), name + ' must style footer route action selector ' + selector);
-        }
-        assert.match(stylesheet, /fpt-nav-quick-actions[\s\S]*fpt-nav-quick-action/,
-            name + ' must provide footer action styling in both sidebar states');
+    for (const stylesheet of [css, runtimeCss, popupCss]) {
+        assert.doesNotMatch(stylesheet, /fpt-nav-footer|fpt-nav-quick-action/);
     }
     assert.match(css, /prefers-reduced-motion/);
     assert.match(runtimeCss, /prefers-reduced-motion/);

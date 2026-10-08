@@ -1115,48 +1115,85 @@ function parseOrderParticipants(html) {
 }
 
 // 3.0: Parse order page for auto-delivery - get secrets, lotId, chatId
+// Этап 0: lotId берётся только из ссылки вида lots/offer?id=N (раньше подходила любая
+// ссылка с id=), nodeId — из ссылки на категорию, плюс количество, статус и покупатель.
+function fptOrderParamItems(doc) {
+    return Array.from(doc.querySelectorAll('.param-item')).map(item => ({
+        item,
+        title: (item.querySelector('h5')?.textContent || '').trim().toLowerCase()
+    }));
+}
+
+function fptOrderParam(items, pattern) {
+    return items.find(entry => pattern.test(entry.title))?.item || null;
+}
+
+function fptOrderParamText(item) {
+    if (!item) return '';
+    const heading = item.querySelector('h5');
+    const value = heading?.nextElementSibling;
+    return (value ? value.textContent : item.textContent.replace(heading?.textContent || '', '')).replace(/\s+/g, ' ').trim();
+}
+
 function parseOrderPageForDelivery(html) {
     try {
         const doc = window.__fptParseHTML(html);
+        const items = fptOrderParamItems(doc);
 
         // Get secrets (the goods that were delivered / in order-secrets-box)
         const secretsBox = doc.querySelector('.order-secrets-box, .order-secrets-list');
         const secrets = secretsBox?.textContent.trim() || null;
 
-        // Get lot ID from the order page
-        const lotLink = doc.querySelector('.order-desc a[href*="lots/offer"], a[href*="id="]');
-        const lotIdMatch = lotLink?.getAttribute('href')?.match(/id=(\d+)/);
-        const lotId = lotIdMatch ? lotIdMatch[1] : null;
+        let lotId = null;
+        for (const link of doc.querySelectorAll('a[href*="offer"]')) {
+            const match = (link.getAttribute('href') || '').match(/\/lots\/offer\?(?:[^#]*&)?id=(\d+)/);
+            if (match) { lotId = match[1]; break; }
+        }
 
-        // Node ID from lot link
-        const nodeIdMatch = lotLink?.getAttribute('href')?.match(/node=(\d+)/);
-        const nodeId = nodeIdMatch ? nodeIdMatch[1] : null;
+        const categoryItem = fptOrderParam(items, /^(категория|category)/);
+        const categoryLinks = [categoryItem?.querySelector('a[href]'), ...doc.querySelectorAll('.param-item a[href*="/lots/"], .param-item a[href*="/chips/"]')];
+        let nodeId = null;
+        let nodeType = null;
+        for (const link of categoryLinks) {
+            const match = link?.getAttribute('href')?.match(/\/(lots|chips)\/(\d+)\/?(?:[?#]|$)/);
+            if (match) { nodeType = match[1]; nodeId = match[2]; break; }
+        }
+
+        const amountText = fptOrderParamText(fptOrderParam(items, /^(количество|кол-во|amount|quantity)/));
+        const amountMatch = amountText.replace(/\s/g, '').match(/^(\d+)/);
+        const amount = amountMatch ? parseInt(amountMatch[1], 10) : null;
+
+        const statusText = fptOrderParamText(fptOrderParam(items, /^(статус|status)/)).toLowerCase();
+        const status = /возврат|refund/.test(statusText) ? 'refunded'
+            : /закрыт|closed|complete/.test(statusText) ? 'closed'
+            : /оплачен|paid/.test(statusText) ? 'paid'
+            : null;
 
         // Buyer chat ID
         const chatLink = doc.querySelector('.order-user a[href*="/chat/?node="], a[href*="chat/?node="]');
         const chatIdMatch = chatLink?.getAttribute('href')?.match(/node=(\d+)/);
         const buyerChatId = chatIdMatch ? chatIdMatch[1] : null;
 
-        // Buyer username
+        const buyerItem = fptOrderParam(items, /^(покупатель|buyer)/);
+        const buyerProfile = buyerItem?.querySelector('a[href*="/users/"]');
+        const buyerIdMatch = buyerProfile?.getAttribute('href')?.match(/\/users\/(\d+)/);
+        const buyerId = buyerIdMatch ? buyerIdMatch[1] : null;
         const buyerLink = doc.querySelector('.media-user-name a[href*="/users/"]');
-        const buyerUsername = buyerLink?.textContent.trim() || null;
+        const buyerUsername = buyerProfile?.textContent.trim() || buyerLink?.textContent.trim() || null;
 
         // Short description of lot (for variables)
-        const shortDescHeader = Array.from(doc.querySelectorAll('.param-item h5'))
-            .find(h => h.textContent.trim() === 'Краткое описание');
-        const lotName = shortDescHeader?.nextElementSibling?.textContent.trim() || '';
+        const lotName = fptOrderParamText(fptOrderParam(items, /^(краткое описание|short description)/));
 
         // Game / category
         const categoryEl = doc.querySelector('.order-category, .order-subcategory');
-        const category = categoryEl?.textContent.trim() || '';
+        const category = categoryEl?.textContent.trim() || fptOrderParamText(categoryItem);
 
-        return { secrets, lotId, nodeId, buyerChatId, buyerUsername, lotName, category };
+        return { secrets, lotId, nodeId, nodeType, amount, status, buyerChatId, buyerId, buyerUsername, lotName, category };
     } catch (e) {
         console.error('FunPay Funcy Offscreen: Error in parseOrderPageForDelivery', e);
         return null;
     }
 }
-
 
 function parseSupportTickets(html) {
     const doc = window.__fptParseHTML(html);
@@ -1274,31 +1311,6 @@ function parseOrdersPage(html) {
     return [...orders.values()];
 }
 
-// Detailed parse of the sales/orders list (used by Telegram notifications + /orders).
-function parseOrdersDetailed(html) {
-    const doc = window.__fptParseHTML(html);
-    const orders = [];
-    doc.querySelectorAll('a.tc-item[href*="/orders/"]').forEach(row => {
-        const href = row.getAttribute('href') || '';
-        const m = href.match(/\/orders\/([A-Z0-9]{8})/);
-        const id = m ? m[1] : '';
-        if (!id) return;
-        const title = (row.querySelector('.tc-desc-text') || row.querySelector('.order-desc') || {}).textContent || '';
-        const buyer = (row.querySelector('.media-user-name') || row.querySelector('.tc-user') || {}).textContent || '';
-        const price = (row.querySelector('.tc-price') || {}).textContent || '';
-        const status = (row.querySelector('.tc-status') || {}).textContent || '';
-        orders.push({
-            id,
-            link: href.startsWith('http') ? href : ('https://funpay.com' + href),
-            title: (title || '').replace(/\s+/g, ' ').trim(),
-            buyer: (buyer || '').replace(/\s+/g, ' ').trim(),
-            price: (price || '').replace(/\s+/g, ' ').trim(),
-            status: (status || '').replace(/\s+/g, ' ').trim()
-        });
-    });
-    return orders;
-}
-
 // Header balance: only text that holds an amount counts. Without a balance badge FunPay shows just the
 // «Финансы» menu link, which means a zero balance for a signed-in user.
 function fptReadHeaderBalance(doc, loggedIn) {
@@ -1331,25 +1343,6 @@ function parseAuthData(html) {
         } catch (_) {}
     }
     return out;
-}
-
-function parseProfileInfo(html) {
-    const doc = window.__fptParseHTML(html);
-    let username = '';
-    const userLink = doc.querySelector('.user-link-name, .menu-item-night + * .user-link-name');
-    if (userLink) username = userLink.textContent.trim();
-    if (!username) {
-        const appData = doc.querySelector('body')?.getAttribute('data-app-data');
-        if (appData) {
-            try {
-                const d = JSON.parse(appData.replace(/&quot;/g, '"'));
-                const u = Array.isArray(d) ? d[0] : d;
-                username = u.userName || '';
-            } catch (_) {}
-        }
-    }
-    const balance = fptReadHeaderBalance(doc, Boolean(username));
-    return { username, balance };
 }
 
 // Spendable balance lives on any lot page: <select name="method"> carries data-balance-* attributes
@@ -1535,12 +1528,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case 'parseOrdersPage':
             sendResponse(parseOrdersPage(message.html));
-            break;
-        case 'parseOrdersDetailed':
-            sendResponse(parseOrdersDetailed(message.html));
-            break;
-        case 'parseProfileInfo':
-            sendResponse(parseProfileInfo(message.html));
             break;
         case 'parseAuthData':
             sendResponse(parseAuthData(message.html));

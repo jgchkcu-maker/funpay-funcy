@@ -37,7 +37,7 @@ test('autobump: styles are responsive and the toast region covers the page', () 
     assert.match(css, /\.fpt-auto-bump\s*\{/);
     assert.match(css, /@container fpt-auto-bump \(max-width: 640px\)/);
     assert.match(css, /fpt-ab-hero\[data-state="on"\]/);
-    assert.ok(read('content/ui/popup_components.js').includes('.fp-tools-page-content.active'), 'toasts render on the active page, including autobump');
+    assert.ok(read('content/ui/popup_components.js').includes('body > .fpt-popup-toast-region'), 'service toasts retain their page overlay, including autobump');
 });
 
 test('autobump: popup actions and background expose the status and raise-now routes', () => {

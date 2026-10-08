@@ -3,22 +3,6 @@
 (function() {
     'use strict';
     
-    // --- НОВЫЙ БЛОК: ФУНКЦИОНАЛ ОБЪЯВЛЕНИЙ ---
-    function updateAnnouncementsBadgeUI(unreadCount) {
-        const announcementsTab = document.getElementById('announcementsNavTab');
-        if (!announcementsTab) return;
-        const badge = announcementsTab.querySelector('.notification-badge');
-
-        if (unreadCount > 0) {
-            announcementsTab.classList.add('has-unread');
-            badge.textContent = `+${unreadCount}`;
-            badge.style.display = 'flex';
-        } else {
-            announcementsTab.classList.remove('has-unread');
-            badge.style.display = 'none';
-        }
-    }
-    // --- КОНЕЦ НОВОГО БЛОКА ---
 
     function loadGoogleFonts() {
         if (document.getElementById('google-material-icons')) return;
@@ -294,7 +278,6 @@
                 await loadSavedSettings();
                 initializeToolsPopup();
                 makePopupResponsive(toolsPopup);
-                initializeCustomSound();
                 initializeAutoReview();
                 initializeLotIO();
                 if (window.FPTLotIOPage && typeof window.FPTLotIOPage.mount === 'function') {
@@ -374,22 +357,26 @@
                         console.error('FunPay Funcy: не удалось открыть раздел эффектов:', error);
                     }
                 }
+                if (window.FPTNotificationSoundPage && typeof window.FPTNotificationSoundPage.mount === 'function') {
+                    try {
+                        await window.FPTNotificationSoundPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел звука уведомлений:', error);
+                    }
+                }
+                if (window.FPTBlacklistPage && typeof window.FPTBlacklistPage.mount === 'function') {
+                    try {
+                        await window.FPTBlacklistPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел чёрного списка:', error);
+                    }
+                }
                 if (window.FPTSupportPage && typeof window.FPTSupportPage.mount === 'function') {
                     try {
                         await window.FPTSupportPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел поддержки:', error);
                     }
-                }
-
-                // Общий чат: опрашиваем public-chat.json раз в 16 минут.
-                // Так active/display/url меняются на лету без обновления расширения.
-                if (typeof fptGcRefreshConfig === 'function' && !window.__fptGcConfigTimer) {
-                    window.__fptGcConfigTimer = setInterval(() => {
-                        fptGcRefreshConfig(true).then(() => {
-                            if (typeof fptGcApplyVisibility === 'function') fptGcApplyVisibility();
-                        });
-                    }, 16 * 60 * 1000);
                 }
 
                 __fpPopupReady = true;
@@ -461,18 +448,6 @@
                 } catch (e) {
                     sendResponse({ success: false, error: e.message });
                 }
-                return true;
-            }
-            if (request.action === 'fpToolsCheckRestoreLots') {
-                setTimeout(checkAndRestoreLots, 5000);
-                return true;
-            }
-            if (request.action === 'updateAnnouncementsBadge') {
-                updateAnnouncementsBadgeUI(request.unreadCount);
-                return true;
-            }
-            if (request.action === 'announcementsUpdated') {
-                window.dispatchEvent(new CustomEvent('fpt:announcements-updated', { detail: request.announcements }));
                 return true;
             }
         });

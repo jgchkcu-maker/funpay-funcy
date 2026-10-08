@@ -8,7 +8,7 @@
 
 ```js
 const settings = await window.fptPopupActions.run('general', 'getSettings', {
-  keys: ['hideBalance', 'fpToolsDiscord']
+  keys: ['hideBalance', 'fpToolsSlashCommands']
 });
 
 await window.fptPopupActions.run('general', 'saveSettings', {

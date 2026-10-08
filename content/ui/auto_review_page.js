@@ -131,6 +131,15 @@
         }
         return wrap;
     }
+    function metric(iconName, label) {
+        const element = node('div', 'fpt-qr-metric fpt-rv-metric');
+        const badge = node('span', 'fpt-qr-metric-icon'); badge.append(icon(iconName));
+        const copy = node('div', 'fpt-qr-metric-copy');
+        const value = node('strong', 'fpt-qr-metric-value', '—');
+        copy.append(node('span', 'fpt-qr-metric-label', label), value);
+        element.append(badge, copy);
+        return { element, value };
+    }
     function field(label, id, rows, placeholder) {
         const wrap = node('div', 'fpt-rv-field');
         const caption = node('label', 'fpt-rv-label', label);
@@ -154,9 +163,26 @@
             latest: null, storageVersion: 0,
             conflict: { reviews: false, bonuses: false } };
         const screen = node('div', 'fpt-reviews');
-        const intro = node('p', 'fpt-rv-intro', 'Отвечайте на отзывы своим тоном и благодарите покупателей за высокую оценку.');
+        const hero = node('section', 'fpt-qr-hero fpt-rv-hero');
+        hero.setAttribute('aria-labelledby', 'fpt-rv-hero-title');
+        const heroMain = node('div', 'fpt-qr-hero-main');
+        const heroIcon = node('span', 'fpt-qr-hero-icon'); heroIcon.append(icon('reviews'));
+        const heroCopy = node('div', 'fpt-qr-hero-copy');
+        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
+        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Благодарность за каждый отзыв'); heroTitle.id = 'fpt-rv-hero-title';
+        const heroPill = node('span', 'fpt-qr-pill', 'Загрузка…');
+        heroTitleRow.append(heroTitle, heroPill);
+        const intro = node('p', 'fpt-qr-hero-description fpt-rv-intro', 'Отвечайте на отзывы своим тоном и благодарите покупателей за высокую оценку.');
+        heroCopy.append(heroTitleRow, intro);
+        heroMain.append(heroIcon, heroCopy);
+        const metricAnswers = metric('rate_review', 'Ответов настроено');
+        const metricImages = metric('image', 'Изображений в ответах');
+        const metricBonus = metric('redeem', 'Бонус за 5★');
+        const metrics = node('div', 'fpt-qr-metrics');
+        metrics.append(metricAnswers.element, metricImages.element, metricBonus.element);
+        hero.append(heroMain, metrics);
         const grid = node('div', 'fpt-rv-grid');
-        screen.append(intro, grid);
+        screen.append(hero, grid);
         const helpPanel = node('aside', 'fpt-rv-help fpt-ad-help fpt-lot-help-popover');
         helpPanel.hidden = true;
         helpPanel.id = 'fpt-rv-help';
@@ -218,8 +244,12 @@
             const input = node('input', ''); input.type = 'checkbox'; input.setAttribute('role', 'switch');
             input.setAttribute('aria-label', title);
             toggle.append(input, node('span', 'fpt-rv-switch-track'));
+            const switchLine = node('div', 'fpt-rv-switch-line');
+            const switchState = node('span', 'fpt-rv-switch-state', 'Выкл');
+            switchState.setAttribute('aria-hidden', 'true');
+            switchLine.append(toggle, switchState);
             input.addEventListener('change', () => { state.draft[enabledKey] = input.checked; changed(kind); });
-            head.append(emblem, copy, toggle);
+            head.append(emblem, copy, switchLine);
             const content = node('div', 'fpt-rv-content');
             const conflict = node('div', 'fpt-rv-conflict'); conflict.hidden = true;
             conflict.append(icon('sync_problem'), node('span', '', 'Настройки изменились в другом окне. Черновик сохранён здесь.'));
@@ -236,7 +266,7 @@
             cancel.addEventListener('click', () => { if (state.conflict[kind]) confirmReload(kind); else reset(kind); });
             actions.append(cancel, save); footer.append(status, actions);
             controls.append(head, content, conflict, footer); card.append(controls); grid.append(card);
-            blocks[kind] = { card, controls, content, input, status, save, cancel, conflict, enabledKey };
+            blocks[kind] = { card, controls, content, input, switchState, status, save, cancel, conflict, enabledKey };
             return blocks[kind];
         }
         const reviews = makeBlock('reviews', 'Ответы на отзывы', 'Отдельный ответ для каждой оценки', 'reviews', 'autoReviewEnabled');
@@ -255,6 +285,14 @@
             const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             path.setAttribute('d', 'M12 3 14.8 8.7 21 9.6 16.5 14 17.6 20.2 12 17.3 6.4 20.2 7.5 14 3 9.6 9.2 8.7Z');
             star.append(path); el.prepend(star);
+            el.lastChild.className = 'fpt-rv-rating-num';
+            const scale = node('span', 'fpt-rv-rating-stars');
+            scale.setAttribute('aria-hidden', 'true');
+            scale.textContent = '★'.repeat(rating);
+            scale.append(node('span', 'fpt-rv-rating-stars-off', '★'.repeat(5 - rating)));
+            const meta = node('span', 'fpt-rv-rating-meta');
+            meta.setAttribute('aria-hidden', 'true');
+            el.append(scale, meta);
             el.dataset.rating = rating; el.setAttribute('role', 'radio');
             el.addEventListener('click', () => selectRating(rating));
             el.addEventListener('keydown', event => {
@@ -279,8 +317,11 @@
         const count = node('span', 'fpt-rv-muted');
         attachmentHead.append(attach, count, file);
         const images = node('div', 'fpt-rv-images');
-        const skipHint = node('p', 'fpt-rv-hint', 'Пустой текст — пропустить эту оценку.');
-        reviews.content.append(ratings, reviewEditor.wrap, chips, attachmentHead, images, skipHint);
+        const skipHint = node('p', 'fpt-rv-hint fpt-rv-skip-hint');
+        skipHint.append(icon('info'), node('span', '', 'Пустой текст — пропустить эту оценку.'));
+        const editorPane = node('div', 'fpt-rv-editor');
+        editorPane.append(reviewEditor.wrap, skipHint, chips, attachmentHead, images);
+        reviews.content.append(ratings, editorPane);
         file.addEventListener('change', async () => {
             const selected = file.files[0]; file.value = '';
             if (!selected || state.uploading) return;
@@ -324,21 +365,24 @@
         addBonus.addEventListener('click', () => editBonus(null));
         randomWrap.append(list, addBonus);
         const delayWrap = node('div', 'fpt-rv-delay');
-        const delayCopy = node('div', '');
+        const delayCopy = node('div', 'fpt-rv-delay-copy');
         const delayLabel = node('label', 'fpt-rv-label', 'Задержка перед бонусом'); delayLabel.htmlFor = 'fpt-rv-delay';
-        delayCopy.append(delayLabel, node('p', 'fpt-rv-hint', 'Пауза перед сообщением в чат'));
+        delayCopy.append(icon('schedule'), delayLabel);
+        delayWrap.title = 'Пауза перед сообщением в чат';
         const delayControl = node('div', 'fpt-rv-delay-control');
         const delay = node('input', 'fpt-rv-number fpt-control-field'); delay.id = 'fpt-rv-delay'; delay.type = 'number'; delay.min = '0'; delay.step = 'any';
         delay.addEventListener('input', () => { state.draft.bonusForReviewDelaySec = delay.value === '' ? '' : Number(delay.value); changed('bonuses'); });
         delayControl.append(delay, node('span', 'fpt-rv-muted', 'сек')); delayWrap.append(delayCopy, delayControl);
-        bonuses.content.append(modes, singleWrap, randomWrap, delayWrap);
+        const bonusToolbar = node('div', 'fpt-rv-bonus-toolbar');
+        bonusToolbar.append(modes, delayWrap);
+        bonuses.content.append(bonusToolbar, singleWrap, randomWrap);
 
         function status(kind, message, type = '') {
             // Success goes to the shared toast; errors and draft state stay next to the save button.
             if (message && type === 'success' && typeof ui.showToast === 'function') {
                 ui.showToast(popup, message, type);
                 message = dirty(kind) ? 'Есть несохранённые изменения' : '';
-                type = '';
+                type = message ? 'dirty' : '';
             }
             blocks[kind].status.textContent = message; blocks[kind].status.dataset.kind = type;
         }
@@ -350,10 +394,33 @@
             block.cancel.disabled = !dirty(kind) || busy;
             block.conflict.hidden = !state.conflict[kind];
             block.card.dataset.state = state.draft[block.enabledKey] ? 'on' : 'off';
+            block.switchState.textContent = state.draft[block.enabledKey] ? 'Вкл' : 'Выкл';
             attach.disabled = state.uploading || state.draft.reviewTemplateImages[state.rating].length >= 5;
         }
+        function renderHero(error) {
+            const base = state.base;
+            const answers = RATINGS.filter(rating => base.reviewTemplates[rating].trim()).length;
+            const photos = RATINGS.reduce((sum, rating) => sum + base.reviewTemplateImages[rating].length, 0);
+            const on = base.autoReviewEnabled || base.bonusForReviewEnabled;
+            metricAnswers.value.textContent = state.loaded ? `${answers} из 5` : '—';
+            metricImages.value.textContent = state.loaded ? String(photos) : '—';
+            if (!state.loaded) metricBonus.value.textContent = '—';
+            else if (!base.bonusForReviewEnabled) metricBonus.value.textContent = 'Выключен';
+            else {
+                const variants = base.bonusMode === 'random' ? ` · ${base.randomBonuses.length} ${ui.pluralize(base.randomBonuses.length, ['вариант', 'варианта', 'вариантов'])}` : '';
+                metricBonus.value.textContent = `Через ${Number(base.bonusForReviewDelaySec) || 0} сек${variants}`;
+            }
+            hero.dataset.state = state.loaded && on ? 'on' : 'off';
+            if (!state.loaded) {
+                heroPill.dataset.kind = error ? 'error' : 'neutral';
+                heroPill.textContent = error ? 'Ошибка загрузки' : 'Загрузка…';
+            } else {
+                heroPill.dataset.kind = on ? 'success' : 'neutral';
+                heroPill.textContent = on ? 'Работает' : 'Выключено';
+            }
+        }
         function changed(kind) {
-            status(kind, dirty(kind) ? 'Есть несохранённые изменения' : '');
+            status(kind, dirty(kind) ? 'Есть несохранённые изменения' : '', dirty(kind) ? 'dirty' : '');
             update(kind);
         }
         function renderRatings() {
@@ -365,6 +432,12 @@
                 el.dataset.saved = String(saved);
                 el.setAttribute('aria-label', `${rating} звёзд${saved ? ', ответ задан' : ', без ответа'}`);
                 el.title = saved ? 'Ответ задан' : 'Ответ не задан';
+                const text = state.draft.reviewTemplates[rating].trim().replace(/\s+/g, ' ');
+                const photos = state.draft.reviewTemplateImages[rating].length;
+                const meta = el.querySelector('.fpt-rv-rating-meta');
+                meta.textContent = (text ? (text.length > 48 ? `${text.slice(0, 47)}…` : text) : 'Без ответа')
+                    + (photos ? ` · ${photos} фото` : '');
+                meta.dataset.empty = String(!text);
             });
         }
         function renderImages() {
@@ -381,6 +454,7 @@
                 });
                 item.append(img, remove); images.append(item);
             });
+            renderRatings();
             update('reviews');
         }
         function selectRating(rating) {
@@ -411,7 +485,8 @@
             list.replaceChildren();
             if (!state.rows.length) {
                 const empty = node('div', 'fpt-rv-empty');
-                empty.append(icon('redeem'), node('p', 'fpt-rv-label', 'Пока нет вариантов'), node('p', 'fpt-rv-hint', 'Добавьте сообщения — для каждого отзыва будет выбран один случайный бонус.'));
+                const emblem = node('span', 'fpt-rv-empty-emblem'); emblem.append(icon('redeem'));
+                empty.append(emblem, node('p', 'fpt-rv-label', 'Пока нет вариантов'), node('p', 'fpt-rv-hint', 'Добавьте сообщения — для каждого отзыва будет выбран один случайный бонус.'));
                 list.append(empty);
             }
             state.rows.forEach((row, index) => {
@@ -482,6 +557,7 @@
             if (kind === 'bonuses') state.rows = settings.randomBonuses.map((text, originalIndex) => ({ originalIndex, text: typeof text === 'string' ? text : '' }));
             state.conflict[kind] = false;
             render(kind);
+            renderHero();
         }
         function reset(kind) {
             assign(kind, clone(state.base)); changed(kind);
@@ -584,6 +660,7 @@
                 status('reviews', ''); status('bonuses', '');
             } catch (error) {
                 for (const kind of ['reviews', 'bonuses']) status(kind, error.message || 'Не удалось загрузить настройки.', 'error');
+                renderHero(true);
                 const retry = button('Повторить загрузку', 'fpt-rv-primary', 'refresh');
                 retry.addEventListener('click', async () => {
                     retry.disabled = true;

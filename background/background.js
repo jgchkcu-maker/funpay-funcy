@@ -5,18 +5,22 @@ import './purchases_db.js'; // FunPay Funcy: IndexedDB-хранилище пок
 import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище финансов (self.FPTFinanceDB)
 import { fetchAIResponse, fetchAILotGeneration, fetchAITranslation, fetchAIImageGeneration } from './ai.js';
 import { cleanupRetiredFinancialToolData } from './retired_financial_tools.mjs';
-import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump, runBumpCycle } from './autobump.js';
-import { runAutoResponderCycle, resetAutoResponderState } from './autoresponder.js';
+import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump } from './autobump.js';
+import { runAutoResponderCycle, resetAutoResponderState, configureOrderJournal, runOrderReconcile } from './autoresponder.js';
+import { createOpsJournal, createIndexedDbBackend } from './ops_db.js';
+import { createLotWriter } from './lot_writer.js';
+import { createLotAvailabilitySweep } from './lot_availability.js';
+import { createJobScheduler } from './job_scheduler.js';
 import { patchAutoReplies, importAutoReplies } from './auto_reply_store.js';
 import {
     configureAutoDeliveryStore, saveAutoDeliveryLot, syncAutoDeliveryStockCounts
 } from './auto_delivery_store.js';
 import { AUTO_RESTORE_ALARM_NAME, syncAutoRestoreAlarm } from './auto_restore_alarm.js';
 import { startEngine, stopEngine, onHeartbeat, onKeepalivePing, ENGINE_HEARTBEAT_ALARM } from './fpt_engine.js';
-import {
-    TELEGRAM_ALARM, telegramInit, telegramSyncAlarm, telegramPollOnce,
-    telegramValidateAndResolve, telegramNotifyNewMessages, telegramNotifyNewOrders, tgSendMessage
-} from './telegram.js';
+import './retired_integrations.js';
+
+const retiredIntegrationCleanup = globalThis.FPTRetiredIntegrations.cleanup(chrome.storage.local, chrome.alarms)
+    .catch(error => console.error('FunPay Funcy: retired integrations cleanup failed:', error));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FIX 2.8.1 - НАДЁЖНАЯ ОТПРАВКА КУКОВ.
@@ -26,7 +30,7 @@ import {
 // отсюда «у меня картинки/автоответы работают, а у людей нет».
 // Оборачиваем глобальный fetch так, чтобы для ВСЕХ запросов к funpay.com по
 // умолчанию подставлялись реальные куки активной сессии (credentials:'include').
-// Прочие домены (api.telegram.org, *.workers.dev, CDN и т.д.) не затрагиваются.
+// Прочие домены (*.workers.dev, CDN и т.д.) не затрагиваются.
 // Совместимо с подменой golden_key в fptSnapshotForKey (она и так грузит главную
 // с credentials:'include' из cookie-jar).
 (function () {
@@ -48,10 +52,8 @@ const OFFSCREEN_DOCUMENT_PATH = 'offscreen/offscreen.html';
 
 const _imgSendInFlight = new Map();
 const _imgSendDone = new Map();
-const DISCORD_LOG_ALARM_NAME = 'fpToolsDiscordCheck';
 const AUTO_RESPONDER_ALARM_NAME = 'fpToolsAutoResponder';
 let _autoRestoreAlarmSyncGeneration = 0;
-let lastDiscordChatTag = null;
 const IMPORT_PROCESS_KEY = 'fpToolsLotImportProcess';
 let _lotImportStartInFlight = false;
 const RETRY_LIMIT = 5;
@@ -817,195 +819,6 @@ async function getAuthDetailsForBackground(force) {
     }
 }
 
-// ── Telegram integration deps ─────────────────────────────────────────────────
-// Получить последние заказы (детально) для уведомлений/команд.
-async function tgFetchOrders(limit) {
-    try {
-        const auth = await getAuthDetailsForBackground();
-        if (!auth.golden_key) return [];
-        // credentials:'include' заставляет браузер приложить настоящие cookie
-        // активной сессии (ручной заголовок Cookie браузер игнорирует - forbidden header).
-        const resp = await fetch('https://funpay.com/orders/trade', {
-            credentials: 'include',
-            cache: 'no-store'
-        });
-        if (!resp.ok) return [];
-        // Если нас разлогинило/редиректнуло на страницу входа - не считаем это заказами.
-        if (/\/account\/login/.test(resp.url)) return [];
-        const html = await resp.text();
-        const orders = await parseHtmlViaOffscreen(html, 'parseOrdersDetailed');
-        const arr = Array.isArray(orders) ? orders : [];
-        return (limit && limit > 0) ? arr.slice(0, limit) : arr;
-    } catch (e) {
-        console.error('FunPay Funcy: tgFetchOrders error:', e.message);
-        return [];
-    }
-}
-
-// Получить базовую информацию профиля (имя, баланс).
-async function tgFetchProfileInfo() {
-    try {
-        const auth = await getAuthDetailsForBackground();
-        if (!auth.golden_key) return null;
-        const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
-        const html = await resp.text();
-        const info = await parseHtmlViaOffscreen(html, 'parseProfileInfo');
-        const orders = await tgFetchOrders(0);
-        // "Активные" = заказы, требующие действия (оплачен/в работе), а не вся история.
-        const activeStatuses = ['paid', 'active', 'pending', 'оплачен', 'в работе'];
-        const activeCount = orders.filter(o => {
-            const s = String(o.status || o.orderStatus || '').toLowerCase();
-            if (!s) return false;
-            return activeStatuses.some(a => s.includes(a));
-        }).length;
-        return {
-            username: (info && info.username) || auth.username || '',
-            balance: (info && info.balance) || '',
-            activeOrders: activeCount
-        };
-    } catch (e) {
-        return null;
-    }
-}
-
-// Получить список чатов (для команды /chats) - переиспользуем runner как Discord.
-async function tgFetchChatList() {
-    try {
-        const auth = await getAuthDetailsForBackground();
-        if (!auth.golden_key || !auth.csrf_token || !auth.userId) return [];
-        const payload = {
-            objects: JSON.stringify([{ type: 'chat_bookmarks', id: auth.userId, tag: '0000000000', data: false }]),
-            request: false,
-            csrf_token: auth.csrf_token
-        };
-        const resp = await fetch('https://funpay.com/runner/', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                'x-requested-with': 'XMLHttpRequest'
-            },
-            body: new URLSearchParams(payload).toString()
-        });
-        if (!resp.ok) return [];
-        const data = await resp.json();
-        const chatObj = data.objects.find(o => o.type === 'chat_bookmarks');
-        if (!chatObj || !chatObj.data || !chatObj.data.html) return [];
-        const chats = await parseHtmlViaOffscreen(chatObj.data.html, 'parseChatList');
-        return Array.isArray(chats) ? chats : [];
-    } catch (e) {
-        return [];
-    }
-}
-
-// Запустить поднятие лотов по команде /bump.
-async function tgRunBump() {
-    try {
-        const res = await runBumpCycle();
-        if (res && typeof res === 'object') {
-            return { raised: res.raised || 0, errors: res.errors || 0, skipped: res.skipped || 0 };
-        }
-        return { raised: 0, errors: 0 };
-    } catch (e) {
-        return { raised: 0, errors: 1 };
-    }
-}
-
-// Сводка продаж для команды /sales.
-async function tgSalesSummary() {
-    try {
-        const all = await FPTSalesDB.getAllAsArray();
-        if (!all.length) return null;
-        const now = Date.now(), day = 864e5;
-        const t0 = new Date(); const todayStart = new Date(t0.getFullYear(), t0.getMonth(), t0.getDate()).getTime();
-        const sym = { RUB: '₽', USD: '$', EUR: '€' };
-        const bucket = (since) => {
-            let count = 0; const rev = {};
-            for (const o of all) {
-                if (since && o.orderDate < since) continue;
-                count++;
-                if (o.orderStatus === 'closed' || o.orderStatus === 'paid') {
-                    rev[o.currency] = (rev[o.currency] || 0) + (o.price || 0);
-                }
-            }
-            const revStr = Object.entries(rev).map(([c, v]) => `${Math.round(v).toLocaleString('ru-RU')} ${sym[c] || c}`).join(' · ') || '0 ₽';
-            return { count, revenue: revStr };
-        };
-        return {
-            today: bucket(todayStart),
-            week: bucket(now - 7 * day),
-            month: bucket(now - 30 * day),
-            all: bucket(null)
-        };
-    } catch (_) { return null; }
-}
-
-// Список лотов для команды /lots.
-async function tgGetLots(limit) {
-    try {
-        const auth = await getAuthDetailsForBackground();
-        if (!auth.golden_key || !auth.userId) return [];
-        const resp = await fetch(`https://funpay.com/users/${auth.userId}/`, { credentials: 'include', cache: 'no-store' });
-        if (!resp.ok) return [];
-        const html = await resp.text();
-        const lots = await parseHtmlViaOffscreen(html, 'parseUserLotsList').catch(() => null);
-        if (Array.isArray(lots)) return limit ? lots.slice(0, limit) : lots;
-        return [];
-    } catch (_) { return []; }
-}
-
-// Поддержать онлайн для команды /online.
-async function tgKeepOnline() {
-    try {
-        const auth = await getAuthDetailsForBackground();
-        if (!auth.golden_key) return false;
-        const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
-        return resp.ok;
-    } catch (_) { return false; }
-}
-
-telegramInit({
-    getOrders: tgFetchOrders,
-    getProfileInfo: tgFetchProfileInfo,
-    getChatList: tgFetchChatList,
-    runBump: tgRunBump,
-    getSalesSummary: tgSalesSummary,
-    getLots: tgGetLots,
-    keepOnline: tgKeepOnline
-});
-
-// Полный цикл Telegram: приём команд (getUpdates) + уведомления (сообщения/заказы).
-let _tgChatTag = null;
-async function runTelegramCheckCycle() {
-    const { fpToolsTelegram } = await chrome.storage.local.get('fpToolsTelegram');
-    const cfg = fpToolsTelegram || {};
-    if (!cfg.enabled || !cfg.token) return;
-
-    // 1) команды из бота
-    try { await telegramPollOnce(); } catch (e) { console.error('FunPay Funcy: TG poll:', e.message); }
-
-    // 2) уведомления о новых сообщениях (если Discord-цикл не активен, тянем сами)
-    if (cfg.notifyMessages) {
-        try {
-            const { fpToolsDiscord } = await chrome.storage.local.get('fpToolsDiscord');
-            const discordActive = fpToolsDiscord && fpToolsDiscord.enabled && fpToolsDiscord.webhookUrl;
-            // Если Discord активен - он уже кормит Telegram внутри runDiscordCheckCycle.
-            if (!discordActive) {
-                const chats = await tgFetchChatList();
-                if (chats.length) await telegramNotifyNewMessages(chats);
-            }
-        } catch (e) { console.error('FunPay Funcy: TG msg notify:', e.message); }
-    }
-
-    // 3) уведомления о новых заказах
-    if (cfg.notifyOrders) {
-        try {
-            const orders = await tgFetchOrders(0);
-            if (orders.length) await telegramNotifyNewOrders(orders);
-        } catch (e) { console.error('FunPay Funcy: TG order notify:', e.message); }
-    }
-}
-
 // Функция для парсинга HTML через offscreen документ
 async function parseHtmlViaOffscreen(html, action, extra = {}) {
     await ensureOffscreenDocument();
@@ -1039,6 +852,102 @@ async function readAutoDeliveryLotForm(lot) {
 }
 
 configureAutoDeliveryStore(chrome.storage.local, readAutoDeliveryLotForm);
+
+// Сохранение формы лота через lots/offerSave. Бросает ошибку с текстом FunPay,
+// если лот не сохранён.
+async function postOfferSave(payload, csrfToken) {
+    const token = csrfToken || (await getAuthDetailsForBackground()).csrf_token;
+    if (!token) throw new Error('Нет CSRF токена');
+    const formData = new URLSearchParams(payload);
+    formData.set('csrf_token', token);
+
+    const { response, seal } = await fptFetchWithSeal('https://funpay.com/lots/offerSave', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+        },
+        body: formData
+    });
+
+    if (!response.ok) {
+        if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
+        throw new Error(`HTTP ${response.status}`);
+    }
+    const result = await response.json();
+
+    // FunPay returns { error: 0 } on success, or { error: 1, errors: {...} }
+    // / { msg: "..." } on failure. The old check treated any non-true error as
+    // success in some cases; now we explicitly require error to be falsy AND
+    // surface field-level errors so the bulk editor can show why nothing changed.
+    const hasError = result && (result.error === 1 || result.error === true ||
+        (result.errors && (Array.isArray(result.errors) ? result.errors.length : Object.keys(result.errors).length)));
+
+    if (result && !hasError && (result.error === 0 || result.error === false || result.error === undefined)) {
+        return result;
+    }
+    let msg = result?.msg || 'Неизвестная ошибка API';
+    if (result?.errors) {
+        const parts = Array.isArray(result.errors)
+            ? result.errors.map(e => Array.isArray(e) ? e[1] : e)
+            : Object.values(result.errors);
+        if (parts.length) msg = parts.join('; ');
+    }
+    throw new Error(msg);
+}
+
+// ─── Этап 0: журнал операций, фоновое изменение лотов, задания ─────────────────
+const ORDER_RECONCILE_ALARM = 'fpToolsOrderReconcile';
+const ORDER_RECONCILE_PERIOD_MIN = 5;
+const OPS_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
+
+let opsJournal = null;
+try {
+    opsJournal = createOpsJournal({ backend: createIndexedDbBackend(self.indexedDB) });
+    configureOrderJournal(opsJournal);
+} catch (error) {
+    console.error('FunPay Funcy: журнал операций недоступен:', error);
+}
+
+const lotWriter = createLotWriter({
+    readForm: readAutoDeliveryLotForm,
+    saveForm: payload => postOfferSave(payload)
+});
+
+async function listOwnLotsForBackground() {
+    const auth = await getAuthDetailsForBackground();
+    if (!auth.userId) return [];
+    const { response } = await fptFetchWithSeal(`https://funpay.com/users/${auth.userId}/`, {});
+    if (!response.ok) return [];
+    const lots = await parseHtmlViaOffscreen(await response.text(), 'parseUserLotsList');
+    return Array.isArray(lots) ? lots : [];
+}
+
+const lotAvailability = createLotAvailabilitySweep({
+    getSettings: () => chrome.storage.local.get(['fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled', 'fpToolsAutoDeliveryLots']),
+    listOwnLots: listOwnLotsForBackground,
+    writer: lotWriter,
+    notify: async change => {
+        const tabs = await chrome.tabs.query({ url: 'https://funpay.com/*' }).catch(() => []);
+        tabs.forEach(tab => {
+            chrome.tabs.sendMessage(tab.id, { action: 'fpToolsLotAvailabilityChanged', ...change }).catch(() => {});
+        });
+    }
+});
+
+const jobScheduler = createJobScheduler({ alarms: chrome.alarms });
+jobScheduler.register(AUTO_RESTORE_ALARM_NAME, () => lotAvailability.sweep());
+jobScheduler.register(ORDER_RECONCILE_ALARM, () => runOrderReconcile());
+if (opsJournal) {
+    jobScheduler.registerRecovery('ops', () => opsJournal.recoverInterruptedOps());
+}
+
+function syncOrderReconcileAlarm(enabled) {
+    const sync = enabled && opsJournal
+        ? jobScheduler.ensurePeriodic(ORDER_RECONCILE_ALARM, ORDER_RECONCILE_PERIOD_MIN, { delayInMinutes: 1 })
+        : jobScheduler.clear(ORDER_RECONCILE_ALARM);
+    Promise.resolve(sync).catch(error => console.warn('FunPay Funcy: alarm сверки заказов не настроен:', error?.message || error));
+}
 
 async function ensureOffscreenDocument() {
     try {
@@ -1144,148 +1053,6 @@ async function cloneCalcNetPrice(auth, nodeId, buyerPrice, currencyCode) {
     const net = buyerPrice / coeff;
     return Math.round(net * 100) / 100;
 }
-
-// --- СЕКЦИЯ РАБОТЫ С DISCORD ---
-async function sendDiscordNotification(chat, settings) {
-    let content = "";
-    if (settings.pingEveryone) content += "@everyone ";
-    if (settings.pingHere) content += "@here ";
-
-    const payload = {
-        content: content.trim(),
-        embeds: [{
-            author: {
-                name: chat.chatName,
-                url: `https://funpay.com/chat/?node=${chat.chatId}`,
-                icon_url: chat.avatarUrl || 'https://funpay.com/img/layout/avatar.png'
-            },
-            description: chat.messageText.substring(0, 2000),
-            color: 5814783,
-            footer: {
-                text: `FunPay Funcy • ${new Date().toLocaleTimeString()}`
-            }
-        }]
-    };
-
-    try {
-        const response = await fetch(settings.webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            console.error('FunPay Funcy: Не удалось отправить сообщение в Discord, статус:', response.status);
-        } else {
-            console.log(`FunPay Funcy: Уведомление о сообщении от ${chat.chatName} отправлено в Discord.`);
-        }
-    } catch (error) {
-        console.error('FunPay Funcy: Ошибка при отправке сообщения в Discord:', error);
-    }
-}
-
-async function runDiscordCheckCycle() {
-    const { fpToolsDiscord, fpToolsProcessedDiscordIds } = await chrome.storage.local.get(['fpToolsDiscord', 'fpToolsProcessedDiscordIds']);
-
-    if (!fpToolsDiscord || !fpToolsDiscord.enabled || !fpToolsDiscord.webhookUrl) {
-        chrome.alarms.clear(DISCORD_LOG_ALARM_NAME);
-        return;
-    }
-    
-    const processedDiscordMessageIds = new Set(fpToolsProcessedDiscordIds || []);
-
-    try {
-        const auth = await getAuthDetailsForBackground();
-        if (!auth.golden_key || !auth.csrf_token || !auth.userId) throw new Error("Нет данных авторизации для Discord-цикла.");
-
-        const runnerPayload = {
-            objects: JSON.stringify([{
-                type: "chat_bookmarks",
-                id: auth.userId,
-                tag: lastDiscordChatTag || "0000000000",
-                data: false
-            }]),
-            request: false,
-            csrf_token: auth.csrf_token
-        };
-
-        const discordCookieStr = auth.phpsessid
-            ? `golden_key=${auth.golden_key}; PHPSESSID=${auth.phpsessid}`
-            : `golden_key=${auth.golden_key}`;
-        const response = await fetch("https://funpay.com/runner/", {
-            method: "POST",
-            credentials: 'include',
-            headers: {
-                "content-type": "application/x-www-form-urlencoded; charset=UTF-8",
-                "x-requested-with": "XMLHttpRequest",
-                "cookie": discordCookieStr
-            },
-            body: new URLSearchParams(runnerPayload).toString()
-        });
-
-        if (!response.ok) throw new Error(`Runner-запрос для Discord провалился: ${response.status}`);
-
-        const data = await response.json();
-        // 3.0: Also capture buyer_viewing data for chat header display
-        const buyerViewingObjects = data.objects.filter(o => o.type === "buyer_viewing");
-        if (buyerViewingObjects.length > 0) {
-            const tabs = await chrome.tabs.query({ url: "https://funpay.com/*" });
-            buyerViewingObjects.forEach(bv => {
-                tabs.forEach(tab => {
-                    chrome.tabs.sendMessage(tab.id, {
-                        action: 'fpToolsBuyerViewing',
-                        buyerId: bv.id,
-                        data: bv.data
-                    }).catch(() => {});
-                });
-            });
-        }
-        const chatObject = data.objects.find(o => o.type === "chat_bookmarks");
-
-        if (!chatObject || !chatObject.data || !chatObject.data.html) return;
-
-        lastDiscordChatTag = chatObject.tag;
-
-        const parsedChats = await parseHtmlViaOffscreen(chatObject.data.html, 'parseChatList');
-
-        // Telegram: уведомления о новых сообщениях (тот же источник, что и Discord).
-        try { await telegramNotifyNewMessages(parsedChats); } catch (e) { console.error('FunPay Funcy: TG notify msgs:', e.message); }
-
-        // 3.0: stop Discord spam. Two fixes:
-        //  (1) First-run seeding - if we've never recorded ids, just record current unread ids
-        //      and DON'T notify (otherwise enabling Discord blasts every existing unread chat).
-        //  (2) Only notify when the chat's last message is genuinely new inbound
-        //      (nodeMsg > userMsg), not merely flagged unread.
-        const { fpToolsDiscordSeeded } = await chrome.storage.local.get('fpToolsDiscordSeeded');
-        const isFirstDiscordRun = !fpToolsDiscordSeeded;
-
-        let newMessagesToSend = false;
-        for (const chat of parsedChats) {
-            const genuinelyNew = (chat.nodeMsg != null && chat.userMsg != null)
-                ? (chat.nodeMsg > chat.userMsg)
-                : chat.isUnread;
-            if (!genuinelyNew) continue;
-            if (processedDiscordMessageIds.has(chat.msgId)) continue;
-
-            if (!isFirstDiscordRun) {
-                await sendDiscordNotification(chat, fpToolsDiscord);
-            }
-            processedDiscordMessageIds.add(chat.msgId);
-            newMessagesToSend = true;
-        }
-
-        if (newMessagesToSend || isFirstDiscordRun) {
-            let idsToStore = Array.from(processedDiscordMessageIds);
-            if (idsToStore.length > 200) {
-                idsToStore = idsToStore.slice(-200);
-            }
-            await chrome.storage.local.set({ fpToolsProcessedDiscordIds: idsToStore, fpToolsDiscordSeeded: true });
-        }
-
-    } catch (e) {
-        console.error(`FunPay Funcy: Ошибка в цикле проверки Discord: ${e.message}`);
-    }
-}
-
 
 // --- ИЗМЕНЕННЫЙ БЛОК: ЭКСПОРТ И ИМПОРТ ЛОТОВ ---
 
@@ -2144,43 +1911,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     }
                 }
 
-                const formData = new URLSearchParams(payload);
-                formData.set('csrf_token', auth.csrf_token);
-
-                const { response, seal } = await fptFetchWithSeal('https://funpay.com/lots/offerSave', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                    },
-                    body: formData
-                });
-
-                if (!response.ok) {
-                    if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                const result = await response.json();
-
-                // FunPay returns { error: 0 } on success, or { error: 1, errors: {...} }
-                // / { msg: "..." } on failure. The old check treated any non-true error as
-                // success in some cases; now we explicitly require error to be falsy AND
-                // surface field-level errors so the bulk editor can show why nothing changed.
-                const hasError = result && (result.error === 1 || result.error === true ||
-                    (result.errors && (Array.isArray(result.errors) ? result.errors.length : Object.keys(result.errors).length)));
-
-                if (result && !hasError && (result.error === 0 || result.error === false || result.error === undefined)) {
-                    sendResponse({ success: true });
-                } else {
-                    let msg = result.msg || 'Неизвестная ошибка API';
-                    if (result.errors) {
-                        const parts = Array.isArray(result.errors)
-                            ? result.errors.map(e => Array.isArray(e) ? e[1] : e)
-                            : Object.values(result.errors);
-                        if (parts.length) msg = parts.join('; ');
-                    }
-                    throw new Error(msg);
-                }
+                await postOfferSave(payload, auth.csrf_token);
+                sendResponse({ success: true });
             } catch (e) {
                 sendResponse({ success: false, error: e.message });
             }
@@ -2402,26 +2134,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (!key) { sendResponse({ ok: false, error: 'no key' }); return; }
                 const snap = await fptSnapshotForKey(key);
                 sendResponse({ ok: true, snapshot: snap || {} });
-            } catch (e) {
-                sendResponse({ ok: false, error: e.message });
-            }
-        })();
-        return true;
-    }
-
-    // TELEGRAM HANDLERS
-    if (request.action === 'telegramValidate') {
-        (async () => {
-            const res = await telegramValidateAndResolve(request.token);
-            sendResponse(res);
-        })();
-        return true;
-    }
-    if (request.action === 'telegramTest') {
-        (async () => {
-            try {
-                const r = await tgSendMessage('✅ FunPay Funcy подключён к этому чату. Уведомления и управление работают.');
-                sendResponse({ ok: !!(r && r.ok), error: r && r.description });
             } catch (e) {
                 sendResponse({ ok: false, error: e.message });
             }
@@ -2876,14 +2588,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // --- Обработчики будильников ---
 chrome.alarms.onAlarm.addListener(async (alarm) => {
+    if (await jobScheduler.handleAlarm(alarm)) return;
     if (alarm.name === BUMP_ALARM_NAME) {
         await runScheduledBump();
-    }
-    if (alarm.name === DISCORD_LOG_ALARM_NAME) {
-        await runDiscordCheckCycle();
-    }
-    if (alarm.name === TELEGRAM_ALARM) {
-        await runTelegramCheckCycle();
     }
     // <-- НОВЫЙ ОБРАБОТЧИК -->
     if (alarm.name === AUTO_RESPONDER_ALARM_NAME) {
@@ -2892,13 +2599,7 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     // 3.0: engine heartbeat - resurrects the active polling loop after the worker is killed
     if (alarm.name === ENGINE_HEARTBEAT_ALARM) {
         await onHeartbeat();
-    }
-    if (alarm.name === AUTO_RESTORE_ALARM_NAME) {
-        // Notify all FunPay tabs to check and restore/disable lots
-        const tabs = await chrome.tabs.query({ url: "https://funpay.com/*" });
-        tabs.forEach(tab => {
-            chrome.tabs.sendMessage(tab.id, { action: 'fpToolsCheckRestoreLots' }).catch(() => {});
-        });
+        await jobScheduler.runRecovery();
     }
 });
 
@@ -2913,7 +2614,7 @@ function supportMessageHtml(message) {
 function setupInitialAlarms() {
     const autoRestoreRevision = ++_autoRestoreAlarmSyncGeneration;
     chrome.storage.local.get([
-        'autoBumpEnabled', 'fpToolsDiscord', 'fpToolsAutoReplies',
+        'autoBumpEnabled', 'fpToolsAutoReplies',
         'fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled'
     ], (settings) => {
         if (settings.autoBumpEnabled) {
@@ -2924,15 +2625,6 @@ function setupInitialAlarms() {
             syncAutoRestoreAlarm(chrome.alarms, settings.fpToolsAutoRestoreEnabled, settings.fpToolsAutoDisableEnabled);
         }
 
-        if (settings.fpToolsDiscord && settings.fpToolsDiscord.enabled && settings.fpToolsDiscord.webhookUrl) {
-            chrome.alarms.create(DISCORD_LOG_ALARM_NAME, {
-                delayInMinutes: 1,
-                periodInMinutes: 1
-            });
-            runDiscordCheckCycle();
-        }
-        // Telegram: запускаем опрос, если включён и есть токен.
-        telegramSyncAlarm();
         // <-- НОВЫЙ БЛОК ДЛЯ АВТООТВЕТЧИКА -->
         const autoReplies = settings.fpToolsAutoReplies || {};
         const arAnyEnabled = autoReplies.greetingEnabled || autoReplies.keywordsEnabled ||
@@ -2943,12 +2635,21 @@ function setupInitialAlarms() {
             // 3.0: start the MV3-safe active loop instead of the broken 0.25-min alarm.
             startEngine();
         }
+        syncOrderReconcileAlarm(Boolean(arAnyEnabled));
     });
+    jobScheduler.runRecovery({ force: true });
+    opsJournal?.prune(OPS_RETENTION_MS).catch(error => console.warn('FunPay Funcy: очистка журнала не удалась:', error?.message || error));
 }
 
 chrome.runtime.onStartup.addListener(setupInitialAlarms);
 
 chrome.runtime.onInstalled.addListener(async (details) => {
+    await retiredIntegrationCleanup;
+    try {
+        await globalThis.FPTRetiredIntegrations.cleanup(chrome.storage.local, chrome.alarms);
+    } catch (error) {
+        console.error('FunPay Funcy: retired integrations cleanup failed:', error);
+    }
     try {
         await cleanupRetiredFinancialToolData(details.reason, chrome.storage.local);
     } catch (error) {
@@ -2962,8 +2663,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
             hideBalance: false,
             viewSellersPromo: true,
             enableCustomTheme: false,
-            fpToolsDisabledFeatures: [],
-            fpToolsDiscord: { enabled: false, webhookUrl: '', pingEveryone: false, pingHere: false }
+            fpToolsDisabledFeatures: []
         });
     }
     
@@ -2982,25 +2682,6 @@ chrome.storage.onChanged.addListener((changes, area) => {
         });
     }
 
-    if (changes.fpToolsDiscord) {
-        const newValue = changes.fpToolsDiscord.newValue;
-        const isEnabled = newValue && newValue.enabled && newValue.webhookUrl;
-
-        chrome.alarms.get(DISCORD_LOG_ALARM_NAME, (alarm) => {
-            if (isEnabled && !alarm) {
-                chrome.alarms.create(DISCORD_LOG_ALARM_NAME, { delayInMinutes: 1, periodInMinutes: 1 });
-                runDiscordCheckCycle();
-            } else if (!isEnabled && alarm) {
-                chrome.alarms.clear(DISCORD_LOG_ALARM_NAME);
-            }
-        });
-    }
-
-    // Telegram: включение/выключение и смена токена → пересоздаём/убираем опрос.
-    if (changes.fpToolsTelegram) {
-        telegramSyncAlarm();
-    }
-
     // <-- НОВЫЙ БЛОК ДЛЯ УПРАВЛЕНИЯ БУДИЛЬНИКОМ АВТООТВЕТЧИКА -->
     if (changes.fpToolsAutoReplies) {
         const newSettings = changes.fpToolsAutoReplies.newValue || {};
@@ -3008,6 +2689,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
             newSettings.newOrderReplyEnabled || newSettings.orderConfirmReplyEnabled || newSettings.autoDeliveryEnabled;
 
         // 3.0: drive the engine instead of the broken alarm
+        syncOrderReconcileAlarm(Boolean(isEnabled));
         if (isEnabled) {
             startEngine();
         } else {

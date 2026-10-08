@@ -83,7 +83,7 @@ async function getAuthDetails() {
         }
     }
 
-    // 2) Открытой вкладки нет (например, команда /bump из Telegram) - берём
+    // 2) Открытой вкладки нет - берём
     //    userId/csrf напрямую с главной страницы, используя настоящие cookie.
     try {
         const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });

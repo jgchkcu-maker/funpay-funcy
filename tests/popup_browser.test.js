@@ -73,7 +73,9 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));
         await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'lot_io');
         const pages = await page.locator('.fp-tools-page-content').evaluateAll(nodes => nodes.map(n => n.dataset.page));
-        assert.equal(pages.length, 18);
+        assert.equal(pages.length, 16);
+        assert.ok(!pages.includes('telegram') && !pages.includes('support') && !pages.includes('global_chat'));
+        assert.equal(await page.locator('.fpt-nav-footer, .fpt-nav-quick-actions, [data-page="telegram"], [data-page="support"]').count(), 0);
         await page.evaluate(() => window.fptOpenPopupPage('lot_io'));
         await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'lot_io');
         await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.getAnimations().every(animation => animation.playState === 'finished'));
@@ -259,6 +261,8 @@ test('real browser: lot management screen, navigation and shell geometry', async
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="effects"] > .fpt-fx').count(), 1);
             } else if (id === 'tickets') {
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="tickets"] > .fpt-sp').count(), 1);
+            } else if (id === 'sounds') {
+                assert.equal(await page.locator('.fp-tools-page-content[data-page="sounds"] > .fpt-ns').count(), 1);
             } else {
                 assert.equal(await page.locator(`.fp-tools-page-content[data-page="${id}"] > *:not(.fpt-category-header):not(.fpt-popup-toast-region)`).count(), 0, id);
             }
@@ -296,7 +300,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
             checkboxes: document.querySelectorAll('.fpt-controls-test-fixture input[type="checkbox"]').length,
             decorated: document.querySelectorAll('.fpt-controls-test-fixture .fpt-checkbox-control').length
         }));
-        assert.equal(decorationState.decorated, 55, `all category fixtures should receive checkbox controls: ${JSON.stringify({ ...decorationState, errors })}`);
+        assert.equal(decorationState.decorated, decorationState.fixtures * 3 + 1, `all category fixtures should receive checkbox controls: ${JSON.stringify({ ...decorationState, errors })}`);
         const sharedCheckboxComponent = await page.locator('#fpt-shared-checkbox-test').evaluate(input => ({
             checked: input.checked,
             caption: input.closest('label').querySelector('.fpt-checkbox-caption')?.textContent,
@@ -351,7 +355,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
             assert.equal(controls.specialControlsDecorated, false);
         }
         await page.evaluate(() => window.fptOpenPopupPage('lot_io'));
-        const fixtureUnchecked = page.locator('.fp-tools-page-content[data-page="lot_io"] #fpt-unchecked-7');
+        const fixtureUnchecked = page.locator('.fp-tools-page-content[data-page="lot_io"] .fpt-controls-test-fixture input[id^="fpt-unchecked-"]');
         await fixtureUnchecked.click();
         assert.equal(await fixtureUnchecked.isChecked(), true);
         await fixtureUnchecked.press('Space');
@@ -522,7 +526,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.locator('.fpt-lot-dialog--bulk .fpt-lot-dialog-close').click();
         await page.evaluate(() => window.fptOpenPopupPage('slash_commands'));
         assert.equal(await page.locator('[data-page="templates"].fp-tools-page-content').getAttribute('data-fpt-page-mode'), 'commands');
-        for (const retiredRoute of ['currency_calc', 'calculator', 'piggy_banks']) {
+        for (const retiredRoute of ['currency_calc', 'calculator', 'piggy_banks', 'telegram', 'support', 'global_chat']) {
             await page.evaluate(route => window.fptOpenPopupPage(route), retiredRoute);
             assert.equal(await page.locator('.fp-tools-page-content.active').getAttribute('data-page'), 'lot_io',
                 `${retiredRoute} falls back to the supported lot page`);
@@ -673,8 +677,8 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.locator('#fpToolsButton').click();
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));
         assert.equal(await page.locator('.fp-tools-popup').count(), 1);
-        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]):not([data-page="tickets"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
-        assert.equal(await page.locator('.fp-tools-page-content > .fpt-category-header').count(), 18);
+        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]):not([data-page="tickets"]):not([data-page="sounds"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
+        assert.equal(await page.locator('.fp-tools-page-content > .fpt-category-header').count(), 16);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="lot_io"] > .fpt-lot-io').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_delivery"] > .fpt-category-header').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_delivery"] > .fpt-auto-delivery').count(), 1);

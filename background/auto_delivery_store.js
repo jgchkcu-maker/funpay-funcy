@@ -56,7 +56,9 @@ export function createAutoDeliveryStore(storage, readLotForm) {
         });
     }
 
-    async function writeStockCounts(counts) {
+    // nodeIds запоминаются, чтобы фоновое автовосстановление могло открыть форму
+    // лота, которого уже нет в публичном профиле (выключенного).
+    async function writeStockCounts(counts, nodeIds = {}) {
         return serializeWrite(async () => {
             const lots = await readLots();
             const nextLots = { ...lots };
@@ -65,6 +67,7 @@ export function createAutoDeliveryStore(storage, readLotForm) {
                 if (!current || typeof current !== 'object') continue;
                 nextLots[id] = {
                     ...current,
+                    ...(nodeIds[id] ? { nodeId: nodeIds[id] } : {}),
                     productCount: current.mode === 'template' ? null : count,
                     stockSnapshot: current.mode === 'template' ? current.stockSnapshot : count
                 };
@@ -80,11 +83,13 @@ export function createAutoDeliveryStore(storage, readLotForm) {
         const counts = {};
         const errors = [];
         const work = [];
+        const nodeIds = {};
 
         for (const lot of lots) {
             const id = String(lot?.id || '').trim();
             const nodeId = String(lot?.nodeId || '').trim();
             if (!/^\d+$/.test(id) || !/^\d+$/.test(nodeId)) continue;
+            nodeIds[id] = nodeId;
             if (configs[id]?.mode === 'template') {
                 counts[id] = null;
                 continue;
@@ -116,7 +121,7 @@ export function createAutoDeliveryStore(storage, readLotForm) {
             }
         };
         await Promise.all(Array.from({ length: Math.min(STOCK_SYNC_CONCURRENCY, work.length) }, worker));
-        await writeStockCounts(counts);
+        await writeStockCounts(counts, nodeIds);
         return { counts, errors };
     }
 

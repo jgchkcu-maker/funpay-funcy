@@ -25,13 +25,6 @@ function extractSchema() {
     return { schema, sections, pages: sections.flatMap(section => section.pages) };
 }
 
-function extractQuickActionIds() {
-    const start = source.indexOf('const FPT_NAV_QUICK_ACTIONS = Object.freeze([');
-    const end = source.indexOf(']);', start);
-    assert.ok(start >= 0 && end > start, 'FPT_NAV_QUICK_ACTIONS must define the footer routes');
-    return [...source.slice(start, end).matchAll(/'([^']+)'/g)].map(match => match[1]);
-}
-
 function extractStyleRule(stylesheet, selector) {
     const start = stylesheet.lastIndexOf(selector);
     assert.ok(start >= 0, 'missing stylesheet rule: ' + selector);
@@ -47,24 +40,21 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
     assert.ok(navPages.length > 0, 'popup must retain existing page nodes');
     assert.equal(new Set(navPages).size, navPages.length, 'flat nav must not contain duplicate data-page ids');
     assert.equal(new Set(pages).size, pages.length, 'navigation schema must not duplicate page ids');
-    const quickActions = extractQuickActionIds();
-    assert.equal(pages.length, 17, 'accordion groups must own exactly 17 pages');
-    assert.equal(quickActions.length, 1, 'the footer must own exactly one quick route');
-    assert.equal(new Set(quickActions).size, quickActions.length, 'footer routes must not duplicate each other');
-    assert.deepEqual([...pages, ...quickActions].sort(), [...navPages].sort(),
-        'six groups and the footer action must cover all 18 canonical nav routes exactly once');
-    assert.deepEqual(quickActions, ['support'], 'support must remain the footer route');
+    assert.equal(pages.length, 16);
+    assert.deepEqual([...pages].sort(), [...navPages].sort());
+    assert.ok(!navPages.includes('telegram') && !navPages.includes('support'));
+
 }
 
 function testSixIndependentAccordionSections() {
     const { schema, sections } = extractSchema();
     const expected = [
         { id: 'sales', pages: ['lot_io', 'auto_delivery', 'autobump'] },
-        { id: 'customers', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
+        { id: 'customers', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds'] },
         { id: 'finance', pages: ['finance_hub'] },
         { id: 'interface', pages: ['theme', 'effects', 'needs'] },
-        { id: 'settings', pages: ['accounts', 'general', 'telegram', 'settings_io'] },
-        { id: 'help', pages: ['tickets', 'global_chat'] }
+        { id: 'settings', pages: ['accounts', 'general', 'settings_io'] },
+        { id: 'help', pages: ['tickets'] }
     ];
     assert.deepEqual(sections, expected, 'the six navigation groups must use the final order and exact page sets');
     assert.equal(new Set(sections.map(section => section.id)).size, sections.length, 'accordion section IDs must be unique');
@@ -93,8 +83,7 @@ function testAccordionRendererMovesExistingNodes() {
     assert.doesNotMatch(block, /\.click\(\)/, 'category toggles must never click a child page');
     assert.match(source, /fpToolsNavExpandedSectionsV2/, 'expanded state must use the versioned section key');
     assert.doesNotMatch(source, /fpToolsNavExpandedSections(?!V2)/, 'legacy ambiguous section IDs must not be read');
-    assert.match(block, /FPT_NAV_QUICK_ACTIONS[\s\S]*?appendChild\(item\)/,
-        'support must move into the footer without cloning route nodes');
+    assert.doesNotMatch(block, /fpt-nav-quick-action/);
 }
 
 function testInitialPageAndExpandedStateFallback() {
@@ -123,7 +112,7 @@ function testInitialPageAndExpandedStateFallback() {
 function testFinalLabelsAndRatingRoute() {
     const schemaStart = source.indexOf('const FPT_NAV_SECTIONS = Object.freeze([');
     const labelsStart = source.indexOf('const FPT_NAV_LABEL_OVERRIDES = Object.freeze({', schemaStart);
-    const quickActionsStart = source.indexOf('const FPT_NAV_QUICK_ACTIONS', labelsStart);
+    const quickActionsStart = source.indexOf('const FPT_NAV_EXPANDED_STORAGE_KEY', labelsStart);
     const schema = source.slice(schemaStart, labelsStart);
     const labels = source.slice(labelsStart, quickActionsStart);
     const sectionLabels = [
@@ -140,23 +129,21 @@ function testFinalLabelsAndRatingRoute() {
     }
     const pageLabels = [
         ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['autobump', 'Автоподнятие'],
-        ['auto_reply', 'Автоответчик'], ['auto_review', 'Отзывы и бонусы'], ['templates', 'Быстрые ответы'], ['blacklist', 'Чёрный список'],
+        ['auto_reply', 'Автоответчик'], ['auto_review', 'Отзывы и бонусы'], ['templates', 'Быстрые ответы'], ['blacklist', 'Чёрный список'], ['sounds', 'Звук уведомлений'],
         ['finance_hub', 'Обзор и аналитика'],
         ['theme', 'Темы'], ['effects', 'Эффекты'], ['needs', 'Элементы интерфейса'],
-        ['accounts', 'Аккаунты'], ['general', 'Отображение FunPay'], ['telegram', 'Уведомления и интеграции'], ['settings_io', 'Перенос настроек'],
-        ['tickets', 'Поддержка FunPay'], ['global_chat', 'Чат сообщества'],
-        ['support', 'Оценить расширение']
+        ['accounts', 'Аккаунты'], ['general', 'Отображение FunPay'], ['settings_io', 'Перенос настроек'],
+        ['tickets', 'Поддержка FunPay'],
     ];
     for (const [id, label] of pageLabels) {
         assert.match(labels, new RegExp(`${id}:\\s*['"]${label}['"]`), id + ' must use its approved visible label');
     }
     assert.match(source, /tickets: 'Поддержка FunPay'/, 'ticket and rating routes retain distinct labels');
-    assert.match(source, /support: 'Оценить расширение'/);
+    assert.doesNotMatch(source, /support: 'Оценить расширение'/);
     const setupStart = source.indexOf('function setupPopupNavigation()');
     const setupEnd = source.indexOf('function selectQuickRepliesMode(', setupStart);
     const setupBlock = source.slice(setupStart, setupEnd);
-    assert.match(setupBlock, /promoLink[\s\S]*openPopupPage\(['"]support['"]\)/,
-        'the rating promotion must navigate through the central route entry point');
+    assert.doesNotMatch(setupBlock, /promoLink/);
     assert.doesNotMatch(source, /Вкладка "Кастомизация"|Вкладка "Авто-поднятие"/,
         'help copy must not direct users to the superseded page names');
 }
@@ -169,7 +156,7 @@ function testPageClickContractAndRestore() {
     assert.match(setupBlock, /openPopupPage\(item\.dataset\.page\)/, 'page clicks must delegate to the central router');
 
     const routerStart = source.indexOf('async function openPopupPage(');
-    const routerEnd = source.indexOf('function setupGlobalChatVisibilityHandoff(', routerStart);
+    const routerEnd = source.indexOf('function setupPopupNavigation(', routerStart);
     const routerBlock = source.slice(routerStart, routerEnd);
     assert.match(routerBlock, /normalizePopupRoute\(pageId\)/, 'legacy routes must normalize before page state changes');
     assert.match(routerBlock, /navSections\.showSectionForPage\(targetPageId\)/, 'the router must reveal the active page section');
@@ -228,7 +215,7 @@ function testSearchRestoresAccordionState() {
     assert.match(searchBlock, /groupId[\s\S]{0,100}pageId[\s\S]{0,100}mode[\s\S]{0,100}text[\s\S]{0,100}aliases[\s\S]{0,100}element/,
         'search index records carry group, page, mode, text, aliases and exact element context');
     assert.match(searchBlock, /\.fpt-nav-group-toggle/, 'group headings are searchable independently of pages');
-    assert.match(searchBlock, /data-quick-replies-pane|data-calc-pane|fpt-fin-tab-pane|data-notification-pane/,
+    assert.match(searchBlock, /data-quick-replies-pane|data-calc-pane|fpt-fin-tab-pane|data-route-mode/,
         'hidden mode panes are included in the search index');
     assert.match(searchBlock, /row\.addEventListener\('click'[\s\S]*jumpToFeature\(/,
         'page-result activation delegates to the route-and-scroll helper');
@@ -240,15 +227,8 @@ function testSearchRestoresAccordionState() {
     assert.doesNotMatch(searchBlock, /compactNav\(/, 'search must not rebalance a removed two-column grid');
 }
 
-function testGlobalChatAndShortcutContracts() {
-    assert.match(source, /<li data-page="global_chat"/, 'global_chat must remain an existing nav item');
-    const handoffStart = source.indexOf('function setupGlobalChatVisibilityHandoff(');
-    const handoffEnd = source.indexOf('function setupPopupNavigation()', handoffStart);
-    const handoff = source.slice(handoffStart, handoffEnd);
-    assert.match(handoff, /global_chat/, 'remote visibility handoff must continue to target global_chat');
-    assert.match(handoff, /display/, 'remote display state must continue to hide or restore global_chat');
-    assert.match(handoff, /openPopupPage\(['"]lot_io['"]\)/,
-        'remote hiding must keep the existing fallback route behavior');
+function testRemovedCommunityChatAndShortcutContracts() {
+    assert.doesNotMatch(source, /global_chat|fptGc|fpt:global-chat-visibility/);
     assert.match(source, /e\.ctrlKey \|\| e\.metaKey/, 'shortcut must support Ctrl and Cmd');
     assert.match(source, /String\(e\.key\)\.toLowerCase\(\) !== ['"]k['"]/, 'shortcut must listen for K');
     assert.match(source, /input\.focus\(\)[\s\S]{0,80}input\.select\(\)/, 'shortcut must focus and select the popup search');
@@ -390,7 +370,7 @@ function runAll() {
     testFinalLabelsAndRatingRoute();
     testPageClickContractAndRestore();
     testSearchRestoresAccordionState();
-    testGlobalChatAndShortcutContracts();
+    testRemovedCommunityChatAndShortcutContracts();
     testAccordionStyles();
     testSelectedReferenceKeepsSpaciousActiveHierarchy();
     testNavigationRegressionGuards();

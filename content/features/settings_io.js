@@ -17,19 +17,8 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsAccounts',
     'fpToolsAccountsList',
     // --- Токены/секреты ---
-    'fpToolsGCToken',
-    'fpToolsGCConfig',
-    'fpToolsGCConfigTs',
     // --- Рантайм/служебное состояние движков (per-device) ---
     'fpToolsEngineHeartbeat',
-    'fpToolsTelegramPoll',
-    'fpToolsTelegramSeeded',
-    'fpToolsTelegramOrdersSeeded',
-    'fpToolsTelegramProcessedIds',
-    'fpToolsTelegramProcessedOrders',
-    'fpToolsDiscordSeeded',
-    'fpToolsDiscordCheck',
-    'fpToolsProcessedDiscordIds',
     'fpToolsSalesCollecting',
     'fpToolsPurchasesCollecting',
     'fpToolsFinanceCollecting',
@@ -41,13 +30,17 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsLastOrderId',
     'fpToolsLotImportProcess',
     'fpToolsCheckRestoreLots',
+    // Секреты (shared_secret, ключи поставщиков) не покидают этот браузер.
+    'fpToolsSecrets',
     'fpToolsBlacklistUpdated',
     'fpToolsUnreadCount',
     // --- Кэши (большие, легко перезапросятся) ---
     'fpToolsWallpaperCache',
     'fpToolsImageStore',
     'fpToolsImageCanvas',
-    'fpToolsCustomSoundData',   // звук может весить много; мета оставляем
+    // Своя мелодия весит до ~1 МБ; без самого звука мета не нужна.
+    'fpToolsCustomSoundData',
+    'fpToolsCustomSoundMeta',
     'fpToolsBuyerHistory',
     'fpToolsBuyerViewing',
     // --- Чисто UI-состояние текущей вкладки/окна (per-device) ---
@@ -59,7 +52,7 @@ const EXCLUDE_KEYS = new Set([
 ]);
 
 async function getPopupSettingsExport() {
-    const all = await chrome.storage.local.get(null);
+    const all = globalThis.FPTRetiredIntegrations.sanitizeSettings(await chrome.storage.local.get(null));
     return { _magic: FP_CONFIG_MAGIC, _version: FP_CONFIG_VERSION, _date: new Date().toISOString(),
         _extVer: chrome.runtime.getManifest().version,
         settings: Object.fromEntries(Object.entries(all).filter(([key]) => !EXCLUDE_KEYS.has(key))) };
@@ -67,7 +60,7 @@ async function getPopupSettingsExport() {
 async function importPopupSettings(p) {
     const data = p.data || JSON.parse(await p.file.text());
     if (data?._magic !== FP_CONFIG_MAGIC || !data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) throw new Error('Неверный формат .fpconfig.');
-    const safe = Object.fromEntries(Object.entries(data.settings).filter(([key]) => !EXCLUDE_KEYS.has(key) && key !== 'fpToolsAutoReplies'));
+    const safe = Object.fromEntries(Object.entries(globalThis.FPTRetiredIntegrations.sanitizeSettings(data.settings)).filter(([key]) => !EXCLUDE_KEYS.has(key) && key !== 'fpToolsAutoReplies'));
     if (safe.fpToolsPageModes && typeof safe.fpToolsPageModes === 'object' && !Array.isArray(safe.fpToolsPageModes)) {
         const pageModes = { ...safe.fpToolsPageModes };
         delete pageModes.piggy_banks;

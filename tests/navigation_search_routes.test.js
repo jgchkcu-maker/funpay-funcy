@@ -11,19 +11,20 @@ assert.ok(searchStart >= 0 && searchEnd > searchStart, 'setupNavSearch source bl
 
 const sections = [
     { id: 'sales', label: 'Лоты и продажи', pages: ['lot_io', 'auto_delivery', 'autobump'] },
-    { id: 'customers', label: 'Покупатели', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist'] },
+    { id: 'customers', label: 'Покупатели', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds'] },
     { id: 'finance', label: 'Финансы', pages: ['finance_hub'] },
     { id: 'interface', label: 'Интерфейс', pages: ['theme', 'effects', 'needs'] },
-    { id: 'settings', label: 'Настройки', pages: ['accounts', 'general', 'telegram', 'settings_io'] },
-    { id: 'help', label: 'Справка', pages: ['tickets', 'global_chat'] }
+    { id: 'settings', label: 'Настройки', pages: ['accounts', 'general', 'settings_io'] },
+    { id: 'help', label: 'Справка', pages: ['tickets'] }
 ];
 const labels = {
     lot_io: 'Управление лотами', auto_delivery: 'Автовыдача', autobump: 'Автоподнятие',
     auto_reply: 'Автоответчик', auto_review: 'Отзывы и бонусы', templates: 'Быстрые ответы', blacklist: 'Чёрный список',
+    sounds: 'Звук уведомлений',
     finance_hub: 'Обзор и аналитика', theme: 'Темы', effects: 'Эффекты',
     needs: 'Элементы интерфейса', accounts: 'Аккаунты', general: 'Отображение FunPay',
-    telegram: 'Уведомления и интеграции', settings_io: 'Перенос настроек',
-    tickets: 'Поддержка FunPay', global_chat: 'Чат сообщества', support: 'Оценить расширение'
+    settings_io: 'Перенос настроек',
+    tickets: 'Поддержка FunPay'
 };
 
 class FakeClassList {
@@ -95,7 +96,7 @@ class FakeElement {
     }
     querySelectorAll(selector) {
         if (selector === 'h3, h4, h5, label > span, .setting-group > h4') return this.headings || [];
-        if (selector.includes('[data-quick-replies-pane]') && selector.includes('[data-notification-pane]')) return this.panes || [];
+        if (selector.includes('[data-quick-replies-pane]') && selector.includes('[data-route-mode]')) return this.panes || [];
         if (selector === '.fpt-nav-search-result') return this.children.filter(child => child.classList.contains('fpt-nav-search-result'));
         if (selector === '.fpt-search-flash') return [];
         return [];
@@ -111,8 +112,7 @@ function createHarness() {
     const routeCalls = [];
     const order = [];
     const storageWrites = [];
-    let globalChatVisible = true;
-    const pageIds = sections.flatMap(section => section.pages).concat(['support']);
+    const pageIds = sections.flatMap(section => section.pages);
     const pageToSection = new Map(sections.flatMap(section => section.pages.map(pageId => [pageId, section.id])));
     const navItems = pageIds.map(pageId => {
         const li = new FakeElement({ pageId, label: new FakeElement({ text: pageId === 'tickets' ? 'Поддержка FunPay' : labels[pageId] }) });
@@ -126,7 +126,6 @@ function createHarness() {
         const page = new FakeElement({ pageId });
         page.headings = [];
         page.panes = [];
-        if (pageId === 'global_chat') page.headings.push(new FakeElement({ text: 'Секретная функция сообщества' }));
         if (pageId === 'templates') {
             const templates = new FakeElement({ dataset: { quickRepliesPane: 'templates' }, text: 'Шаблоны ответов' });
             const commands = new FakeElement({ dataset: { quickRepliesPane: 'commands' }, text: 'Слэш-команды' });
@@ -189,7 +188,7 @@ function createHarness() {
             createDocumentFragment() { const fragment = new FakeElement(); fragment.isFragment = true; return fragment; }
         },
         setTimeout, clearTimeout,
-        isPopupPageSearchable(_popup, pageId) { return pageId !== 'global_chat' || globalChatVisible; },
+        isPopupPageSearchable(_popup, pageId) { return pages.some(page => page.dataset.page === pageId); },
         getPopupNavigationActions() { return navItems; },
         openPopupPage(pageId, options = {}) {
             routeCalls.push([pageId, options.mode]);
@@ -209,7 +208,6 @@ function createHarness() {
     return {
         context, popup, input, clearButton, searchToggle, results, navItems, pages, groupToggles,
         navState, routeCalls, order, storageWrites, initialSnapshot,
-        setGlobalChatVisible(value) { globalChatVisible = value; },
         getIndex() { return popup._fptNavSearch.buildFeatureIndex(); },
         refresh() { popup._fptNavSearch.refreshVisibility(); }
     };
@@ -237,13 +235,13 @@ function testIndexContractAndAliases() {
         ['lot_io', null, 'Импорт / экспорт'],
         ['settings_io', null, 'Импорт / экспорт']
     ]) assert.ok(find(pageId, mode, alias), `${alias} targets ${pageId}${mode ? `/${mode}` : ''}`);
-    assert.ok(index.some(item => item.pageId === 'support' && item.text === 'Оценить расширение'), 'footer rating action is indexed with its human label');
+    assert.ok(index.every(item => !['telegram', 'support', 'global_chat'].includes(item.pageId)), 'retired integrations and rating are absent from search');
     assert.ok(index.every(item => item.pageId !== 'piggy_banks' && item.pageId !== 'calculator'),
         'removed financial tools cannot contribute searchable entries');
 }
 
 async function testRemovedFinancialToolsAreNotSearchable() {
-    for (const query of ['Копилки', 'Калькуляторы', 'Валюты']) {
+    for (const query of ['Копилки', 'Калькуляторы', 'Валюты', 'Оценить расширение', 'Уведомления и интеграции', 'Telegram', 'Discord', 'Чат сообщества', 'Общий чат']) {
         assert.deepEqual(await search(createHarness(), query), [], `${query} has no remaining search route`);
     }
 }
@@ -268,13 +266,6 @@ async function testSupportAndQuickActionRoutesStayDistinct() {
     assert.match(supportRows[0].querySelector('.fpt-nsr-page').textContent, /FunPay/);
     await supportRows[0].dispatch('click');
     assert.deepEqual(h.routeCalls.at(-1), ['tickets', undefined], 'FunPay support search routes to tickets');
-
-    const ratingRows = await search(h, 'оценить расширение');
-    assert.ok(ratingRows.length > 0);
-    const rating = ratingRows.find(row => row.querySelector('.fpt-nsr-page').textContent === 'Оценить расширение');
-    assert.ok(rating, 'rating quick action is separate from the FunPay help page');
-    await rating.dispatch('click');
-    assert.deepEqual(h.routeCalls.at(-1), ['support', undefined]);
 
     const importRows = await search(h, 'Импорт / экспорт');
     const labelsFound = new Set(importRows.map(row => row.querySelector('.fpt-nsr-page').textContent));
@@ -317,17 +308,6 @@ async function testLegacyAliasesActivateCanonicalPageAndMode() {
         await wait(60);
         assert.deepEqual(h.routeCalls.at(-1), [pageId, mode], `${query} routes to its canonical page/mode`);
     }
-}
-
-async function testLateGlobalChatHideInvalidatesCurrentAndBuiltResults() {
-    const h = createHarness();
-    assert.equal((await search(h, 'Секретная функция сообщества')).length, 1);
-    assert.ok(h.getIndex().some(item => item.pageId === 'global_chat'));
-    h.setGlobalChatVisible(false);
-    h.navItems.find(item => item.dataset.page === 'global_chat').style.display = 'none';
-    h.refresh();
-    assert.equal(h.results.querySelectorAll('.fpt-nav-search-result').length, 0, 'stale rows are invalidated immediately');
-    assert.equal(h.getIndex().some(item => item.pageId === 'global_chat'), false, 'both menu and inner page records are excluded after remote hide');
 }
 
 async function testClearRestoresCompactNavWithoutPreferenceWrites() {
@@ -376,7 +356,6 @@ async function run() {
     await testEveryGroupHeadingRevealsOnlyItsChildren();
     await testSupportAndQuickActionRoutesStayDistinct();
     await testLegacyAliasesActivateCanonicalPageAndMode();
-    await testLateGlobalChatHideInvalidatesCurrentAndBuiltResults();
     await testClearRestoresCompactNavWithoutPreferenceWrites();
     await testImmediateClearCancelsPendingSearchRender();
     await testEnterIgnoresRowsAfterClearDuringFade();

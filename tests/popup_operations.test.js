@@ -145,7 +145,7 @@ test('concurrent feature mutations and partial settings writes retain both expli
         fpToolsSlashCommands: { enabled: true, commands: [{ id: 'one', response: 'old1' }, { id: 'two', response: 'old2' }] },
         fpToolsTheme: { font: 'Inter', textColor: '#111111' } });
     h.ctx.fpToolsAccounts = []; h.load('content/features/accounts.js'); h.load('content/features/blacklist.js');
-    h.load('content/features/slash_telegram_ui.js'); h.load('content/features/theme.js');
+    h.load('content/features/slash_commands_ui.js'); h.load('content/features/theme.js');
     h.ctx.applyCustomTheme = h.ctx.applyHeaderPosition = async () => {};
     await Promise.all([
         h.api.run('accounts', 'renameAccount', { key: '1', name: 'new1' }),

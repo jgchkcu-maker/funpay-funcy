@@ -1,0 +1,30 @@
+<!-- Синтетическая страница заказа по разметке FunPay (param-item + h5).
+     При первой возможности заменить сохранённой реальной страницей /orders/<id>/
+     с вычищенными персональными данными. -->
+<html>
+<body data-app-data="{&quot;userId&quot;:100,&quot;csrf-token&quot;:&quot;x&quot;}">
+<nav class="navbar">
+  <a href="https://funpay.com/users/100/">Продавец</a>
+  <a href="https://funpay.com/account/balance?id=7">Баланс</a>
+  <a href="https://funpay.com/lots/offerEdit?node=42&amp;id=0">Новый лот</a>
+</nav>
+<div class="page-content">
+  <h1 class="page-header">Заказ #ABCD1234</h1>
+  <div class="row">
+    <div class="param-item"><h5>Игра</h5><div><a href="https://funpay.com/lots/42/">Elden Ring</a></div></div>
+    <div class="param-item"><h5>Категория</h5><div><a href="https://funpay.com/lots/42/">Ключи</a></div></div>
+    <div class="param-item"><h5>Краткое описание</h5><div>
+      Steam ключ   Elden Ring
+    </div></div>
+    <div class="param-item"><h5>Количество</h5><div>2 шт.</div></div>
+    <div class="param-item"><h5>Статус</h5><div class="text-warning">Оплачен</div></div>
+    <div class="param-item"><h5>Покупатель</h5><div class="media-user-name"><a href="https://funpay.com/users/555/">QA Buyer</a></div></div>
+    <div class="param-item"><h5>Продавец</h5><div class="media-user-name"><a href="https://funpay.com/users/100/">Продавец</a></div></div>
+  </div>
+  <div class="order-desc"><a href="https://funpay.com/lots/offer?id=987654">Открыть лот</a></div>
+  <div class="order-secrets-box">KEY-1111
+KEY-2222</div>
+  <div class="order-user"><a href="https://funpay.com/chat/?node=31337">Написать</a></div>
+</div>
+</body>
+</html>
