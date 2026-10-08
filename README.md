@@ -20,7 +20,6 @@
 <a href="https://github.com/jgchkcu-maker/funpay-funcy/stargazers"><img src="https://img.shields.io/github/stars/jgchkcu-maker/funpay-funcy?style=flat-square&color=c084fc&labelColor=1a1a2e&logo=github" alt="stars"/></a>
 <a href="https://github.com/jgchkcu-maker/funpay-funcy/commits/main"><img src="https://img.shields.io/github/last-commit/jgchkcu-maker/funpay-funcy?style=flat-square&color=c084fc&labelColor=1a1a2e" alt="last commit"/></a>
 <a href="https://github.com/jgchkcu-maker/funpay-funcy/commits/main"><img src="https://img.shields.io/github/commit-activity/m/jgchkcu-maker/funpay-funcy?style=flat-square&color=c084fc&labelColor=1a1a2e" alt="activity"/></a>
-<img src="https://img.shields.io/github/repo-size/jgchkcu-maker/funpay-funcy?style=flat-square&color=c084fc&labelColor=1a1a2e" alt="size"/>
 <img src="https://img.shields.io/badge/JavaScript-vanilla-f7df1e?style=flat-square&logo=javascript&logoColor=f7df1e&labelColor=1a1a2e" alt="js"/>
 
 <br/><br/>
