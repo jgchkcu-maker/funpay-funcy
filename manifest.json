@@ -2,8 +2,8 @@
   "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
   "name": "FunPay Funcy",
-  "version": "2.9.9",
-  "description": "Глобальное расширение для FunPay ⚡ 299+ инструментов • ИИ-помощник • Автоответчик • Аналитика • Автоматизация • Больше продаж",
+  "version": "0.9.9",
+  "description": "FunPay Funcy — всё для продавца FunPay: автоответчик, автовыдача, ИИ-помощник, аналитика продаж и управление лотами",
   "permissions": [
     "storage",
     "tabs",
@@ -30,9 +30,18 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "FunPay Funcy"
+    "default_title": "FunPay Funcy",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
   "background": {
@@ -122,10 +131,14 @@
         "content/ui/popup_metadata.js",
         "content/ui/main_popup.js",
         "content/ui/popup_components.js",
+        "content/ui/automation_ui.js",
+        "content/ui/lot_automation_page.js",
         "content/ui/lot_io_page.js",
+        "content/ui/orders_view.js",
         "content/ui/auto_delivery_page.js",
         "content/ui/auto_bump_page.js",
         "content/ui/auto_reply_page.js",
+        "content/ui/review_reminder_block.js",
         "content/ui/auto_review_page.js",
         "content/ui/quick_replies_page.js",
         "content/ui/interface_elements_page.js",
@@ -157,7 +170,6 @@
         "content/features/support.js",
         "content/features/purchases.js",
         "content/content_script.js",
-        "content/features/auto_restore_lots.js",
         "content/features/order_page_enhancements.js",
         "content/features/order_timer.js",
         "content/features/order_lot_copy.js",
@@ -180,6 +192,7 @@
         "css/ai_creator.css",
         "css/live_styler.css",
         "css/fpt_icons_theme.css",
+        "css/automation.css",
         "css/page_windows.css"
       ],
       "run_at": "document_idle"

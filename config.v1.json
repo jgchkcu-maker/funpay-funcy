@@ -133,7 +133,6 @@
     "lotContextMenu": true,
     "sellerSearch": true,
     "lotOfferActions": true,
-    "autoRestore": true,
     "inlinePrice": true,
     "categoryPeek": true,
     "supportTheme": true,

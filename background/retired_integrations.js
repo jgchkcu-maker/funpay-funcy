@@ -1,11 +1,11 @@
 // Shared retirement policy for the worker and settings backups.
 (function (root) {
     'use strict';
-    const RETIRED_PAGES = new Set(['telegram', 'support', 'global_chat']);
-    const RETIRED_KEYS = new Set(['logToDiscord', 'discordWebhookUrl']);
-    const RETIRED_ALARMS = ['fpToolsTelegramPoll', 'fpToolsDiscordCheck'];
+    const RETIRED_PAGES = new Set(['telegram', 'support', 'global_chat', 'suppliers']);
+    const RETIRED_KEYS = new Set(['logToDiscord', 'discordWebhookUrl', 'fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled']);
+    const RETIRED_ALARMS = ['fpToolsTelegramPoll', 'fpToolsDiscordCheck', 'fpToolsAutoRestore'];
     const isRetiredKey = key => RETIRED_KEYS.has(key)
-        || /^(?:fpToolsTelegram|fpToolsDiscord|fpToolsProcessedDiscord|fpToolsGC|discordSent_)/.test(key);
+        || /^(?:fpToolsTelegram|fpToolsDiscord|fpToolsProcessedDiscord|fpToolsGC|fpToolsSupplier|discordSent_)/.test(key);
 
     function sanitizeSettings(settings) {
         const result = Object.fromEntries(Object.entries(settings).filter(([key]) => !isRetiredKey(key)));

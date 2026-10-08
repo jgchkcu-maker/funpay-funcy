@@ -1,7 +1,6 @@
 
 import { updateAutoReplies } from './auto_reply_store.js';
-import { refreshAutoDeliveryLotStock, isAutoDeliveryLotEnabled } from './auto_delivery_store.js';
-import { createOrderDetailsLoader } from './order_details.js';
+import { createStrictChatSender } from './chat_sender.js';
 export { countAutoDeliverySecrets, createAutoDeliveryStore, isAutoDeliveryLotEnabled } from './auto_delivery_store.js';
 
 function randomTag() {
@@ -133,35 +132,21 @@ async function parseViaOffscreen(html, action) {
     return chrome.runtime.sendMessage({ target: 'offscreen', action, html });
 }
 
-async function sendChatMessage(chatId, text, auth) {
-    // FIX: FunPay runner requires BOTH golden_key AND PHPSESSID cookies.
-    // Without PHPSESSID the request returns 200 but message is silently dropped.
-    const cookieStr = auth.phpsessid
-        ? `golden_key=${auth.golden_key}; PHPSESSID=${auth.phpsessid}`
-        : `golden_key=${auth.golden_key}`;
+// Сообщения уходят строгим отправителем: один POST без повторов. Неясный исход
+// (таймаут, 5xx, нечитаемый ответ) не повторяется — сообщение могло дойти.
+const strictSender = createStrictChatSender({ mark: markOutgoing });
 
-    // tag '00000000', last_message: -1 в обоих местах (objects.data и request.data)
-    const markedText = markOutgoing(text);
-    const payload = {
-        objects: JSON.stringify([{ type: 'chat_node', id: chatId, tag: '00000000', data: { node: chatId, last_message: -1, content: '' } }]),
-        request: JSON.stringify({ action: 'chat_message', data: { node: chatId, last_message: -1, content: markedText } }),
-        csrf_token: auth.csrf_token
-    };
-    const res = await fetchWithRetry('https://funpay.com/runner/', {
-        method: 'POST',
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'x-requested-with': 'XMLHttpRequest',
-            'cookie': cookieStr
-        },
-        body: new URLSearchParams(payload)
-    });
-    // definite: FunPay однозначно отказал, сообщение точно не отправлено.
-    // Сетевые ошибки и исчерпанные 5xx-повторы такого флага не имеют.
-    if (!res.ok) throw Object.assign(new Error(`sendMessage HTTP ${res.status}`), { definite: res.status < 500 && res.status !== 429 });
-    const json = await res.json().catch(() => null);
-    if (json?.error) throw Object.assign(new Error(`FunPay runner error: ${json.error}`), { definite: true });
-    console.log(`FunPay Funcy AR: → чат ${chatId}`);
+export async function sendChatMessage(chatId, text, auth) {
+    const result = await strictSender.send({ chatId, text, auth, accountId: auth?.userId ? String(auth.userId) : null });
+    if (result.status === 'rejected' || result.status === 'uncertain') {
+        throw Object.assign(new Error(result.error || `sendMessage: ${result.status}`), { definite: result.status === 'rejected', outcome: result.status });
+    }
+    console.log(`FunPay Funcy AR: → чат ${chatId} (${result.status})`);
+    return result;
+}
+
+export function getStrictChatSender() {
+    return strictSender;
 }
 
 // 3.0: upload an image (data URL) to FunPay and send it to a chat, in the background.
@@ -190,8 +175,10 @@ async function sendChatImage(chatId, dataUrl, auth) {
         request: JSON.stringify({ action: 'chat_message', data: { node: chatId, last_message: -1, content: '', image_id: fileId } }),
         csrf_token: auth.csrf_token
     };
-    const res = await fetchWithRetry('https://funpay.com/runner/', {
+    // Отправка картинки в чат — внешний эффект: один POST без автоматических повторов.
+    const res = await fetch('https://funpay.com/runner/', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', 'cookie': cookieStr },
         body: new URLSearchParams(payload)
     });
@@ -245,7 +232,7 @@ async function sendReviewReply(orderId, text, auth, rating) {
     if (!res.ok) throw new Error(`sendReviewReply HTTP ${res.status}`);
 }
 
-function applyVariables(template, vars = {}) {
+export function applyVariables(template, vars = {}) {
     const h = new Date().getHours();
     const greeting = h >= 5 && h < 12 ? 'Доброе утро!' : h >= 12 && h < 18 ? 'Добрый день!' : 'Добрый вечер!';
     const now = new Date();
@@ -279,7 +266,7 @@ async function atomicUpdate(updater) {
     return updateAutoReplies(updater);
 }
 
-async function isBlacklisted(username, feature) {
+export async function isBlacklisted(username, feature) {
     const { fpToolsBlacklist = [] } = await chrome.storage.local.get('fpToolsBlacklist');
     const entry = fpToolsBlacklist.find(e => e.username.toLowerCase() === username?.toLowerCase());
     if (!entry) return false;
@@ -382,6 +369,7 @@ async function handleReview(msg, auth, settings) {
 
     const alreadyReplied = (settings.repliedOrderIds || []).includes(orderId);
     if (alreadyReplied && msgType === 'NEW_FEEDBACK') return;
+    if (await isBlacklisted(msg.buyerName, 'response')) return;
 
     try {
         const orderRes = await fetchWithRetry(`https://funpay.com/orders/${orderId}/`, { headers: { cookie: `golden_key=${auth.golden_key}` } });
@@ -417,7 +405,9 @@ async function handleReview(msg, auth, settings) {
             }
         }
 
-        if (settings.bonusForReviewEnabled && stars === 5) {
+        // Бонус за отзыв — один на заказ: изменение отзыва не присылает его повторно.
+        const bonusAlreadySent = (settings.bonusSentOrderIds || []).includes(orderId);
+        if (settings.bonusForReviewEnabled && stars === 5 && !bonusAlreadySent) {
             let bonusText = '';
             if (settings.bonusMode === 'single' && settings.singleBonusText) bonusText = settings.singleBonusText;
             else if (settings.bonusMode === 'random' && settings.randomBonuses?.length)
@@ -431,32 +421,19 @@ async function handleReview(msg, auth, settings) {
                 const delaySec = Number(settings.bonusForReviewDelaySec);
                 const delayMs = (Number.isFinite(delaySec) && delaySec >= 0 ? delaySec : 4) * 1000;
                 if (delayMs > 0) await new Promise(r => setTimeout(r, delayMs));
+                // Отметка ставится до отправки: неясный исход не должен привести ко второму бонусу.
+                await atomicUpdate(s => {
+                    const ids = s.bonusSentOrderIds || [];
+                    if (!ids.includes(orderId)) ids.push(orderId);
+                    if (ids.length > 1000) ids.splice(0, ids.length - 1000);
+                    s.bonusSentOrderIds = ids;
+                });
                 try { await sendReplyContent(msg.chatId, applyVariables(bonusText, vars), auth); }
                 catch (e) { console.error(`FunPay Funcy AR: ошибка бонуса #${orderId}`, e.message); }
             }
         }
     } catch (e) {
         console.error(`FunPay Funcy AR: ошибка обработки отзыва #${orderId}`, e.message);
-    }
-}
-
-// FIX 2.8.2 (№12): проверка, что в заказе Я - ПРОДАВЕЦ. Кэшируем результат по
-// orderId, чтобы не дёргать страницу заказа повторно в одном цикле.
-const _sellerCheckCache = new Map();async function verifyIAmSeller(orderId, auth) {
-    if (!orderId) return true; // нет orderId - не блокируем (старое поведение)
-    if (_sellerCheckCache.has(orderId)) return _sellerCheckCache.get(orderId);
-    try {
-        const res = await fetchWithRetry(`https://funpay.com/orders/${orderId}/`, { headers: { cookie: `golden_key=${auth.golden_key}` } });
-        if (!res.ok) return true; // не смогли проверить - не ломаем автоответы
-        const html = await res.text();
-        const info = await parseViaOffscreen(html, 'parseOrderParticipants');
-        // iAmSeller === false → это МОЯ покупка, блокируем. null/undefined → не уверены, пропускаем.
-        const ok = !(info && info.iAmSeller === false);
-        _sellerCheckCache.set(orderId, ok);
-        if (_sellerCheckCache.size > 300) _sellerCheckCache.clear();
-        return ok;
-    } catch (e) {
-        return true; // при ошибке - не блокируем
     }
 }
 
@@ -471,35 +448,14 @@ function isMyOwnAction(messageText, myUsername) {
     return re.test(clean);
 }
 
-// --- Журнал заказов (этап 0) -------------------------------------------------------
-// Журнал подключает background.js через configureOrderJournal. Без него (старые тесты,
-// ошибка IndexedDB) автоответчик работает по-прежнему, только без защиты от повторов.
-let orderJournal = null;
+// --- Исполнение заказов ---------------------------------------------------------
+// background.js подключает единый исполнитель (fulfillment_dispatcher), сверку и
+// проверку роли. Без них события заказов только пишутся в лог: автоответчик не
+// выдаёт товар и не отвечает на заказы, если не может подтвердить, что вы продавец.
+let orderAutomation = null;
 
-export function configureOrderJournal(journal) {
-    orderJournal = journal || null;
-}
-
-let _orderDetails = null;
-
-function getOrderDetails() {
-    if (!_orderDetails) {
-        _orderDetails = createOrderDetailsLoader({
-            fetchOrderInfo: async orderId => {
-                const res = await fetchWithRetry(`https://funpay.com/orders/${orderId}/`, {});
-                if (!res.ok) return null;
-                return parseViaOffscreen(await res.text(), 'parseOrderPageForDelivery');
-            },
-            listOwnLots: async () => {
-                const auth = await getAuth();
-                if (!auth.userId) return [];
-                const res = await fetchWithRetry(`https://funpay.com/users/${auth.userId}/`, {});
-                if (!res.ok) return [];
-                return parseViaOffscreen(await res.text(), 'parseUserLotsList');
-            }
-        });
-    }
-    return _orderDetails;
+export function configureOrderAutomation(automation) {
+    orderAutomation = automation || null;
 }
 
 function orderIdOf(msg) {
@@ -508,22 +464,21 @@ function orderIdOf(msg) {
     return match ? match[1] : null;
 }
 
-async function recordPurchasedOrder(msg, source, extra = {}) {
-    const orderId = orderIdOf(msg);
-    if (!orderJournal || !orderId) return null;
+// 'seller' | 'buyer' | 'unknown'. Ошибка чтения — unknown, а не разрешение.
+async function roleForOrder(orderId) {
+    if (!orderId || !orderAutomation?.roleOf) return 'unknown';
     try {
-        const { order } = await orderJournal.recordOrder({
-            orderId,
-            source,
-            chatId: msg.chatId || null,
-            buyerName: msg.buyerName || null,
-            ...extra
-        });
-        return order;
+        return await orderAutomation.roleOf(orderId);
     } catch (error) {
-        console.warn(`FunPay Funcy AR: заказ #${orderId} не записан в журнал`, error?.message || error);
-        return null;
+        console.warn(`FunPay Funcy AR: роль в заказе #${orderId} не определена`, error?.message || error);
+        return 'unknown';
     }
+}
+
+async function observeOrder(msg, options = {}) {
+    const orderId = orderIdOf(msg);
+    if (!orderId || !orderAutomation?.dispatcher) return null;
+    return orderAutomation.dispatcher.observe({ orderId, eventChatId: msg.chatId || null, buyerName: msg.buyerName || null, source: 'chat', ...options });
 }
 
 async function handleOrderPurchased(msg, auth, settings) {
@@ -586,125 +541,6 @@ async function handleOrderConfirmed(msg, auth, settings) {
     }
 }
 
-// Перед первой отправкой операция `delivery:<orderId>` пишется в журнал в состоянии
-// sending. Повторное событие по тому же заказу (повтор чата, сверка, рестарт)
-// видит запись и ничего не отправляет. Неясный исход — uncertain, без автоповтора.
-async function beginDeliveryOp(orderId, lotId) {
-    if (!orderJournal) return { proceed: true, key: null };
-    const key = `delivery:${orderId}`;
-    const { op, created } = await orderJournal.beginOp({ key, kind: 'delivery', orderId, payload: { lotId }, state: 'sending' });
-    if (created) return { proceed: true, key };
-    if (op.state === 'failed') {
-        await orderJournal.transitionOp(key, 'sending', { lastError: null });
-        return { proceed: true, key };
-    }
-    return { proceed: false, key, state: op.state };
-}
-
-async function finishDeliveryOp(key, state, lastError = null) {
-    if (!orderJournal || !key) return;
-    try {
-        await orderJournal.transitionOp(key, state, { lastError });
-    } catch (error) {
-        console.error(`FunPay Funcy AR: не удалось записать итог выдачи ${key}`, error?.message || error);
-    }
-}
-
-async function handleAutoDelivery(msg, auth, settings) {
-    if (!settings.autoDeliveryEnabled) return;
-
-    const msgType = msg.msgType || getMessageType(msg.messageText);
-    if (msgType !== 'ORDER_PURCHASED') return;
-
-    const orderId = orderIdOf(msg);
-    if (!orderId) return;
-
-    
-    if (await isBlacklisted(msg.buyerName, 'delivery')) return;
-
-    
-    const delivered = settings.deliveredOrderIds || [];
-    if (delivered.includes(orderId)) return;
-
-    let opKey = null;
-    let partsSent = 0;
-    try {
-        const orderInfo = await getOrderDetails().load(orderId);
-        if (!orderInfo) return;
-
-        const { secrets, lotId, nodeId, buyerChatId, lotName } = orderInfo;
-        const chatId = msg.chatId || buyerChatId;
-        await recordPurchasedOrder({ ...msg, orderId, chatId }, msg.source || 'chat', {
-            lotId, nodeId, amount: orderInfo.amount, buyerId: orderInfo.buyerId, lotName, fpStatus: orderInfo.status
-        });
-
-        
-        const { fpToolsAutoDeliveryLots = {} } = await chrome.storage.local.get('fpToolsAutoDeliveryLots');
-        const deliveryConfig = lotId ? fpToolsAutoDeliveryLots[String(lotId)] : null;
-        if (!isAutoDeliveryLotEnabled(deliveryConfig)) return;
-
-        let deliveryText = '';
-        let deliveryMode = 'secrets'; 
-
-        if (deliveryConfig?.mode === 'template' && deliveryConfig.text) {
-            deliveryText = applyVariables(deliveryConfig.text, { buyerName: msg.buyerName, orderId, lotName });
-            deliveryMode = 'template';
-        } else if (deliveryConfig?.mode === 'secrets' && secrets) {
-            deliveryText = secrets;
-            deliveryMode = 'secrets';
-        } else if (secrets && !deliveryConfig) {
-            
-            deliveryText = secrets;
-        }
-
-        if (!deliveryText?.trim() || !chatId) return;
-
-        const op = await beginDeliveryOp(orderId, lotId);
-        if (!op.proceed) {
-            console.log(`FunPay Funcy AR: выдача по заказу #${orderId} уже в журнале (${op.state}), повтор пропущен`);
-            return;
-        }
-        opKey = op.key;
-
-
-        const parts = deliveryText.split(/\$sleep=(\d+\.?\d*)/i);
-        for (let i = 0; i < parts.length; i++) {
-            if (/^\d+\.?\d*$/.test(parts[i])) {
-                const sleepSec = parseFloat(parts[i]);
-                await new Promise(r => setTimeout(r, sleepSec * 1000));
-            } else if (parts[i].trim()) {
-                await sendChatMessage(chatId, parts[i].trim(), auth);
-                partsSent += 1;
-                if (i < parts.length - 1) await new Promise(r => setTimeout(r, 500));
-            }
-        }
-
-        await finishDeliveryOp(opKey, 'done');
-        await atomicUpdate(s => {
-            const arr = s.deliveredOrderIds || [];
-            if (!arr.includes(orderId)) arr.push(orderId);
-            if (arr.length > 200) arr.splice(0, arr.length - 200);
-            s.deliveredOrderIds = arr;
-        });
-        console.log(`FunPay Funcy AR: авто-выдача → заказ #${orderId}, чат ${chatId}`);
-
-        if (deliveryMode === 'secrets' && lotId && nodeId) {
-            try {
-                await refreshAutoDeliveryLotStock(lotId, nodeId);
-            } catch (stockError) {
-                console.warn(`FunPay Funcy AR: не удалось обновить остаток лота ${lotId}`, stockError.message);
-            }
-        }
-
-    } catch (e) {
-        // Однозначный отказ FunPay до первой части — можно повторить позже (failed).
-        // Всё остальное могло дойти до покупателя — uncertain, решение за продавцом.
-        const definite = e?.definite === true && partsSent === 0;
-        await finishDeliveryOp(opKey, definite ? 'failed' : 'uncertain', e?.message || String(e));
-        console.error(`FunPay Funcy AR: ошибка авто-выдачи #${orderId}`, e.message);
-    }
-}
-
 async function notifyDearVendors(msg) {
     const tabs = await chrome.tabs.query({ url: 'https://funpay.com/*' });
     tabs.forEach(tab => {
@@ -737,100 +573,24 @@ function isAutoResponderActive(settings) {
         settings.bonusForReviewEnabled||
         settings.newOrderReplyEnabled ||
         settings.orderConfirmReplyEnabled ||
-        settings.autoDeliveryEnabled);
+        settings.autoDeliveryEnabled ||
+        settings.reviewReminderEnabled);
 }
 
-// --- Сверка заказов (этап 0) ------------------------------------------------------
-// Автоответчик видит только последнее сообщение каждого чата: если покупатель успел
-// написать после системного «оплатил заказ», событие теряется. Раз в несколько минут
-// сверяем первую страницу продаж с журналом и догоняем пропущенные оплаченные заказы.
-// Первый проход только запоминает существующие заказы, ничего не отправляя.
-const RECONCILE_MAX_REPLAYS = 5;
-
-function toTimestamp(value) {
-    const time = typeof value === 'number' ? value : Date.parse(value);
-    return Number.isFinite(time) ? time : Date.now();
-}
-
+// --- Сверка заказов ------------------------------------------------------------
+// Сверка (order_reconcile.js) догоняет потерянные события об оплате. Она делит с
+// циклом автоответчика флаг занятости, чтобы два прохода не шли одновременно.
 export async function runOrderReconcile() {
-    if (!orderJournal) return { skipped: 'no-journal' };
+    if (!orderAutomation?.reconcile) return { skipped: 'no-journal' };
     if (__arCycleRunning) return { skipped: 'busy' };
+    const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+    if (!isAutoResponderActive(settings)) return { skipped: 'disabled' };
     __arCycleRunning = true;
     try {
-        return await _runOrderReconcileInner();
+        return await orderAutomation.reconcile.run();
     } finally {
         __arCycleRunning = false;
     }
-}
-
-async function _runOrderReconcileInner() {
-    const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-    if (!isAutoResponderActive(settings)) return { skipped: 'disabled' };
-
-    const auth = await getAuth();
-    if (!auth.golden_key || !auth.csrf_token || !auth.userId) return { skipped: 'auth' };
-
-    const res = await fetchWithRetry('https://funpay.com/orders/trade', {}, { retries: 2, baseDelay: 800 });
-    if (!res.ok) throw new Error(`Сверка заказов: HTTP ${res.status}`);
-    const parsed = await parseViaOffscreen(await res.text(), 'parseSalesPage');
-    if (!parsed || parsed.error || !Array.isArray(parsed.orders)) {
-        throw new Error(`Сверка заказов: ${parsed?.error || 'страница продаж не разобрана'}`);
-    }
-
-    const seeded = await orderJournal.getMeta('reconcileSeededAt');
-    const replays = [];
-    let seededCount = 0;
-    for (const row of parsed.orders) {
-        if (!row?.orderId) continue;
-        const known = await orderJournal.getOrder(row.orderId);
-        if (known) {
-            if (row.orderStatus && known.fpStatus !== row.orderStatus) {
-                await orderJournal.recordOrder({ orderId: row.orderId, source: 'reconcile', fpStatus: row.orderStatus });
-            }
-            continue;
-        }
-        const base = {
-            orderId: row.orderId,
-            buyerName: row.buyerUsername,
-            buyerId: row.buyerId ? String(row.buyerId) : null,
-            lotName: row.description,
-            fpStatus: row.orderStatus,
-            purchasedAt: toTimestamp(row.orderDate)
-        };
-        if (!seeded || row.orderStatus !== 'paid') {
-            await orderJournal.recordOrder({ ...base, source: seeded ? 'reconcile' : 'seed' });
-            if (!seeded) seededCount += 1;
-            continue;
-        }
-        // Остальные пропущенные заказы не записываем — их подберёт следующий проход.
-        if (replays.length < RECONCILE_MAX_REPLAYS) replays.push(base);
-    }
-    if (!seeded) {
-        await orderJournal.setMeta('reconcileSeededAt', Date.now());
-        return { seeded: seededCount, replayed: 0 };
-    }
-
-    let replayed = 0;
-    for (const base of replays) {
-        const info = await getOrderDetails().load(base.orderId);
-        // Не удалось открыть заказ — не записываем, повторим в следующий раз.
-        if (!info?.buyerChatId) continue;
-        const msg = {
-            chatId: info.buyerChatId,
-            buyerName: base.buyerName || info.buyerUsername,
-            messageText: '',
-            msgType: 'ORDER_PURCHASED',
-            orderId: base.orderId,
-            source: 'reconcile'
-        };
-        await recordPurchasedOrder(msg, 'reconcile', { ...base, lotId: info.lotId, nodeId: info.nodeId, amount: info.amount });
-        console.log(`FunPay Funcy AR: сверка нашла пропущенный заказ #${base.orderId}`);
-        const { fpToolsAutoReplies: fresh = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-        await handleOrderPurchased(msg, auth, fresh);
-        await handleAutoDelivery(msg, auth, fresh);
-        replayed += 1;
-    }
-    return { seeded: 0, replayed };
 }
 
 async function _runAutoResponderCycleInner() {
@@ -926,24 +686,22 @@ async function _runAutoResponderCycleInner() {
                 await notifyDearVendors(msg);
             } else if (msgType === 'ORDER_PURCHASED' || msgType === 'ORDER_CONFIRMED'
                        || msgType === 'NEW_FEEDBACK' || msgType === 'FEEDBACK_CHANGED') {
-                const _oid = (msg.messageText.match(RX.ORDER_ID) || [])[1] || null;
-                let iAmSeller = true;
-                if (iAmInitiator) {
-                    iAmSeller = false;
-                } else {
-                    iAmSeller = await verifyIAmSeller(_oid, auth);
-                }
-                if (!iAmSeller) {
-                    console.log(`FunPay Funcy AR: пропуск события по заказу #${_oid} - это моя покупка, не реагируем.`);
+                const role = iAmInitiator ? 'buyer' : await roleForOrder(msg.orderId);
+                if (role !== 'seller') {
+                    console.log(`FunPay Funcy AR: пропуск события по заказу #${msg.orderId} — роль продавца не подтверждена (${role}).`);
                 } else if (msgType === 'ORDER_PURCHASED') {
-                    await recordPurchasedOrder(msg, 'chat', { purchasedAt: Date.now() });
                     await handleOrderPurchased(msg, auth, fresh);
-                    await handleAutoDelivery(msg, auth, fresh);
+                    await observeOrder(msg);
                 } else if (msgType === 'ORDER_CONFIRMED') {
                     await handleOrderConfirmed(msg, auth, fresh);
+                    await observeOrder(msg, { adopt: false });
                 } else {
                     await handleReview(msg, auth, fresh);
+                    await observeOrder(msg, { adopt: false });
                 }
+            } else if ((msgType === 'REFUND' || msgType === 'PARTIAL_REFUND' || msgType === 'ORDER_REOPENED') && orderIdOf(msg)) {
+                // Возврат или повторное открытие: перечитываем заказ, чтобы остановить эффекты.
+                await observeOrder(msg, { adopt: false });
             } else if (msgType === 'NON_SYSTEM' && !isSameText) {
                 await handleGreeting(msg, auth, fresh);
                 await handleKeywords(msg, auth, fresh);

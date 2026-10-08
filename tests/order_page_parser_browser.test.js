@@ -60,3 +60,49 @@ test('order page parser reads lot, category, quantity, status and buyer from rea
         await browser.close();
     }
 });
+
+async function parseFacts(browser, html) {
+    const page = await browser.newPage();
+    try {
+        await page.setContent('<html><body></body></html>');
+        return await page.evaluate(({ code, html }) => {
+            window.__fptParseHTML = markup => new DOMParser().parseFromString(markup, 'text/html');
+            // eslint-disable-next-line no-new-func
+            new Function(`${code}\nwindow.__parse = parseOrderFacts;`)();
+            return window.__parse(html);
+        }, { code: parserSource, html });
+    } finally {
+        await page.close();
+    }
+}
+
+test('order facts parser returns raw page facts without decisions', async () => {
+    const browser = await chromium.launch({ executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+    try {
+        const facts = await parseFacts(browser, fixture);
+        assert.equal(facts.recognized, true);
+        assert.equal(facts.pageOrderId, 'ABCD1234');
+        assert.equal(facts.currentUserId, '100');
+        assert.equal(facts.sellerId, '100');
+        assert.equal(facts.buyerId, '555');
+        assert.equal(facts.buyerChatId, '31337');
+        assert.equal(facts.statusText, 'Оплачен');
+        assert.equal(facts.quantityText, '2 шт.');
+        assert.equal(facts.lotId, '987654');
+        assert.deepEqual(facts.secrets, ['KEY-1111', 'KEY-2222']);
+        assert.equal(facts.review.sectionFound, false);
+
+        const fractional = await parseFacts(browser, fixture.replace('2 шт.', '1,5 шт.'));
+        assert.equal(fractional.quantityText, '1,5 шт.', 'the raw quantity is passed through whole');
+        const delivery = await parse(browser, fixture.replace('2 шт.', '1,5 шт.'));
+        assert.equal(delivery.amount, null, 'the legacy parser no longer truncates 1,5 to 1');
+        assert.equal((await parse(browser, fixture.replace('2 шт.', '2abc'))).amount, null);
+
+        const reviewed = await parseFacts(browser, fixture.replace('</div>\n</body>', '<div class="order-review"><div class="rating"><div class="rating2"></div></div></div></div>\n</body>'));
+        assert.equal(reviewed.review.rating, 2);
+        const noHeader = await parseFacts(browser, fixture.replace('Заказ #ABCD1234', 'Something'));
+        assert.equal(noHeader.recognized, false);
+    } finally {
+        await browser.close();
+    }
+});

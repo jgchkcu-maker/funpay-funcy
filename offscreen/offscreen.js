@@ -1159,9 +1159,10 @@ function parseOrderPageForDelivery(html) {
             if (match) { nodeType = match[1]; nodeId = match[2]; break; }
         }
 
+        // Количество разбирается целиком: «1,5», «1.5» и «2abc» — не целые штуки.
         const amountText = fptOrderParamText(fptOrderParam(items, /^(количество|кол-во|amount|quantity)/));
-        const amountMatch = amountText.replace(/\s/g, '').match(/^(\d+)/);
-        const amount = amountMatch ? parseInt(amountMatch[1], 10) : null;
+        const amountMatch = amountText.match(/^(\d{1,3}(?:[    ]\d{3})+|\d+)(?:\s+(?:шт|pcs|pc)\.?)?$/i);
+        const amount = amountMatch ? Number(amountMatch[1].replace(/[    ]/g, '')) || null : null;
 
         const statusText = fptOrderParamText(fptOrderParam(items, /^(статус|status)/)).toLowerCase();
         const status = /возврат|refund/.test(statusText) ? 'refunded'
@@ -1191,6 +1192,99 @@ function parseOrderPageForDelivery(html) {
         return { secrets, lotId, nodeId, nodeType, amount, status, buyerChatId, buyerId, buyerUsername, lotName, category };
     } catch (e) {
         console.error('FunPay Funcy Offscreen: Error in parseOrderPageForDelivery', e);
+        return null;
+    }
+}
+
+// Сырые факты страницы заказа без решений: номер со страницы, участники, статус и
+// количество исходным текстом, привязка к лоту, разметка отзыва. Нормализует и
+// проверяет их background/order_facts.js.
+function parseOrderFacts(html) {
+    try {
+        const doc = window.__fptParseHTML(html);
+        const items = fptOrderParamItems(doc);
+        const userIdOf = link => link?.getAttribute('href')?.match(/\/users\/(\d+)/)?.[1] || null;
+
+        let currentUserId = null;
+        const appDataRaw = doc.querySelector('body')?.getAttribute('data-app-data');
+        if (appDataRaw) {
+            try {
+                const data = JSON.parse(appDataRaw.replace(/&quot;/g, '"'));
+                const user = Array.isArray(data) ? data[0] : data;
+                currentUserId = user?.userId != null ? String(user.userId) : null;
+            } catch (_) {}
+        }
+
+        const header = doc.querySelector('h1.page-header, .page-header h1, h1');
+        const pageOrderId = (header?.textContent || '').match(/(?:заказ|order)\s*#\s*([A-Z0-9]{8})\b/i)?.[1]?.toUpperCase() || null;
+
+        let sellerId = null;
+        let buyerId = null;
+        let buyerUsername = null;
+        for (const { item, title } of items) {
+            const link = item.querySelector('a[href*="/users/"]');
+            if (!link) continue;
+            if (/^(продавец|seller)/.test(title)) sellerId = userIdOf(link);
+            else if (/^(покупатель|buyer)/.test(title)) { buyerId = userIdOf(link); buyerUsername = link.textContent.trim() || null; }
+        }
+
+        let lotId = null;
+        for (const link of doc.querySelectorAll('a[href*="offer"]')) {
+            const match = (link.getAttribute('href') || '').match(/\/lots\/offer\?(?:[^#]*&)?id=(\d+)/);
+            if (match) { lotId = match[1]; break; }
+        }
+        const categoryItem = fptOrderParam(items, /^(категория|category)/);
+        let nodeId = null;
+        let nodeType = null;
+        for (const link of [categoryItem?.querySelector('a[href]'), ...doc.querySelectorAll('.param-item a[href*="/lots/"], .param-item a[href*="/chips/"]')]) {
+            const match = link?.getAttribute('href')?.match(/\/(lots|chips)\/(\d+)\/?(?:[?#]|$)/);
+            if (match) { nodeType = match[1]; nodeId = match[2]; break; }
+        }
+
+        const chatLink = doc.querySelector('.order-user a[href*="/chat/?node="], a[href*="chat/?node="]');
+        const buyerChatId = chatLink?.getAttribute('href')?.match(/node=(\d+)/)?.[1] || null;
+
+        const secretsBox = doc.querySelector('.order-secrets-box, .order-secrets-list');
+        const secrets = secretsBox
+            ? Array.from(secretsBox.querySelectorAll('li, .secret-placeholder')).map(el => el.textContent.trim()).filter(Boolean)
+            : [];
+        if (secretsBox && !secrets.length) {
+            secretsBox.textContent.split(/\n+/).map(line => line.trim()).filter(Boolean).forEach(line => secrets.push(line));
+        }
+
+        // Отзыв: рейтинг/текст — отзыв есть; узнаваемый пустой блок — отзыва нет.
+        const reviewSection = doc.querySelector('.order-review, .review-container, .review-compose, .review-item');
+        const reviewHeading = items.some(entry => /^(отзыв|review)/.test(entry.title));
+        const ratingDiv = doc.querySelector('.order-review .rating > div, .review-item .rating > div');
+        const ratingClass = ratingDiv ? Array.from(ratingDiv.classList).find(c => /^rating\d$/.test(c)) : null;
+        const reviewText = doc.querySelector('.review-item-text, .order-review .review-text');
+        const authorLink = doc.querySelector('.review-item-head .media-user-name a, .order-review .media-user-name a');
+
+        return {
+            recognized: Boolean(pageOrderId && items.length),
+            pageOrderId,
+            currentUserId,
+            sellerId,
+            buyerId,
+            buyerUsername,
+            buyerChatId,
+            statusText: fptOrderParamText(fptOrderParam(items, /^(статус|status)/)),
+            quantityText: fptOrderParamText(fptOrderParam(items, /^(количество|кол-во|amount|quantity)/)),
+            lotId,
+            nodeId,
+            nodeType,
+            lotName: fptOrderParamText(fptOrderParam(items, /^(краткое описание|short description)/)),
+            category: doc.querySelector('.order-category, .order-subcategory')?.textContent.trim() || fptOrderParamText(categoryItem),
+            secrets,
+            review: {
+                sectionFound: Boolean(reviewSection || reviewHeading),
+                rating: ratingClass ? Number(ratingClass.slice(6)) : null,
+                hasReviewText: Boolean(reviewText && reviewText.textContent.trim()),
+                authorId: userIdOf(authorLink)
+            }
+        };
+    } catch (e) {
+        console.error('FunPay Funcy Offscreen: Error in parseOrderFacts', e);
         return null;
     }
 }
@@ -1513,6 +1607,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case 'parseOrderParticipants':
             sendResponse(parseOrderParticipants(message.html));
+            break;
+        case 'parseOrderFacts':
+            sendResponse(parseOrderFacts(message.html));
             break;
         case 'parseSupportTickets':
             sendResponse(parseSupportTickets(message.html));

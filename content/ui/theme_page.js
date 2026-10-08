@@ -131,16 +131,10 @@
         input.setAttribute('role', 'switch');
         input.setAttribute('aria-label', labelText);
         label.append(input, node('span', 'fpt-th-switch-track'));
-        let stateLabel = null;
         const element = node('div', 'fpt-th-switch-line');
         if (master) element.classList.add('fpt-th-master-switch');
         element.appendChild(label);
-        if (master) {
-            stateLabel = node('span', 'fpt-th-switch-state', checked ? 'Вкл' : 'Выкл');
-            element.appendChild(stateLabel);
-        }
         input.addEventListener('change', () => {
-            if (stateLabel) stateLabel.textContent = input.checked ? 'Вкл' : 'Выкл';
             if (onChange) onChange(input.checked, input);
         });
         return {
@@ -148,7 +142,6 @@
             input,
             setChecked(value) {
                 input.checked = !!value;
-                if (stateLabel) stateLabel.textContent = input.checked ? 'Вкл' : 'Выкл';
             }
         };
     }

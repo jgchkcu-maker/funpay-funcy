@@ -89,7 +89,8 @@
             'Экспорт сохраняет лоты выбранных категорий в файл JSON — это резервная копия и способ перенести лоты.',
             'Импорт создаёт лоты из такого файла. Ход сохраняется: импорт можно отложить, продолжить или пропустить проблемный лот.',
             'Файл можно перетащить прямо на карточку «Импорт из файла».',
-            'Массовое редактирование меняет название, описание, цену или активирует выбранные лоты за один запуск.'
+            'Массовое редактирование меняет название, описание, цену или активирует выбранные лоты за один запуск.',
+            'Расписание включает и выключает лоты по недельным окнам; цены от себестоимости меняются только после предпросмотра.'
         ].forEach(text => helpList.appendChild(node('li', '', text)));
         helpPanel.appendChild(helpList);
 
@@ -175,8 +176,22 @@
         fileInput.accept = '.json,application/json';
         fileInput.id = 'lot-io-import-file';
         fileInput.setAttribute('aria-label', 'Файл резервной копии лотов');
+        // Расписание и цены от себестоимости открываются диалогами (lot_automation_page.js).
+        const scheduleButton = button('Настроить', 'fpt-lot-action-button', 'schedule', 'fp-lot-schedule-btn');
+        const scheduleTool = tool('schedule', 'schedule', 'Расписание', 'Недельные окна продаж: вне окна лот выключается, в окне снова включается.');
+        scheduleTool.appendChild(scheduleButton);
+        scheduleButton.addEventListener('click', () => root.FPTLotAutomationPage?.openScheduleDialog(popup));
+        const pricingButton = button('Рассчитать', 'fpt-lot-action-button', 'price_change', 'fp-lot-pricing-btn');
+        const pricingTool = tool('pricing', 'price_change', 'Цены от себестоимости', 'Наценка или маржа, минимальная прибыль и предпросмотр перед изменением.');
+        pricingTool.appendChild(pricingButton);
+        pricingButton.addEventListener('click', () => root.FPTLotAutomationPage?.openPricingDialog(popup));
         actionBand.append(exportTool, importTool, bulkTool, fileInput);
         view.appendChild(actionBand);
+        // Отдельная полоса автоматизации: основная полоса переноса лотов остаётся компактной.
+        const automationBand = node('section', 'fpt-lot-automation-band');
+        automationBand.setAttribute('aria-label', 'Автоматизация лотов');
+        automationBand.append(scheduleTool, pricingTool);
+        view.appendChild(automationBand);
 
         const section = node('section', 'fpt-lot-import-section');
         section.setAttribute('aria-labelledby', 'fpt-lot-import-title');
@@ -247,7 +262,10 @@
                 const total = Array.isArray(task.lots) ? task.lots.length : 0;
                 const currentIndex = Math.max(0, Math.min(total, Number(task.currentIndex) || 0));
                 const currentLot = task.lots?.[currentIndex];
-                if (currentLot?.status === 'error') {
+                if (currentLot?.status === 'uncertain') {
+                    kind = 'warning';
+                    text = `Нужна проверка · ${currentIndex} из ${total}: ${currentLot.error || 'Лот мог создаться.'}`;
+                } else if (currentLot?.status === 'error') {
                     kind = 'error';
                     text = `Ошибка · ${currentIndex} из ${total}: ${currentLot.error || 'Проверьте текущий лот.'}`;
                 } else if (task.state === 'postponed') {
@@ -306,7 +324,7 @@
                 menu.appendChild(menuButton);
             };
             if (task.state === 'running' && !hasError) addAction('Отложить импорт', 'postpone');
-            if (currentLot && ['pending', 'error'].includes(currentLot.status)) addAction('Пропустить текущий лот', 'skip');
+            if (currentLot && ['pending', 'error', 'uncertain'].includes(currentLot.status)) addAction('Пропустить текущий лот', 'skip');
             addAction('Отменить импорт', 'cancel', 'fpt-lot-danger-item');
 
             trigger.addEventListener('click', () => {
@@ -349,7 +367,9 @@
             const completed = currentIndex;
             const percent = Math.max(0, Math.min(100, Math.round(completed / total * 100)));
             const isPostponed = task.state === 'postponed';
-            const hasError = currentLot?.status === 'error';
+            // uncertain: FunPay не подтвердил создание — лот мог появиться, повтор только по решению продавца.
+            const isUncertain = currentLot?.status === 'uncertain';
+            const hasError = currentLot?.status === 'error' || isUncertain;
             const card = node('article', 'fpt-lot-import-card');
             card.dataset.state = hasError ? 'error' : isPostponed ? 'postponed' : 'running';
             card.setAttribute('aria-label', `Импорт ${task.name || 'лотов'}`);
@@ -364,7 +384,9 @@
             const status = node('div', 'fpt-lot-file-status');
             const dot = node('span', `fpt-lot-status-dot${hasError ? ' fpt-lot-status-dot--error' : !isPostponed ? ' fpt-lot-status-dot--running' : ''}`);
             dot.setAttribute('aria-hidden', 'true');
-            const statusText = hasError
+            const statusText = isUncertain
+                ? `Нужна проверка · ${completed} из ${total}`
+                : hasError
                 ? `Ошибка · ${completed} из ${total}`
                 : `${isPostponed ? 'Приостановлен' : 'Выполняется'} · ${completed} из ${total}`;
             status.append(dot, node('span', '', statusText));
@@ -410,11 +432,12 @@
             continueButton.type = 'button';
             continueButton.append(
                 icon(isPostponed || hasError ? 'play_arrow' : 'progress_activity'),
-                node('span', '', isPostponed || hasError ? 'Продолжить' : 'Импорт идёт')
+                node('span', '', isUncertain ? 'Повторить лот' : isPostponed || hasError ? 'Продолжить' : 'Импорт идёт')
             );
             continueButton.id = 'lot-io-continue-btn';
             continueButton.disabled = !(isPostponed || hasError);
             continueButton.addEventListener('click', async () => {
+                if (isUncertain && !window.confirm('FunPay не подтвердил создание этого лота — он мог уже появиться. Проверьте список лотов: если лот есть, выберите «Пропустить текущий лот». Создать его ещё раз?')) return;
                 continueButton.disabled = true;
                 try {
                     assertSuccessfulResponse(await root.fptPopupActions.run(PAGE_ID, IMPORT_ACTIONS.continue));

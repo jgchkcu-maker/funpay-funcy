@@ -521,3 +521,27 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('focus', () => { try { fptApplyThemeVars(); } catch (_) {} });
 window.addEventListener('pageshow', () => { try { fptApplyThemeVars(); } catch (_) {} });
+
+// Изменение существующего лота через фоновую очередь (аккаунт + лот, свежая форма
+// внутри очереди). Страница сообщает, от имени какого аккаунта она открыта:
+// если cookie уже принадлежит другому аккаунту, фон откажет.
+function fptPageUserId() {
+    try {
+        const app = JSON.parse(document.body?.dataset.appData || '{}');
+        const userId = (Array.isArray(app) ? app[0] : app)?.userId;
+        return userId != null ? String(userId) : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+async function fptLotWrite({ offerId, nodeId, op, source = 'page' }) {
+    const response = await chrome.runtime.sendMessage({
+        action: 'fptLotWrite', offerId: String(offerId), nodeId: nodeId ? String(nodeId) : '', op, source,
+        expectedAccountId: fptPageUserId()
+    });
+    if (!response?.success) throw new Error(response?.error || 'Лот не сохранён.');
+    return response;
+}
+window.fptLotWrite = fptLotWrite;
+window.fptPageUserId = fptPageUserId;

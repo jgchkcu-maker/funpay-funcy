@@ -76,47 +76,80 @@ test('setLotActive removes the active field to deactivate and reports unverified
     assert.deepEqual(result.notApplied, ['active']);
 });
 
-test('availability decisions never act on unknown stock and respect per-lot opt-outs', async () => {
-    const { decideLotAvailability } = await import(availabilityUrl);
-    const on = { restoreEnabled: true, disableEnabled: true };
-    assert.equal(decideLotAvailability({ ...on, config: { productCount: null }, active: true }), null);
-    assert.equal(decideLotAvailability({ ...on, config: { mode: 'template', productCount: 0 }, active: true }), null);
-    assert.equal(decideLotAvailability({ ...on, config: { productCount: 0 }, active: true }), 'deactivate');
-    assert.equal(decideLotAvailability({ ...on, config: { productCount: 0, autoDisableEnabled: false }, active: true }), null);
-    assert.equal(decideLotAvailability({ ...on, config: { productCount: 3 }, active: false }), 'activate');
-    assert.equal(decideLotAvailability({ ...on, config: { productCount: 3, autoRestoreEnabled: false }, active: false }), null);
-    assert.equal(decideLotAvailability({ restoreEnabled: false, disableEnabled: true, config: { productCount: 3 }, active: false }), null);
+const policyUrl = pathToFileURL(path.join(__dirname, '../background/lot_policy.js')).href;
+
+async function activityEnv(forms) {
+    const { createLotWriter, createLotWriteQueue } = await import(writerUrl);
+    const { createLotActivityService } = await import(availabilityUrl);
+    const { createLotPolicyStore } = await import(policyUrl);
+    const site = fakeFunPay(forms);
+    const data = {};
+    const storage = {
+        get: async keys => Object.fromEntries([].concat(keys).map(key => [key, structuredClone(data[key])])),
+        set: async patch => Object.assign(data, structuredClone(patch))
+    };
+    const guard = { current: async () => ({ accountId: '100', epoch: 1 }), assertCurrent: async () => ({}) };
+    const queue = createLotWriteQueue({ writer: createLotWriter(site), deleteOffer: async () => {}, guard, log: { warn() {} } });
+    const policies = createLotPolicyStore({ storage });
+    const activity = createLotActivityService({ queue, policies });
+    return { site, data, storage, policies, activity };
+}
+
+test('activity service leaves unmanaged lots alone and never reads or acts on stock', async () => {
+    const env = await activityEnv({ '501': { active: 'on', secrets: '' }, '502': { active: '', secrets: 'a\nb' } });
+    assert.equal((await env.activity.apply({ accountId: '100', offerId: '501', nodeId: '42' })).status, 'not-managed');
+    // A managed lot with no blocker is not switched by its stock, in either direction.
+    for (const id of ['501', '502']) await env.policies.update('100', id, policy => ({ ...policy, manageActive: true }), { nodeId: '42' });
+    await env.activity.apply({ accountId: '100', offerId: '501', nodeId: '42' });
+    await env.activity.apply({ accountId: '100', offerId: '502', nodeId: '42' });
+    assert.equal(env.site.saves.length, 0);
+    assert.equal((await env.policies.get('100', '502')).inactiveEvidence, 'unknown', 'a lot that was off is not ours to switch on');
 });
 
-test('background sweep toggles lots without an open tab and skips lots it cannot locate', async () => {
-    const { createLotWriter } = await import(writerUrl);
-    const { createLotAvailabilitySweep } = await import(availabilityUrl);
-    const site = fakeFunPay({
-        '501': { active: 'on', 'fields[summary][ru]': 'Пустой' },
-        '502': { active: '' },
-        '503': { active: 'on' }
-    });
-    const notices = [];
-    const sweep = createLotAvailabilitySweep({
-        getSettings: async () => ({
-            fpToolsAutoRestoreEnabled: true,
-            fpToolsAutoDisableEnabled: true,
-            fpToolsAutoDeliveryLots: {
-                '501': { productCount: 0, nodeId: '42' },
-                '502': { productCount: 5 },
-                '503': { productCount: null, nodeId: '44' },
-                '504': { productCount: 2 }
-            }
-        }),
-        listOwnLots: async () => [{ id: '502', nodeId: '43', title: 'Пополненный' }],
-        writer: createLotWriter(site),
-        notify: change => notices.push(change),
-        log: { warn() {} }
-    });
+test('a manual change by the seller pauses management; manual off is never overridden', async () => {
+    const env = await activityEnv({ '601': { active: 'on', secrets: 'k' } });
+    await env.policies.update('100', '601', policy => ({ ...policy, manageActive: true }), { nodeId: '42' });
+    await env.policies.setBlocker('100', '601', 'schedule', true, { reason: 'Вне окна' });
+    assert.equal((await env.activity.apply({ accountId: '100', offerId: '601', nodeId: '42' })).decision, 'deactivate');
+    assert.equal(env.site.lots.get('601').active, undefined);
+    // The seller switches the lot back on by hand while the blocker is still there.
+    env.site.lots.get('601').active = 'on';
+    await env.activity.apply({ accountId: '100', offerId: '601', nodeId: '42' });
+    assert.equal(env.site.lots.get('601').active, 'on', 'a manual activation is not fought');
+    assert.equal((await env.policies.get('100', '601')).paused.reason, 'external-change');
 
-    const result = await sweep.sweep();
-    assert.deepEqual(result.changed, [{ id: '501', decision: 'deactivate' }, { id: '502', decision: 'activate' }]);
-    assert.deepEqual(result.skipped, ['504'], 'a lot without a known category is skipped');
-    assert.equal(site.saves.some(save => save.lot.id === '503'), false, 'unknown stock is never touched');
-    assert.deepEqual(notices.map(n => [n.offerId, n.title, n.active]), [['501', 'Пустой', false], ['502', 'Пополненный', true]]);
+    const env2 = await activityEnv({ '602': { active: '', secrets: 'x' } });
+    await env2.policies.update('100', '602', policy => ({ ...policy, manageActive: true, manualIntent: 'off', adoptInactive: true }), { nodeId: '42' });
+    await env2.activity.apply({ accountId: '100', offerId: '602', nodeId: '42' });
+    assert.equal(env2.site.saves.length, 0, '«Не включать автоматически» wins');
+});
+
+test('traces of the retired stock sweep neither hold a lot off nor let automation switch it on', async () => {
+    const { withoutRetiredStockState, releaseStockManagedLots, STOCK_MANAGEMENT_RELEASED_KEY, LOT_POLICIES_KEY } = await import(policyUrl);
+    const legacy = { manageActive: true, blockers: { stock: { reason: 'Склад пуст' }, schedule: { reason: 'x' } }, disabledBy: ['stock'], inactiveEvidence: null };
+    const cleaned = withoutRetiredStockState(legacy);
+    assert.deepEqual(Object.keys(cleaned.blockers), ['schedule']);
+    assert.deepEqual(cleaned.disabledBy, []);
+    assert.equal(cleaned.inactiveEvidence, 'unknown', 'a lot the sweep switched off is not ours to switch on any more');
+    assert.equal(withoutRetiredStockState({ ...legacy, blockers: {}, disabledBy: [], inactiveEvidence: 'stock-empty' }).inactiveEvidence, 'unknown');
+    const mixed = withoutRetiredStockState({ ...legacy, disabledBy: ['stock', 'schedule'] });
+    assert.deepEqual(mixed.disabledBy, ['schedule']);
+    assert.equal(mixed.inactiveEvidence, null);
+
+    const env = await activityEnv({ '701': { active: 'on' } });
+    const base = { revision: 1, nodeId: '42', blockers: {}, disabledBy: [], manualIntent: 'auto', adoptInactive: false };
+    env.data[LOT_POLICIES_KEY] = {
+        '100:1': { ...base, accountId: '100', offerId: '1', manageActive: true },
+        '100:2': { ...base, accountId: '100', offerId: '2', manageActive: true },
+        '100:3': { ...base, accountId: '100', offerId: '3', manageActive: true, manualIntent: 'off' },
+        '100:4': { ...base, accountId: '100', offerId: '4', manageActive: false }
+    };
+    env.data.fpToolsLotSchedules = { bindings: { '100:2': { ruleId: 'r1' }, '100:9': { ruleId: null } } };
+    env.data.fpToolsPricing = { bindings: {} };
+    const released = await releaseStockManagedLots({ storage: env.storage, policies: env.policies, bindingKeys: ['fpToolsLotSchedules', 'fpToolsPricing'] });
+    assert.equal(released, 2, 'lots nothing else manages are released, manual commands included');
+    const managed = Object.fromEntries((await env.policies.list('100')).map(policy => [policy.offerId, [policy.manageActive, policy.manualIntent]]));
+    assert.deepEqual(managed, { 1: [false, 'auto'], 2: [true, 'auto'], 3: [false, 'auto'], 4: [false, 'auto'] });
+    assert.equal(env.data[STOCK_MANAGEMENT_RELEASED_KEY], true);
+    assert.equal(await releaseStockManagedLots({ storage: env.storage, policies: env.policies, bindingKeys: [] }), 0, 'the release runs once');
 });

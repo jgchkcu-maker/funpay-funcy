@@ -5,10 +5,6 @@
     const PAGE_ID = 'auto_delivery';
     // The lot list and stock counts older than this are reloaded on their own when the page is opened.
     const AUTO_REFRESH_MS = 15 * 60 * 1000;
-    const GLOBAL_SETTINGS = Object.freeze({
-        restore: 'fpToolsAutoRestoreEnabled',
-        disable: 'fpToolsAutoDisableEnabled'
-    });
 
     function node(tag, className, text) {
         const element = document.createElement(tag);
@@ -35,7 +31,12 @@
         if (draft.stockError) {
             return { text: 'Не удалось проверить остаток', kind: 'error', title: draft.stockError };
         }
-        return formatStock(draft.productCount, draft.mode);
+        const state = formatStock(draft.productCount, draft.mode);
+        // Остаток — снимок склада FunPay: показываем, когда он проверен.
+        if (state.kind !== 'unknown' && Number.isFinite(draft.stockCheckedAt)) {
+            state.title = `Склад FunPay проверен ${formatCheckedAt(draft.stockCheckedAt).toLowerCase()}`;
+        }
+        return state;
     }
 
     function pluralLots(count) {
@@ -129,14 +130,10 @@
         return { label, input };
     }
 
-    function makeSwitchLine(control, checked) {
+    function makeSwitchLine(control) {
         const line = node('div', 'fpt-ad-switch-line');
-        const state = node('span', 'fpt-ad-switch-state', checked ? 'Вкл' : 'Выкл');
-        control.input.addEventListener('change', () => {
-            state.textContent = control.input.checked ? 'Вкл' : 'Выкл';
-        });
-        line.append(control.label, state);
-        return { element: line, state };
+        line.append(control.label);
+        return { element: line };
     }
 
     function makeHelpPanel() {
@@ -150,23 +147,10 @@
         [
             'После оплаты расширение отправляет покупателю в чат товар со склада FunPay или ваш шаблон.',
             'В шаблоне работают переменные {buyername}, {lotname}, {orderid}, {orderlink}, {welcome}, {date}; $sleep=5 делит текст на сообщения с паузой.',
-            'Остатки обновляются кнопкой «Обновить лоты» и после каждой успешной выдачи.',
-            'Правила склада учитывают только лоты с включённой автовыдачей и сохранёнными настройками.'
+            'Остатки обновляются кнопкой «Обновить лоты» и после каждой успешной выдачи.'
         ].forEach(text => list.appendChild(node('li', '', text)));
         panel.appendChild(list);
         return panel;
-    }
-
-    function createRule({ id, iconName, title, description, settingKey, checked }) {
-        const row = node('article', 'fpt-ad-rule-row');
-        const iconWrap = node('span', `fpt-ad-rule-icon fpt-ad-rule-icon--${settingKey}`);
-        iconWrap.appendChild(icon(iconName));
-        const copy = node('div', 'fpt-ad-rule-copy');
-        copy.append(node('h3', '', title), node('p', '', description));
-        const control = makeSwitch(id, title, checked, 'fpt-ad-global-switch');
-        control.input.dataset.settingKey = settingKey;
-        row.append(iconWrap, copy, makeSwitchLine(control, checked).element);
-        return row;
     }
 
     function createEmptyState(kind = 'empty') {
@@ -218,7 +202,8 @@
         const stockSnapshot = Number.isInteger(settings.productCount) && settings.productCount >= 0
             ? settings.productCount
             : Number.isInteger(config.stockSnapshot) && config.stockSnapshot >= 0 ? config.stockSnapshot : null;
-        return { ...settings, stockSnapshot, saved: { ...settings }, dirty: false };
+        const stockCheckedAt = Number.isFinite(config.stockCheckedAt) ? config.stockCheckedAt : null;
+        return { ...settings, stockSnapshot, stockCheckedAt, saved: { ...settings }, dirty: false };
     }
 
     function settingsChanged(draft) {
@@ -271,12 +256,7 @@
         const enabled = makeSwitch(`fpt-ad-enabled-${id}`, `Автовыдача для лота ${lot.title || id}`, draft.enabled);
         enabled.input.dataset.lotControl = 'enabled';
         enabled.input.dataset.lotId = id;
-        const enabledLine = makeSwitchLine(enabled, draft.enabled);
-        if (!draft.enabled) {
-            enabledLine.state.remove();
-            enabledLine.element.appendChild(node('span', 'fpt-ad-disabled-badge', 'Выкл'));
-        }
-        delivery.appendChild(enabledLine.element);
+        delivery.appendChild(makeSwitchLine(enabled).element);
 
         const source = node('div', 'fpt-ad-lot-source');
         const sourceLabel = node('label', 'fpt-ad-field-label', 'Источник товаров');
@@ -285,7 +265,8 @@
         select.id = `fpt-ad-source-${id}`;
         select.dataset.lotControl = 'mode';
         select.dataset.lotId = id;
-        for (const [value, label] of [['secrets', 'Склад FunPay'], ['template', 'Свой шаблон']]) {
+        const sources = [['secrets', 'Склад FunPay'], ['template', 'Свой шаблон']];
+        for (const [value, label] of sources) {
             const option = node('option', '', label);
             option.value = value;
             option.selected = draft.mode === value;
@@ -397,7 +378,7 @@
             if (control.dataset.lotControl === 'enabled') draft.enabled = control.checked;
             if (control.dataset.lotControl === 'mode') {
                 draft.mode = control.value;
-                if (draft.mode === 'template') {
+                if (draft.mode !== 'secrets') {
                     if (Number.isInteger(draft.productCount) && draft.productCount >= 0) {
                         draft.stockSnapshot = draft.productCount;
                     }
@@ -458,18 +439,6 @@
         if (delivery) {
             const enabled = delivery.querySelector('[data-lot-control="enabled"]');
             if (enabled) enabled.checked = draft.enabled;
-            const state = delivery.querySelector('.fpt-ad-switch-state');
-            const line = delivery.querySelector('.fpt-ad-switch-line');
-            const badge = line?.querySelector('.fpt-ad-disabled-badge');
-            if (draft.enabled) {
-                if (badge) badge.remove();
-                const enabledState = state || node('span', 'fpt-ad-switch-state', 'Вкл');
-                enabledState.textContent = 'Вкл';
-                if (line && !state) line.appendChild(enabledState);
-            } else {
-                if (state) state.remove();
-                if (line && !badge) line.appendChild(node('span', 'fpt-ad-disabled-badge', 'Выкл'));
-            }
         }
         if (unsavedBadge) unsavedBadge.hidden = !draft.dirty;
         if (save) save.disabled = !draft.dirty || invalidTemplate;
@@ -525,39 +494,11 @@
         metrics.append(metricActive.element, metricStock.element, metricAttention.element, metricChecked.element);
         hero.append(heroMain, metrics);
 
-        const rules = node('section', 'fpt-ad-rules fpt-qr-card fpt-ad-rules-card');
-        rules.setAttribute('aria-labelledby', 'fpt-ad-rules-title');
-        const rulesHead = node('div', 'fpt-qr-card-head');
-        const rulesEmblem = node('span', 'fpt-qr-emblem');
-        rulesEmblem.appendChild(icon('warehouse'));
-        const rulesCopy = node('div', 'fpt-qr-card-copy');
-        const rulesHeading = node('h3', '', 'Правила склада');
-        rulesHeading.id = 'fpt-ad-rules-title';
-        rulesCopy.append(rulesHeading, node('p', '', 'Применяются к сохранённым лотам с включённой автовыдачей.'));
-        rulesHead.append(rulesEmblem, rulesCopy);
-        rules.appendChild(rulesHead);
-        const storageKeys = [GLOBAL_SETTINGS.restore, GLOBAL_SETTINGS.disable, 'fpToolsAutoDeliveryLots', 'fpToolsAutoDeliveryLotsCache'];
+        const storageKeys = ['fpToolsAutoDeliveryLots', 'fpToolsAutoDeliveryLotsCache'];
         let initialSettings = {};
         try {
             initialSettings = await root.fptPopupActions.run(PAGE_ID, 'getSettings', { keys: storageKeys });
         } catch (_) {}
-        const rulePanel = node('div', 'fpt-ad-rule-panel');
-        rulePanel.append(
-            createRule({
-                id: 'fpToolsAutoRestoreEnabled', iconName: 'sync', title: 'Автовосстановление лотов',
-                description: 'Снова активировать лот, когда на складе появились товары.',
-                settingKey: 'restore', checked: initialSettings[GLOBAL_SETTINGS.restore] === true
-            }),
-            createRule({
-                id: 'fpToolsAutoDisableEnabled', iconName: 'visibility_off', title: 'Деактивация при пустом складе',
-                description: 'Скрывать лот, когда товары на складе закончились.',
-                settingKey: 'disable', checked: initialSettings[GLOBAL_SETTINGS.disable] === true
-            })
-        );
-        rules.appendChild(rulePanel);
-        const rulesStatus = node('p', 'fpt-ad-rules-status');
-        rulesStatus.setAttribute('aria-live', 'polite');
-        rules.appendChild(rulesStatus);
 
         const lotsSection = node('section', 'fpt-ad-lots');
         lotsSection.setAttribute('aria-labelledby', 'fpt-ad-lots-title');
@@ -672,7 +613,36 @@
         const lotsHeader = node('div', 'fpt-finance fpt-ad-lots-header');
         lotsHeader.append(lotsHeading, toolbar);
         lotsSection.append(lotsHeader, cacheStatus, progressWrap, loadStatus, list, saveBar);
-        view.append(hero, rules, lotsSection);
+        // Две вкладки: настройки лотов и журнал «Заказы и выдачи». «Проблемы» в фильтре
+        // лотов по-прежнему означают проблемы лотов (пустой склад, ошибка остатка).
+        const viewTabs = node('div', 'fpt-auto-tabs fpt-ad-view-tabs');
+        viewTabs.setAttribute('role', 'tablist');
+        viewTabs.setAttribute('aria-label', 'Раздел автовыдачи');
+        const lotsPanel = node('div', 'fpt-ad-panel');
+        lotsPanel.dataset.panel = 'lots';
+        lotsPanel.append(hero, lotsSection);
+        const ordersPanel = node('div', 'fpt-ad-panel');
+        ordersPanel.dataset.panel = 'orders';
+        ordersPanel.hidden = true;
+        let ordersView = null;
+        for (const [id, label] of [['lots', 'Лоты и склад'], ['orders', 'Заказы и выдачи']]) {
+            const tab = node('button', 'fpt-auto-tab', label);
+            tab.type = 'button';
+            tab.setAttribute('role', 'tab');
+            tab.dataset.panel = id;
+            tab.setAttribute('aria-selected', String(id === 'lots'));
+            tab.addEventListener('click', () => {
+                viewTabs.querySelectorAll('.fpt-auto-tab').forEach(item => item.setAttribute('aria-selected', String(item === tab)));
+                lotsPanel.hidden = id !== 'lots';
+                ordersPanel.hidden = id !== 'orders';
+                if (id === 'orders' && root.FPTOrdersView) {
+                    if (!ordersView) ordersView = root.FPTOrdersView.mount(ordersPanel, popup);
+                    ordersView.load();
+                }
+            });
+            viewTabs.appendChild(tab);
+        }
+        view.append(viewTabs, lotsPanel, ordersPanel);
 
         page.appendChild(view);
 
@@ -826,7 +796,7 @@
                 enabled: draft.enabled,
                 mode: draft.mode,
                 text: draft.text,
-                productCount: draft.mode === 'template' ? null : draft.productCount
+                productCount: draft.mode === 'secrets' ? draft.productCount : null
             };
             const controls = Array.from(row.querySelectorAll('[data-lot-control]'));
             const save = row.querySelector('.fpt-ad-save-button');
@@ -838,7 +808,7 @@
             try {
                 const response = await root.fptPopupActions.run(PAGE_ID, 'autoSaveDeliveryLot', { lotId: id, settings: submitted });
                 if (response?.success === false) throw new Error(response.error || 'Не удалось сохранить настройки.');
-                if (submitted.mode === 'template') {
+                if (submitted.mode !== 'secrets') {
                     draft.productCount = null;
                 } else if (response && Object.prototype.hasOwnProperty.call(response, 'productCount')) {
                     draft.productCount = Number.isInteger(response.productCount) && response.productCount >= 0
@@ -875,33 +845,6 @@
             }
             savingAll = false;
             updateListView();
-        });
-
-        let rulesStatusTimer = null;
-        const setRulesStatus = (text, kind) => {
-            if (rulesStatusTimer !== null) window.clearTimeout(rulesStatusTimer);
-            setStatus(rulesStatus, text, kind);
-            if (kind === 'success') {
-                rulesStatusTimer = window.setTimeout(() => setStatus(rulesStatus, '', ''), 2600);
-            }
-        };
-        const saveGlobalSetting = async input => {
-            const previous = input.checked;
-            const key = input.dataset.settingKey === 'restore' ? GLOBAL_SETTINGS.restore : GLOBAL_SETTINGS.disable;
-            input.disabled = true;
-            try {
-                await root.fptPopupActions.run(PAGE_ID, 'saveSettings', { settings: { [key]: input.checked } });
-                setRulesStatus(`${input.getAttribute('aria-label')}: настройка сохранена.`, 'success');
-            } catch (error) {
-                input.checked = !previous;
-                setRulesStatus(error.message || 'Не удалось сохранить правило склада.', 'error');
-            } finally {
-                input.disabled = false;
-            }
-        };
-        rulePanel.addEventListener('change', event => {
-            const input = event.target.closest('.fpt-ad-global-switch');
-            if (input) saveGlobalSetting(input);
         });
 
         const renderLots = ({ lots, config = {}, stockCounts = {}, stockErrors = [] }, { cached = false } = {}) => {

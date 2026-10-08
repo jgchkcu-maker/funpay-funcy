@@ -30,8 +30,18 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsLastOrderId',
     'fpToolsLotImportProcess',
     'fpToolsCheckRestoreLots',
-    // Секреты (shared_secret, ключи поставщиков) не покидают этот браузер.
+    // Секреты (shared_secret) не покидают этот браузер.
     'fpToolsSecrets',
+    // Автоматизация привязана к аккаунту и состоянию лотов этого устройства:
+    // политики, расписания, цены и сроки заданий не переносятся
+    // автоматически (импорт включил бы управление без нового предпросмотра).
+    'fpToolsAccountEpoch',
+    'fpToolsJobDeadlines',
+    'fpToolsDeletedOffers',
+    'fpToolsLotPolicies',
+    'fpToolsLotSchedules',
+    'fpToolsLotSchedulesEnabled',
+    'fpToolsPricing',
     'fpToolsBlacklistUpdated',
     'fpToolsUnreadCount',
     // --- Кэши (большие, легко перезапросятся) ---

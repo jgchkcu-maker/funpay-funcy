@@ -51,7 +51,8 @@ async function anyAutomationEnabled() {
         fpToolsAutoReplies.bonusForReviewEnabled ||
         fpToolsAutoReplies.newOrderReplyEnabled ||
         fpToolsAutoReplies.orderConfirmReplyEnabled ||
-        fpToolsAutoReplies.autoDeliveryEnabled
+        fpToolsAutoReplies.autoDeliveryEnabled ||
+        fpToolsAutoReplies.reviewReminderEnabled
     );
 }
 

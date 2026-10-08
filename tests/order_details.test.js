@@ -23,35 +23,42 @@ test('lot is resolved from the offer link first, then from a unique title in the
     assert.deepEqual(resolveOrderLotId({ lotId: '12345678' /* chat id would look like this */, lotName: '' }, []).source, 'link');
 });
 
-test('order loader reads each order once per window and only lists lots when the link is missing', async () => {
+test('order loader reads each order once per account window and never invents quantity or binding', async () => {
     const { createOrderDetailsLoader } = await import(detailsUrl);
     const clock = { now: 0 };
     const calls = { order: 0, lots: 0 };
+    const page = (orderId, extra) => ({ recognized: true, pageOrderId: orderId, sellerId: '100', currentUserId: '100', statusText: 'Оплачен', ...extra });
     const loader = createOrderDetailsLoader({
         now: () => clock.now,
-        fetchOrderInfo: async orderId => {
+        fetchOrderFacts: async orderId => {
             calls.order += 1;
             return orderId === 'LINKED01'
-                ? { lotId: '501', nodeId: '42', amount: 3 }
-                : { lotId: null, nodeId: '42', lotName: 'Лот', amount: null };
+                ? page(orderId, { lotId: '501', nodeId: '42', quantityText: '3 шт.' })
+                : page(orderId, { lotId: null, nodeId: '42', lotName: 'Лот', quantityText: '' });
         },
         listOwnLots: async () => { calls.lots += 1; return [{ id: '600', nodeId: '42', title: 'Лот' }]; }
     });
 
-    const [a, b] = await Promise.all([loader.load('LINKED01'), loader.load('linked01')]);
+    const scope = { accountId: '100', epoch: 1 };
+    const [a, b] = await Promise.all([loader.load('LINKED01', scope), loader.load('linked01', scope)]);
     assert.equal(a, b);
     assert.equal(calls.order, 1);
     assert.equal(calls.lots, 0, 'a linked lot needs no profile request');
-    assert.equal(a.amount, 3);
+    assert.equal(a.quantity.value, 3);
+    assert.equal(a.lotId, '501');
 
-    const titled = await loader.load('TITLED01');
-    assert.equal(titled.lotId, '600');
-    assert.equal(titled.lotIdSource, 'title');
-    assert.equal(titled.amount, 1, 'missing quantity defaults to one');
+    const titled = await loader.load('TITLED01', scope);
+    assert.equal(titled.lotId, null, 'a matching title is not a binding');
+    assert.deepEqual(titled.lotCandidate, { offerId: '600', source: 'title' });
+    assert.equal(titled.quantity.kind, 'unknown', 'missing quantity stays unknown');
 
+    await loader.load('LINKED01', { accountId: '200', epoch: 1 });
+    assert.equal(calls.order, 3, 'another account never reuses the cache');
+    await loader.load('LINKED01', { ...scope, fresh: true });
+    assert.equal(calls.order, 4, 'fresh reads bypass the cache');
     clock.now = 61_000;
-    await loader.load('LINKED01');
-    assert.equal(calls.order, 3, 'the cache expires');
+    await loader.load('LINKED01', scope);
+    assert.equal(calls.order, 5, 'the cache expires');
 });
 
 test('scheduler dispatches only its own alarms, keeps a running periodic alarm, and serializes recovery', async () => {
@@ -88,4 +95,39 @@ test('scheduler dispatches only its own alarms, keeps a running periodic alarm, 
     clock.now += 31_000;
     await scheduler.runRecovery();
     assert.equal(runs, 2);
+});
+
+test('persisted deadlines survive a worker restart and run once when overdue', async () => {
+    const { createJobScheduler } = await import(schedulerUrl);
+    const data = {};
+    const storage = { get: async key => ({ [key]: data[key] }), set: async patch => Object.assign(data, structuredClone(patch)) };
+    const existing = new Map();
+    const alarms = {
+        create(name, info) { existing.set(name, { name, scheduledTime: info.when }); return Promise.resolve(); },
+        clear(name) { existing.delete(name); return Promise.resolve(true); },
+        async get(name) { return existing.get(name); }
+    };
+    const clock = { now: 1_000_000 };
+    const first = createJobScheduler({ alarms, storage, now: () => clock.now, log: { error() {} } });
+    first.register('schedules', () => {});
+    first.register('reminders', () => {});
+    await first.scheduleDue('schedules', clock.now + 60_000);
+    await first.scheduleDue('reminders', clock.now + 600_000);
+    await assert.rejects(() => first.scheduleDue('unknown', 1), /не зарегистрировано/);
+
+    // The worker dies, Chrome loses the alarms, the computer sleeps for a while.
+    existing.clear();
+    clock.now += 120_000;
+    const runs = [];
+    const second = createJobScheduler({ alarms, storage, now: () => clock.now, log: { error() {} } });
+    second.register('schedules', alarm => runs.push([alarm.name, alarm.recovered]));
+    second.register('reminders', alarm => runs.push([alarm.name, alarm.recovered]));
+    await second.recoverDeadlines();
+    assert.deepEqual(runs, [['schedules', true]], 'only the overdue job runs, once');
+    assert.ok(existing.has('reminders'), 'the future alarm is recreated');
+    assert.equal((await second.getDeadlines()).schedules, undefined);
+    await second.recoverDeadlines();
+    assert.equal(runs.length, 1, 'recovery does not replay');
+    await second.clearDue('reminders');
+    assert.deepEqual(await second.getDeadlines(), {});
 });

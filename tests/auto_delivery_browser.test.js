@@ -27,8 +27,6 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         await page.evaluate(() => {
             document.body.dataset.appData = JSON.stringify([{ userId: 'qa-user' }]);
             const state = {
-                fpToolsAutoRestoreEnabled: true,
-                fpToolsAutoDisableEnabled: true,
                     fpToolsAutoDeliveryLots: {
                     '501': { enabled: true, mode: 'secrets', productCount: 2 },
                     '502': { enabled: false, mode: 'secrets', productCount: 4 },
@@ -186,16 +184,11 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         assert.equal(await stockSnapshotRow.locator('.fpt-ad-lot-stock').textContent(), 'На складе: 6 шт.',
             'switching back to secrets must restore the last known stock');
 
-        assert.equal(await page.locator('#fpToolsAutoRestoreEnabled').isChecked(), true);
-        assert.equal(await page.locator('#fpToolsAutoDisableEnabled').isChecked(), true);
+        assert.equal(await page.locator('#fpToolsAutoRestoreEnabled, #fpToolsAutoDisableEnabled, .fpt-ad-rules').count(), 0,
+            'stock automation toggles are gone: the page only shows the stock');
         const disabledRow = page.locator('.fpt-ad-lot-row[data-lot-id="502"]');
-        assert.equal(await disabledRow.locator('.fpt-ad-disabled-badge').textContent(), 'Выкл');
-        const disabledToggleAlignment = await disabledRow.evaluate(row => {
-            const track = row.querySelector('.fpt-ad-switch-track').getBoundingClientRect();
-            const badge = row.querySelector('.fpt-ad-disabled-badge').getBoundingClientRect();
-            return Math.abs((track.top + track.height / 2) - (badge.top + badge.height / 2));
-        });
-        assert.ok(disabledToggleAlignment <= 2, `disabled status should share the toggle row: ${disabledToggleAlignment}px`);
+        assert.equal(await page.locator('.fpt-ad-disabled-badge, .fpt-ad-switch-state').count(), 0,
+            'the toggle alone shows the state: no «Вкл/Выкл» caption');
         const disabledTrackStyle = await disabledRow.locator('.fpt-ad-switch-track').evaluate(element => {
             const style = getComputedStyle(element);
             return { borderColor: style.borderColor, backgroundColor: style.backgroundColor };

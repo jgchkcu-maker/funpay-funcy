@@ -427,7 +427,7 @@
         initializeSalesFilters();
         // Apply saved FunPay Funcy button size/opacity at load (panel itself builds with popup).
         if (typeof applyHeaderButtonStylesEarly === 'function') applyHeaderButtonStylesEarly();
-        // order_page_enhancements.js, lot_context_menu.js, auto_restore_lots.js self-initialize
+        // order_page_enhancements.js, lot_context_menu.js self-initialize
         // New 3.0 features (self-initializing modules loaded separately)
         // quick_lot_search.js, chat_enhancements.js self-initialize
 

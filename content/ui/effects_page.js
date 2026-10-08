@@ -89,14 +89,11 @@
         const element = node('div', 'fpt-ad-switch-line');
         if (master) element.classList.add('fpt-fx-master-switch');
         element.appendChild(label);
-        const stateLabel = master ? node('span', 'fpt-ad-switch-state', checked ? 'Вкл' : 'Выкл') : null;
-        if (stateLabel) element.appendChild(stateLabel);
         return {
             element,
             input,
             setChecked(value) {
                 input.checked = !!value;
-                if (stateLabel) stateLabel.textContent = input.checked ? 'Вкл' : 'Выкл';
             }
         };
     }

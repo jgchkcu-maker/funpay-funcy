@@ -14,7 +14,7 @@ test('review help follows shared page typography, fits both themes and closes by
                 const panel = page.locator('#fpt-rv-help');
                 await trigger.click();
                 assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
-                assert.equal(await panel.locator('li').count(), 5);
+                assert.equal(await panel.locator('li').count(), 6, 'help lists replies, images, publishing, bonuses, independent saves and reminders');
                 const textStyle = await panel.locator('li').first().evaluate(el => ({ font: getComputedStyle(el).fontSize, height: getComputedStyle(el).lineHeight }));
                 assert.equal(textStyle.font, '13px');
                 assert.equal(textStyle.height, '18.85px');

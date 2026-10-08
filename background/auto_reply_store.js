@@ -10,7 +10,8 @@ const AUTO_REPLY_RUNTIME_FIELDS = new Set([
     'repliedOrderIds',
     'repliedNewOrders',
     'repliedConfirmedOrders',
-    'deliveredOrderIds'
+    'deliveredOrderIds',
+    'bonusSentOrderIds'
 ]);
 
 function isRecord(value) {

@@ -70,8 +70,6 @@
 .fp-tools-popup.fptm-themed .fpt-rv-head-copy h3 { margin: 0; color: var(--fptm-text); font-size: 16px; font-weight: 650; line-height: 1.3; letter-spacing: -.015em; }
 .fp-tools-popup.fptm-themed .fpt-rv-head-copy p { margin: 3px 0 0; color: var(--fptm-muted); font-size: 13px; line-height: 1.4; }
 .fp-tools-popup.fptm-themed .fpt-rv-switch-line { display: flex; align-items: center; gap: 8px; }
-.fp-tools-popup.fptm-themed .fpt-rv-switch-state { min-width: 30px; color: var(--fptm-muted); font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
-.fp-tools-popup.fptm-themed .fpt-rv-card[data-state="on"] .fpt-rv-switch-state { color: var(--fptm-accent); }
 .fp-tools-popup.fptm-themed .fpt-rv-switch.switch { position: relative; display: block; flex: 0 0 42px; width: 42px; height: 24px; margin: 0; padding: 0; }
 .fp-tools-popup.fptm-themed .fpt-rv-switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; z-index: 2; }
 .fp-tools-popup.fptm-themed .fpt-rv-switch-track { position: relative; display: block; width: 42px; height: 24px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--fptm-muted) 38%, var(--fptm-surface-2)); box-sizing: border-box; transition: background .2s ease; }
@@ -1373,7 +1371,6 @@
     outline-offset: 3px;
 }
 .fp-tools-popup.fptm-themed .fpt-ad-switch-line { min-width: 0; min-height: 40px; display: flex; align-items: center; gap: 4px; }
-.fp-tools-popup.fptm-themed .fpt-ad-switch-state { color: var(--fptm-muted); font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
 /* Shared with the auto-bump and autoresponder screens. */
 .fp-tools-popup.fptm-themed .fpt-ad-lots-heading {
     min-width: 0;
@@ -1693,7 +1690,6 @@
 .fp-tools-popup.fptm-themed .fpt-ad-lot-stock--error { color: var(--fptm-warning); cursor: help; text-decoration: underline dotted; text-underline-offset: 2px; }
 .fp-tools-popup.fptm-themed .fpt-ad-lot-delivery,
 .fp-tools-popup.fptm-themed .fpt-ad-lot-source { box-sizing: border-box; height: 60px; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 4px; }
-.fp-tools-popup.fptm-themed .fpt-ad-disabled-badge { max-width: 100%; color: var(--fptm-muted); font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
 .fp-tools-popup.fptm-themed .fpt-ad-source-select,
 .fp-tools-popup.fptm-themed .fpt-ad-template-input {
     box-sizing: border-box;
@@ -2131,7 +2127,6 @@
 .fp-tools-popup.fptm-themed .fpt-ab-master-switch .fpt-ad-switch-track { width: 54px; height: 30px; }
 .fp-tools-popup.fptm-themed .fpt-ab-master-switch .fpt-ad-switch-track::after { top: 3px; left: 3px; width: 24px; height: 24px; }
 .fp-tools-popup.fptm-themed .fpt-ab-master-switch .fpt-ad-switch:checked + .fpt-ad-switch-track::after { transform: translateX(24px); }
-.fp-tools-popup.fptm-themed .fpt-ab-master-switch .fpt-ad-switch-state { min-width: 30px; font-size: 13px; }
 .fp-tools-popup.fptm-themed .fpt-ab-metrics {
     min-width: 0;
     display: grid;
@@ -3063,7 +3058,6 @@
 .fp-tools-popup.fptm-themed .fpt-th-switch:checked + .fpt-th-switch-track::after { transform: translateX(18px); }
 .fp-tools-popup.fptm-themed .fpt-th-switch:focus-visible + .fpt-th-switch-track { outline: 2px solid var(--fptm-accent); outline-offset: 3px; }
 .fp-tools-popup.fptm-themed .fpt-th-switch-line { min-width: 0; min-height: 40px; display: flex; align-items: center; gap: 4px; }
-.fp-tools-popup.fptm-themed .fpt-th-switch-state { color: var(--fptm-muted); font-size: 12px; font-weight: 600; line-height: 1.2; white-space: nowrap; }
 .fp-tools-popup.fptm-themed .fpt-th-master-switch .fpt-th-switch-control { width: 54px; height: 44px; }
 .fp-tools-popup.fptm-themed .fpt-th-master-switch .fpt-th-switch-track { width: 54px; height: 30px; }
 .fp-tools-popup.fptm-themed .fpt-th-master-switch .fpt-th-switch-track::after { top: 3px; left: 3px; width: 24px; height: 24px; }
@@ -5901,7 +5895,6 @@
 .fp-tools-popup.fptm-themed .fpt-fx-master-switch .fpt-ad-switch-track { width: 54px; height: 30px; }
 .fp-tools-popup.fptm-themed .fpt-fx-master-switch .fpt-ad-switch-track::after { top: 3px; left: 3px; width: 24px; height: 24px; }
 .fp-tools-popup.fptm-themed .fpt-fx-master-switch .fpt-ad-switch:checked + .fpt-ad-switch-track::after { transform: translateX(24px); }
-.fp-tools-popup.fptm-themed .fpt-fx-master-switch .fpt-ad-switch-state { min-width: 30px; font-size: 13px; }
 .fp-tools-popup.fptm-themed .fpt-fx-card-body {
     min-width: 0;
     margin-top: 18px;

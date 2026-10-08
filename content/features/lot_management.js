@@ -682,35 +682,27 @@ function setupActionProcessing() {
             updateLog(`${actionText}: ${lotName}...`);
 
             try {
-                let response, result;
-                let formData;
+                let result;
 
-                if (actionType === 'delete') {
-                    formData = new URLSearchParams({ 'csrf_token': csrfToken, 'offer_id': offerId, 'location': 'offer', 'deleted': '1' });
-                } else {
+                // Существующие лоты меняются через фоновую очередь со свежей формой;
+                // дублирование создаёт новый лот (offer_id=0) и остаётся отдельным потоком.
+                if (actionType === 'duplicate') {
                     const lotParams = await getLotParams(nodeId, offerId);
-                    formData = new URLSearchParams(lotParams);
+                    const formData = new URLSearchParams(lotParams);
                     formData.set('csrf_token', csrfToken);
-                    
-                    if (actionType === 'duplicate') {
-                        formData.set('offer_id', '0');
-                        formData.set('node_id', nodeId);
-                        formData.set('active', 'on');
-                    } else if (actionType === 'deactivate') {
-                        formData.set('active', '0'); 
-                        formData.delete('deleted');
-                    } else if (actionType === 'activate') {
-                        formData.set('active', 'on');
-                        formData.delete('deleted');
-                    }
+                    formData.set('offer_id', '0');
+                    formData.set('node_id', nodeId);
+                    formData.set('active', 'on');
+                    const response = await fetch("https://funpay.com/lots/offerSave", {
+                        method: "POST", headers: { "X-Requested-With": "XMLHttpRequest", 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: formData
+                    });
+                    if (!response.ok) throw new Error(`Ошибка сети: ${response.statusText}`);
+                    result = await response.json();
+                } else {
+                    const op = actionType === 'delete' ? { type: 'delete' } : { type: 'setActive', active: actionType === 'activate' };
+                    await fptLotWrite({ offerId, nodeId, op, source: `bulk-${actionType}` });
+                    result = { error: 0 };
                 }
-
-                response = await fetch("https://funpay.com/lots/offerSave", {
-                    method: "POST", headers: { "X-Requested-With": "XMLHttpRequest", 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: formData
-                });
-
-                if (!response.ok) throw new Error(`Ошибка сети: ${response.statusText}`);
-                result = await response.json();
 
                 if (result && (result.error === 0 || result.error === false || typeof result.error === 'undefined') && result.done !== false) {
                     successCount++;
@@ -820,30 +812,17 @@ function setupActionProcessing() {
             updateLog(`Изменение цены: ${lotName}...`);
 
             try {
-                const lotParams = await getLotParams(nodeId, offerId);
-                const formData = new URLSearchParams(lotParams);
-                const currentPrice = parseFloat(formData.get('price'));
-                if (isNaN(currentPrice)) throw new Error("Не удалось получить текущую цену.");
-
-                const newPrice = computeNewPrice(currentPrice, mode, value, round, min, max);
-                if (isNaN(newPrice)) throw new Error('Не удалось вычислить цену.');
-
-                formData.set('price', newPrice.toFixed(2));
-                formData.set('csrf_token', csrfToken);
-
-                const response = await fetch("https://funpay.com/lots/offerSave", {
-                    method: "POST", headers: { "X-Requested-With": "XMLHttpRequest", 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: formData
+                // Новая цена считается в фоне точно, от свежей формы внутри очереди лота.
+                const priceMode = { set: 'set', add: 'add', sub: 'sub', pct_up: 'percent_up', pct_down: 'percent_down' }[mode] || 'set';
+                const saved = await fptLotWrite({
+                    offerId, nodeId, source: 'bulk-price',
+                    op: {
+                        type: 'adjustPrice', mode: priceMode, value: String(value), round: Boolean(round),
+                        min: Number.isFinite(min) ? String(min) : null, max: Number.isFinite(max) ? String(max) : null
+                    }
                 });
-
-                if (!response.ok) throw new Error(`Ошибка сети: ${response.statusText}`);
-                const result = await response.json();
-
-                if (result && (result.error === 0 || result.error === false)) {
-                    successCount++;
-                    $lotLink.find('.tc-price').text(`${newPrice.toFixed(2)} ₽`);
-                } else {
-                    throw new Error(result.msg || 'Ошибка API FunPay');
-                }
+                successCount++;
+                if (saved.price != null) $lotLink.find('.tc-price').text(`${String(saved.price).replace('.', ',')} ₽`);
             } catch (error) {
                 updateLog(`Ошибка "${lotName}": ${error.message}`, true);
                 errorCount++;
@@ -923,22 +902,9 @@ async function reactivateLot(offerId, nodeId, button) {
         const csrfToken = getCsrfToken();
         if (!csrfToken) throw new Error("Не удалось получить CSRF-токен");
         
-        const lotParams = await (await fetch(`https://funpay.com/lots/offerEdit?node=${nodeId}&offer=${offerId}&location=offer`)).text();
-        const doc = new DOMParser().parseFromString(lotParams, 'text/html');
-        const form = doc.querySelector(".form-offer-editor");
-        if (!form) throw new Error("Форма не найдена.");
-
-        const formData = new URLSearchParams(new FormData(form));
-        formData.set('csrf_token', csrfToken);
-        formData.set('active', 'on');
-        formData.delete('deleted');
-
-        const response = await fetch("https://funpay.com/lots/offerSave", {
-            method: "POST", headers: { "X-Requested-With": "XMLHttpRequest", 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' }, body: formData
-        });
-
-        if (!response.ok) throw new Error(`Ошибка сети: ${response.statusText}`);
-        const result = await response.json();
+        // Включение — намерение для фоновой очереди лота: форма читается там же, перед записью.
+        await fptLotWrite({ offerId, nodeId, op: { type: 'setActive', active: true }, source: 'reactivate' });
+        const result = { error: 0 };
 
         if (result && (result.error === 0 || result.error === false)) {
             const { fpToolsDeactivatedLots = [] } = await chrome.storage.local.get('fpToolsDeactivatedLots');

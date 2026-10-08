@@ -169,37 +169,10 @@
 
     async function saveLotPrice(offerId, newPrice, priceEl) {
         try {
-            const lotEditUrl = `https://funpay.com/lots/offerEdit?offer=${offerId}`;
-            const editResp = await fetch(lotEditUrl, { credentials: 'include' });
-            if (!editResp.ok) throw new Error('Не удалось загрузить форму');
-            const editHtml = await editResp.text();
-
-            const formData = await new Promise(r =>
-                chrome.runtime.sendMessage({ target: 'offscreen', action: 'parseLotEditPage', html: editHtml }, d => r(d))
-            );
-            if (!formData) throw new Error('Не удалось разобрать форму лота');
-
-            formData.price = newPrice.toFixed(2);
-
-            const appData = getAppData();
-            const csrf = formData.csrf_token || appData.csrf_token ||
-                document.cookie.match(/csrftoken=([^;]+)/)?.[1];
-            if (!csrf) throw new Error('CSRF-токен не найден');
-            formData.csrf_token = csrf;
-
-            const saveResp = await fetch('https://funpay.com/lots/offerSave', {
-                method: 'POST',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: new URLSearchParams(formData).toString()
-            });
-
-            if (!saveResp.ok) throw new Error(`Ошибка сервера: ${saveResp.status}`);
-            const result = await saveResp.json().catch(() => ({}));
-            if (result.error) throw new Error(result.error);
+            // Цена — намерение для фоновой очереди лота: свежая форма читается там,
+            // поэтому параллельные изменения активности или описания не откатываются.
+            const nodeId = window.location.pathname.match(/\/(?:lots|chips)\/(\d+)/)?.[1] || '';
+            await fptLotWrite({ offerId, nodeId, op: { type: 'setPrice', price: newPrice.toFixed(2) }, source: 'inline-price' });
 
             // Update displayed price
             const priceDiv = priceEl.querySelector('div');

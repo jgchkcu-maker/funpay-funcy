@@ -114,11 +114,11 @@
         el.title = label;
         return el;
     }
-    function variables(textarea, changed) {
+    function variables(textarea, changed, list = VARIABLES) {
         const wrap = node('div', 'fpt-rv-variables');
         wrap.setAttribute('role', 'group');
         wrap.setAttribute('aria-label', 'Вставить переменную');
-        for (const [token, label] of VARIABLES) {
+        for (const [token, label] of list) {
             const chip = button(label, 'fpt-rv-variable');
             chip.title = token;
             chip.addEventListener('click', () => {
@@ -195,7 +195,8 @@
             'К ответу можно прикрепить до 5 изображений, каждое до 1 МБ.',
             'Текст ответа публикуется под отзывом, изображения отправляются покупателю в чат.',
             'Бонус отправляется в чат после отзыва на 5★ с указанной задержкой. В режиме «Случайный из списка» выбирается один вариант.',
-            'Ответы и бонусы включаются и сохраняются отдельно.'
+            'Ответы и бонусы включаются и сохраняются отдельно.',
+            'Напоминание после продажи — одна просьба об отзыве по новому заказу, который расширение выдало и покупатель подтвердил. Любой отзыв отменяет его. Старым завершённым заказам без отзыва можно напомнить вручную.'
         ].forEach(text => helpList.append(node('li', '', text)));
         helpPanel.append(helpList);
         const header = ui.ensureCategoryHeader(page, 'Отзывы и бонусы', {
@@ -245,9 +246,7 @@
             input.setAttribute('aria-label', title);
             toggle.append(input, node('span', 'fpt-rv-switch-track'));
             const switchLine = node('div', 'fpt-rv-switch-line');
-            const switchState = node('span', 'fpt-rv-switch-state', 'Выкл');
-            switchState.setAttribute('aria-hidden', 'true');
-            switchLine.append(toggle, switchState);
+            switchLine.append(toggle);
             input.addEventListener('change', () => { state.draft[enabledKey] = input.checked; changed(kind); });
             head.append(emblem, copy, switchLine);
             const content = node('div', 'fpt-rv-content');
@@ -266,11 +265,15 @@
             cancel.addEventListener('click', () => { if (state.conflict[kind]) confirmReload(kind); else reset(kind); });
             actions.append(cancel, save); footer.append(status, actions);
             controls.append(head, content, conflict, footer); card.append(controls); grid.append(card);
-            blocks[kind] = { card, controls, content, input, switchState, status, save, cancel, conflict, enabledKey };
+            blocks[kind] = { card, controls, content, input, status, save, cancel, conflict, enabledKey };
             return blocks[kind];
         }
         const reviews = makeBlock('reviews', 'Ответы на отзывы', 'Отдельный ответ для каждой оценки', 'reviews', 'autoReviewEnabled');
         const bonuses = makeBlock('bonuses', 'Бонус за 5★', 'Сообщение покупателю после пятизвёздочного отзыва', 'redeem', 'bonusForReviewEnabled');
+        // Третий независимый блок: напоминание об отзыве (review_reminder_block.js).
+        if (root.FPTReviewReminderBlock && root.FPTAutomationUI) {
+            root.FPTReviewReminderBlock.mount(grid, popup, { button, icon, iconButton, variables, field }).catch(error => console.warn('FunPay Funcy: блок напоминаний не загружен:', error?.message || error));
+        }
 
         const ratings = node('div', 'fpt-rv-ratings');
         ratings.setAttribute('role', 'radiogroup'); ratings.setAttribute('aria-label', 'Оценка покупателя');
@@ -394,7 +397,6 @@
             block.cancel.disabled = !dirty(kind) || busy;
             block.conflict.hidden = !state.conflict[kind];
             block.card.dataset.state = state.draft[block.enabledKey] ? 'on' : 'off';
-            block.switchState.textContent = state.draft[block.enabledKey] ? 'Вкл' : 'Выкл';
             attach.disabled = state.uploading || state.draft.reviewTemplateImages[state.rating].length >= 5;
         }
         function renderHero(error) {

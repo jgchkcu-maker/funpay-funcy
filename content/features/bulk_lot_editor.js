@@ -62,6 +62,16 @@ function finalizeBulkPrice(next, price = {}) {
     return price.round === true ? Math.round(result) : Math.round(result * 100) / 100;
 }
 
+function userIdOfPage() {
+    try {
+        const app = JSON.parse(document.body?.dataset.appData || '{}');
+        const userId = (Array.isArray(app) ? app[0] : app)?.userId;
+        return userId != null ? String(userId) : null;
+    } catch (_) {
+        return null;
+    }
+}
+
 async function openBulkEditor(p = {}) {
     const app = JSON.parse(document.body?.dataset.appData || '{}');
     const userId = p.userId || (Array.isArray(app) ? app[0] : app).userId;
@@ -149,7 +159,9 @@ async function applyPopupBulkLots(p = {}, activate = false) {
 
 
             throwIfBulkLotAborted(p.signal);
-            const saved = await chrome.runtime.sendMessage({ action: 'saveSingleLot', data: formData });
+            // Фон применяет только отличия от загруженной формы и проверяет, что их
+            // исходные значения не изменились (иначе — конфликт, а не перезапись).
+            const saved = await chrome.runtime.sendMessage({ action: 'saveSingleLot', nodeId, data: formData, original: editData, expectedAccountId: userIdOfPage() });
             if (!saved?.success) throw new Error(saved?.error || 'Ошибка сохранения.');
             results.push({
                 offerId, success: true,

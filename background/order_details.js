@@ -1,11 +1,17 @@
 /*
  * FunPay Funcy — сведения о заказе для фоновых функций.
  *
- * Страница заказа не всегда содержит ссылку на сам лот. Если ссылки нет, лот
- * определяется по краткому описанию и категории среди собственных лотов
- * продавца — и только при единственном совпадении. Иначе lotId = null:
- * лучше не выдать, чем выдать чужой товар.
+ * Загрузчик читает страницу заказа и возвращает нормализованные факты
+ * (order_facts.js). Кэш короткий и привязан к аккаунту и эпохе сессии: после
+ * смены аккаунта старые сведения не используются. Для эффектов вызывающий
+ * просит fresh: true — тогда страница перечитывается в любом случае.
+ *
+ * Если ссылки на лот нет, совпадение краткого описания с собственным лотом даёт
+ * только кандидата (lotCandidate) для ручного подтверждения. Разрешением на
+ * выдачу или закупку оно не является.
  */
+
+import { normalizeOrderFacts } from './order_facts.js';
 
 export function normalizeLotTitle(value) {
     return String(value || '')
@@ -28,48 +34,53 @@ export function resolveOrderLotId(info, ownLots) {
         : { lotId: null, source: matches.length ? 'ambiguous' : null };
 }
 
-// fetchOrderInfo(orderId) -> разобранная страница заказа;
+// fetchOrderFacts(orderId) -> сырые факты offscreen parseOrderFacts (или null);
 // listOwnLots() -> [{ id, nodeId, title }] собственных лотов.
-export function createOrderDetailsLoader({ fetchOrderInfo, listOwnLots, now = () => Date.now(), orderTtlMs = 60000, lotsTtlMs = 600000 } = {}) {
-    if (typeof fetchOrderInfo !== 'function') throw new Error('Не задано чтение страницы заказа.');
+export function createOrderDetailsLoader({ fetchOrderFacts, listOwnLots, now = () => Date.now(), orderTtlMs = 60000, lotsTtlMs = 600000 } = {}) {
+    if (typeof fetchOrderFacts !== 'function') throw new Error('Не задано чтение страницы заказа.');
     const orders = new Map();
     let lotsCache = null;
 
-    async function ownLots() {
+    async function ownLots(scope) {
         if (typeof listOwnLots !== 'function') return [];
-        if (lotsCache && now() - lotsCache.at < lotsTtlMs) return lotsCache.promise;
+        if (lotsCache && lotsCache.scope === scope && now() - lotsCache.at < lotsTtlMs) return lotsCache.promise;
         const promise = Promise.resolve().then(listOwnLots).then(lots => (Array.isArray(lots) ? lots : []));
-        lotsCache = { at: now(), promise };
+        lotsCache = { at: now(), scope, promise };
         promise.catch(() => { if (lotsCache?.promise === promise) lotsCache = null; });
         return promise;
     }
 
-    async function loadFresh(orderId) {
-        const info = await fetchOrderInfo(orderId);
-        if (!info) return null;
-        let resolved = resolveOrderLotId(info, null);
-        if (!resolved.lotId) resolved = resolveOrderLotId(info, await ownLots().catch(() => []));
-        return {
-            ...info,
-            orderId,
-            lotId: resolved.lotId,
-            lotIdSource: resolved.source,
-            amount: Number.isInteger(info.amount) && info.amount > 0 ? info.amount : 1
-        };
+    async function loadFresh(orderId, scope) {
+        const raw = await fetchOrderFacts(orderId);
+        if (!raw) return null;
+        const facts = normalizeOrderFacts(raw, { requestedOrderId: orderId, observedAt: now() });
+        let lotCandidate = null;
+        if (!facts.lotId && facts.lotName) {
+            const resolved = resolveOrderLotId(facts, await ownLots(scope).catch(() => []));
+            lotCandidate = resolved.lotId ? { offerId: resolved.lotId, source: 'title' } : (resolved.source === 'ambiguous' ? { offerId: null, source: 'ambiguous' } : null);
+        }
+        return { ...facts, lotCandidate };
     }
 
-    // Один заказ в течение orderTtlMs читается один раз, даже если его спрашивают
-    // и автовыдача, и журнал, и сверка.
-    function load(orderId) {
-        const id = String(orderId || '').toUpperCase();
-        const cached = orders.get(id);
-        if (cached && now() - cached.at < orderTtlMs) return cached.promise;
-        const promise = loadFresh(id);
-        orders.set(id, { at: now(), promise });
-        promise.then(value => { if (!value) orders.delete(id); }, () => orders.delete(id));
+    // Один заказ в пределах orderTtlMs читается один раз для одного аккаунта и эпохи,
+    // если вызывающий не потребовал свежего чтения.
+    function load(orderId, { accountId = null, epoch = null, fresh = false } = {}) {
+        const id = String(orderId || '').replace(/^#/, '').toUpperCase();
+        const scope = `${accountId || '?'}:${epoch ?? '?'}`;
+        const key = `${scope}:${id}`;
+        const cached = orders.get(key);
+        if (!fresh && cached && now() - cached.at < orderTtlMs) return cached.promise;
+        const promise = loadFresh(id, scope);
+        orders.set(key, { at: now(), promise });
+        promise.then(value => { if (!value) orders.delete(key); }, () => orders.delete(key));
         if (orders.size > 100) orders.delete(orders.keys().next().value);
         return promise;
     }
 
-    return Object.freeze({ load });
+    function invalidate() {
+        orders.clear();
+        lotsCache = null;
+    }
+
+    return Object.freeze({ load, invalidate });
 }

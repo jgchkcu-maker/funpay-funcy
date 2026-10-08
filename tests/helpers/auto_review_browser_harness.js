@@ -6,12 +6,13 @@ let chromium;
 try { ({ chromium } = require(process.env.FPT_PLAYWRIGHT || 'playwright')); }
 catch { ({ chromium } = require('C:/Users/Usser/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')); }
 
-async function openReviews(browser, initial = {}, { dark = true, width = 1480, height = 930, initialReadFailure = false } = {}) {
+async function openReviews(browser, initial = {}, { dark = true, width = 1480, height = 930, initialReadFailure = false, reminders = null } = {}) {
     const { createAutoReplyStore } = await import(pathToFileURL(path.join(root, 'background/auto_reply_store.js')).href);
     let stored = structuredClone(initial);
     let failNext = false;
     let failRead = initialReadFailure;
     const patches = [];
+    const reminderCalls = [];
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -28,6 +29,13 @@ async function openReviews(browser, initial = {}, { dark = true, width = 1480, h
     await page.exposeFunction('qaRead', () => {
         if (failRead) throw new Error('Ошибка загрузки');
         return structuredClone(stored);
+    });
+    await page.exposeFunction('qaReminders', async message => {
+        reminderCalls.push(structuredClone(message));
+        const handler = reminders?.[message.command];
+        if (!handler) return { success: false, error: 'Нет данных' };
+        try { return { success: true, data: await handler(message) }; }
+        catch (e) { return { success: false, error: e.message }; }
     });
     await page.exposeFunction('qaSave', async patch => {
         patches.push(patch);
@@ -47,14 +55,15 @@ async function openReviews(browser, initial = {}, { dark = true, width = 1480, h
                 removeListener(fn) { window.qaListeners = window.qaListeners.filter(value => value !== fn); }
             } },
             runtime: { id: 'qa', getURL: file => `https://funpay.com/${file}`,
-                async sendMessage(message) { return window.qaSave(message.patch); } }
+                async sendMessage(message) { return message.action === 'fptReviewReminders' ? window.qaReminders(message) : window.qaSave(message.patch); } }
         };
     });
-    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
+    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css', ...(reminders ? ['css/automation.css'] : [])]) await page.addStyleTag({ path: path.join(root, file) });
     // Reproduce the host rule responsible for the original heading underlay.
     await page.addStyleTag({ content: 'header { background: rgba(0,0,0,.08) !important; }' });
     for (const file of ['content/features/auto_reply_store.js', 'content/ui/popup_metadata.js', 'content/ui/popup_actions.js',
-        'content/ui/popup_attachments.js', 'content/ui/popup_components.js', 'content/ui/main_popup.js', 'content/ui/auto_review_page.js']) {
+        'content/ui/popup_attachments.js', 'content/ui/popup_components.js', 'content/ui/main_popup.js',
+        ...(reminders ? ['content/ui/automation_ui.js', 'content/ui/review_reminder_block.js'] : []), 'content/ui/auto_review_page.js']) {
         await page.addScriptTag({ path: path.join(root, file) });
     }
     await page.evaluate(async () => {
@@ -74,7 +83,7 @@ async function openReviews(browser, initial = {}, { dark = true, width = 1480, h
         await store.patchAutoReplies(patch);
         await page.evaluate(({ oldValue, newValue }) => window.qaListeners.forEach(fn => fn({ fpToolsAutoReplies: { oldValue, newValue } }, 'local')), { oldValue: previous, newValue: stored });
     }
-    return { page, errors, patches, state: () => structuredClone(stored), external,
+    return { page, errors, patches, reminderCalls, state: () => structuredClone(stored), external,
         failSave: () => { failNext = true; }, failReads: next => { failRead = next; } };
 }
 const launch = () => chromium.launch({ headless: true, executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe' });

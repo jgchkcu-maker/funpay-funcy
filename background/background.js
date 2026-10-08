@@ -6,16 +6,29 @@ import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище фина
 import { fetchAIResponse, fetchAILotGeneration, fetchAITranslation, fetchAIImageGeneration } from './ai.js';
 import { cleanupRetiredFinancialToolData } from './retired_financial_tools.mjs';
 import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump } from './autobump.js';
-import { runAutoResponderCycle, resetAutoResponderState, configureOrderJournal, runOrderReconcile } from './autoresponder.js';
+import {
+    runAutoResponderCycle, resetAutoResponderState, configureOrderAutomation, runOrderReconcile,
+    getStrictChatSender, applyVariables, isBlacklisted
+} from './autoresponder.js';
+import { createAccountGuard, sha256Short, ACCOUNT_EPOCH_KEY } from './account_guard.js';
+import { createOrderDetailsLoader } from './order_details.js';
+import { orderRole } from './order_facts.js';
+import { createFulfillmentDispatcher } from './fulfillment_dispatcher.js';
+import { createOrderReconcile } from './order_reconcile.js';
+import { createOrderCommands } from './order_commands.js';
+import { createReviewReminders, REMINDER_ALARM } from './review_reminders.js';
 import { createOpsJournal, createIndexedDbBackend } from './ops_db.js';
-import { createLotWriter } from './lot_writer.js';
-import { createLotAvailabilitySweep } from './lot_availability.js';
+import { createLotWriter, createLotWriteQueue } from './lot_writer.js';
+import { createLotActivityService } from './lot_availability.js';
+import { createLotScheduleService, LOT_SCHEDULES_ALARM, LOT_SCHEDULES_KEY } from './lot_schedule_service.js';
+import { createPricingService, PRICING_ALARM, PRICING_KEY } from './pricing_service.js';
+import { createLotPolicyStore, releaseStockManagedLots } from './lot_policy.js';
 import { createJobScheduler } from './job_scheduler.js';
 import { patchAutoReplies, importAutoReplies } from './auto_reply_store.js';
 import {
-    configureAutoDeliveryStore, saveAutoDeliveryLot, syncAutoDeliveryStockCounts
+    configureAutoDeliveryStore, saveAutoDeliveryLot, syncAutoDeliveryStockCounts,
+    refreshAutoDeliveryLotStock, isAutoDeliveryLotEnabled
 } from './auto_delivery_store.js';
-import { AUTO_RESTORE_ALARM_NAME, syncAutoRestoreAlarm } from './auto_restore_alarm.js';
 import { startEngine, stopEngine, onHeartbeat, onKeepalivePing, ENGINE_HEARTBEAT_ALARM } from './fpt_engine.js';
 import './retired_integrations.js';
 
@@ -53,7 +66,6 @@ const OFFSCREEN_DOCUMENT_PATH = 'offscreen/offscreen.html';
 const _imgSendInFlight = new Map();
 const _imgSendDone = new Map();
 const AUTO_RESPONDER_ALARM_NAME = 'fpToolsAutoResponder';
-let _autoRestoreAlarmSyncGeneration = 0;
 const IMPORT_PROCESS_KEY = 'fpToolsLotImportProcess';
 let _lotImportStartInFlight = false;
 const RETRY_LIMIT = 5;
@@ -904,15 +916,159 @@ const OPS_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
 let opsJournal = null;
 try {
     opsJournal = createOpsJournal({ backend: createIndexedDbBackend(self.indexedDB) });
-    configureOrderJournal(opsJournal);
 } catch (error) {
     console.error('FunPay Funcy: журнал операций недоступен:', error);
 }
+
+// Текущий аккаунт и эпоха сессии. Ключ golden_key сравнивается по хэшу; при его
+// смене аккаунт определяется заново свежим запросом.
+async function readSessionForGuard() {
+    const cookie = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
+    if (!cookie?.value) return {};
+    const { [ACCOUNT_EPOCH_KEY]: record } = await chrome.storage.local.get(ACCOUNT_EPOCH_KEY);
+    if (record?.accountId && record.keyHash === await sha256Short(cookie.value)) {
+        return { goldenKey: cookie.value, userId: record.accountId, username: record.username };
+    }
+    const auth = await getAuthDetailsForBackground(true);
+    return { goldenKey: cookie.value, userId: auth.userId, username: auth.username };
+}
+
+const accountGuard = createAccountGuard({ storage: chrome.storage.local, readSession: readSessionForGuard });
+
+async function fetchOrderFactsForBackground(orderId) {
+    const { response } = await fptFetchWithSeal(`https://funpay.com/orders/${orderId}/`, {});
+    if (!response.ok) return null;
+    return parseHtmlViaOffscreen(await response.text(), 'parseOrderFacts');
+}
+
+const orderLoader = createOrderDetailsLoader({
+    fetchOrderFacts: fetchOrderFactsForBackground,
+    listOwnLots: () => listOwnLotsForBackground()
+});
+
+accountGuard.onChange(() => orderLoader.invalidate());
+chrome.cookies.onChanged.addListener(({ cookie }) => {
+    if (cookie?.name !== 'golden_key' || !/funpay\.com$/.test(cookie.domain || '')) return;
+    accountGuard.invalidate();
+    orderLoader.invalidate();
+});
+
+async function fetchSalesPageForReconcile(continueToken) {
+    const options = { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' } };
+    if (continueToken) options.body = new URLSearchParams({ continue: continueToken });
+    const response = await fptFetchResilient('https://funpay.com/orders/trade', options, { retries: 2, baseDelay: 800 });
+    if (!response.ok) throw new Error(`Сверка заказов: HTTP ${response.status}`);
+    const parsed = await parseHtmlViaOffscreen(await response.text(), 'parseSalesPage');
+    if (!parsed || parsed.error || !Array.isArray(parsed.orders)) throw new Error(`Сверка заказов: ${parsed?.error || 'страница продаж не разобрана'}`);
+    return parsed;
+}
+
+let fulfillmentDispatcher = null;
+let reviewReminders = null;
+let orderReconcile = null;
+if (opsJournal) {
+    fulfillmentDispatcher = createFulfillmentDispatcher({
+        journal: opsJournal,
+        guard: accountGuard,
+        loadFacts: (orderId, scope) => orderLoader.load(orderId, scope),
+        sender: getStrictChatSender(),
+        getAuth: () => getAuthDetailsForBackground(),
+        getAutoReplies: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {},
+        getDeliveryConfigs: async () => (await chrome.storage.local.get('fpToolsAutoDeliveryLots')).fpToolsAutoDeliveryLots || {},
+        isLotEnabled: isAutoDeliveryLotEnabled,
+        isBlacklisted,
+        render: applyVariables,
+        onDelivered: async ({ offerId, nodeId, source }) => {
+            if (source === 'funpay_secrets' && offerId && nodeId) await refreshAutoDeliveryLotStock(offerId, nodeId);
+        },
+        // Каждое чтение заказа обновляет задачу напоминания (планирует или отменяет).
+        onObserved: async ({ order }) => { if (reviewReminders) await reviewReminders.observeOrder({ order }); }
+    });
+    orderReconcile = createOrderReconcile({
+        journal: opsJournal,
+        guard: accountGuard,
+        fetchSalesPage: fetchSalesPageForReconcile,
+        dispatcher: fulfillmentDispatcher
+    });
+}
+
+let orderCommands = null;
+if (opsJournal && fulfillmentDispatcher) {
+    orderCommands = createOrderCommands({ journal: opsJournal, guard: accountGuard, dispatcher: fulfillmentDispatcher });
+}
+
+configureOrderAutomation({
+    dispatcher: fulfillmentDispatcher,
+    reconcile: orderReconcile,
+    roleOf: async orderId => {
+        const account = await accountGuard.current();
+        if (!account.accountId) return 'unknown';
+        const facts = await orderLoader.load(orderId, { accountId: account.accountId, epoch: account.epoch });
+        return orderRole(facts, account.accountId);
+    }
+});
 
 const lotWriter = createLotWriter({
     readForm: readAutoDeliveryLotForm,
     saveForm: payload => postOfferSave(payload)
 });
+
+// Удаление существующего лота: один POST deleted=1 с проверкой ответа FunPay.
+async function deleteOfferOnFunPay(offerId) {
+    const auth = await getAuthDetailsForBackground();
+    if (!auth.csrf_token) throw new Error('Нет CSRF-токена.');
+    const body = new URLSearchParams({ offer_id: String(offerId), deleted: '1', csrf_token: auth.csrf_token });
+    const { response, seal } = await fptFetchWithSeal('https://funpay.com/lots/offerSave', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body
+    });
+    if (!response.ok) {
+        if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
+        throw new Error(`HTTP ${response.status}`);
+    }
+    const result = await response.json().catch(() => null);
+    if (result && (result.error === 1 || result.error === true || typeof result.error === 'string')) {
+        throw new Error(result.msg || (typeof result.error === 'string' ? result.error : 'FunPay не удалил лот.'));
+    }
+}
+
+// Все изменения существующих лотов (UI, массовый редактор, автоматизация) идут
+// через одну очередь по аккаунту и лоту со свежей формой внутри очереди.
+const lotWriteQueue = createLotWriteQueue({
+    writer: lotWriter,
+    deleteOffer: deleteOfferOnFunPay,
+    guard: accountGuard,
+    storage: chrome.storage.local
+});
+
+function lotWriteStatusMessage(result) {
+    if (result?.status === 'conflict') {
+        return `Лот изменился на FunPay после загрузки (${result.conflicts.map(c => c.field).join(', ')}). Обновите данные и повторите.`;
+    }
+    if (result?.status === 'unverified') return `FunPay не применил изменения: ${result.notApplied.join(', ')}.`;
+    if (result?.status === 'deleted') return 'Лот уже удалён — изменения не применены.';
+    if (result?.status === 'skipped') return 'Изменение не требуется.';
+    return 'Лот не сохранён.';
+}
+
+// Отличия formData от исходной формы — только их и применяем.
+function intendedLotFields(data, original) {
+    const fields = {};
+    const expect = {};
+    for (const [field, value] of Object.entries(data || {})) {
+        if (['offer_id', 'node_id', 'csrf_token', 'location', 'deleted'].includes(field)) continue;
+        const before = original ? original[field] : undefined;
+        if (original && String(before ?? '') === String(value ?? '')) continue;
+        fields[field] = value;
+        if (original && field !== 'active') expect[field] = before ?? '';
+    }
+    if (original && Object.hasOwn(original, 'active') !== Object.hasOwn(data || {}, 'active')) {
+        fields.active = Object.hasOwn(data || {}, 'active') ? data.active : '';
+        expect.active = Boolean(original.active && original.active !== '0');
+    }
+    return { fields, expect };
+}
 
 async function listOwnLotsForBackground() {
     const auth = await getAuthDetailsForBackground();
@@ -923,20 +1079,48 @@ async function listOwnLotsForBackground() {
     return Array.isArray(lots) ? lots : [];
 }
 
-const lotAvailability = createLotAvailabilitySweep({
-    getSettings: () => chrome.storage.local.get(['fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled', 'fpToolsAutoDeliveryLots']),
-    listOwnLots: listOwnLotsForBackground,
-    writer: lotWriter,
-    notify: async change => {
-        const tabs = await chrome.tabs.query({ url: 'https://funpay.com/*' }).catch(() => []);
-        tabs.forEach(tab => {
-            chrome.tabs.sendMessage(tab.id, { action: 'fpToolsLotAvailabilityChanged', ...change }).catch(() => {});
-        });
-    }
-});
+const lotPolicies = createLotPolicyStore({ storage: chrome.storage.local });
+const lotActivity = createLotActivityService({ queue: lotWriteQueue, policies: lotPolicies });
 
-const jobScheduler = createJobScheduler({ alarms: chrome.alarms });
-jobScheduler.register(AUTO_RESTORE_ALARM_NAME, () => lotAvailability.sweep());
+const jobScheduler = createJobScheduler({ alarms: chrome.alarms, storage: chrome.storage.local });
+
+const lotSchedules = createLotScheduleService({
+    storage: chrome.storage.local,
+    guard: accountGuard,
+    policies: lotPolicies,
+    activity: lotActivity,
+    scheduler: jobScheduler
+});
+jobScheduler.register(LOT_SCHEDULES_ALARM, () => lotSchedules.evaluate());
+
+if (opsJournal) {
+    reviewReminders = createReviewReminders({
+        journal: opsJournal,
+        guard: accountGuard,
+        loadFacts: (orderId, scope) => orderLoader.load(orderId, scope),
+        sender: getStrictChatSender(),
+        getAuth: () => getAuthDetailsForBackground(),
+        getSettings: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {},
+        isBlacklisted,
+        fetchSalesPage: fetchSalesPageForReconcile,
+        scheduler: jobScheduler
+    });
+    jobScheduler.register(REMINDER_ALARM, () => reviewReminders.run());
+    jobScheduler.registerRecovery('reminders', () => reviewReminders.recover());
+}
+
+const pricingService = createPricingService({
+    storage: chrome.storage.local,
+    guard: accountGuard,
+    readForm: readAutoDeliveryLotForm,
+    queue: lotWriteQueue,
+    policies: lotPolicies,
+    activity: lotActivity,
+    scheduler: jobScheduler
+});
+jobScheduler.register(PRICING_ALARM, () => pricingService.runAuto());
+releaseStockManagedLots({ storage: chrome.storage.local, policies: lotPolicies, bindingKeys: [LOT_SCHEDULES_KEY, PRICING_KEY] })
+    .catch(error => console.warn('FunPay Funcy: пометки управления складом не сняты:', error?.message || error));
 jobScheduler.register(ORDER_RECONCILE_ALARM, () => runOrderReconcile());
 if (opsJournal) {
     jobScheduler.registerRecovery('ops', () => opsJournal.recoverInterruptedOps());
@@ -1079,6 +1263,16 @@ async function processNextLotImport() {
     }
 
     const currentLot = process.lots[process.currentIndex];
+
+    // Предыдущий запуск остановился во время создания этого лота: исход неизвестен.
+    if (currentLot.status === 'sending') {
+        currentLot.status = 'uncertain';
+        currentLot.error = 'Создание лота было прервано. Проверьте список лотов, затем пропустите или повторите его.';
+        process.state = 'postponed';
+        await chrome.storage.local.set({ [IMPORT_PROCESS_KEY]: process });
+        sendImportProgressUpdate(process);
+        return;
+    }
     
     // Если лот уже успешно создан или пропущен, переходим к следующему
     if (currentLot.status === 'success' || currentLot.status === 'skipped') {
@@ -1106,21 +1300,36 @@ async function processNextLotImport() {
         formData.set('offer_id', '0'); // Всегда создаем новый лот
         formData.set('active', 'on'); // Активируем по умолчанию
 
-        const { response, seal } = await fptFetchWithSeal("https://funpay.com/lots/offerSave", {
-            method: "POST",
-            headers: { 
-                "X-Requested-With": "XMLHttpRequest", 
-                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-            },
-            body: formData
-        });
+        // Перед POST лот помечается как «отправляется»: если worker остановится или
+        // ответ потеряется, повторно создавать лот вслепую нельзя.
+        currentLot.status = 'sending';
+        await chrome.storage.local.set({ [IMPORT_PROCESS_KEY]: process });
+        let response, seal;
+        try {
+            ({ response, seal } = await fptFetchWithSeal("https://funpay.com/lots/offerSave", {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: formData
+            }));
+        } catch (networkError) {
+            throw Object.assign(new Error('FunPay не ответил. Лот мог создаться — проверьте список лотов, затем пропустите или повторите его.'), { uncertain: true });
+        }
 
         if (!response.ok) {
             if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
+            if (response.status >= 500) throw Object.assign(new Error(`FunPay ответил HTTP ${response.status}. Лот мог создаться — проверьте список лотов, затем пропустите или повторите его.`), { uncertain: true });
             throw new Error(`Ошибка сети: ${response.statusText}`);
         }
-        
-        const result = await response.json();
+
+        let result;
+        try {
+            result = await response.json();
+        } catch (_) {
+            throw Object.assign(new Error('FunPay вернул нечитаемый ответ. Лот мог создаться — проверьте список лотов, затем пропустите или повторите его.'), { uncertain: true });
+        }
         
         if (result && (result.error === 0 || result.error === false)) {
             currentLot.status = 'success';
@@ -1133,6 +1342,16 @@ async function processNextLotImport() {
         }
 
     } catch (error) {
+        if (error.uncertain) {
+            // Неясный исход создания: импорт останавливается до решения продавца
+            // (пропустить лот или повторить вручную после проверки списка).
+            currentLot.status = 'uncertain';
+            currentLot.error = error.message;
+            process.state = 'postponed';
+            await chrome.storage.local.set({ [IMPORT_PROCESS_KEY]: process });
+            sendImportProgressUpdate(process);
+            return;
+        }
         currentLot.retries++;
         currentLot.status = 'pending';
         currentLot.error = error.message;
@@ -1159,6 +1378,17 @@ async function processNextLotImport() {
 // Все вызовы сериализуются (очередь), чтобы параллельные снимки не затирали
 // cookie друг друга и не разлогинивали активную сессию.
 // =====================================================================
+// Работает ли что-то, что действует от имени текущего аккаунта без участия продавца.
+async function isAutomationActive() {
+    const settings = await chrome.storage.local.get([
+        'fpToolsAutoReplies', 'autoBumpEnabled', 'fpToolsLotSchedulesEnabled'
+    ]);
+    const replies = settings.fpToolsAutoReplies || {};
+    return Boolean(replies.greetingEnabled || replies.keywordsEnabled || replies.autoReviewEnabled || replies.bonusForReviewEnabled
+        || replies.newOrderReplyEnabled || replies.orderConfirmReplyEnabled || replies.autoDeliveryEnabled || replies.reviewReminderEnabled
+        || settings.autoBumpEnabled || settings.fpToolsLotSchedulesEnabled);
+}
+
 let _fptSnapChain = Promise.resolve();
 
 function fptSnapshotForKey(key) {
@@ -1790,9 +2020,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
                 const body = new URLSearchParams(payload);
                 // POST в EN-локали - ровно как в плагине: method("post", "lots/offerSave", ..., locale="en")
+                // Создание лота — внешний эффект: один POST без автоматических повторов.
+                // После таймаута или 5xx лот мог создаться — повтор только вручную после проверки.
                 let response;
                 try {
-                    response = await fptFetchResilient('https://funpay.com/en/lots/offerSave', {
+                    response = await fetchWithTimeout('https://funpay.com/en/lots/offerSave', {
                         method: 'POST',
                         headers: {
                             'X-Requested-With': 'XMLHttpRequest',
@@ -1803,16 +2035,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         body
                     });
                 } catch (netErr) {
-                    throw new Error('FunPay не отвечает (возможно, у сайта временные неполадки — 502/таймаут). Лот мог НЕ создаться. Подождите минуту и проверьте список лотов перед повторной попыткой.');
+                    throw Object.assign(new Error('FunPay не ответил вовремя. Лот мог создаться — проверьте список лотов перед повторной попыткой.'), { uncertain: true });
                 }
                 if (response.status >= 500) {
-                    throw new Error(`FunPay вернул ошибку сервера (${response.status}). Это проблема на стороне FunPay, не расширения. Лот мог не создаться — проверьте список лотов перед повтором.`);
+                    throw Object.assign(new Error(`FunPay вернул ошибку сервера (${response.status}). Лот мог создаться — проверьте список лотов перед повтором.`), { uncertain: true });
                 }
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const rawText = await response.text();
                 let result;
                 try { result = JSON.parse(rawText); }
-                catch { throw new Error('FunPay вернул не-JSON ответ (возможно, требуется повторный вход).'); }
+                catch { throw Object.assign(new Error('FunPay вернул нечитаемый ответ. Лот мог создаться — проверьте список лотов перед повтором.'), { uncertain: true }); }
 
                 const hasError = result && (result.error === 1 || result.error === true ||
                     (result.errors && (Array.isArray(result.errors) ? result.errors.length : Object.keys(result.errors).length)));
@@ -1839,7 +2071,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     throw new Error(msg);
                 }
             } catch (e) {
-                sendResponse({ success: false, error: e.message });
+                sendResponse({ success: false, error: e.message, uncertain: e.uncertain === true || undefined });
             }
         })();
         return true;
@@ -1848,26 +2080,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'cloneDeleteLot') {
         (async () => {
             try {
-                const auth = await getAuthDetailsForBackground();
-                if (!auth.csrf_token) throw new Error('Нет CSRF-токена.');
                 if (!request.offerId) throw new Error('Не передан ID лота.');
-                const body = new URLSearchParams({
-                    offer_id: String(request.offerId),
-                    deleted: '1',
-                    csrf_token: auth.csrf_token
-                });
-                const { response, seal } = await fptFetchWithSeal('https://funpay.com/lots/offerSave', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
-                    },
-                    body
-                });
-                if (!response.ok) {
-                    if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
-                    throw new Error(`HTTP ${response.status}`);
-                }
+                await lotWriteQueue.enqueue({ offerId: request.offerId, op: { type: 'delete' }, expectedAccountId: request.expectedAccountId, source: 'delete' });
                 sendResponse({ success: true });
             } catch (e) {
                 sendResponse({ success: false, error: e.message });
@@ -1876,43 +2090,111 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // 2.9: Save/update a single lot (used by bulk editor)
+    // Расписания лотов: правила, привязки, предпросмотр и применение.
+    if (request.action === 'fptLotSchedules') {
+        const commands = {
+            list: () => lotSchedules.list(),
+            saveRule: () => lotSchedules.saveRule({ rule: request.rule, expectedRevision: request.expectedRevision ?? null }),
+            setRuleEnabled: () => lotSchedules.setRuleEnabled({ ruleId: request.ruleId, enabled: request.enabled, expectedRevision: request.expectedRevision ?? null }),
+            deleteRule: () => lotSchedules.deleteRule({ ruleId: request.ruleId }),
+            bindLots: () => lotSchedules.bindLots({ ruleId: request.ruleId || null, lots: request.lots }),
+            preview: () => lotSchedules.preview({ rule: request.rule || null, ruleId: request.ruleId || null }),
+            evaluate: () => lotSchedules.evaluate()
+        };
+        const run = commands[request.command];
+        if (!run) { sendResponse({ success: false, error: 'Неизвестная команда расписания.' }); return false; }
+        run().then(data => sendResponse({ success: true, data }))
+            .catch(error => sendResponse({ success: false, error: error?.message || 'Ошибка расписания.', code: error?.code }));
+        return true;
+    }
+
+    // Правила цен: предпросмотр от свежих форм, применение строк предпросмотра, автопересчёт.
+    if (request.action === 'fptPricing') {
+        const commands = {
+            list: () => pricingService.list(),
+            saveRule: () => pricingService.saveRule({ rule: request.rule, expectedRevision: request.expectedRevision ?? null }),
+            deleteRule: () => pricingService.deleteRule({ ruleId: request.ruleId }),
+            bindLots: () => pricingService.bindLots({ ruleId: request.ruleId || null, lots: request.lots }),
+            preview: () => pricingService.preview({ ruleId: request.ruleId || null, rule: request.rule || null, lots: request.lots }),
+            apply: () => pricingService.apply({ previewId: request.previewId, offerIds: request.offerIds }),
+            setAuto: () => pricingService.setAuto({ ruleId: request.ruleId, auto: request.auto, expectedRevision: request.expectedRevision ?? null }),
+            resumeAuto: () => pricingService.resumeAuto({ offerId: request.offerId })
+        };
+        const run = commands[request.command];
+        if (!run) { sendResponse({ success: false, error: 'Неизвестная команда цен.' }); return false; }
+        run().then(data => sendResponse({ success: true, data }))
+            .catch(error => sendResponse({ success: false, error: error?.message || 'Ошибка расчёта цен.', code: error?.code }));
+        return true;
+    }
+
+    // Журнал «Заказы и выдачи»: список, карточка и команды с проверкой ревизии.
+    if (request.action === 'fptOrders') {
+        if (!orderCommands) { sendResponse({ success: false, error: 'Журнал заказов недоступен (IndexedDB).' }); return false; }
+        const run = request.command === 'list' ? orderCommands.list({ filter: request.filter })
+            : request.command === 'card' ? orderCommands.card({ orderKey: request.orderKey })
+                : orderCommands.command({ ...request, command: request.orderCommand || request.command });
+        run.then(data => sendResponse({ success: true, data }))
+            .catch(error => sendResponse({ success: false, error: error?.message || 'Ошибка журнала заказов.', code: error?.code }));
+        return true;
+    }
+
+    // Напоминания об отзыве: список задач, отмена, ручной запуск проверки,
+    // завершённые заказы без отзыва и разовое напоминание по выбранным.
+    if (request.action === 'fptReviewReminders') {
+        if (!reviewReminders) { sendResponse({ success: false, error: 'Журнал заказов недоступен (IndexedDB).' }); return false; }
+        const commands = {
+            list: () => reviewReminders.list(),
+            cancel: () => reviewReminders.cancel({ key: request.key }),
+            run: () => reviewReminders.run(),
+            candidates: () => reviewReminders.candidates({ refresh: request.refresh === true }),
+            sendManual: () => reviewReminders.sendManual({ orderIds: Array.isArray(request.orderIds) ? request.orderIds.map(String) : [] })
+        };
+        const run = commands[request.command];
+        if (!run) { sendResponse({ success: false, error: 'Неизвестная команда напоминаний.' }); return false; }
+        run().then(data => sendResponse({ success: true, data }))
+            .catch(error => sendResponse({ success: false, error: error?.message || 'Ошибка напоминаний.' }));
+        return true;
+    }
+
+    // Единая точка изменения существующих лотов из страниц FunPay и popup.
+    // op: { type: 'setActive'|'setPrice'|'adjustPrice'|'setFields'|'delete', ... }
+    if (request.action === 'fptLotWrite') {
+        (async () => {
+            try {
+                const result = await lotWriteQueue.enqueue({
+                    offerId: request.offerId, nodeId: request.nodeId, op: request.op || {},
+                    expectedAccountId: request.expectedAccountId, source: request.source || 'ui'
+                });
+                const ok = ['saved', 'unchanged', 'deleted-now'].includes(result.status);
+                sendResponse({ success: ok, ...result, before: undefined, after: undefined,
+                    error: ok ? undefined : lotWriteStatusMessage(result) });
+            } catch (e) {
+                sendResponse({ success: false, status: 'error', error: e.message, code: e.code });
+            }
+        })();
+        return true;
+    }
+
+    // 2.9: Save/update a single lot (used by bulk editor and the order page price field).
+    // Применяются только намеренные поля: либо частичный набор (без полей формы fields[...]),
+    // либо отличия полной формы от присланной исходной (original). Полная форма без
+    // исходной не принимается — она могла устареть и откатить чужие изменения.
     if (request.action === 'saveSingleLot') {
         (async () => {
             try {
-                const auth = await getAuthDetailsForBackground();
-                if (!auth.csrf_token) throw new Error('Нет CSRF токена');
-
-                let payload = { ...request.data };
-
-                // If the caller only sent a partial payload (e.g. the inline price editor
-                // sends just { offer_id, price }), FunPay's offerSave would blank every
-                // field that isn't present. Detect that and merge onto the full current
-                // form so we only change what was intended.
-                const looksPartial = !Object.keys(payload).some(k => k.startsWith('fields['));
-                if (looksPartial && payload.offer_id && payload.offer_id !== '0') {
-                    try {
-                        let nodeId = request.nodeId || payload.node_id;
-                        // node is needed for offerEdit; try to discover it if absent
-                        const editUrl = nodeId
-                            ? `https://funpay.com/lots/offerEdit?node=${nodeId}&offer=${payload.offer_id}`
-                            : `https://funpay.com/lots/offerEdit?offer=${payload.offer_id}`;
-                        const { response: r } = await fptFetchWithSeal(editUrl, {});
-                        if (r.ok) {
-                            const html = await r.text();
-                            const full = await parseHtmlViaOffscreen(html, 'parseLotEditPage');
-                            if (full && typeof full === 'object') {
-                                payload = { ...full, ...payload }; // overrides win
-                            }
-                        }
-                    } catch (mergeErr) {
-                        // fall through with partial payload if the edit page can't be loaded
-                        console.warn('saveSingleLot: could not merge full form:', mergeErr.message);
-                    }
-                }
-
-                await postOfferSave(payload, auth.csrf_token);
-                sendResponse({ success: true });
+                const data = { ...(request.data || {}) };
+                const offerId = String(data.offer_id || request.offerId || '');
+                const nodeId = String(request.nodeId || data.node_id || '');
+                const looksPartial = !Object.keys(data).some(k => k.startsWith('fields['));
+                if (!looksPartial && !request.original) throw new Error('Нужна исходная форма лота, чтобы применить только изменения.');
+                const { fields, expect } = intendedLotFields(data, looksPartial ? null : request.original);
+                if (!Object.keys(fields).length) { sendResponse({ success: true, status: 'unchanged' }); return; }
+                const result = await lotWriteQueue.enqueue({
+                    offerId, nodeId, expectedAccountId: request.expectedAccountId, source: 'saveSingleLot',
+                    op: { type: 'setFields', fields, expect: Object.keys(expect).length ? expect : null }
+                });
+                if (!['saved', 'unchanged'].includes(result.status)) throw new Error(lotWriteStatusMessage(result));
+                sendResponse({ success: true, status: result.status });
             } catch (e) {
                 sendResponse({ success: false, error: e.message });
             }
@@ -2132,6 +2414,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             try {
                 const key = request.key;
                 if (!key) { sendResponse({ ok: false, error: 'no key' }); return; }
+                // Пока работает автоматизация, чужой аккаунт не подставляется в общую
+                // cookie даже на миг: показывается сохранённый снимок.
+                const active = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
+                if (active?.value !== key && await isAutomationActive()) {
+                    sendResponse({ ok: false, automationLocked: true, error: 'Пока работает автоматизация, данные других аккаунтов не обновляются вживую.' });
+                    return;
+                }
                 const snap = await fptSnapshotForKey(key);
                 sendResponse({ ok: true, snapshot: snap || {} });
             } catch (e) {
@@ -2612,17 +2901,11 @@ function supportMessageHtml(message) {
 }
 
 function setupInitialAlarms() {
-    const autoRestoreRevision = ++_autoRestoreAlarmSyncGeneration;
     chrome.storage.local.get([
-        'autoBumpEnabled', 'fpToolsAutoReplies',
-        'fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled'
+        'autoBumpEnabled', 'fpToolsAutoReplies'
     ], (settings) => {
         if (settings.autoBumpEnabled) {
             runScheduledBump();
-        }
-        // 3.0: Periodic lot restore/disable check (every 5 minutes)
-        if (autoRestoreRevision === _autoRestoreAlarmSyncGeneration) {
-            syncAutoRestoreAlarm(chrome.alarms, settings.fpToolsAutoRestoreEnabled, settings.fpToolsAutoDisableEnabled);
         }
 
         // <-- НОВЫЙ БЛОК ДЛЯ АВТООТВЕТЧИКА -->
@@ -2630,7 +2913,7 @@ function setupInitialAlarms() {
         const arAnyEnabled = autoReplies.greetingEnabled || autoReplies.keywordsEnabled ||
             autoReplies.autoReviewEnabled || autoReplies.bonusForReviewEnabled ||
             autoReplies.newOrderReplyEnabled || autoReplies.orderConfirmReplyEnabled ||
-            autoReplies.autoDeliveryEnabled;
+            autoReplies.autoDeliveryEnabled || autoReplies.reviewReminderEnabled;
         if (arAnyEnabled) {
             // 3.0: start the MV3-safe active loop instead of the broken 0.25-min alarm.
             startEngine();
@@ -2674,19 +2957,16 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== 'local') return;
 
-    if (changes.fpToolsAutoRestoreEnabled || changes.fpToolsAutoDisableEnabled) {
-        const autoRestoreRevision = ++_autoRestoreAlarmSyncGeneration;
-        chrome.storage.local.get(['fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled'], (settings) => {
-            if (autoRestoreRevision !== _autoRestoreAlarmSyncGeneration) return;
-            syncAutoRestoreAlarm(chrome.alarms, settings.fpToolsAutoRestoreEnabled, settings.fpToolsAutoDisableEnabled);
-        });
-    }
-
     // <-- НОВЫЙ БЛОК ДЛЯ УПРАВЛЕНИЯ БУДИЛЬНИКОМ АВТООТВЕТЧИКА -->
     if (changes.fpToolsAutoReplies) {
+        const before = changes.fpToolsAutoReplies.oldValue || {};
+        const after = changes.fpToolsAutoReplies.newValue || {};
+        if (Boolean(before.reviewReminderEnabled) !== Boolean(after.reviewReminderEnabled)) {
+            reviewReminders?.onSettingsChanged().catch(error => console.warn('FunPay Funcy: напоминания не перенастроены:', error?.message || error));
+        }
         const newSettings = changes.fpToolsAutoReplies.newValue || {};
         const isEnabled = newSettings.greetingEnabled || newSettings.keywordsEnabled || newSettings.autoReviewEnabled || newSettings.bonusForReviewEnabled ||
-            newSettings.newOrderReplyEnabled || newSettings.orderConfirmReplyEnabled || newSettings.autoDeliveryEnabled;
+            newSettings.newOrderReplyEnabled || newSettings.orderConfirmReplyEnabled || newSettings.autoDeliveryEnabled || newSettings.reviewReminderEnabled;
 
         // 3.0: drive the engine instead of the broken alarm
         syncOrderReconcileAlarm(Boolean(isEnabled));
@@ -2711,3 +2991,11 @@ chrome.runtime.onUpdateAvailable.addListener(function(details) {
     console.log("FunPay Funcy: доступно обновление до версии " + details.version + ". применение...");
     chrome.runtime.reload();
 });
+
+// Каждый запуск service worker (а не только старт браузера): незавершённые
+// отправки становятся uncertain, просроченные сроки заданий проверяются один раз,
+// будущие alarms восстанавливаются. Не зависит от включённости автоответчика.
+Promise.resolve()
+    .then(() => jobScheduler.runRecovery({ force: true }))
+    .then(() => jobScheduler.recoverDeadlines())
+    .catch(error => console.warn('FunPay Funcy: восстановление заданий при запуске не удалось:', error?.message || error));

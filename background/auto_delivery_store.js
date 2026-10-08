@@ -58,10 +58,13 @@ export function createAutoDeliveryStore(storage, readLotForm) {
 
     // nodeIds запоминаются, чтобы фоновое автовосстановление могло открыть форму
     // лота, которого уже нет в публичном профиле (выключенного).
-    async function writeStockCounts(counts, nodeIds = {}) {
+    // Остаток склада FunPay — снимок с временем проверки: старый положительный
+    // остаток после ошибки чтения не считается подтверждённым (stockError).
+    async function writeStockCounts(counts, nodeIds = {}, errors = []) {
         return serializeWrite(async () => {
             const lots = await readLots();
             const nextLots = { ...lots };
+            const checkedAt = Date.now();
             for (const [id, count] of Object.entries(counts)) {
                 const current = nextLots[id];
                 if (!current || typeof current !== 'object') continue;
@@ -69,8 +72,15 @@ export function createAutoDeliveryStore(storage, readLotForm) {
                     ...current,
                     ...(nodeIds[id] ? { nodeId: nodeIds[id] } : {}),
                     productCount: current.mode === 'template' ? null : count,
-                    stockSnapshot: current.mode === 'template' ? current.stockSnapshot : count
+                    stockSnapshot: current.mode === 'template' ? current.stockSnapshot : count,
+                    stockCheckedAt: checkedAt,
+                    stockError: null
                 };
+            }
+            for (const { lotId, error } of errors) {
+                const current = nextLots[lotId];
+                if (!current || typeof current !== 'object') continue;
+                nextLots[lotId] = { ...current, stockError: error, stockErrorAt: checkedAt };
             }
             await storage.set({ [LOT_STORAGE_KEY]: nextLots });
             return counts;
@@ -121,7 +131,7 @@ export function createAutoDeliveryStore(storage, readLotForm) {
             }
         };
         await Promise.all(Array.from({ length: Math.min(STOCK_SYNC_CONCURRENCY, work.length) }, worker));
-        await writeStockCounts(counts, nodeIds);
+        await writeStockCounts(counts, nodeIds, errors);
         return { counts, errors };
     }
 
@@ -157,7 +167,7 @@ export async function saveAutoDeliveryLot(lotId, settings) {
         enabled: settings.enabled,
         mode: settings.mode,
         text: typeof settings.text === 'string' ? settings.text : '',
-        productCount: settings.mode === 'template' ? null : productCount,
+        productCount: settings.mode === 'secrets' ? productCount : null,
         updatedAt: Date.now()
     }, { preserveCurrentStock: true });
 }

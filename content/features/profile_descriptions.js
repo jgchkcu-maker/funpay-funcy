@@ -225,22 +225,11 @@
     if (!offerId) throw new Error('OFFER_ID_NOT_FOUND');
     return offerId;
   }
+  // Удаление идёт через фоновую очередь лота: она ставит терминальную отметку,
+  // после которой отложенные изменения этого лота не применяются.
   async function deleteVerificationLot(offerId) {
-    const body = new URLSearchParams();
-    body.append('offer_id', String(offerId));
-    body.append('deleted', '1');
-    body.append('csrf_token', getCsrf());
-    const res = await fetch('/lots/offerSave', {
-      method: 'POST', credentials: 'same-origin',
-      headers: { accept: '*/*', 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest' },
-      body,
-    });
-    if (!res.ok) throw new Error('FUNPAY_DELETE_' + res.status);
-    const json = await res.json().catch(() => ({}));
-    if (json && json.error) {
-      const e = typeof json.error === 'string' ? json.error : JSON.stringify(json.error);
-      throw new Error('FUNPAY_DELETE_ERROR: ' + e);
-    }
+    const res = await chrome.runtime.sendMessage({ action: 'cloneDeleteLot', offerId: String(offerId), expectedAccountId: window.fptPageUserId?.() || null });
+    if (!res?.success) throw new Error('FUNPAY_DELETE_ERROR: ' + (res?.error || 'unknown'));
   }
 
   // ── Надёжная очистка верификационных лотов ──────────────────────────────────

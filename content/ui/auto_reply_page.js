@@ -227,15 +227,12 @@
         label.append(input, node('span', 'fpt-ad-switch-track'));
 
         const line = node('div', 'fpt-ad-switch-line');
-        const stateLabel = node('span', 'fpt-ad-switch-state', checked ? 'Вкл' : 'Выкл');
-        input.addEventListener('change', () => { stateLabel.textContent = input.checked ? 'Вкл' : 'Выкл'; });
-        line.append(label, stateLabel);
+        line.append(label);
         return {
             element: line,
             input,
             setChecked(value) {
                 input.checked = !!value;
-                stateLabel.textContent = input.checked ? 'Вкл' : 'Выкл';
             }
         };
     }

@@ -1,88 +1,49 @@
 /*
- * FunPay Funcy — автовыключение и автовосстановление лотов по остатку.
+ * FunPay Funcy — активность лотов: единое применение решения.
  *
- * Раньше переключение шло из content script и работало только при открытой
- * вкладке FunPay. Теперь проход выполняется в service worker по alarm
- * `fpToolsAutoRestore` и пишет лот через lot_writer (с перечитыванием формы).
+ * createLotActivityService применяет одно решение resolver'а (lot_policy.js) к
+ * свежей форме лота внутри очереди записи: сначала проверяет, не изменил ли лот
+ * продавец, затем решает, затем записывает итог и владельца выключения.
+ * Расписание, цены и ручные команды меняют только свою блокировку или намерение
+ * и просят сервис применить решение. Автовыключения и автовосстановления по
+ * остатку склада нет: остаток только показывается в «Автовыдаче».
  */
 
 import { isLotFormActive } from './lot_writer.js';
+import { decideLotActivity, observeExternalChange, afterApply, activeBlockers } from './lot_policy.js';
 
-function knownCount(config) {
-    if (!config || typeof config !== 'object' || config.mode === 'template') return null;
-    return Number.isInteger(config.productCount) && config.productCount >= 0 ? config.productCount : null;
-}
+export function createLotActivityService({ queue, policies, now = () => Date.now() } = {}) {
+    if (!queue || !policies) throw new Error('Сервис активности лотов не настроен.');
 
-// Возвращает 'activate', 'deactivate' или null. Неизвестный остаток никогда не
-// приводит к переключению.
-export function decideLotAvailability({ config, active, restoreEnabled, disableEnabled }) {
-    const count = knownCount(config);
-    if (count === null) return null;
-    if (disableEnabled && count === 0 && active && config.autoDisableEnabled !== false) return 'deactivate';
-    if (restoreEnabled && count > 0 && !active && config.autoRestoreEnabled !== false) return 'activate';
-    return null;
-}
-
-export function createLotAvailabilitySweep({ getSettings, listOwnLots, writer, notify = () => {}, log = console } = {}) {
-    if (typeof getSettings !== 'function' || !writer) throw new Error('Проход по лотам не настроен.');
-    let running = null;
-
-    async function sweepOnce() {
-        const settings = await getSettings();
-        const restoreEnabled = Boolean(settings.fpToolsAutoRestoreEnabled);
-        const disableEnabled = Boolean(settings.fpToolsAutoDisableEnabled);
-        const result = { changed: [], conflicts: [], errors: [], skipped: [] };
-        if (!restoreEnabled && !disableEnabled) return result;
-
-        const configs = settings.fpToolsAutoDeliveryLots || {};
-        const candidates = Object.entries(configs).filter(([, config]) => knownCount(config) !== null);
-        if (!candidates.length) return result;
-
-        let lotsById = null;
-        const nodeFor = async (id, config) => {
-            if (/^\d+$/.test(String(config.nodeId || ''))) return String(config.nodeId);
-            if (!lotsById && typeof listOwnLots === 'function') {
-                const lots = await listOwnLots().catch(() => []);
-                lotsById = new Map((Array.isArray(lots) ? lots : []).map(lot => [String(lot.id), lot]));
-            }
-            return lotsById?.get(id)?.nodeId ? String(lotsById.get(id).nodeId) : null;
-        };
-
-        for (const [id, config] of candidates) {
-            try {
-                const nodeId = await nodeFor(id, config);
-                if (!nodeId) { result.skipped.push(id); continue; }
-                let decision = null;
-                const outcome = await writer.patchLot({
-                    offerId: id,
-                    nodeId,
-                    mutate: form => {
-                        decision = decideLotAvailability({ config, active: isLotFormActive(form), restoreEnabled, disableEnabled });
-                        if (decision === 'activate') form.active = 'on';
-                        if (decision === 'deactivate') delete form.active;
-                        return form;
-                    }
-                });
-                if (outcome.status === 'saved') {
-                    const title = outcome.before?.['fields[summary][ru]'] || lotsById?.get(id)?.title || `Лот #${id}`;
-                    result.changed.push({ id, decision });
-                    notify({ offerId: id, title, active: decision === 'activate' });
-                } else if (outcome.status !== 'unchanged') {
-                    result.conflicts.push({ id, status: outcome.status });
+    async function apply({ accountId, offerId, nodeId, source = 'policy' }) {
+        const snapshot = await policies.get(accountId, offerId);
+        if (!snapshot?.manageActive) return { status: 'not-managed', decision: 'not-managed' };
+        let observed = null;
+        const result = await queue.enqueue({
+            offerId, nodeId: nodeId || snapshot.nodeId, source,
+            op: {
+                type: 'policy',
+                decide: form => {
+                    const active = isLotFormActive(form);
+                    const policy = observeExternalChange({ ...snapshot }, { currentActive: active, now: now() });
+                    const decision = decideLotActivity(policy, active);
+                    observed = { policy, decision, active };
+                    return decision;
                 }
-            } catch (error) {
-                result.errors.push({ id, error: error?.message || String(error) });
-                log.warn?.(`FunPay Funcy AutoRestore: лот ${id} не обработан:`, error?.message || error);
             }
-        }
-        return result;
+        });
+        if (!observed) return { status: result.status, decision: null };
+        const saved = result.status === 'saved';
+        const observedActive = saved ? (result.active ?? observed.decision === 'activate') : observed.active;
+        const updated = await policies.update(accountId, offerId, current => afterApply({
+            ...current,
+            paused: observed.policy.paused,
+            inactiveEvidence: observed.policy.inactiveEvidence,
+            disabledBy: observed.policy.disabledBy,
+            lastWrite: observed.policy.lastWrite
+        }, { decision: observed.decision, observedActive, status: result.status, now: now() }));
+        return { status: result.status, decision: observed.decision, active: observedActive, policy: updated, blockers: activeBlockers(updated) };
     }
 
-    // Повторный alarm во время идущего прохода не запускает второй параллельный.
-    function sweep() {
-        if (!running) running = sweepOnce().finally(() => { running = null; });
-        return running;
-    }
-
-    return Object.freeze({ sweep });
+    return Object.freeze({ apply });
 }

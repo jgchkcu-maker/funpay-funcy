@@ -14,6 +14,7 @@ function legacySettings(page = 'telegram') {
         fpToolsDiscord: { enabled: true, webhookUrl: 'old-webhook' },
         fpToolsProcessedDiscordIds: ['2'], discordSent_123: true,
         logToDiscord: true, discordWebhookUrl: 'legacy-webhook',
+        fpToolsAutoRestoreEnabled: true, fpToolsAutoDisableEnabled: true,
         notificationSound: 'custom', notificationVolume: 0.5,
         fpToolsCustomSoundData: 'data:audio/wav;base64,old', fpToolsCustomSoundMeta: { length: 4 },
         fpToolsGCToken: 'community-token', fpToolsGCConfig: { active: true, display: true }, fpToolsGCConfigTs: 123,
@@ -37,7 +38,7 @@ test('worker cleanup cancels only retired alarms, removes secrets and keeps unre
     };
     await cleanup(storage, { async clear(name) { alarms.delete(name); } });
     assert.ok(Object.keys(saved).every(key => !isRetiredKey(key)));
-    assert.deepEqual([...alarms], ['fpToolsAutoResponder', 'fpToolsAutoRestore']);
+    assert.deepEqual([...alarms], ['fpToolsAutoResponder'], 'the stock sweep alarm is cancelled with the retired integrations');
     assert.equal(saved.fpToolsLastPage, 'lot_io');
     assert.equal(saved.fpToolsLastPageMode, null);
     assert.deepEqual(saved.fpToolsPageModes, { templates: 'commands' });
@@ -138,4 +139,12 @@ test('worker retirement runs on load and install, while shared parsing and suppo
         assert.doesNotMatch(read(file), /fptGc|global_chat|public-chat\.json|fpt:global-chat-visibility/);
     }
     assert.ok(read('content/utils.js').includes('function showNotification('));
+});
+
+test('removed supplier module leaves no settings or page behind', () => {
+    assert.ok(isRetiredKey('fpToolsSupplierMappings'));
+    assert.ok(isRetiredKey('fpToolsSupplierPilot'));
+    const result = sanitizeSettings({ fpToolsLastPage: 'suppliers', fpToolsPageModes: { suppliers: 'x', lot_io: null } });
+    assert.equal(result.fpToolsLastPage, 'lot_io');
+    assert.deepEqual(result.fpToolsPageModes, { lot_io: null });
 });

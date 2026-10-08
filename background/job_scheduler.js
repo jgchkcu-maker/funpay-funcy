@@ -6,7 +6,10 @@
  * проходом восстановления при запуске и на heartbeat.
  */
 
-export function createJobScheduler({ alarms, log = console, recoveryGapMs = 30000, now = () => Date.now() } = {}) {
+export const JOB_DEADLINES_KEY = 'fpToolsJobDeadlines';
+
+// storage (необязательно) — chrome.storage.local-подобный объект для сроков заданий.
+export function createJobScheduler({ alarms, storage = null, log = console, recoveryGapMs = 30000, now = () => Date.now() } = {}) {
     if (!alarms || typeof alarms.create !== 'function' || typeof alarms.clear !== 'function') {
         throw new Error('chrome.alarms недоступен.');
     }
@@ -33,18 +36,80 @@ export function createJobScheduler({ alarms, log = console, recoveryGapMs = 3000
         return true;
     }
 
+    // Возвращает Promise создания alarm: ошибку настройки видит вызывающий.
     function scheduleAt(name, when) {
-        alarms.create(name, { when: Math.max(Number(when) || 0, now() + 1000) });
+        return Promise.resolve(alarms.create(name, { when: Math.max(Number(when) || 0, now() + 1000) }));
     }
 
     function clear(name) {
         return alarms.clear(name);
     }
 
+    // --- Сроки, которые переживают перезапуск -----------------------------------
+    // Alarm — только сигнал проверить сохранённый срок. Сначала срок записывается,
+    // потом создаётся alarm; при запуске worker просроченные задания выполняются
+    // один раз (без проигрывания пропущенных интервалов), будущие — переустанавливаются.
+    let deadlineChain = Promise.resolve();
+    function withDeadlines(mutate) {
+        if (!storage) return Promise.reject(new Error('Хранилище сроков заданий не настроено.'));
+        const run = deadlineChain.then(async () => {
+            const { [JOB_DEADLINES_KEY]: stored } = await storage.get(JOB_DEADLINES_KEY);
+            const deadlines = stored && typeof stored === 'object' ? { ...stored } : {};
+            const result = mutate(deadlines);
+            await storage.set({ [JOB_DEADLINES_KEY]: deadlines });
+            return result;
+        });
+        deadlineChain = run.catch(() => {});
+        return run;
+    }
+
+    async function scheduleDue(name, dueAt) {
+        if (!handlers.has(name)) throw new Error(`Задание ${name} не зарегистрировано.`);
+        const when = Number(dueAt);
+        if (!Number.isFinite(when)) throw new Error('Некорректный срок задания.');
+        await withDeadlines(deadlines => { deadlines[name] = when; });
+        await scheduleAt(name, when);
+        return when;
+    }
+
+    async function clearDue(name) {
+        await withDeadlines(deadlines => { delete deadlines[name]; });
+        await clear(name);
+    }
+
+    async function getDeadlines() {
+        if (!storage) return {};
+        const { [JOB_DEADLINES_KEY]: stored } = await storage.get(JOB_DEADLINES_KEY);
+        return stored && typeof stored === 'object' ? { ...stored } : {};
+    }
+
+    async function recoverDeadlines() {
+        const deadlines = await getDeadlines();
+        const results = [];
+        for (const [name, dueAt] of Object.entries(deadlines)) {
+            if (!handlers.has(name)) continue;
+            if (dueAt <= now()) {
+                // Обработчик сам вычисляет состояние «сейчас» и назначает следующий срок.
+                await withDeadlines(current => { if (current[name] === dueAt) delete current[name]; });
+                results.push({ name, ran: await handleAlarm({ name, scheduledTime: dueAt, recovered: true }) });
+                continue;
+            }
+            const existing = typeof alarms.get === 'function' ? await alarms.get(name) : null;
+            if (!existing || Math.abs((existing.scheduledTime || 0) - dueAt) > 1000) await scheduleAt(name, dueAt);
+            results.push({ name, ran: false });
+        }
+        return results;
+    }
+
     // true — alarm принадлежит планировщику и обработан.
     async function handleAlarm(alarm) {
         const handler = handlers.get(alarm?.name);
         if (!handler) return false;
+        if (storage && !alarm.recovered) {
+            await withDeadlines(deadlines => {
+                if (deadlines[alarm.name] !== undefined && deadlines[alarm.name] <= now() + 1000) delete deadlines[alarm.name];
+            }).catch(() => {});
+        }
         try {
             await handler(alarm);
         } catch (error) {
@@ -78,5 +143,8 @@ export function createJobScheduler({ alarms, log = console, recoveryGapMs = 3000
         return recovery;
     }
 
-    return Object.freeze({ register, schedulePeriodic, ensurePeriodic, scheduleAt, clear, handleAlarm, registerRecovery, runRecovery });
+    return Object.freeze({
+        register, schedulePeriodic, ensurePeriodic, scheduleAt, clear, handleAlarm, registerRecovery, runRecovery,
+        scheduleDue, clearDue, getDeadlines, recoverDeadlines
+    });
 }
