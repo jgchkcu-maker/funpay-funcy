@@ -61,8 +61,8 @@ window.FPTCursorFxParticles = FPTCursorFxParticles;
 
 class CursorFX {
     constructor() {
-        this.canvas = createElement('canvas', { id: 'fp-tools-cursor-fx' });
-        this.ctx = this.canvas.getContext('2d', { willReadFrequently: false, alpha: true });
+        this.canvas = null;
+        this.ctx = null;
         this.config = {};
         this.particles = [];
         this.hue = 0;
@@ -76,14 +76,16 @@ class CursorFX {
         this.maxParticles = 120; // 2.8: reduced for GPU perf (review #5)
         this._lastMouseTime = 0;
 
-        this.init();
     }
 
     init() {
+        if (this.canvas) return;
+        this.canvas = createElement('canvas', { id: 'fp-tools-cursor-fx' });
+        this.ctx = this.canvas.getContext('2d', { willReadFrequently: false, alpha: true });
         Object.assign(this.canvas.style, {
             position: 'fixed', top: '0', left: '0',
             width: '100vw', height: '100vh',
-            pointerEvents: 'none', zIndex: '999999'
+            pointerEvents: 'none', zIndex: '999999', display: 'none'
         });
         document.body.appendChild(this.canvas);
         
@@ -130,6 +132,7 @@ class CursorFX {
     }
 
     resize() {
+        if (!this.canvas) return;
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
     }
@@ -137,7 +140,11 @@ class CursorFX {
     updateCustomCursor(newConfig) {
         this.customCursorConfig = { ...this.customCursorConfig, ...newConfig };
         
-        if (this.customCursorConfig.enabled && this.customCursorConfig.image) {
+        const image = this.customCursorConfig.image;
+        const validImage = typeof image === 'string' && image &&
+            (typeof FPTSafe === 'undefined' || FPTSafe.cssImageUrl(image));
+        if (this.customCursorConfig.enabled && validImage) {
+            this.init();
             this._customCursorActive = true;
             this.customCursor.style.display = 'block';
             
@@ -158,8 +165,8 @@ class CursorFX {
             this.customCursor.style.transform = `translate(calc(${this.mouse.x}px - 50%), calc(${this.mouse.y}px - 50%))`;
         } else {
             this._customCursorActive = false;
-            this.customCursor.style.display = 'none';
-            this.cursorHideStyleTag.textContent = '';
+            if (this.customCursor) this.customCursor.style.display = 'none';
+            if (this.cursorHideStyleTag) this.cursorHideStyleTag.textContent = '';
         }
     }
 
@@ -174,6 +181,8 @@ class CursorFX {
 
     start() {
         if (this.isEnabled) return;
+        this.init();
+        this.canvas.style.display = '';
         this.isEnabled = true;
         // Не запускаем animate() сразу, он запустится при первом движении мыши
     }
@@ -186,7 +195,11 @@ class CursorFX {
             this.animationFrame = null;
         }
         // Очищаем холст через некоторое время, чтобы частицы успели исчезнуть
-        setTimeout(() => this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height), 200);
+        setTimeout(() => {
+            if (this.isEnabled) return;
+            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.canvas.style.display = 'none';
+        }, 200);
     }
     
     spawnSingleParticle() {

@@ -436,6 +436,11 @@
     animation: fpToolsPulse 2s infinite ease-in-out;
 }
 
+.fp-tools-popup:not(.active):not(.is-closing) {
+    /* Preserve the exit animation, then skip the closed panel's rendering work. */
+    content-visibility: hidden;
+}
+
 .fp-tools-popup {
     display: flex;
     visibility: hidden;
