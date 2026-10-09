@@ -161,6 +161,12 @@
     return !!document.querySelector('a.tc-item') || !!document.querySelector('h1.page-header');
   }
 
+  let showComm = false, showReal = false;
+  const changedFlags = new Set();
+  const settingsReady = chrome.storage.local.get(['fptShowCommission', 'fptShowRealPrices']).then(st => {
+    if (!changedFlags.has('fptShowCommission')) showComm = st.fptShowCommission === true;
+    if (!changedFlags.has('fptShowRealPrices')) showReal = st.fptShowRealPrices === true;
+  }).catch(error => log('settings error', error && error.message));
   let running = false;
   async function run() {
     if (running) return;
@@ -168,13 +174,7 @@
     try {
       const nodeId = getNodeId();
       if (!nodeId) return;
-      // настройки: по умолчанию ОБЕ выключены
-      let showComm = false, showReal = false;
-      try {
-        const st = await chrome.storage.local.get(['fptShowCommission', 'fptShowRealPrices']);
-        showComm = st.fptShowCommission === true;
-        showReal = st.fptShowRealPrices === true;
-      } catch {}
+      await settingsReady;
       if (!showComm && !showReal) return;
       if (showComm) await renderSectionCommission(nodeId);
       if (showReal) await renderRealPrices(nodeId);
@@ -183,18 +183,23 @@
   }
 
   function boot() {
-    if (isLotsPage()) run();
+    settingsReady.then(() => { if (isLotsPage()) run(); });
     function needsRun() {
       if (!isLotsPage()) return false;
-      if (!document.querySelector('.fpt-comm')) return true;
+      if (!showComm && !showReal) return false;
+      if (showComm && !document.querySelector('.fpt-comm')) return true;
+      if (!showReal) return false;
       const prices = document.querySelectorAll('.tc-item .tc-price');
       for (const p of prices) { if (!p.querySelector('.fpt-realprice')) return true; }
       return false;
     }
-    const obs = new MutationObserver(() => { if (needsRun()) run(); });
+    const check = () => { if (needsRun()) return run(); };
+    const obs = new MutationObserver(window.fptCoalesce?.(check, { name: 'commission' }) || check);
     try { obs.observe(document.body, { childList: true, subtree: true }); } catch {}
     let last = location.pathname;
-    setInterval(() => { if (location.pathname !== last) { last = location.pathname; cache.clear(); if (isLotsPage()) run(); } }, 700);
+    const checkUrl = () => { if (location.pathname !== last) { last = location.pathname; cache.clear(); if (isLotsPage()) run(); } };
+    if (window.fptOnUrlChange) window.fptOnUrlChange(checkUrl);
+    else setInterval(checkUrl, 700);
   }
 
   // мгновенное применение при переключении галок в настройках (без перезагрузки)
@@ -203,6 +208,10 @@
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.onChanged) {
     chrome.storage.onChanged.addListener((changes, area) => {
       if (area !== 'local') return;
+      if (changes.fptShowCommission) changedFlags.add('fptShowCommission');
+      if (changes.fptShowRealPrices) changedFlags.add('fptShowRealPrices');
+      if (changes.fptShowCommission) showComm = changes.fptShowCommission.newValue === true;
+      if (changes.fptShowRealPrices) showReal = changes.fptShowRealPrices.newValue === true;
       if (changes.fptShowCommission) {
         if (changes.fptShowCommission.newValue === true) { if (isLotsPage()) run(); }
         else removeCommission();

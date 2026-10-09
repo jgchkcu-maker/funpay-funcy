@@ -1,8 +1,19 @@
 // Popup actions accept explicit values; no legacy view is mounted.
+let fptStockLots = {}, fptStockLotsVersion = 0, fptStockLotsRead = null;
+function loadStockLotsOnce() {
+    if (!fptStockLotsRead) {
+        const version = fptStockLotsVersion;
+        fptStockLotsRead = chrome.storage.local.get('fpToolsAutoDeliveryLots').then(data => {
+            if (version === fptStockLotsVersion) fptStockLots = data.fpToolsAutoDeliveryLots || {};
+        }).catch(error => { fptStockLotsRead = null; console.error('FunPay Funcy [stock]', error); });
+    }
+    return fptStockLotsRead;
+}
 async function initStockCounterDisplay() {
     if (!window.location.pathname.match(/\/users\/\d+\/?/)) return;
 
-    const { fpToolsAutoDeliveryLots = {} } = await chrome.storage.local.get('fpToolsAutoDeliveryLots');
+    await loadStockLotsOnce();
+    const fpToolsAutoDeliveryLots = fptStockLots;
     if (!Object.keys(fpToolsAutoDeliveryLots).length) return;
 
     document.querySelectorAll('a.tc-item:not(.fp-stock-init)').forEach(row => {
@@ -34,14 +45,23 @@ async function initStockCounterDisplay() {
     });
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initStockCounterDisplay);
-} else {
+const scheduleStockCounters = window.fptCoalesce?.(initStockCounterDisplay, { name: 'stock' }) || initStockCounterDisplay;
+let stockCounterObserver = null;
+function bootStockCounters() {
+    if (!/\/users\/\d+\/?/.test(location.pathname)) return;
     initStockCounterDisplay();
+    if (stockCounterObserver) return;
+    stockCounterObserver = new MutationObserver(scheduleStockCounters);
+    stockCounterObserver.observe(document.body, { childList: true, subtree: true });
 }
-
-new MutationObserver(() => initStockCounterDisplay())
-    .observe(document.body, { childList: true, subtree: true });
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'local' || !changes.fpToolsAutoDeliveryLots) return;
+    fptStockLotsVersion++;
+    fptStockLots = changes.fpToolsAutoDeliveryLots.newValue || {};
+});
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootStockCounters);
+else bootStockCounters();
+window.fptOnUrlChange?.(bootStockCounters);
 
 if (typeof window !== 'undefined' && window.fptPopupActions) {
     window.fptPopupActions.register('auto_delivery', 'fp-load-delivery-lots-btn', async p => {

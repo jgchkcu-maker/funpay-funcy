@@ -686,7 +686,8 @@
     setInterval(() => { sweepPendingLots(); }, 5 * 60 * 1000);
     let lastPath = location.pathname;
     const get = () => lastPath, set = (p) => { lastPath = p; };
-    setInterval(() => checkNav(get, set), 700);
+    if (window.fptOnUrlChange) window.fptOnUrlChange(() => checkNav(get, set));
+    else setInterval(() => checkNav(get, set), 700);
     document.addEventListener('click', () => setTimeout(() => checkNav(get, set), 300), true);
   }
 

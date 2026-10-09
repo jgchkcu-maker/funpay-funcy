@@ -6,6 +6,17 @@
     'use strict';
 
     const FP_CONFIRM_HOURS = 72; // FunPay gives 72h to confirm after completion
+    const liveTimers = new Set();
+    let timerInterval = null;
+    function updateTimers() {
+        for (const timer of liveTimers) {
+            if (!timer.el.isConnected) liveTimers.delete(timer);
+            else timer.update();
+        }
+        if (!liveTimers.size && timerInterval !== null) {
+            clearInterval(timerInterval); timerInterval = null;
+        }
+    }
 
     function parseDateFromRow(row) {
         const dateEl = row.querySelector('.tc-date-time');
@@ -58,8 +69,6 @@
             if (!orderDate) return;
 
             const expiresAt = new Date(orderDate.getTime() + FP_CONFIRM_HOURS * 3600000);
-            const msLeft = expiresAt - Date.now();
-
             const timerEl = document.createElement('div');
             timerEl.className = 'fp-order-timer';
 
@@ -71,15 +80,12 @@
             };
 
             update();
-            const iv = setInterval(update, 60000);
-
-            // Clean up when row removed
-            new MutationObserver((_, obs) => {
-                if (!document.body.contains(row)) { clearInterval(iv); obs.disconnect(); }
-            }).observe(document.body, { childList: true, subtree: true });
-
             const dateEl = row.querySelector('.tc-date');
-            if (dateEl) dateEl.appendChild(timerEl);
+            if (dateEl) {
+                dateEl.appendChild(timerEl);
+                liveTimers.add({ el: timerEl, update });
+                if (timerInterval === null) timerInterval = setInterval(updateTimers, 60000);
+            }
         });
     }
 
@@ -89,7 +95,7 @@
         if (!isOrdersPage) return;
 
         attachTimers();
-        new MutationObserver(attachTimers)
+        new MutationObserver(window.fptCoalesce?.(attachTimers, { name: 'order timers' }) || attachTimers)
             .observe(document.getElementById('content') || document.body, { childList: true, subtree: true });
     }
 

@@ -324,7 +324,7 @@ function initBuyerHistoryObserver() {
     document.querySelectorAll('.chat-header, .chat-full-header').forEach(attachChatMenuItems);
 
     const root = document.getElementById('content') || document.body;
-    new MutationObserver((muts) => {
+    const attachAddedHeaders = (muts) => {
         for (const mut of muts) {
             for (const node of mut.addedNodes) {
                 if (node.nodeType !== 1) continue;
@@ -334,7 +334,9 @@ function initBuyerHistoryObserver() {
                 headers.forEach(attachChatMenuItems);
             }
         }
-    }).observe(root, { childList: true, subtree: true });
+    };
+    new MutationObserver(window.fptCoalesce?.(attachAddedHeaders, { records: true, name: 'buyer history' }) || attachAddedHeaders)
+        .observe(root, { childList: true, subtree: true });
 }
 
 if (document.readyState === 'loading') {

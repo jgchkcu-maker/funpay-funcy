@@ -392,13 +392,14 @@ function openLabelManager() {
 /* ------------------------------------------------------------------ */
 
 function buildChatHeaderMenu() {
-    const observer = new MutationObserver(() => {
+    const refreshHeaderMenu = () => {
         const chatMenu = document.querySelector('.chat-header .dropdown-menu');
         if (chatMenu && !chatMenu.dataset.fpToolsStatusMenu) {
             chatMenu.dataset.fpToolsStatusMenu = 'true';
             renderHeaderMenu(chatMenu);
         }
-    });
+    };
+    const observer = new MutationObserver(window.fptCoalesce?.(refreshHeaderMenu) || refreshHeaderMenu);
     observer.observe(document.body, { childList: true, subtree: true });
 }
 

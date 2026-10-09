@@ -207,7 +207,7 @@ function initReviewRequestButtons() {
     };
 
     addButtons();
-    const obs = new MutationObserver(addButtons);
+    const obs = new MutationObserver(window.fptCoalesce?.(addButtons) || addButtons);
     obs.observe(document.getElementById('content') || document.body, { childList: true, subtree: true });
 }
 

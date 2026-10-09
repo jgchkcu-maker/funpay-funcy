@@ -202,7 +202,7 @@
         attachChipsToPage();
 
         const root = document.getElementById('content') || document.body;
-        new MutationObserver(() => attachChipsToPage())
+        new MutationObserver(window.fptCoalesce?.(attachChipsToPage) || attachChipsToPage)
             .observe(root, { childList: true, subtree: true });
 
         // Close popup on outside click

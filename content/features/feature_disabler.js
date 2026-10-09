@@ -20,11 +20,16 @@ function fptApplyDisabledCss(disabledIds) {
     reg.forEach(entry => {
         if (entry.locked) return;                 // locked = cannot be disabled
         if (!disabled.has(entry.id)) return;
-        if (entry.selector) selectors.push(entry.selector);
+        if (entry.selector) {
+            // The chat button's base rule uses .chat-form .chat-btn-image !important.
+            // Match its specificity so the disable setting can actually hide our button.
+            selectors.push(entry.id === 'chat_custom_attach' ? `.chat-form ${entry.selector}` : entry.selector);
+        }
     });
     let styleEl = document.getElementById(FPT_DISABLED_STYLE_ID);
     if (!selectors.length) {
         if (styleEl) styleEl.textContent = '';
+        document.dispatchEvent(new Event('fptDisabledFeaturesApplied'));
         return;
     }
     if (!styleEl) {
@@ -33,6 +38,7 @@ function fptApplyDisabledCss(disabledIds) {
         (document.head || document.documentElement).appendChild(styleEl);
     }
     styleEl.textContent = selectors.join(', ') + ' { display: none !important; }';
+    document.dispatchEvent(new Event('fptDisabledFeaturesApplied'));
 }
 
 // Read state from storage and apply (CSS only - no settings are touched).

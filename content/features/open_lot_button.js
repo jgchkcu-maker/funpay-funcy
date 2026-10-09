@@ -119,7 +119,9 @@
     const obs = new MutationObserver(() => { scheduleRun(); });
     try { obs.observe(document.body, { childList: true, subtree: true }); } catch {}
     let last = location.href;
-    setInterval(() => { if (location.href !== last) { last = location.href; run(); } }, 800);
+    const checkUrl = () => { if (location.href !== last) { last = location.href; run(); } };
+    if (window.fptOnUrlChange) window.fptOnUrlChange(checkUrl);
+    else setInterval(checkUrl, 800);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

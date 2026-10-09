@@ -899,9 +899,15 @@
     else init();
 
     const root = document.querySelector('.js-main-chat') || document.body;
-    new MutationObserver(() => {
-        if (document.querySelector('.chat-form-input') && !document.querySelector('.fpt-attach-btn')) installButton();
+    const refreshAttach = () => {
+        if (!document.querySelector('.chat-form-input')) return;
+        if (!document.querySelector('.fpt-attach-btn')) installButton();
         syncNativeVisibility();
-    }).observe(root, { childList: true, subtree: true });
+    };
+    // Visibility may change via CSS while both button nodes remain the same.
+    // Keep the style read, but perform it once per mutation batch and after disable CSS is applied.
+    const scheduleAttach = window.fptCoalesce?.(refreshAttach, { name: 'chat attachments' }) || refreshAttach;
+    new MutationObserver(scheduleAttach).observe(root, { childList: true, subtree: true });
+    document.addEventListener('fptDisabledFeaturesApplied', scheduleAttach);
 
 })();

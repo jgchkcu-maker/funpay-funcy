@@ -415,7 +415,7 @@
         const host = document.getElementById('fpTools-stats-cards')
             || document.querySelector('.fp-tools-stats-container');
         if (host) {
-            const mo = new MutationObserver(() => tryWire());
+            const mo = new MutationObserver(window.fptCoalesce?.(tryWire) || tryWire);
             mo.observe(document.body, { childList: true, subtree: true });
         }
         // подстраховка: периодически в первые секунды

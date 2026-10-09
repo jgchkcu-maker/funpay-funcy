@@ -188,7 +188,8 @@ function initializeCustomSound() {
         for (let mutation of mutations) {
             if (mutation.addedNodes) {
                 for (let node of mutation.addedNodes) {
-                    if (node.nodeType === 1 && (node.matches("audio.loud") || node.querySelector("audio.loud"))) {
+                    if (node.nodeType === 1 && ((node.tagName === 'AUDIO' && node.matches('audio.loud')) ||
+                        (node.childElementCount && node.querySelector('audio.loud')))) {
                         applyNotificationSound();
                         return;
                     }

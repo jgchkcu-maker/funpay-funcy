@@ -277,8 +277,11 @@ function initializeMarkAllAsRead() {
         
         const contactList = document.querySelector('.contact-list');
         if (contactList) {
+            let filterScheduled = false;
             const filterObserver = new MutationObserver(() => {
-                setTimeout(applyMarkedFilter, 100); 
+                if (filterScheduled) return;
+                filterScheduled = true;
+                setTimeout(() => { filterScheduled = false; applyMarkedFilter(); }, 100);
             });
             filterObserver.observe(contactList, { childList: true, subtree: true });
         }

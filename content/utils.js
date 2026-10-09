@@ -544,4 +544,86 @@ async function fptLotWrite({ offerId, nodeId, op, source = 'page' }) {
     return response;
 }
 window.fptLotWrite = fptLotWrite;
+
+// DOM scheduling helpers: preserve mutation batches and migrate pending work on visibility changes.
+(function installPerfHelpers(root) {
+    function report(name, error) { console.error(`FunPay Funcy [${name}]`, error); }
+    root.fptCoalesce = function fptCoalesce(fn, { hiddenDelay = 100, records = false, name = fn.name || 'callback' } = {}) {
+        let handle = null, kind = null, generation = 0, disposed = false;
+        let batch = [], observer;
+        function clearSchedule() {
+            generation++;
+            if (handle !== null) {
+                if (kind === 'raf') root.cancelAnimationFrame(handle);
+                else root.clearTimeout(handle);
+            }
+            handle = null; kind = null;
+        }
+        function plan() {
+            const ticket = ++generation;
+            kind = document.hidden ? 'timer' : 'raf';
+            const flush = () => {
+                if (disposed || ticket !== generation) return;
+                handle = null; kind = null;
+                const current = batch, currentObserver = observer;
+                batch = []; observer = undefined;
+                try {
+                    Promise.resolve(records ? fn(current, currentObserver) : fn()).catch(error => report(name, error));
+                } catch (error) { report(name, error); }
+            };
+            handle = kind === 'timer' ? root.setTimeout(flush, hiddenDelay) : root.requestAnimationFrame(flush);
+        }
+        function schedule(mutations, source) {
+            if (disposed) return;
+            if (records && mutations) for (const mutation of mutations) batch.push(mutation);
+            observer = source;
+            if (handle === null) plan();
+        }
+        function visibilityChanged() {
+            if (handle === null) return;
+            clearSchedule(); plan();
+        }
+        document.addEventListener('visibilitychange', visibilityChanged);
+        schedule.cancel = () => { clearSchedule(); batch = []; observer = undefined; };
+        schedule.dispose = () => {
+            disposed = true; schedule.cancel();
+            document.removeEventListener('visibilitychange', visibilityChanged);
+        };
+        return schedule;
+    };
+
+    const listeners = new Set();
+    let lastUrl, interval = null, navigationSource = null;
+    function checkUrl() {
+        const next = root.location.href;
+        if (next === lastUrl) return;
+        const previous = lastUrl; lastUrl = next;
+        for (const fn of Array.from(listeners)) {
+            try { Promise.resolve(fn(next, previous)).catch(error => report('navigation', error)); }
+            catch (error) { report('navigation', error); }
+        }
+    }
+    root.fptOnUrlChange = function fptOnUrlChange(fn) {
+        if (!listeners.size) {
+            lastUrl = root.location.href;
+            navigationSource = root.navigation && typeof root.navigation.addEventListener === 'function' ? root.navigation : null;
+            if (navigationSource) navigationSource.addEventListener('currententrychange', checkUrl);
+            else interval = root.setInterval(checkUrl, 700);
+            root.addEventListener('popstate', checkUrl);
+            root.addEventListener('hashchange', checkUrl);
+        }
+        listeners.add(fn);
+        return () => {
+            listeners.delete(fn);
+            if (listeners.size) return;
+            navigationSource?.removeEventListener('currententrychange', checkUrl);
+            navigationSource = null;
+            if (interval !== null) root.clearInterval(interval);
+            interval = null;
+            root.removeEventListener('popstate', checkUrl);
+            root.removeEventListener('hashchange', checkUrl);
+        };
+    };
+})(window);
+// End DOM scheduling helpers.
 window.fptPageUserId = fptPageUserId;

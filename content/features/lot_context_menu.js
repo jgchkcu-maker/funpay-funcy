@@ -341,12 +341,16 @@
     }
 
     // Also re-render after SPA-style navigation (page content swap)
-    const _navObs = new MutationObserver(() => {
+    let pinnedRenderScheduled = false;
+    const refreshPinnedRows = () => {
         // If pinned rows disappeared (page changed), re-render them
         if (pinnedLots.length && !document.querySelector('a.tc-item.fp-pinned-row')) {
-            setTimeout(renderPinnedInTable, 300);
+            if (pinnedRenderScheduled) return;
+            pinnedRenderScheduled = true;
+            setTimeout(() => { pinnedRenderScheduled = false; renderPinnedInTable(); }, 300);
         }
-    });
+    };
+    const _navObs = new MutationObserver(window.fptCoalesce?.(refreshPinnedRows) || refreshPinnedRows);
     _navObs.observe(document.getElementById('content') || document.body, {
         childList: true,
         subtree: false

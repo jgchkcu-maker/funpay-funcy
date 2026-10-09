@@ -570,12 +570,13 @@
         attach();
         attachContactPreviews();
         const root = document.getElementById('content') || document.body;
-        const ro = new MutationObserver(() => {
+        const refreshChatBindings = () => {
             const list = document.querySelector('.chat-message-list');
             if (list && !list.dataset.fptReplyBound) attach();
             const cl = document.querySelector('.contact-list');
             if (cl && !cl.dataset.fptPrevBound) attachContactPreviews();
-        });
+        };
+        const ro = new MutationObserver(window.fptCoalesce?.(refreshChatBindings) || refreshChatBindings);
         try { ro.observe(root, { childList: true, subtree: true }); } catch (_) {}
     }
 

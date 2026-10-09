@@ -71,7 +71,7 @@
         if (!/\/lots\/offer/.test(window.location.pathname)) return;
         enhance();
         const root = document.getElementById('content') || document.body;
-        new MutationObserver(enhance).observe(root, { childList: true, subtree: true });
+        new MutationObserver(window.fptCoalesce?.(enhance) || enhance).observe(root, { childList: true, subtree: true });
     }
 
     if (document.readyState === 'loading') {
