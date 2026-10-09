@@ -48,7 +48,7 @@ async function initStockCounterDisplay() {
 const scheduleStockCounters = window.fptCoalesce?.(initStockCounterDisplay, { name: 'stock' }) || initStockCounterDisplay;
 let stockCounterObserver = null;
 function bootStockCounters() {
-    if (!/\/users\/\d+\/?/.test(location.pathname)) return;
+    if (!/\/users\/\d+\/?/.test(window.location.pathname)) return;
     initStockCounterDisplay();
     if (stockCounterObserver) return;
     stockCounterObserver = new MutationObserver(scheduleStockCounters);

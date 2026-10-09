@@ -15,7 +15,7 @@ function context(initial = {}) {
             },
             async set(patch) { Object.assign(saved, structuredClone(patch)); },
             async remove(keys) { (Array.isArray(keys) ? keys : [keys]).forEach(key => delete saved[key]); }
-        } }, runtime: {
+        }, onChanged: { addListener() {}, removeListener() {} } }, runtime: {
             async sendMessage(message, callback) { messages.push(message); const result = { success: true, data: [], key: 'session' }; callback?.(result); return result; },
             getURL(value) { return value; }, getManifest() { return { version: 'test' }; }
         } }

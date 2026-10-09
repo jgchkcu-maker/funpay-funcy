@@ -208,13 +208,15 @@ test('stored disabled IDs still hide the exact original live selectors across al
         getElementById(id) { return styleElements.get(id) || null; },
         createElement(tagName) { return { tagName, id: '', textContent: '' }; },
         head: { appendChild(style) { styleElements.set(style.id, style); } },
-        addEventListener() {}
+        addEventListener() {},
+        dispatchEvent() {}
     };
     const context = vm.createContext({
         document,
         chrome: { storage: { local: { async get() { return { fpToolsDisabledFeatures: [...disabledIds] }; } } } },
         window: {},
-        console
+        console,
+        Event
     });
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_registry.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_disabler.js'), 'utf8'), context);

@@ -26,7 +26,7 @@ test('profile stock badges use the same default-enabled rule as the settings pag
         chrome: { storage: { local: { get: async () => ({ fpToolsAutoDeliveryLots: {
             '501': { productCount: 4 },
             '502': { enabled: false, productCount: 2 }
-        } }) } } }
+        } }) }, onChanged: { addListener() {} } } }
     };
     vm.createContext(sandbox);
     vm.runInContext(source, sandbox);
