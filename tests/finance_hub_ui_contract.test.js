@@ -9,15 +9,15 @@ const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 
 test('finance_hub: static markup stays empty and search metadata remains', () => assertEmptyCategory('finance_hub'));
 
-test('finance_hub: model, chart and page modules load in order before the content script that mounts them', () => {
+test('finance_hub: model, chart and page modules load in order before the readiness marker that permits mounting them', () => {
     assert.ok(read('content/content_script.js').includes('FPTFinanceHubPage'), 'the popup boot path mounts the finance view');
-    const manifest = JSON.parse(read('manifest.json'));
+    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
     const scripts = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js')).js;
-    const mount = scripts.indexOf('content/content_script.js');
+    const mount = scripts.indexOf('content/ui/popup_bundle_ready.js');
     const order = ['content/ui/finance_hub_model.js', 'content/ui/finance_charts.js', 'content/ui/finance_hub_page.js'];
     order.forEach((file, index) => {
-        assert.ok(scripts.includes(file), `${file} is in the manifest`);
-        assert.ok(scripts.indexOf(file) < mount, `${file} loads before the content script`);
+        assert.ok(scripts.includes(file), `${file} is in the manifest plus popup bundle`);
+        assert.ok(scripts.indexOf(file) < mount, `${file} loads before the bundle readiness marker`);
         if (index) assert.ok(scripts.indexOf(order[index - 1]) < scripts.indexOf(file), `${file} loads after ${order[index - 1]}`);
     });
 });

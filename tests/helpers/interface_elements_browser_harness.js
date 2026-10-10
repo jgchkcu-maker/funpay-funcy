@@ -73,9 +73,9 @@ async function openInterfaceElements(browser, initial = {}, { dark = true, width
         };
         window.qaAiReply = ai || null;
     }, { initial, failFirstRead, ai });
-    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
+    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_shared.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
     for (const file of ['content/ui/popup_metadata.js', 'content/ui/popup_actions.js', 'content/ui/popup_attachments.js',
-        'content/ui/popup_components.js', 'content/ui/main_popup.js', 'content/features/feature_registry.js',
+        'content/ui/popup_components.js', 'content/ui/menu_theme.js', 'content/ui/main_popup.js', 'content/features/feature_registry.js',
         'content/features/feature_disabler.js', 'content/features/needs_tab.js', 'content/ui/interface_elements_page.js']) {
         await page.addScriptTag({ path: path.join(root, file) });
     }

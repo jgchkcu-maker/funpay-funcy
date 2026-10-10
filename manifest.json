@@ -10,7 +10,8 @@
     "cookies",
     "alarms",
     "offscreen",
-    "background"
+    "background",
+    "scripting"
   ],
   "host_permissions": [
     "https://fptools-ai-server.vercel.app/*",
@@ -87,6 +88,7 @@
         "content/error_page_reload.js",
         "content/scripts/jquery.js",
         "content/utils.js",
+        "content/ui/menu_theme.js",
         "content/ui/page_windows.js",
         "content/features/feature_registry.js",
         "content/features/feature_disabler.js",
@@ -128,29 +130,8 @@
         "content/features/needs_tab.js",
         "content/features/slash_commands_ui.js",
         "content/features/finance_hub.js",
-        "content/ui/popup_metadata.js",
-        "content/ui/main_popup.js",
         "content/ui/popup_components.js",
         "content/ui/automation_ui.js",
-        "content/ui/lot_automation_page.js",
-        "content/ui/lot_io_page.js",
-        "content/ui/orders_view.js",
-        "content/ui/auto_delivery_page.js",
-        "content/ui/auto_bump_page.js",
-        "content/ui/auto_reply_page.js",
-        "content/ui/review_reminder_block.js",
-        "content/ui/auto_review_page.js",
-        "content/ui/quick_replies_page.js",
-        "content/ui/interface_elements_page.js",
-        "content/ui/accounts_page.js",
-        "content/ui/finance_hub_model.js",
-        "content/ui/finance_charts.js",
-        "content/ui/finance_hub_page.js",
-        "content/features/theme_gallery.js",
-        "content/ui/theme_page.js",
-        "content/ui/effects_page.js",
-        "content/ui/notification_sound_page.js",
-        "content/ui/support_page.js",
         "content/ui/header_button_styler.js",
         "content/features/lot_context_menu.js",
         "background/retired_integrations.js",
@@ -163,12 +144,12 @@
         "content/features/chat_search.js",
         "content/features/order_enhancements.js",
         "content/features/blacklist.js",
-        "content/ui/blacklist_page.js",
         "content/features/auto_delivery_ui.js",
         "content/features/rmthub_search.js",
         "content/features/new_chat_starter.js",
         "content/features/support.js",
         "content/features/purchases.js",
+        "content/ui/popup_bundle_loader.js",
         "content/content_script.js",
         "content/features/order_page_enhancements.js",
         "content/features/order_timer.js",
@@ -187,12 +168,11 @@
       ],
       "css": [
         "css/content_styles.css",
-        "css/popup_categories.css",
+        "css/popup_shared.css",
         "css/image_generator.css",
         "css/ai_creator.css",
         "css/live_styler.css",
         "css/fpt_icons_theme.css",
-        "css/automation.css",
         "css/page_windows.css"
       ],
       "run_at": "document_idle"
@@ -212,5 +192,6 @@
         "https://support.funpay.com/*"
       ]
     }
-  ]
+  ],
+  "minimum_chrome_version": "106"
 }

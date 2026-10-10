@@ -27,13 +27,13 @@ test('sounds: static markup stays empty and search metadata remains', () => asse
 test('sounds: the page sits in the customers group and is mounted by the popup', () => {
     assert.match(read('content/ui/main_popup.js'), /id: 'customers'[^\n]*'blacklist', 'sounds'\]/);
     assert.ok(read('content/content_script.js').includes('FPTNotificationSoundPage.mount(toolsPopup)'));
-    const manifest = JSON.parse(read('manifest.json'));
+    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
     const scripts = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js')).js;
     const at = file => scripts.indexOf(file);
     assert.ok(at('content/ui/popup_actions.js') < at('content/features/custom_sound.js'), 'actions exist before the sound runtime registers');
     assert.ok(at('content/features/custom_sound.js') < at('content/ui/notification_sound_page.js'), 'the catalogue loads before the page');
     assert.ok(at('content/features/custom_sound_editor.js') < at('content/ui/notification_sound_page.js'));
-    assert.ok(at('content/ui/notification_sound_page.js') < at('content/content_script.js'));
+    assert.ok(at('content/ui/notification_sound_page.js') < at('content/ui/popup_bundle_ready.js'));
 });
 
 test('sounds: every preset file ships with the extension and is web accessible', () => {

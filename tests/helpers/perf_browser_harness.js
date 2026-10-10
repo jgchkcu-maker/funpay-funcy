@@ -4,7 +4,7 @@ const root = path.resolve(__dirname, '../..');
 const { chromium } = require(process.env.FPT_PLAYWRIGHT || 'playwright');
 const launch = () => chromium.launch({ executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
 
-async function openSite(browser, { sourceRoot = root, dark = false, url = 'https://funpay.com/users/123/', seed = {}, eager = true, width = 1204 } = {}) {
+async function openSite(browser, { sourceRoot = root, dark = false, url = 'https://funpay.com/users/123/', seed = {}, eager = true, width = 1204, beforeScripts } = {}) {
     const page = await browser.newPage({ viewport: { width, height: 789 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -45,6 +45,7 @@ async function openSite(browser, { sourceRoot = root, dark = false, url = 'https
             }
         };
     }, seed);
+    if (beforeScripts) await beforeScripts(page);
     const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'manifest.json'), 'utf8'));
     const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(sourceRoot, css) });

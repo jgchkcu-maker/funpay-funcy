@@ -6,7 +6,7 @@ const ROOT = path.join(__dirname, '..');
 const runtimeFiles = [
     'manifest.json',
     'content/content_script.js',
-    'content/ui/main_popup.js',
+    'content/ui/menu_theme.js', 'content/ui/main_popup.js',
     'background/ai.js'
 ];
 

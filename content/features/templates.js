@@ -415,7 +415,10 @@ function toggleTemplatePopover(trigger) {
 async function openTemplateSettings() {
     try {
         if (typeof window.__fpEnsurePopup === 'function') await window.__fpEnsurePopup();
-    } catch (_) {}
+    } catch (error) {
+        window.fptShowPopupLoadError?.(error);
+        return;
+    }
     const popup = document.querySelector('.fp-tools-popup');
     if (!popup) return;
     if (typeof window.fptOpenPopupPage !== 'function') return;

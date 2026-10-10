@@ -101,7 +101,7 @@ test('retired popup pages reject actions and registrations', async () => {
 });
 
 test('manifest resources exist, notification permissions are removed and bundled sounds are reachable', () => {
-    const manifest = JSON.parse(read('manifest.json'));
+    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
     assert.ok(!manifest.permissions.includes('notifications'));
     assert.ok(!manifest.host_permissions.some(host => host.includes('api.telegram.org')));
     assert.ok(!manifest.host_permissions.some(host => host.includes('fpt-chat.starobinskiy01.workers.dev')));
@@ -135,7 +135,7 @@ test('worker retirement runs on load and install, while shared parsing and suppo
     assert.doesNotMatch(read('popup/popup.html'), /reviewBtn|Оценить/);
     assert.doesNotMatch(read('popup/popup.js'), /reviewBtn|chromewebstore\.google\.com/);
     assert.doesNotMatch(read('content/content_script.js'), /initializeCustomSound|applyNotificationSound/);
-    for (const file of ['content/content_script.js', 'content/ui/main_popup.js', 'content/ui/popup_metadata.js']) {
+    for (const file of ['content/content_script.js', 'content/ui/menu_theme.js', 'content/ui/main_popup.js', 'content/ui/popup_metadata.js']) {
         assert.doesNotMatch(read(file), /fptGc|global_chat|public-chat\.json|fpt:global-chat-visibility/);
     }
     assert.ok(read('content/utils.js').includes('function showNotification('));

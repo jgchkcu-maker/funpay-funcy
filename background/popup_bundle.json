@@ -1,0 +1,32 @@
+{
+  "js": [
+    "content/ui/popup_metadata.js",
+    "content/ui/main_popup.js",
+    "content/ui/lot_automation_page.js",
+    "content/ui/lot_io_page.js",
+    "content/ui/orders_view.js",
+    "content/ui/auto_delivery_page.js",
+    "content/ui/auto_bump_page.js",
+    "content/ui/auto_reply_page.js",
+    "content/ui/review_reminder_block.js",
+    "content/ui/auto_review_page.js",
+    "content/ui/quick_replies_page.js",
+    "content/ui/interface_elements_page.js",
+    "content/ui/accounts_page.js",
+    "content/ui/finance_hub_model.js",
+    "content/ui/finance_charts.js",
+    "content/ui/finance_hub_page.js",
+    "content/features/theme_gallery.js",
+    "content/ui/theme_page.js",
+    "content/ui/effects_page.js",
+    "content/ui/notification_sound_page.js",
+    "content/ui/support_page.js",
+    "content/ui/settings_io_page.js",
+    "content/ui/blacklist_page.js",
+    "content/ui/popup_bundle_ready.js"
+  ],
+  "css": [
+    "css/popup_categories.css",
+    "css/automation.css"
+  ]
+}

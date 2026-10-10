@@ -17,11 +17,11 @@ test('effects: static markup stays empty and search metadata remains', () => ass
 
 test('effects: the category view is mounted into the existing popup shell', () => {
     assert.ok(read('content/content_script.js').includes('FPTEffectsPage.mount(toolsPopup)'), 'the popup boot path mounts the effects view');
-    const manifest = JSON.parse(read('manifest.json'));
+    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
     const scripts = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js')).js;
     assert.ok(scripts.includes('content/ui/effects_page.js'), 'manifest loads the effects page module');
-    assert.ok(scripts.indexOf('content/ui/effects_page.js') < scripts.indexOf('content/content_script.js'),
-        'the module loads before the content script that mounts it');
+    assert.ok(scripts.indexOf('content/ui/effects_page.js') < scripts.indexOf('content/ui/popup_bundle_ready.js'),
+        'the module loads before the readiness marker that permits mounting it');
     assert.ok(scripts.indexOf('content/features/cursor_fx.js') < scripts.indexOf('content/ui/effects_page.js'),
         'the shared particle helpers load before the preview uses them');
 });

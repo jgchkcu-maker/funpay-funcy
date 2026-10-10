@@ -13,7 +13,7 @@ test('orders journal lists orders by decision and the card only offers allowed a
     try {
         const page = await browser.newPage({ viewport: { width: 1100, height: 900 } });
         await page.setContent(`<body data-app-data='{"userId":100}'><div class="fp-tools-popup fptm-themed active"><div id="host"></div></div></body>`);
-        for (const file of ['css/content_styles.css', 'css/popup_categories.css', 'css/automation.css']) await page.addStyleTag({ path: path.join(root, file) });
+        for (const file of ['css/content_styles.css', 'css/popup_shared.css', 'css/popup_categories.css', 'css/automation.css']) await page.addStyleTag({ path: path.join(root, file) });
         const iconFont = fs.readFileSync(path.join(root, 'fonts/material-symbols-rounded.woff2')).toString('base64');
         await page.addStyleTag({ content: `@font-face { font-family: 'Material Symbols Rounded'; src: url(data:font/woff2;base64,${iconFont}) format('woff2'); }
             body { margin: 0; font-family: Arial, sans-serif; } .fp-tools-popup { position: relative; width: 1100px; height: 900px; padding: 16px; box-sizing: border-box; overflow: auto; }

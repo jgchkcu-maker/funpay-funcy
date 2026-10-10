@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..');
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8')));
 const config = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.v1.json'), 'utf8'));
 const cleanupModule = import('../background/retired_financial_tools.mjs').catch(error => {
     if (error.code === 'ERR_MODULE_NOT_FOUND') return null;

@@ -5,6 +5,7 @@ import './purchases_db.js'; // FunPay Funcy: IndexedDB-хранилище пок
 import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище финансов (self.FPTFinanceDB)
 import { fetchAIResponse, fetchAILotGeneration, fetchAITranslation, fetchAIImageGeneration } from './ai.js';
 import { cleanupRetiredFinancialToolData } from './retired_financial_tools.mjs';
+import { createPopupBundleLoader } from './popup_bundle_loader.mjs';
 import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump } from './autobump.js';
 import {
     runAutoResponderCycle, resetAutoResponderState, configureOrderAutomation, runOrderReconcile,
@@ -31,6 +32,17 @@ import {
 } from './auto_delivery_store.js';
 import { startEngine, stopEngine, onHeartbeat, onKeepalivePing, ENGINE_HEARTBEAT_ALARM } from './fpt_engine.js';
 import './retired_integrations.js';
+
+// --- Popup bundle loader ---
+const loadPopupBundle = createPopupBundleLoader({
+    scripting: chrome.scripting,
+    extensionId: chrome.runtime.id,
+    readBundle: async () => {
+        const response = await fetch(chrome.runtime.getURL('background/popup_bundle.json'));
+        if (!response.ok) throw new Error('Popup bundle could not be read');
+        return response.json();
+    }
+});
 
 const retiredIntegrationCleanup = globalThis.FPTRetiredIntegrations.cleanup(chrome.storage.local, chrome.alarms)
     .catch(error => console.error('FunPay Funcy: retired integrations cleanup failed:', error));
@@ -1468,6 +1480,13 @@ function fptSnapshotForKey(key) {
 
 // --- Главный обработчик сообщений ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request?.action === 'fptLoadPopupBundle') {
+        loadPopupBundle(request, sender).then(sendResponse).catch(error => sendResponse({
+            requestId: request.requestId, ok: false, status: 'unknown', stage: 'background',
+            injectionAttempted: true, started: [], completed: [], error: error.message
+        }));
+        return true;
+    }
     if (request?.action === 'fptPatchAutoReplies') {
         patchAutoReplies(request.patch)
             .then(autoReplies => sendResponse({ ok: true, autoReplies }))

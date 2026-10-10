@@ -26,7 +26,15 @@
 
         const button = toolsMenu.querySelector('#fpToolsButton');
 
+        let opening = false;
         button?.addEventListener('click', async () => {
+            if (opening) return;
+            opening = true;
+            const busy = button.getAttribute('aria-busy');
+            const cursor = button.style.cursor;
+            button.setAttribute('aria-busy', 'true');
+            button.style.cursor = 'progress';
+            try {
             // Build the popup on first click (perf: avoids a permanent heavy DOM subtree).
             if (typeof window.__fpEnsurePopup === 'function') {
                 await window.__fpEnsurePopup();
@@ -43,6 +51,15 @@
                 else popup.classList.add('active');
                 if (typeof applyFptMenuTransparency === 'function') applyFptMenuTransparency();
                 if (typeof syncFptMenuControls === 'function') syncFptMenuControls();
+            }
+            } catch (error) {
+                window.fptShowPopupLoadError?.(error);
+                console.error('FunPay Funcy: popup opening failed:', error);
+            } finally {
+                opening = false;
+                if (busy === null) button.removeAttribute('aria-busy');
+                else button.setAttribute('aria-busy', busy);
+                button.style.cursor = cursor;
             }
         });
         
@@ -263,11 +280,15 @@
         // Create the navigation shell once; feature services do not mount category views.
         let __fpPopupReady = false;
         let __fpPopupBuilding = null;
+        let __fpPopupAssemblyFailed = false;
         async function ensureFpToolsPopup() {
             if (__fpPopupReady) return document.querySelector('.fp-tools-popup');
+            if (__fpPopupAssemblyFailed) throw Object.assign(new Error('Не удалось собрать меню. Перезагрузите страницу.'), { popupStatus: 'failed-partial' });
             if (__fpPopupBuilding) return __fpPopupBuilding;
 
             __fpPopupBuilding = (async () => {
+                await window.fptEnsurePopupBundle();
+                try {
                 const toolsPopup = createMainPopup();
                 document.body.appendChild(toolsPopup);
                 if (window.FPTPopupUI && typeof window.FPTPopupUI.observePopupControls === 'function') {
@@ -285,6 +306,7 @@
                         await window.FPTLotIOPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел управления лотами:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTAutoDeliveryPage && typeof window.FPTAutoDeliveryPage.mount === 'function') {
@@ -292,6 +314,7 @@
                         await window.FPTAutoDeliveryPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел автовыдачи:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTAutoBumpPage && typeof window.FPTAutoBumpPage.mount === 'function') {
@@ -299,6 +322,7 @@
                         await window.FPTAutoBumpPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел автоподнятия:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTAutoReplyPage && typeof window.FPTAutoReplyPage.mount === 'function') {
@@ -306,6 +330,7 @@
                         await window.FPTAutoReplyPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел автоответчика:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTAutoReviewPage && typeof window.FPTAutoReviewPage.mount === 'function') {
@@ -313,6 +338,7 @@
                         await window.FPTAutoReviewPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел отзывов и бонусов:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTQuickRepliesPage && typeof window.FPTQuickRepliesPage.mount === 'function') {
@@ -320,6 +346,7 @@
                         await window.FPTQuickRepliesPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел быстрых ответов:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTInterfaceElementsPage && typeof window.FPTInterfaceElementsPage.mount === 'function') {
@@ -327,6 +354,7 @@
                         await window.FPTInterfaceElementsPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел элементов интерфейса:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTAccountsPage && typeof window.FPTAccountsPage.mount === 'function') {
@@ -334,6 +362,7 @@
                         await window.FPTAccountsPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел аккаунтов:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTFinanceHubPage && typeof window.FPTFinanceHubPage.mount === 'function') {
@@ -341,6 +370,7 @@
                         await window.FPTFinanceHubPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел финансов:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTThemePage && typeof window.FPTThemePage.mount === 'function') {
@@ -348,6 +378,7 @@
                         await window.FPTThemePage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел тем:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTEffectsPage && typeof window.FPTEffectsPage.mount === 'function') {
@@ -355,6 +386,7 @@
                         await window.FPTEffectsPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел эффектов:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTNotificationSoundPage && typeof window.FPTNotificationSoundPage.mount === 'function') {
@@ -362,6 +394,7 @@
                         await window.FPTNotificationSoundPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел звука уведомлений:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTBlacklistPage && typeof window.FPTBlacklistPage.mount === 'function') {
@@ -369,6 +402,7 @@
                         await window.FPTBlacklistPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел чёрного списка:', error);
+                        throw error;
                     }
                 }
                 if (window.FPTSupportPage && typeof window.FPTSupportPage.mount === 'function') {
@@ -376,13 +410,21 @@
                         await window.FPTSupportPage.mount(toolsPopup);
                     } catch (error) {
                         console.error('FunPay Funcy: не удалось открыть раздел поддержки:', error);
+                        throw error;
                     }
                 }
 
                 __fpPopupReady = true;
                 return toolsPopup;
+                } catch (error) {
+                    // Views do not all expose disposers. Do not remount their listeners.
+                    __fpPopupAssemblyFailed = true;
+                    document.querySelector('.fp-tools-popup')?.remove();
+                    throw Object.assign(error, { popupStatus: 'failed-partial' });
+                }
             })();
-            return __fpPopupBuilding;
+            try { return await __fpPopupBuilding; }
+            finally { __fpPopupBuilding = null; }
         }
         // Expose so the header-button click handler (defined earlier) can build on demand.
         window.__fpEnsurePopup = ensureFpToolsPopup;

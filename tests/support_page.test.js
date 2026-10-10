@@ -17,11 +17,11 @@ test('support: static markup stays empty and search metadata remains', () => ass
 
 test('support: the category view is mounted into the existing popup shell', () => {
     assert.ok(read('content/content_script.js').includes('FPTSupportPage.mount(toolsPopup)'), 'the popup boot path mounts the support view');
-    const manifest = JSON.parse(read('manifest.json'));
+    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
     const scripts = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js')).js;
     assert.ok(scripts.includes('content/ui/support_page.js'), 'manifest loads the support page module');
-    assert.ok(scripts.indexOf('content/ui/support_page.js') < scripts.indexOf('content/content_script.js'),
-        'the module loads before the content script that mounts it');
+    assert.ok(scripts.indexOf('content/ui/support_page.js') < scripts.indexOf('content/ui/popup_bundle_ready.js'),
+        'the module loads before the readiness marker that permits mounting it');
 });
 
 test('support: the page talks to support only through the registered popup actions', () => {

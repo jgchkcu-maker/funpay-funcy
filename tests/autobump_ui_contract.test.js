@@ -11,12 +11,12 @@ test('autobump: static markup stays empty and search metadata remains', () => as
 
 test('autobump: the category view is mounted into the existing popup shell', () => {
     assert.ok(read('content/content_script.js').includes('FPTAutoBumpPage'), 'the popup boot path mounts the autobump view');
-    const manifest = JSON.parse(read('manifest.json'));
+    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
     const content = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js'));
     const scripts = content.js;
     assert.ok(scripts.includes('content/ui/auto_bump_page.js'), 'manifest loads the autobump page module');
-    assert.ok(scripts.indexOf('content/ui/auto_bump_page.js') < scripts.indexOf('content/content_script.js'),
-        'the module loads before the content script that mounts it');
+    assert.ok(scripts.indexOf('content/ui/auto_bump_page.js') < scripts.indexOf('content/ui/popup_bundle_ready.js'),
+        'the module loads before the readiness marker that permits mounting it');
 });
 
 test('autobump: the page uses the shared category frame and preserves existing storage keys', () => {
