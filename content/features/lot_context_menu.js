@@ -6,14 +6,23 @@
     let pinnedLots    = [];
     let _ctxInverted  = false; // When true: Shift+RMB = this menu, plain RMB = browser
 
-    chrome.storage.local.get(['fpToolsPinnedLots', 'fpToolsCtxInverted'], d => {
-        pinnedLots   = d.fpToolsPinnedLots   || [];
+    (async () => {
+        await migratePinnedLotStorage();
+        const d = await chrome.storage.local.get(['fpToolsCtxPinnedLots', 'fpToolsCtxInverted']);
+        pinnedLots = (Array.isArray(d.fpToolsCtxPinnedLots) ? d.fpToolsCtxPinnedLots : [])
+            .filter((lot, i, all) => lot && /^\d+$/.test(String(lot.offerId)) && all.findIndex(p => String(p?.offerId) === String(lot.offerId)) === i)
+            .map(cleanPinnedLot);
         _ctxInverted = d.fpToolsCtxInverted  || false;
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', waitForLotsAndRender);
         else waitForLotsAndRender();
-    });
+    })().catch(error => console.warn('FunPay Funcy: pinned lot migration failed', error));
 
-    function savePinned() { chrome.storage.local.set({ fpToolsPinnedLots: pinnedLots }); }
+    function cleanPinnedLot(lot) {
+        return { offerId: String(lot.offerId), title: String(lot.title || ''),
+            sellerId: /^\d+$/.test(String(lot.sellerId)) ? String(lot.sellerId) : '', sellerName: String(lot.sellerName || ''),
+            nodeId: /^\d+$/.test(String(lot.nodeId)) ? String(lot.nodeId) : '', pinnedAt: Number(lot.pinnedAt) || 0 };
+    }
+    function savePinned() { pinnedLots = pinnedLots.map(cleanPinnedLot); chrome.storage.local.set({ fpToolsCtxPinnedLots: pinnedLots }); }
 
     function parseLot(el) {
         const a = el.closest('a.tc-item') ||
@@ -24,7 +33,8 @@
         const href       = a.getAttribute('href') || '';
         // offerId: либо ?id=NNN (публичная страница), либо offer=NNN (offerEdit/своя)
         const offerMatch = href.match(/[?&]id=(\d+)/) || href.match(/[?&]offer=(\d+)/);
-        const offerId    = offerMatch?.[1] || a.getAttribute('data-offer') || null;
+        const rawOfferId = offerMatch?.[1] || a.getAttribute('data-offer') || '';
+        const offerId    = /^\d+$/.test(rawOfferId) ? rawOfferId : null;
         const titleEl    = a.querySelector('.tc-desc-text, .tc-desc');
         const title      = (titleEl?.textContent.trim() || a.textContent.trim() || 'Лот').slice(0, 200);
         const selLink    = a.querySelector('.media-user-name a, .media-user-name span[data-href]');
@@ -71,8 +81,10 @@
             if (item.sep) { const d = document.createElement('div'); d.style.cssText = 'height:1px;background:var(--fpt-border, rgba(22,24,29,0.12));margin:4px 0;'; menu.appendChild(d); return; }
             const row = document.createElement('div');
             row.style.cssText = `display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;${item.hint ? 'opacity:0.4;cursor:default;font-size:11px;' : item.enabled ? 'cursor:pointer;' : 'opacity:0.4;cursor:default;'}`;
-            const tooltipHtml = item.tooltip ? `<span style="font-size:10px;color:var(--fpt-text-muted, #4a5070);margin-left:auto;max-width:120px;text-align:right;white-space:normal;line-height:1.3;">${item.tooltip}</span>` : '';
-            row.innerHTML = `<span style="width:18px;text-align:center;">${item.icon}</span><span>${item.label}</span>${tooltipHtml}`;
+            const icon = document.createElement('span'); icon.style.cssText = 'width:18px;text-align:center;'; icon.textContent = item.icon;
+            const label = document.createElement('span'); label.textContent = item.label;
+            row.append(icon, label);
+            if (item.tooltip) { const tip = document.createElement('span'); tip.style.cssText = 'font-size:10px;margin-left:auto;max-width:120px;text-align:right;'; tip.textContent = item.tooltip; row.appendChild(tip); }
             if (item.enabled) {
                 row.addEventListener('mouseenter', () => row.style.background = 'var(--fpt-accent-soft, rgba(22,24,29,0.08))');
                 row.addEventListener('mouseleave', () => row.style.background = '');
@@ -129,11 +141,11 @@
         panel.style.cssText = 'position:fixed;bottom:24px;right:24px;width:320px;background:var(--fpt-bg, #ffffff);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:18px;box-shadow:0 20px 50px var(--fpt-shadow, rgba(0,0,0,0.3));z-index:100001;overflow:hidden;font-family:Inter,\'Segoe UI\',system-ui,sans-serif;font-size:13px;color:var(--fpt-text, #16181d);animation:fpCtxIn 0.15s ease;';
         panel.innerHTML = `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--fpt-border, rgba(22,24,29,0.12));background:transparent;">
-                <span style="font-weight:650;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${lot.sellerName ? `Написать ${lot.sellerName}` : 'Написать'}</span>
+                <span style="font-weight:650;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
                 <button id="fp-ctx-chat-close" style="background:none;border:none;color:var(--fpt-text-muted, #676a73);cursor:pointer;font-size:18px;padding:0 0 0 8px;line-height:1;">✕</button>
             </div>
             <div style="padding:10px 14px;">
-                <div style="font-size:11px;color:var(--fpt-text-muted, #676a73);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Лот: ${lot.title}</div>
+                <div style="font-size:11px;color:var(--fpt-text-muted, #676a73);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
                 <textarea id="fp-ctx-chat-text" placeholder="Сообщение... (Ctrl+Enter отправить)" style="width:100%;height:80px;background:var(--fpt-surface, #f5f7fa);border:1px solid var(--fpt-border, rgba(0,0,0,0.12));border-radius:12px;color:var(--fpt-text, #16181d);font-size:13px;padding:10px 12px;resize:none;outline:none;font-family:inherit;box-sizing:border-box;"></textarea>
                 <div style="display:flex;gap:8px;margin-top:8px;">
                     <button id="fp-ctx-chat-send" style="flex:1;background:var(--fpt-accent, #7663f6);color:#fff;border:none;border-radius:12px;padding:10px;font-size:13px;font-weight:600;cursor:pointer;">Отправить</button>
@@ -141,6 +153,8 @@
                 </div>
                 <div id="fp-ctx-chat-status" style="font-size:11px;color:var(--fpt-text-muted, #8a90a6);margin-top:6px;min-height:16px;"></div>
             </div>`;
+        panel.querySelector('span').textContent = lot.sellerName ? 'Написать ' + lot.sellerName : 'Написать';
+        panel.querySelector('textarea').previousElementSibling.textContent = 'Лот: ' + lot.title;
         document.body.appendChild(panel);
         if (window.fptWindow) window.fptWindow.paint(panel);
 
@@ -175,8 +189,6 @@
                 const csrf = appObj['csrf-token'];
                 const myId = String(appObj.userId || appObj.id || '');
                 if (!myId) throw new Error('Не удалось определить ваш ID');
-                const keyRes = await chrome.runtime.sendMessage({ action: 'getGoldenKey' });
-                if (!keyRes?.success) throw new Error('Нет golden_key');
 
                 // FunPay chat node format: "users-MYID-THEIRID"
                 const chatNodeId = `users-${myId}-${lot.sellerId}`;
@@ -187,7 +199,7 @@
                 };
                 const res = await fetch('https://funpay.com/runner/', {
                     method: 'POST',
-                    headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', 'cookie': `golden_key=${keyRes.key}` },
+                    headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest' },
                     body: new URLSearchParams(payload)
                 });
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -218,6 +230,7 @@
         if (!pinnedLots.length) return;
 
         pinnedLots.forEach(lot => {
+            if (!lot || !/^\d+$/.test(String(lot.offerId))) return;
             if (!lot.offerId) return;
 
             // Find the category table this lot belongs to.
@@ -232,7 +245,7 @@
             }
 
             // Fallback: if we stored the nodeId (category), find the .offer block for it
-            if (!targetTable && lot.nodeId) {
+            if (!targetTable && /^\d+$/.test(String(lot.nodeId))) {
                 const catLink = document.querySelector(`a[href*="/lots/${lot.nodeId}/"], a[href*="/chips/${lot.nodeId}/"]`);
                 if (catLink) {
                     const offerBlock = catLink.closest('.offer');
@@ -247,7 +260,8 @@
 
             const row = document.createElement('a');
             row.className = 'tc-item fp-pinned-row';
-            row.href = lot.lotUrl;
+            if (!/^\d+$/.test(String(lot.offerId))) return;
+            row.href = `https://funpay.com/lots/offer?id=${lot.offerId}`;
             row.setAttribute('data-pinned-id', lot.offerId);
             row.style.cssText = 'display:flex;align-items:center;padding:8px 12px;background:rgba(27,117,187,0.06);border-left:2px solid #1b75bb;';
 
@@ -256,6 +270,7 @@
             if (origRow) {
                 // Use the real row's content, just add pinned indicator
                 const clone = origRow.cloneNode(true);
+                clone.href = `https://funpay.com/lots/offer?id=${lot.offerId}`;
                 clone.classList.add('fp-pinned-row');
                 clone.setAttribute('data-pinned-id', lot.offerId);
                 clone.style.cssText = 'border-left:2px solid #1b75bb;background:rgba(27,117,187,0.05);';
@@ -284,8 +299,9 @@
 
             // Fallback: minimal row
             row.innerHTML = `
-                <div class="tc-desc" style="flex:1;"><div class="tc-desc-text" style="color:#4a9fd4;">📌 ${lot.title}</div></div>
+                <div class="tc-desc" style="flex:1;"><div class="tc-desc-text" style="color:#4a9fd4;"></div></div>
                 <div class="tc-price"><button data-unpin="${lot.offerId}" style="background:none;border:none;color:var(--fpt-text-muted, #8a90a6);cursor:pointer;font-size:14px;padding:0 4px;" title="Открепить">✕</button></div>`;
+            row.querySelector('.tc-desc-text').textContent = '📌 ' + lot.title;
             row.querySelector('button').addEventListener('click', (e) => {
                 e.preventDefault(); e.stopPropagation();
                 pinnedLots = pinnedLots.filter(p => p.offerId !== lot.offerId);

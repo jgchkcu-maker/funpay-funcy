@@ -12,14 +12,7 @@
                 const savedStyles = (data && data.fpToolsLiveStyles) || {};
                 if (!savedStyles || !Object.keys(savedStyles).length) return;
 
-                let cssText = '';
-                for (const selector in savedStyles) {
-                    cssText += `${selector} {\n`;
-                    for (const prop in savedStyles[selector]) {
-                        cssText += `  ${prop}: ${savedStyles[selector][prop]} !important;\n`;
-                    }
-                    cssText += '}\n';
-                }
+                const cssText = FPTSafe.cssDeclarations(savedStyles);
 
                 const inject = () => {
                     let styleEl = document.getElementById('fp-tools-magic-stick-persistent-styles');

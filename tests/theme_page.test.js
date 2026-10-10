@@ -116,7 +116,7 @@ test('original FunPay look: defaults, reset and a light CSS without wallpaper or
     assert.equal((await h.api.run('theme', 'exportThemeBtn')).baseStyle, 'original', 'no saved theme means the original look');
 
     const themeSource = read('content/features/theme.js');
-    const sandbox = {};
+    const sandbox = { FPTSafe: require('../content/safe_values.js') };
     vm.runInNewContext(`${themeSource.slice(themeSource.indexOf('function fptResolveThemeBaseStyle'), themeSource.indexOf('function getCustomThemeCss'))}; this.resolve = fptResolveThemeBaseStyle; this.css = getOriginalThemeCss;`, sandbox);
     assert.equal(sandbox.resolve({ bgColor1: '#fff' }), 'custom', 'themes saved before the field existed stay custom');
     assert.equal(sandbox.resolve({}), 'original');

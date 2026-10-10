@@ -59,7 +59,7 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
     // Theme button colours load at document_start in the extension; the page shares that world.
     await page.addScriptTag({ path: path.join(root, 'content/theme_buttons.js') });
-    for (const js of content.js) await page.addScriptTag({ path: path.join(root, js) });
+    for (const js of ['content/safe_values.js', ...content.js]) await page.addScriptTag({ path: path.join(root, js) });
     await page.evaluate(() => document.fonts.ready);
     await page.waitForFunction(() => typeof window.__fpEnsurePopup === 'function');
     await page.locator('#fpToolsButton').click();

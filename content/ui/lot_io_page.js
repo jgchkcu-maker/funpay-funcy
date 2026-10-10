@@ -52,6 +52,11 @@
     const bulkEditor = () => root.FPTBulkLotEditor;
     const buildFindRegex = findReplace => bulkEditor().buildFindRegex(findReplace);
     const formatRub = value => `${Number(value).toLocaleString('ru-RU', { maximumFractionDigits: 2 })} ₽`;
+    // Amounts are typed into text fields (no spinner, no wheel changes); a comma works as the decimal point.
+    const parseAmount = value => {
+        const text = String(value).trim().replace(/\s+/g, '').replace(',', '.');
+        return text && /^\d*\.?\d+$|^\d+\.$/.test(text) ? Number(text) : NaN;
+    };
 
     function downloadJson(contents, fileName) {
         const blob = new Blob([JSON.stringify(contents, null, 2)], { type: 'application/json' });
@@ -90,7 +95,8 @@
             'Импорт создаёт лоты из такого файла. Ход сохраняется: импорт можно отложить, продолжить или пропустить проблемный лот.',
             'Файл можно перетащить прямо на карточку «Импорт из файла».',
             'Массовое редактирование меняет название, описание, цену или активирует выбранные лоты за один запуск.',
-            'Расписание включает и выключает лоты по недельным окнам; цены от себестоимости меняются только после предпросмотра.'
+            'Расписание — вкладка массового редактора: оно включает и выключает выбранные лоты по недельным окнам.',
+            'Лоты в редакторе сгруппированы по категориям: раскройте категорию или отметьте её целиком.'
         ].forEach(text => helpList.appendChild(node('li', '', text)));
         helpPanel.appendChild(helpList);
 
@@ -132,7 +138,7 @@
             'Резервная копия в JSON, перенос лотов из файла и правка многих лотов за один запуск.'));
         heroMain.append(heroIcon, heroCopy);
         const metricImport = metric('description', 'Импорт');
-        const metricDone = metric('task_alt', 'Обработано');
+        const metricDone = metric('check_circle', 'Обработано');
         const metricProblems = metric('report', 'Ошибки и пропуски');
         const metrics = node('div', 'fpt-qr-metrics fpt-lot-metrics');
         metrics.append(metricImport.element, metricDone.element, metricProblems.element);
@@ -169,29 +175,17 @@
         dropHint.setAttribute('aria-hidden', 'true');
         dropHint.append(icon('file_download'), node('span', '', 'Отпустите, чтобы начать импорт'));
         importTool.appendChild(dropHint);
-        const bulkTool = tool('bulk', 'edit_note', 'Массовое редактирование', 'Название, описание, цена и активация сразу для многих лотов.');
+        const bulkTool = tool('bulk', 'edit_note', 'Массовое редактирование', 'Название, описание, цена (в т. ч. от себестоимости) и активация сразу для многих лотов.');
         bulkTool.appendChild(bulkButton);
         const fileInput = node('input', 'fpt-lot-file-input');
         fileInput.type = 'file';
         fileInput.accept = '.json,application/json';
         fileInput.id = 'lot-io-import-file';
         fileInput.setAttribute('aria-label', 'Файл резервной копии лотов');
-        // Расписание и цены от себестоимости открываются диалогами (lot_automation_page.js).
-        const scheduleButton = button('Настроить', 'fpt-lot-action-button', 'schedule', 'fp-lot-schedule-btn');
-        const scheduleTool = tool('schedule', 'schedule', 'Расписание', 'Недельные окна продаж: вне окна лот выключается, в окне снова включается.');
-        scheduleTool.appendChild(scheduleButton);
-        scheduleButton.addEventListener('click', () => root.FPTLotAutomationPage?.openScheduleDialog(popup));
-        const pricingButton = button('Рассчитать', 'fpt-lot-action-button', 'price_change', 'fp-lot-pricing-btn');
-        const pricingTool = tool('pricing', 'price_change', 'Цены от себестоимости', 'Наценка или маржа, минимальная прибыль и предпросмотр перед изменением.');
-        pricingTool.appendChild(pricingButton);
-        pricingButton.addEventListener('click', () => root.FPTLotAutomationPage?.openPricingDialog(popup));
+        // Расписание — только вкладка массового редактора (lot_automation_page.js), отдельной карточки
+        // на странице нет. Цена от себестоимости — режим «Себестоимость + N ₽» на вкладке «Цена».
         actionBand.append(exportTool, importTool, bulkTool, fileInput);
         view.appendChild(actionBand);
-        // Отдельная полоса автоматизации: основная полоса переноса лотов остаётся компактной.
-        const automationBand = node('section', 'fpt-lot-automation-band');
-        automationBand.setAttribute('aria-label', 'Автоматизация лотов');
-        automationBand.append(scheduleTool, pricingTool);
-        view.appendChild(automationBand);
 
         const section = node('section', 'fpt-lot-import-section');
         section.setAttribute('aria-labelledby', 'fpt-lot-import-title');
@@ -655,87 +649,123 @@
             }
         }
 
-        async function openBulkEditor() {
-            bulkButton.disabled = true;
-            bulkButton.setAttribute('aria-busy', 'true');
+        // The schedule card opens the same editor on its «Расписание» tab.
+        async function openBulkEditor({ tab = 'text', trigger = bulkButton } = {}) {
+            trigger.disabled = true;
+            trigger.setAttribute('aria-busy', 'true');
             try {
                 const response = await root.fptPopupActions.run(PAGE_ID, 'fp-bulk-edit-btn');
                 const lots = Array.isArray(response) ? response : Array.isArray(response?.data) ? response.data : [];
                 if (!lots.length) throw new Error('Активные лоты не найдены.');
-                renderBulkDialog(lots);
+                // Себестоимость, указанная в лотах, нужна для режима «Себестоимость + N ₽».
+                let costs = {};
+                try { costs = (await root.FPTCostBasis?.getAll()) || {}; } catch (_) {}
+                renderBulkDialog(lots, costs, { initialTab: tab });
             } catch (error) {
                 showToast(popup, error.message || 'Не удалось загрузить лоты.', 'error');
             } finally {
-                bulkButton.disabled = false;
-                bulkButton.removeAttribute('aria-busy');
+                trigger.disabled = false;
+                trigger.removeAttribute('aria-busy');
             }
         }
 
-        function renderBulkDialog(lots) {
-            const dialog = createDialog(popup, 'Массовое редактирование лотов', {
-                wide: true,
-                description: 'Изменяются только заполненные поля. В шаблонах доступны переменные {current} и {lotname}.'
-            });
+        function renderBulkDialog(lots, costs = {}, { initialTab = 'text' } = {}) {
+            const costOf = offerId => {
+                const cost = costs[String(offerId)];
+                return cost && Number(cost.amount) > 0 && (!cost.currency || cost.currency === 'RUB') ? Number(cost.amount) : null;
+            };
+            // Lots on top, the changes split into tabs below, the summary and the apply button in the footer.
+            const dialog = createDialog(popup, 'Массовое редактирование лотов', { wide: true });
             const form = document.createElement('form');
             form.className = 'fpt-bulk-form';
             form.noValidate = true;
             form.innerHTML = `
-                <div class="fpt-bulk-dialog-grid">
-                    <div class="fpt-bulk-field"><label for="fptBulkName">Новое название</label><input id="fptBulkName" type="text" placeholder="Например: {current} — Premium"></div>
-                    <div class="fpt-bulk-field"><label for="fptBulkMessage">Сообщение покупателю</label><input id="fptBulkMessage" type="text" placeholder="Оставьте пустым, чтобы не менять"></div>
-                    <div class="fpt-bulk-field fpt-bulk-field--wide"><label for="fptBulkDescription">Новое описание</label><textarea id="fptBulkDescription" rows="3" placeholder="Оставьте пустым, чтобы не менять"></textarea></div>
+                <section class="fpt-bulk-lots" aria-label="Лоты">
+                    <div class="fpt-bulk-lot-tools">
+                        <span class="fpt-bulk-lots-summary"><strong>Лоты</strong> выбрано <strong data-lot-selected>0</strong> из <span data-lot-total></span></span>
+                        <input class="fpt-bulk-lot-filter" type="search" placeholder="Фильтр лотов…" aria-label="Фильтр лотов">
+                        <button type="button" class="fpt-lot-dialog-button" data-select-visible>Выбрать все</button>
+                        <button type="button" class="fpt-lot-dialog-button fpt-bulk-activate-selected" data-activate-selected="true" disabled>Активировать выбранные</button>
+                    </div>
+                    <div class="fpt-bulk-lots-list" role="group" aria-label="Выберите лоты"></div>
+                    <p class="fpt-bulk-filter-empty" hidden>Лоты не найдены.</p>
+                </section>
+                <div class="fpt-bulk-tabs-row">
+                    <div class="fpt-bulk-tabs" role="tablist" aria-label="Что изменить">
+                        <span class="fpt-bulk-tabs-pill" aria-hidden="true"></span>
+                        <button type="button" class="fpt-bulk-tab" role="tab" id="fptBulkTabText" aria-controls="fptBulkPaneText" data-pane="text">Тексты</button>
+                        <button type="button" class="fpt-bulk-tab" role="tab" id="fptBulkTabPrice" aria-controls="fptBulkPanePrice" data-pane="price">Цена</button>
+                        <button type="button" class="fpt-bulk-tab" role="tab" id="fptBulkTabFind" aria-controls="fptBulkPaneFind" data-pane="find">Найти и заменить</button>
+                        <button type="button" class="fpt-bulk-tab" role="tab" id="fptBulkTabSchedule" aria-controls="fptBulkPaneSchedule" data-pane="schedule">Расписание</button>
+                    </div>
+                    <button type="button" class="fpt-lot-dialog-button fpt-bulk-reset" disabled>Очистить</button>
                 </div>
-                <section class="fpt-bulk-group" aria-labelledby="fptBulkFindTitle">
-                    <strong class="fpt-bulk-group-title" id="fptBulkFindTitle">Найти и заменить</strong>
+                <div class="fpt-bulk-panes">
+                <div class="fpt-bulk-pane" id="fptBulkPaneText" role="tabpanel" aria-labelledby="fptBulkTabText" data-pane="text">
+                    <div class="fpt-bulk-dialog-grid">
+                        <div class="fpt-bulk-field"><label for="fptBulkName">Название</label><input id="fptBulkName" type="text" placeholder="Например: {current} — Premium" title="{current} — текущее значение поля, {lotname} — исходное название лота"></div>
+                        <div class="fpt-bulk-field"><label for="fptBulkMessage">Сообщение покупателю</label><input id="fptBulkMessage" type="text" placeholder="Не менять"></div>
+                        <div class="fpt-bulk-field fpt-bulk-field--wide"><label for="fptBulkDescription">Описание</label><textarea id="fptBulkDescription" rows="3" placeholder="Не менять"></textarea></div>
+                    </div>
+                </div>
+                <div class="fpt-bulk-pane" id="fptBulkPanePrice" role="tabpanel" aria-labelledby="fptBulkTabPrice" data-pane="price" hidden>
+                    <div class="fpt-bulk-dialog-grid">
+                        <div class="fpt-bulk-field"><label for="fptBulkPriceMode">Как изменить</label>
+                            <select id="fptBulkPriceMode">
+                                <option value="none">Не менять</option>
+                                <option value="set">Установить цену</option>
+                                <option value="cost_plus">Себестоимость + N ₽</option>
+                                <option value="buyer_set">Цена покупателя с учётом комиссии</option>
+                                <option value="round_flat">Округлить</option>
+                                <option value="add">Прибавить</option>
+                                <option value="sub">Вычесть</option>
+                                <option value="pct_up">Поднять на %</option>
+                                <option value="pct_down">Снизить на %</option>
+                            </select>
+                        </div>
+                        <div class="fpt-bulk-field"><label for="fptBulkPriceValue" data-price-value-label>Сумма</label>
+                            <span class="fpt-bulk-suffix fpt-bulk-price-value"><input id="fptBulkPriceValue" type="text" inputmode="decimal" autocomplete="off" placeholder="0" disabled><span class="fpt-bulk-suffix-unit fpt-bulk-price-unit" aria-hidden="true">₽</span></span>
+                            <select id="fptBulkPriceStep" hidden>
+                                <option value="1">до 1 ₽</option><option value="5">до 5 ₽</option><option value="10" selected>до 10 ₽</option>
+                                <option value="50">до 50 ₽</option><option value="100">до 100 ₽</option><option value="500">до 500 ₽</option><option value="1000">до 1000 ₽</option>
+                            </select>
+                        </div>
+                        <div class="fpt-bulk-field"><label for="fptBulkPriceMinimum">Не ниже</label>
+                            <span class="fpt-bulk-suffix"><input id="fptBulkPriceMinimum" type="text" inputmode="decimal" autocomplete="off" placeholder="Без ограничения"><span class="fpt-bulk-suffix-unit" aria-hidden="true">₽</span></span>
+                        </div>
+                        <div class="fpt-bulk-field fpt-bulk-field--check"><label class="fpt-lot-check-row"><input id="fptBulkPriceRound" type="checkbox"> Округлять до целого</label></div>
+                    </div>
+                    <p class="fpt-bulk-price-hint" aria-live="polite" hidden></p>
+                </div>
+                <div class="fpt-bulk-pane" id="fptBulkPaneFind" role="tabpanel" aria-labelledby="fptBulkTabFind" data-pane="find" hidden>
                     <div class="fpt-bulk-dialog-grid">
                         <div class="fpt-bulk-field"><label for="fptBulkFind">Найти</label><input id="fptBulkFind" type="text" placeholder="Фрагмент текста"></div>
                         <div class="fpt-bulk-field"><label for="fptBulkReplace">Заменить на</label><input id="fptBulkReplace" type="text" placeholder="Новый текст"></div>
+                        <div class="fpt-bulk-field"><span class="fpt-bulk-field-label">Где искать</span>
+                            <div class="fpt-bulk-checks">
+                                <label class="fpt-lot-check-row"><input id="fptBulkFindName" type="checkbox" checked> Название</label>
+                                <label class="fpt-lot-check-row"><input id="fptBulkFindDesc" type="checkbox" checked> Описание</label>
+                                <label class="fpt-lot-check-row"><input id="fptBulkFindMessage" type="checkbox"> Сообщение</label>
+                            </div>
+                        </div>
+                        <div class="fpt-bulk-field"><span class="fpt-bulk-field-label">Как искать</span>
+                            <div class="fpt-bulk-checks">
+                                <label class="fpt-lot-check-row"><input id="fptBulkRegex" type="checkbox"> RegEx</label>
+                                <label class="fpt-lot-check-row"><input id="fptBulkCase" type="checkbox"> Регистр</label>
+                                <label class="fpt-lot-check-row"><input id="fptBulkWholeWord" type="checkbox"> Целые слова</label>
+                                <label class="fpt-lot-check-row"><input id="fptBulkAll" type="checkbox" checked> Все совпадения</label>
+                            </div>
+                        </div>
                     </div>
-                    <div class="fpt-bulk-checks">
-                        <label class="fpt-lot-check-row"><input id="fptBulkFindName" type="checkbox" checked> Название</label>
-                        <label class="fpt-lot-check-row"><input id="fptBulkFindDesc" type="checkbox" checked> Описание</label>
-                        <label class="fpt-lot-check-row"><input id="fptBulkFindMessage" type="checkbox"> Сообщение</label>
-                    </div>
-                    <div class="fpt-bulk-checks">
-                        <label class="fpt-lot-check-row"><input id="fptBulkRegex" type="checkbox"> RegEx</label>
-                        <label class="fpt-lot-check-row"><input id="fptBulkCase" type="checkbox"> Учитывать регистр</label>
-                        <label class="fpt-lot-check-row"><input id="fptBulkWholeWord" type="checkbox"> Целые слова</label>
-                        <label class="fpt-lot-check-row"><input id="fptBulkAll" type="checkbox" checked> Все совпадения</label>
-                    </div>
-                    <p class="fpt-lot-dialog-hint">Сначала применяется поиск и замена, затем новые значения из полей выше.</p>
-                    <p class="fpt-bulk-validation-error" role="alert" hidden></p>
-                </section>
-                <section class="fpt-bulk-group" aria-labelledby="fptBulkPriceTitle">
-                    <strong class="fpt-bulk-group-title" id="fptBulkPriceTitle">Изменение цены</strong>
-                    <div class="fpt-bulk-inline-fields">
-                        <select id="fptBulkPriceMode" aria-label="Режим цены">
-                            <option value="none">Не менять</option>
-                            <option value="set">Установить цену</option>
-                            <option value="buyer_set">Цена покупателя с учётом комиссии</option>
-                            <option value="round_flat">Округлить до</option>
-                            <option value="add">Прибавить</option>
-                            <option value="sub">Вычесть</option>
-                            <option value="pct_up">Поднять на %</option>
-                            <option value="pct_down">Снизить на %</option>
-                        </select>
-                        <span class="fpt-bulk-price-value"><input id="fptBulkPriceValue" type="number" min="0" step="0.01" placeholder="Значение" aria-label="Значение цены" disabled><span class="fpt-bulk-price-unit" aria-hidden="true">₽</span></span>
-                        <select id="fptBulkPriceStep" aria-label="Шаг округления" hidden>
-                            <option value="1">до 1</option><option value="5">до 5</option><option value="10" selected>до 10</option>
-                            <option value="50">до 50</option><option value="100">до 100</option><option value="500">до 500</option><option value="1000">до 1000</option>
-                        </select>
-                    </div>
-                    <p class="fpt-bulk-price-hint" aria-live="polite" hidden></p>
-                    <div class="fpt-bulk-checks">
-                        <label class="fpt-lot-check-row"><input id="fptBulkPriceRound" type="checkbox"> Округлять до целого</label>
-                        <label class="fpt-lot-check-row fpt-lot-check-row--minimum"><span>Не ниже</span><input id="fptBulkPriceMinimum" type="number" min="0" step="0.01" placeholder="Мин."></label>
-                    </div>
-                </section>
-                <div class="fpt-bulk-lot-tools">
-                    <span class="fpt-bulk-lots-summary">Лоты: <strong data-lot-total></strong> · выбрано: <strong data-lot-selected>0</strong></span>
-                    <input class="fpt-bulk-lot-filter" type="search" placeholder="Фильтр лотов…" aria-label="Фильтр лотов">
-                    <button type="button" class="fpt-lot-dialog-button" data-select-visible>Выбрать все</button>
                 </div>
-                <div class="fpt-bulk-lots-list" role="group" aria-label="Выберите лоты"></div>
+                <div class="fpt-bulk-pane fpt-bulk-pane--schedule" id="fptBulkPaneSchedule" role="tabpanel" aria-labelledby="fptBulkTabSchedule" data-pane="schedule" hidden></div>
+                </div>
+                <p class="fpt-bulk-validation-error" role="alert" hidden></p>
+                <div class="fpt-bulk-preview" aria-live="polite" hidden>
+                    <strong class="fpt-bulk-preview-title">Название после изменений</strong>
+                    <div class="fpt-bulk-preview-items"></div>
+                    <p class="fpt-bulk-preview-more"></p>
+                </div>
                 <div class="fpt-bulk-progress" hidden>
                     <div class="fpt-bulk-progress-track" role="progressbar" aria-label="Ход массового редактирования" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="fpt-bulk-progress-fill"></div></div>
                     <div class="fpt-bulk-progress-text" role="status" aria-live="polite"></div>
@@ -743,55 +773,123 @@
                 </div>`;
             dialog.body.appendChild(form);
 
-            const initialFields = form.querySelector('.fpt-bulk-dialog-grid');
-            const changeGroups = Array.from(form.querySelectorAll('.fpt-bulk-group'));
-            const lotTools = form.querySelector('.fpt-bulk-lot-tools');
-            const lotsList = form.querySelector('.fpt-bulk-lots-list');
-            const progressPanel = form.querySelector('.fpt-bulk-progress');
-            const activateButton = node('button', 'fpt-lot-dialog-button fpt-bulk-activate-selected', 'Активировать выбранные');
-            activateButton.type = 'button';
-            activateButton.disabled = true;
-            activateButton.dataset.activateSelected = 'true';
-            lotTools.appendChild(activateButton);
-            const filterEmpty = node('p', 'fpt-bulk-filter-empty', 'Лоты не найдены. Измените поисковый запрос.');
-            filterEmpty.hidden = true;
-            const categoryChips = node('div', 'fpt-bulk-categories');
-            categoryChips.setAttribute('role', 'group');
-            categoryChips.setAttribute('aria-label', 'Выбрать лоты категории');
-            const stepLots = node('section', 'fpt-bulk-step fpt-bulk-step--lots');
-            stepLots.append(node('h3', '', '1. Выберите лоты'), node('p', 'fpt-bulk-step-hint', 'Отметьте лоты вручную или выберите всю категорию одним нажатием.'), categoryChips, lotTools, lotsList, filterEmpty);
-            const stepChanges = node('section', 'fpt-bulk-step fpt-bulk-step--changes');
-            const resetButton = node('button', 'fpt-lot-dialog-button fpt-bulk-reset', 'Очистить');
-            resetButton.type = 'button';
-            resetButton.disabled = true;
-            stepChanges.append(node('h3', '', '2. Что изменить'), resetButton, node('p', 'fpt-bulk-step-hint', 'Пустые поля останутся без изменений. {current} — текущее значение поля, {lotname} — исходное название лота.'), initialFields, ...changeGroups);
-            const stepReview = node('section', 'fpt-bulk-step fpt-bulk-step--review');
-            stepReview.appendChild(node('h3', '', '3. Проверьте изменения'));
-            const reviewSummary = node('p', 'fpt-bulk-review-summary', 'Выберите лоты и укажите изменения.');
+            const activateButton = form.querySelector('.fpt-bulk-activate-selected');
+            const filterEmpty = form.querySelector('.fpt-bulk-filter-empty');
+            const resetButton = form.querySelector('.fpt-bulk-reset');
+            const preview = form.querySelector('.fpt-bulk-preview');
+            const previewItems = form.querySelector('.fpt-bulk-preview-items');
+            const previewMore = form.querySelector('.fpt-bulk-preview-more');
+            const panes = form.querySelector('.fpt-bulk-panes');
+            // Text-like change fields only; the lot filter is type="search" and is not a change,
+            // and the schedule tab saves its own rules.
+            const changeFields = () => Array.from(form.querySelectorAll('.fpt-bulk-pane:not([data-pane="schedule"]) :is(input[type="text"], textarea)'));
+            const reviewSummary = node('p', 'fpt-bulk-review-summary', 'Выберите лоты');
             reviewSummary.setAttribute('role', 'status');
-            const preview = node('div', 'fpt-bulk-preview');
-            preview.setAttribute('aria-live', 'polite');
-            const previewTitle = node('strong', 'fpt-bulk-preview-title', 'Названия после изменений');
-            const previewItems = node('div', 'fpt-bulk-preview-items');
-            const previewMore = node('p', 'fpt-bulk-preview-more');
-            const previewFields = node('p', 'fpt-bulk-preview-fields');
-            const previewPrice = node('p', 'fpt-bulk-preview-price', '');
-            preview.append(previewTitle, previewItems, previewMore, previewFields, previewPrice);
-            stepReview.append(reviewSummary, preview, progressPanel);
-            form.replaceChildren(stepLots, stepChanges, stepReview);
+            dialog.footer.appendChild(reviewSummary);
 
+            const tabList = form.querySelector('.fpt-bulk-tabs');
+            const tabs = Array.from(form.querySelectorAll('.fpt-bulk-tab'));
+            let activePane = 'text';
+            const selectTab = (pane, focus = false) => {
+                activePane = pane;
+                form.dataset.pane = pane;
+                tabs.forEach((tab, index) => {
+                    const active = tab.dataset.pane === pane;
+                    tab.setAttribute('aria-selected', String(active));
+                    tab.tabIndex = active ? 0 : -1;
+                    if (!active) return;
+                    tabList.style.setProperty('--bulk-tab-index', String(index));
+                    if (focus) tab.focus();
+                });
+                form.querySelectorAll('.fpt-bulk-pane').forEach(element => { element.hidden = element.dataset.pane !== pane; });
+                panes.scrollTop = 0;
+                refreshReview();
+            };
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => selectTab(tab.dataset.pane));
+                tab.addEventListener('keydown', event => {
+                    const last = tabs.length - 1;
+                    const next = { ArrowRight: index === last ? 0 : index + 1, ArrowLeft: index === 0 ? last : index - 1, Home: 0, End: last }[event.key];
+                    if (next === undefined) return;
+                    event.preventDefault();
+                    selectTab(tabs[next].dataset.pane, true);
+                });
+            });
             const totalElement = form.querySelector('[data-lot-total]');
             const selectedElement = form.querySelector('[data-lot-selected]');
             const list = form.querySelector('.fpt-bulk-lots-list');
             let refreshReview = () => {};
             let syncSelection = () => {};
             const selectedCount = () => {
-                selectedElement.textContent = String(form.querySelectorAll('.fpt-bulk-lot-check:checked').length);
+                selectedElement.textContent = String(list.querySelectorAll('.fpt-bulk-lot-check:checked').length);
                 syncSelection();
                 refreshReview();
             };
-            totalElement.textContent = `${lots.length} ${root.FPTPopupUI.pluralize(lots.length, ['лот', 'лота', 'лотов'])}`;
-            lots.forEach(lot => {
+
+            // Lots are grouped by category; groups start collapsed and open on click or on a filter match.
+            const groups = new Map();
+            let filterQuery = '';
+            const groupRows = group => Array.from(group.body.querySelectorAll('.fpt-bulk-lot-row'));
+            const isChecked = row => row.querySelector('.fpt-bulk-lot-check').checked;
+            const renderGroup = group => {
+                const rows = groupRows(group);
+                const visible = rows.filter(row => !row.hidden);
+                const checked = rows.filter(isChecked).length;
+                group.element.hidden = Boolean(filterQuery) && !visible.length;
+                const expanded = filterQuery ? group.filterOpen ?? visible.length > 0 : group.open;
+                group.body.hidden = !expanded;
+                group.toggle.setAttribute('aria-expanded', String(expanded));
+                group.element.dataset.open = String(expanded);
+                group.element.dataset.hasError = String(rows.some(row => row.dataset.result === 'error'));
+                group.check.checked = rows.length > 0 && checked === rows.length;
+                group.check.indeterminate = checked > 0 && checked < rows.length;
+                group.count.textContent = checked ? `${checked} из ${rows.length}` : String(rows.length);
+            };
+            const groupFor = categoryName => {
+                const key = categoryName || 'Без категории';
+                if (groups.has(key)) return groups.get(key);
+                const element = node('div', 'fpt-bulk-group');
+                element.dataset.category = key;
+                const head = node('div', 'fpt-bulk-group-head');
+                const check = node('input', 'fpt-bulk-group-check');
+                check.type = 'checkbox';
+                check.setAttribute('aria-label', `Выбрать все лоты категории «${key}»`);
+                const toggle = node('button', 'fpt-bulk-group-toggle');
+                toggle.type = 'button';
+                const chevron = icon('chevron_right');
+                chevron.classList.add('fpt-bulk-group-chevron');
+                const count = node('span', 'fpt-bulk-group-count');
+                const name = node('span', 'fpt-bulk-group-name', key);
+                name.title = key;
+                toggle.append(chevron, name, count);
+                const body = node('div', 'fpt-bulk-group-body');
+                body.id = `fptBulkGroup${groups.size + 1}`;
+                body.setAttribute('role', 'group');
+                body.setAttribute('aria-label', key);
+                toggle.setAttribute('aria-controls', body.id);
+                head.append(check, toggle);
+                element.append(head, body);
+                list.appendChild(element);
+                const group = { key, element, body, check, toggle, count, open: false, filterOpen: undefined };
+                toggle.addEventListener('click', () => {
+                    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+                    if (filterQuery) group.filterOpen = !expanded;
+                    else group.open = !expanded;
+                    renderGroup(group);
+                });
+                // The list's change listener recounts after the rows are updated here.
+                check.addEventListener('change', () => {
+                    groupRows(group).filter(row => !row.hidden).forEach(row => { row.querySelector('.fpt-bulk-lot-check').checked = check.checked; });
+                });
+                groups.set(key, group);
+                return group;
+            };
+            const openGroupsWith = predicate => groups.forEach(group => {
+                if (!groupRows(group).some(predicate)) return;
+                group.open = true;
+                group.filterOpen = filterQuery ? true : undefined;
+            });
+            const addLotRow = (lot, { hiddenFromProfile = false } = {}) => {
                 const label = node('label', 'fpt-bulk-lot-row');
                 const checkbox = node('input', 'fpt-bulk-lot-check');
                 checkbox.type = 'checkbox';
@@ -799,84 +897,108 @@
                 checkbox.dataset.nodeId = String(lot.nodeId ?? '');
                 const name = node('span', 'fpt-bulk-lot-name', lot.title || 'Лот без названия');
                 name.title = lot.title || '';
-                const category = node('span', 'fpt-bulk-lot-category', lot.categoryName || '');
+                const schedule = node('span', 'fpt-bulk-lot-schedule');
+                schedule.hidden = true;
+                const cost = costOf(lot.offerId ?? lot.id);
+                const costTag = node('span', 'fpt-bulk-lot-cost', cost === null ? '' : `себест. ${formatRub(cost)}`);
+                costTag.hidden = cost === null;
                 const status = node('span', 'fpt-bulk-lot-status');
                 status.hidden = true;
-                label.dataset.category = lot.categoryName || '';
-                label.append(checkbox, name, category, status);
+                const category = hiddenFromProfile ? 'Не на витрине' : lot.categoryName || '';
+                label.dataset.category = category;
+                label.append(checkbox, name, schedule, costTag, status);
                 label.dataset.search = `${lot.title || ''} ${lot.categoryName || ''} ${lot.offerId || lot.id || ''}`.toLocaleLowerCase('ru');
-                list.appendChild(label);
-            });
-            const lotRows = () => Array.from(list.querySelectorAll('.fpt-bulk-lot-row'));
-            const categories = new Map();
-            lotRows().forEach(row => {
-                const name = row.dataset.category || 'Без категории';
-                categories.set(name, (categories.get(name) || 0) + 1);
-            });
-            if (categories.size > 1) {
-                for (const [name, count] of categories) {
-                    const chip = node('button', 'fpt-bulk-category-chip');
-                    chip.type = 'button';
-                    chip.dataset.category = name;
-                    chip.setAttribute('aria-pressed', 'false');
-                    chip.append(node('span', '', name), node('strong', '', String(count)));
-                    chip.title = `Выбрать или снять все лоты категории «${name}»`;
-                    chip.addEventListener('click', () => {
-                        const rows = lotRows().filter(row => (row.dataset.category || 'Без категории') === name);
-                        const check = rows.some(row => !row.querySelector('.fpt-bulk-lot-check').checked);
-                        rows.forEach(row => { row.querySelector('.fpt-bulk-lot-check').checked = check; });
-                        selectedCount();
-                    });
-                    categoryChips.appendChild(chip);
-                }
-            } else {
-                categoryChips.hidden = true;
-            }
-            const syncCategoryChips = () => {
-                categoryChips.querySelectorAll('.fpt-bulk-category-chip').forEach(chip => {
-                    const rows = lotRows().filter(row => (row.dataset.category || 'Без категории') === chip.dataset.category);
-                    const checked = rows.filter(row => row.querySelector('.fpt-bulk-lot-check').checked).length;
-                    chip.setAttribute('aria-pressed', String(checked > 0 && checked === rows.length));
-                    chip.dataset.partial = String(checked > 0 && checked < rows.length);
-                });
+                const group = groupFor(category);
+                group.body.appendChild(label);
+                return label;
             };
+            lots.forEach(lot => addLotRow(lot));
+            const renderGroups = () => groups.forEach(renderGroup);
+            const updateTotal = () => { totalElement.textContent = String(list.querySelectorAll('.fpt-bulk-lot-row').length); };
+            updateTotal();
+            if (groups.size === 1) groups.forEach(group => { group.open = true; });
+            const lotRows = () => Array.from(list.querySelectorAll('.fpt-bulk-lot-row'));
             list.addEventListener('change', selectedCount);
             form.querySelector('.fpt-bulk-lot-filter').addEventListener('input', event => {
-                const query = event.target.value.trim().toLocaleLowerCase('ru');
-                list.querySelectorAll('.fpt-bulk-lot-row').forEach(row => {
-                    row.hidden = Boolean(query) && !row.dataset.search.includes(query);
+                filterQuery = event.target.value.trim().toLocaleLowerCase('ru');
+                lotRows().forEach(row => {
+                    row.hidden = Boolean(filterQuery) && !row.dataset.search.includes(filterQuery);
                 });
-                filterEmpty.hidden = Array.from(list.querySelectorAll('.fpt-bulk-lot-row')).some(row => !row.hidden);
+                groups.forEach(group => { group.filterOpen = undefined; });
+                filterEmpty.hidden = lotRows().some(row => !row.hidden);
                 syncSelection();
                 refreshReview();
             });
             const selectVisible = form.querySelector('[data-select-visible]');
             selectVisible.addEventListener('click', () => {
                 const rows = lotRows().filter(row => !row.hidden);
-                const shouldCheck = rows.some(row => !row.querySelector('.fpt-bulk-lot-check').checked);
+                const shouldCheck = rows.some(row => !isChecked(row));
                 rows.forEach(row => { row.querySelector('.fpt-bulk-lot-check').checked = shouldCheck; });
                 selectedCount();
             });
             syncSelection = () => {
-                syncCategoryChips();
+                renderGroups();
                 const rows = lotRows().filter(row => !row.hidden);
-                selectVisible.textContent = rows.length && rows.every(row => row.querySelector('.fpt-bulk-lot-check').checked)
+                selectVisible.textContent = rows.length && rows.every(isChecked)
                     ? 'Снять выделение' : 'Выбрать все';
+                schedulePane?.refreshSelection();
             };
+            const selectedLotPayload = () => Array.from(list.querySelectorAll('.fpt-bulk-lot-check:checked')).map(input => ({
+                id: input.dataset.offerId,
+                offerId: input.dataset.offerId,
+                nodeId: input.dataset.nodeId,
+                title: input.closest('.fpt-bulk-lot-row')?.querySelector('.fpt-bulk-lot-name')?.textContent || input.dataset.offerId
+            }));
 
+            // «Расписание» tab: rules from lot_automation_page.js, bound to the lots checked above.
+            // Each row shows the rule it is bound to; lots the schedule switched off are not on the
+            // public profile, so they are added from the bindings.
+            const schedulePaneElement = form.querySelector('#fptBulkPaneSchedule');
+            const applyScheduleState = state => {
+                const bindings = Array.isArray(state.bindings) ? state.bindings : [];
+                const ruleOf = new Map(bindings.filter(binding => binding.ruleId).map(binding => [String(binding.offerId), binding]));
+                ruleOf.forEach((binding, offerId) => {
+                    if (rowByOfferId(offerId)) return;
+                    const lot = { offerId, nodeId: binding.nodeId || '', title: binding.title || `Лот #${offerId}` };
+                    lots.push(lot);
+                    addLotRow(lot, { hiddenFromProfile: true });
+                });
+                lotRows().forEach(row => {
+                    const binding = ruleOf.get(row.querySelector('.fpt-bulk-lot-check').dataset.offerId);
+                    const badge = row.querySelector('.fpt-bulk-lot-schedule');
+                    const ruleName = binding ? state.ruleName(binding.ruleId) : '';
+                    badge.hidden = !ruleName;
+                    badge.replaceChildren(...(ruleName ? [icon('schedule'), node('span', '', ruleName)] : []));
+                    badge.title = ruleName ? `Расписание: ${ruleName}` : '';
+                });
+                updateTotal();
+                selectedCount();
+            };
+            let schedulePane = null;
+            if (root.FPTLotAutomationPage?.mountSchedulePane && root.FPTAutomationUI) {
+                schedulePane = root.FPTLotAutomationPage.mountSchedulePane(schedulePaneElement, {
+                    dialog, getSelectedLots: selectedLotPayload, onState: applyScheduleState
+                });
+            } else {
+                schedulePaneElement.appendChild(node('p', 'fpt-bulk-schedule-unavailable', 'Расписание недоступно. Обновите страницу FunPay.'));
+            }
             const priceMode = form.querySelector('#fptBulkPriceMode');
             const priceValue = form.querySelector('#fptBulkPriceValue');
             const priceStep = form.querySelector('#fptBulkPriceStep');
             const priceUnit = form.querySelector('.fpt-bulk-price-unit');
             const priceValueWrap = form.querySelector('.fpt-bulk-price-value');
+            const priceValueLabel = form.querySelector('[data-price-value-label]');
+            // The label names the number for the chosen mode, so no separate hint is needed.
+            const PRICE_VALUE_LABELS = { set: 'Новая цена', cost_plus: 'Сколько добавить', buyer_set: 'Цена для покупателя', round_flat: 'Округлить до',
+                add: 'Сколько прибавить', sub: 'Сколько вычесть', pct_up: 'На сколько процентов', pct_down: 'На сколько процентов' };
             priceMode.addEventListener('change', () => {
                 const flat = priceMode.value === 'round_flat';
                 priceValue.disabled = priceMode.value === 'none' || flat;
                 priceValueWrap.hidden = flat;
                 priceStep.hidden = !flat;
                 priceUnit.textContent = ['pct_up', 'pct_down'].includes(priceMode.value) ? '%' : '₽';
-                if (priceMode.value === 'pct_down') priceValue.max = '100';
-                else priceValue.removeAttribute('max');
+                priceValueLabel.textContent = PRICE_VALUE_LABELS[priceMode.value] || 'Сумма';
+                priceValueLabel.htmlFor = flat ? 'fptBulkPriceStep' : 'fptBulkPriceValue';
                 if (priceMode.value === 'none' || flat) priceValue.value = '';
                 refreshReview();
             });
@@ -905,14 +1027,21 @@
 
                 const mode = priceMode.value;
                 if (mode !== 'none') {
-                    if (mode !== 'round_flat' && !priceValue.value.trim()) throw new Error('Введите цену для выбранного режима.');
-                    if (mode === 'pct_down' && Number(priceValue.value) > 100) throw new Error('Снизить цену можно не больше чем на 100%.');
                     const price = { mode };
                     if (mode === 'round_flat') price.step = Number(priceStep.value) || 1;
-                    else price.value = Number(priceValue.value);
+                    else {
+                        // An empty amount only blocks «Применить»; it is not an error worth a message.
+                        if (!priceValue.value.trim()) throw Object.assign(new Error('Укажите сумму.'), { quiet: true });
+                        price.value = parseAmount(priceValue.value);
+                        if (!Number.isFinite(price.value) || price.value < 0) throw new Error('Сумма должна быть положительным числом.');
+                        if (mode === 'pct_down' && price.value > 100) throw new Error('Снизить цену можно не больше чем на 100%.');
+                    }
                     if (form.querySelector('#fptBulkPriceRound').checked) price.round = true;
                     const minimum = form.querySelector('#fptBulkPriceMinimum').value.trim();
-                    if (minimum) price.minimum = Number(minimum);
+                    if (minimum) {
+                        price.minimum = parseAmount(minimum);
+                        if (!Number.isFinite(price.minimum) || price.minimum < 0) throw new Error('«Не ниже» должно быть положительным числом.');
+                    }
                     changes.price = price;
                 }
 
@@ -972,8 +1101,9 @@
                 const validRegex = validateRegex();
                 let changes = {};
                 let validationMessage = '';
+                let blocked = false;
                 try { changes = makeChangePayload(); }
-                catch (error) { changes = {}; validationMessage = error.message || 'Проверьте введённые значения.'; }
+                catch (error) { changes = {}; blocked = true; validationMessage = error.quiet ? '' : error.message || 'Проверьте введённые значения.'; }
                 if (!validRegex && !validationMessage) validationMessage = regexError.textContent;
                 regexError.hidden = !validationMessage;
                 if (validationMessage) regexError.textContent = validationMessage;
@@ -982,21 +1112,36 @@
                 if (changes.description) changeLabels.push('описание');
                 if (changes.message) changeLabels.push('сообщение');
                 if (changes.price) {
-                    const modeNames = { set: 'цена', buyer_set: 'цена покупателя', round_flat: 'округление цены', add: 'прибавка к цене', sub: 'вычет из цены', pct_up: `цена +${changes.price.value}%`, pct_down: `цена −${changes.price.value}%` };
+                    const modeNames = { set: 'цена', cost_plus: 'цена от себестоимости', buyer_set: 'цена покупателя', round_flat: 'округление цены', add: 'прибавка к цене', sub: 'вычет из цены', pct_up: `цена +${changes.price.value}%`, pct_down: `цена −${changes.price.value}%` };
                     changeLabels.push(modeNames[changes.price.mode] || 'цена');
                 }
                 if (changes.findReplace) changeLabels.push('поиск и замена');
-                reviewSummary.textContent = selectedCountValue
-                    ? `Будет изменено ${selectedCountValue} ${root.FPTPopupUI.pluralize(selectedCountValue, ['лот', 'лота', 'лотов'])}${changeLabels.length ? ` · ${changeLabels.join(', ')}` : ' · изменения не заданы'}`
-                    : 'Выберите лоты и укажите изменения.';
+                const lotsText = `${selectedCountValue} ${root.FPTPopupUI.pluralize(selectedCountValue, ['лот', 'лота', 'лотов'])}`;
+                reviewSummary.textContent = !selectedCountValue ? 'Выберите лоты'
+                    : changeLabels.length ? `Будет изменено ${lotsText} · ${changeLabels.join(', ')}` : `Выбрано ${lotsText} · укажите изменения`;
                 activateButton.disabled = selectedCountValue === 0;
-                applyButton.disabled = selectedCountValue === 0 || changeLabels.length === 0 || !validRegex || Boolean(validationMessage);
+                applyButton.disabled = selectedCountValue === 0 || changeLabels.length === 0 || !validRegex || blocked;
+                // The schedule tab writes through its own buttons; «Применить» and «Очистить» belong to the edit tabs.
+                const onSchedule = activePane === 'schedule';
+                applyButton.hidden = onSchedule;
+                resetButton.hidden = onSchedule;
+                if (onSchedule) {
+                    reviewSummary.textContent = selectedCountValue ? `Выбрано ${lotsText} · привязка к правилу расписания` : 'Выберите лоты для расписания';
+                }
 
+                // A dot on a tab keeps changes on the hidden tabs visible.
+                const filled = selector => Boolean(form.querySelector(selector).value.trim());
+                const dirty = {
+                    text: filled('#fptBulkName') || filled('#fptBulkDescription') || filled('#fptBulkMessage'),
+                    price: priceMode.value !== 'none',
+                    find: filled('#fptBulkFind'),
+                    schedule: false
+                };
+                tabs.forEach(tab => { tab.dataset.dirty = String(dirty[tab.dataset.pane]); });
                 resetButton.disabled = !hasFormChanges();
                 renderPreview(selectedInputs, changes);
             };
-            const hasFormChanges = () => Array.from(stepChanges.querySelectorAll('input[type="text"], textarea'))
-                .some(field => field.value.trim()) || priceMode.value !== 'none';
+            const hasFormChanges = () => changeFields().some(field => field.value.trim()) || priceMode.value !== 'none';
 
             // Mirrors bulk_lot_editor.js: find/replace first, then {current} is the replaced value and {lotname} the original title.
             const nextTitle = (title, changes) => {
@@ -1010,13 +1155,13 @@
                 return changes.name ? bulkEditor().applyTemplate(changes.name, current, title) : current;
             };
             const PREVIEW_LIMIT = 3;
+            // Only titles get a before/after preview, and only when a change touches the title.
             function renderPreview(selectedInputs, changes) {
                 previewItems.replaceChildren();
                 const selectedLots = selectedInputs.map(input => lots.find(lot => String(lot.offerId ?? lot.id ?? '') === input.dataset.offerId)).filter(Boolean);
-                if (!selectedLots.length) {
-                    previewItems.appendChild(node('p', 'fpt-bulk-preview-empty', 'Отметьте лоты, чтобы увидеть, как изменятся названия.'));
-                }
-                selectedLots.slice(0, PREVIEW_LIMIT).forEach(lot => {
+                const touchesTitle = Boolean(changes.name || changes.findReplace?.fields?.name);
+                preview.hidden = !touchesTitle || !selectedLots.length;
+                (preview.hidden ? [] : selectedLots.slice(0, PREVIEW_LIMIT)).forEach(lot => {
                     const before = lot.title || lot.name || `Лот #${lot.offerId ?? lot.id}`;
                     const after = nextTitle(before, changes);
                     const item = node('div', 'fpt-bulk-preview-item');
@@ -1024,23 +1169,23 @@
                     item.append(node('p', 'fpt-bulk-preview-before', `До: ${before}`), node('p', 'fpt-bulk-preview-after', `После: ${after}`));
                     previewItems.appendChild(item);
                 });
-                const rest = selectedLots.length - PREVIEW_LIMIT;
+                const rest = preview.hidden ? 0 : selectedLots.length - PREVIEW_LIMIT;
                 previewMore.textContent = rest > 0 ? `и ещё ${rest} ${root.FPTPopupUI.pluralize(rest, ['лот', 'лота', 'лотов'])}` : '';
-                const fieldNotes = [];
-                if (changes.description) fieldNotes.push('описание будет заменено');
-                if (changes.message) fieldNotes.push('сообщение покупателю будет заменено');
-                if (changes.findReplace && (changes.findReplace.fields.desc || changes.findReplace.fields.msg)) {
-                    fieldNotes.push(`замена текста в ${[changes.findReplace.fields.desc && 'описании', changes.findReplace.fields.msg && 'сообщении'].filter(Boolean).join(' и ')}`);
-                }
-                previewFields.textContent = fieldNotes.length ? `Также: ${fieldNotes.join('; ')}.` : '';
-                previewPrice.textContent = describePrice(changes.price);
+                // Подсказка о цене показывается один раз — под полем цены.
                 priceHint.hidden = !changes.price;
-                priceHint.textContent = changes.price ? describePrice(changes.price) : '';
+                priceHint.textContent = changes.price ? describePrice(changes.price, selectedLots) : '';
             }
             const priceHint = form.querySelector('.fpt-bulk-price-hint');
             // Current seller prices are only known after a lot is opened, so the rule is shown on an example price.
-            function describePrice(price) {
+            function describePrice(price, selectedLots = []) {
                 if (!price) return '';
+                if (price.mode === 'cost_plus') {
+                    const withCost = selectedLots.filter(lot => costOf(lot.offerId ?? lot.id) !== null);
+                    const exampleCost = withCost.length ? costOf(withCost[0].offerId ?? withCost[0].id) : 100;
+                    const missing = selectedLots.length - withCost.length;
+                    const text = `Себестоимость ${formatRub(exampleCost)} → цена ${formatRub(bulkEditor().computePrice(0, price, exampleCost))}`;
+                    return missing ? `${text}. Без себестоимости: ${missing} — пропустим.` : text;
+                }
                 if (price.mode === 'buyer_set') {
                     return `Покупатель увидит ${formatRub(price.value)}; ваша цена посчитается с учётом комиссии раздела каждого лота.`;
                 }
@@ -1053,9 +1198,10 @@
             form.addEventListener('input', refreshReview);
             form.addEventListener('change', refreshReview);
             resetButton.addEventListener('click', () => {
-                stepChanges.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(field => { field.value = ''; });
+                changeFields().forEach(field => { field.value = ''; });
                 priceMode.value = 'none';
                 priceMode.dispatchEvent(new Event('change', { bubbles: true }));
+                selectTab('text');
                 form.querySelector('#fptBulkName').focus();
             });
             const rowByOfferId = offerId => list.querySelector(`.fpt-bulk-lot-check[data-offer-id="${CSS.escape(String(offerId))}"]`)?.closest('.fpt-bulk-lot-row');
@@ -1080,20 +1226,15 @@
                 lotRows().forEach(row => {
                     row.querySelector('.fpt-bulk-lot-check').checked = row.dataset.result === 'error';
                 });
+                openGroupsWith(row => row.dataset.result === 'error');
                 selectedCount();
-                list.querySelector('.fpt-bulk-lot-row[data-result="error"]')?.scrollIntoView({ block: 'nearest' });
             });
-            refreshReview();
+            selectTab(['text', 'price', 'find', 'schedule'].includes(initialTab) ? initialTab : 'text');
+            syncSelection();
 
             async function applyToSelected(activate) {
-                const selectedInputs = Array.from(list.querySelectorAll('.fpt-bulk-lot-check:checked'));
-                if (!selectedInputs.length) throw new Error('Выберите хотя бы один лот.');
-                const selectedLots = selectedInputs.map(input => ({
-                    id: input.dataset.offerId,
-                    offerId: input.dataset.offerId,
-                    nodeId: input.dataset.nodeId,
-                    title: input.closest('.fpt-bulk-lot-row')?.querySelector('.fpt-bulk-lot-name')?.textContent || input.dataset.offerId
-                }));
+                const selectedLots = selectedLotPayload();
+                if (!selectedLots.length) throw new Error('Выберите хотя бы один лот.');
                 const changes = activate ? {} : makeChangePayload();
                 if (!activate && !Object.keys(changes).length) throw new Error('Укажите хотя бы одно изменение.');
 
@@ -1101,7 +1242,7 @@
                     const countText = `${selectedLots.length} ${root.FPTPopupUI.pluralize(selectedLots.length, ['лот', 'лота', 'лотов'])}`;
                     const summaryText = activate
                         ? `Будет активировано ${countText}. Продолжить?`
-                        : `Будет изменено ${countText}. ${reviewSummary.textContent}. Продолжить?`;
+                        : `${reviewSummary.textContent}. Продолжить?`;
                     if (!window.confirm(summaryText)) return;
                 }
 
@@ -1166,6 +1307,8 @@
                     showToast(popup, error.message || 'Не удалось применить изменения.', error?.name === 'AbortError' ? 'warning' : 'error');
                 } finally {
                     dialog.setBusy(false);
+                    openGroupsWith(row => row.dataset.result === 'error');
+                    syncSelection();
                 }
             }
 
@@ -1188,7 +1331,7 @@
             }
             fileInput.click();
         });
-        bulkButton.addEventListener('click', openBulkEditor);
+        bulkButton.addEventListener('click', () => openBulkEditor());
         const startImport = async file => {
             if (!file) return;
             if (currentTask) {

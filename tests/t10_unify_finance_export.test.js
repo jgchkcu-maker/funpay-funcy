@@ -64,6 +64,7 @@ function createHubEnv(sharedStudio) {
 
 function createSharedEngineContext() {
     const sandbox = {
+        FPTSafe: require('../content/safe_values.js'),
         window: { FPTExportStudio: {} },
         console: { log() {}, warn() {}, error() {} },
         Date, String, Object, Array, Math, Number, Boolean, JSON, isNaN

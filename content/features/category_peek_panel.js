@@ -235,9 +235,7 @@
             ? `<div class="fpt-peek-lots">` + data.lots.map(l => {
                 const stars = l.rating ? `<span class="fpt-peek-stars" title="${l.rating}/5">${'★'.repeat(l.rating)}${'☆'.repeat(5 - l.rating)}</span>` : '';
                 const reviews = l.reviews ? `<span class="fpt-peek-reviews">${escapeHtml(l.reviews)}</span>` : '';
-                const av = l.avatar
-                    ? `<span class="fpt-peek-av${l.online ? ' on' : ''}" style="background-image:url('${escapeHtml(l.avatar)}')"></span>`
-                    : `<span class="fpt-peek-av${l.online ? ' on' : ''}"></span>`;
+                const av = `<span class="fpt-peek-av${l.online ? ' on' : ''}"></span>`;
                 return `
                 <a class="fpt-peek-lot" href="${escapeHtml(l.href)}" target="_blank" rel="noopener">
                     <div class="fpt-peek-lot-top">
@@ -276,6 +274,12 @@
             ${lotsHtml}
             ${chatSection}
         `;
+        body.querySelectorAll('.fpt-peek-av').forEach((el, i) => {
+            try {
+                const url = new URL(data.lots[i].avatar);
+                if (url.protocol === 'https:') el.style.backgroundImage = 'url(' + JSON.stringify(url.href) + ')';
+            } catch (_) {}
+        });
     }
 
     const _cache = new Map(); // node -> { ts, data }

@@ -481,10 +481,16 @@ async function observeOrder(msg, options = {}) {
     return orderAutomation.dispatcher.observe({ orderId, eventChatId: msg.chatId || null, buyerName: msg.buyerName || null, source: 'chat', ...options });
 }
 
+async function statusForOrder(orderId, chatId) {
+    if (!orderId || !orderAutomation?.statusOf) return 'unknown';
+    try { return await orderAutomation.statusOf(orderId, chatId); } catch (_) { return 'unknown'; }
+}
+
 async function handleOrderPurchased(msg, auth, settings) {
     if (!settings.newOrderReplyEnabled || !settings.newOrderReplyText) return;
 
     const orderId = orderIdOf(msg);
+    if (!['paid', 'closed'].includes(await statusForOrder(orderId, msg.chatId))) return;
     const vars = { buyerName: msg.buyerName, orderId, orderLink: orderId ? `https://funpay.com/orders/${orderId}/` : '' };
     const text = applyVariables(settings.newOrderReplyText, vars);
 
@@ -514,8 +520,8 @@ async function handleOrderPurchased(msg, auth, settings) {
 async function handleOrderConfirmed(msg, auth, settings) {
     if (!settings.orderConfirmReplyEnabled || !settings.orderConfirmReplyText) return;
 
-    const orderMatch = msg.messageText.match(RX.ORDER_ID);
-    const orderId = orderMatch ? orderMatch[1] : null;
+    const orderId = orderIdOf(msg);
+    if (await statusForOrder(orderId, msg.chatId) !== 'closed') return;
     const vars = { buyerName: msg.buyerName, orderId };
     const text = applyVariables(settings.orderConfirmReplyText, vars);
 

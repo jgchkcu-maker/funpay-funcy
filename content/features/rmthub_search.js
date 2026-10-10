@@ -209,9 +209,9 @@
                 <div class="rmth-stat"><div class="rmth-sval">$${fmt(total)}</div><div class="rmth-slbl">Выручка</div></div>
                 <div class="rmth-stat"><div class="rmth-sval">${fmt(reviews,0)}</div><div class="rmth-slbl">Отзывы</div></div>
                 <div class="rmth-stat"><div class="rmth-sval">$${fmt(avg)}</div><div class="rmth-slbl">Ср. чек</div></div>
-                <div class="rmth-stat"><div class="rmth-sval">${games}</div><div class="rmth-slbl">Игр</div></div>
+                <div class="rmth-stat"><div class="rmth-sval">${fmt(games, 0)}</div><div class="rmth-slbl">Игр</div></div>
             </div>
-            ${top3.length ? `<div class="rmth-glbl">ТОП ИГРЫ</div>${top3.map(g=>`<div class="rmth-grow"><span class="rmth-gname">${esc(g.game)}</span><span class="rmth-gpct">${g.percentage}%</span><span class="rmth-grev">$${fmt(g.amount)}</span></div>`).join('')}` : ''}
+            ${top3.length ? `<div class="rmth-glbl">ТОП ИГРЫ</div>${top3.map(g=>`<div class="rmth-grow"><span class="rmth-gname">${esc(g.game)}</span><span class="rmth-gpct">${fmt(g.percentage, 0)}%</span><span class="rmth-grev">$${fmt(g.amount)}</span></div>`).join('')}` : ''}
         </div>
         <div class="rmth-foot">
             <div class="rmth-links">

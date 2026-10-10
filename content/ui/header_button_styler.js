@@ -18,6 +18,7 @@ async function loadAndApplyButtonStyles() {
 }
 
 function applyButtonStyles(settings) {
+    settings = { size: FPTSafe.cssNumber(settings.size, 12, 24, 14), opacity: FPTSafe.cssNumber(settings.opacity, 10, 100, 100) };
     let styleTag = document.getElementById(BUTTON_STYLE_ID);
     if (!styleTag) {
         styleTag = document.createElement('style');

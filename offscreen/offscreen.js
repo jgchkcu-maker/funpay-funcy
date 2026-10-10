@@ -225,12 +225,31 @@ function parseSalesPage(html) {
     }
 }
 
-function parseLotEditPage(html) {
+function fptLotEditPageError(doc) {
+    const title = (doc.querySelector('title')?.textContent || '').trim();
+    if (doc.querySelector('#challenge-form, #challenge-running, script[src*="/cdn-cgi/challenge-platform/"]')
+        || /^(just a moment|один момент|checking your browser)/i.test(title)) {
+        return { code: 'browser_check', message: 'FunPay запросил проверку браузера. Откройте funpay.com, пройдите проверку и повторите действие.' };
+    }
+    if (doc.querySelector('form[action*="/account/login"], input[name="login"]')) {
+        return { code: 'login_required', message: 'FunPay вернул страницу входа. Войдите в нужный аккаунт на funpay.com и повторите действие.' };
+    }
+    const heading = doc.querySelector('h1.page-header, h1')?.textContent || '';
+    if (/Предложение не найдено|Пропозицію не знайдено|Offer not found/i.test(heading)) {
+        return { code: 'offer_not_found', message: 'Предложение не найдено на FunPay. Обновите список лотов и повторите действие.' };
+    }
+    return { code: 'form_missing', message: 'FunPay вернул страницу без формы редактирования. Проверьте, что лот доступен и принадлежит текущему аккаунту, затем обновите список лотов.' };
+}
+
+function parseLotEditPage(html, detailed = false) {
     try {
         const doc = window.__fptParseHTML(html);
         const form = doc.querySelector('form.form-offer-editor');
         if (!form) {
-            throw new Error('Форма редактирования лота не найдена на странице.');
+            const error = fptLotEditPageError(doc);
+            if (detailed) return { ok: false, error };
+            console.warn('FunPay Funcy Offscreen:', error.message);
+            return null;
         }
 
         const formData = new FormData(form);
@@ -289,9 +308,10 @@ function parseLotEditPage(html) {
             }
         });
 
-        return dataObject;
+        return detailed ? { ok: true, data: dataObject } : dataObject;
     } catch (e) {
         console.error("FunPay Funcy Offscreen: Error in parseLotEditPage", e);
+        if (detailed) return { ok: false, error: { code: 'parse_failed', message: 'Не удалось разобрать форму лота.' } };
         return null;
     }
 }
@@ -1561,7 +1581,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             sendResponse(parseFinancePage(message.html));
             break;
         case 'parseLotEditPage':
-            sendResponse(parseLotEditPage(message.html));
+            sendResponse(parseLotEditPage(message.html, message.detailed === true));
             break;
         case 'parsePublicLotForClone':
             sendResponse(parsePublicLotForClone(message.html));

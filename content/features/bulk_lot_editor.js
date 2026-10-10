@@ -40,11 +40,13 @@ function applyBulkTemplate(template, current, lotName) {
 }
 
 // Returns the new seller price for every mode except buyer_set, which needs the section commission.
-function computeBulkPrice(current, price = {}) {
+// cost_plus needs the lot cost from FPTCostBasis.
+function computeBulkPrice(current, price = {}, cost = NaN) {
     const value = Number(price.value), step = Number(price.step ?? 1);
     let next;
     switch (price.mode) {
         case 'set': next = value; break;
+        case 'cost_plus': next = Number(cost) + value; break;
         case 'add': next = current + value; break;
         case 'sub': next = current - value; break;
         case 'pct_up': next = current * (1 + value / 100); break;
@@ -85,7 +87,7 @@ async function applyPopupBulkLots(p = {}, activate = false) {
     const nameWanted = Object.hasOwn(change, 'name'), descWanted = Object.hasOwn(change, 'description'), msgWanted = Object.hasOwn(change, 'message');
     const pMode = price.mode || 'none', pVal = Number(price.value), pFlatStep = Number(price.step ?? 1);
     const priceWanted = pMode !== 'none', frActive = Boolean(fr.find), frFields = { name: true, desc: true, msg: false, ...fr.fields };
-    if (!['none', 'set', 'buyer_set', 'round_flat', 'add', 'sub', 'pct_up', 'pct_down'].includes(pMode)) throw new Error('Некорректный режим цены.');
+    if (!['none', 'set', 'cost_plus', 'buyer_set', 'round_flat', 'add', 'sub', 'pct_up', 'pct_down'].includes(pMode)) throw new Error('Некорректный режим цены.');
     if (priceWanted && pMode !== 'round_flat' && (!Number.isFinite(pVal) || pVal < 0)) throw new Error('Укажите корректную цену.');
     if (pMode === 'pct_down' && pVal > 100) throw new Error('Снизить цену можно не больше чем на 100%.');
     if (pMode === 'round_flat' && (!Number.isFinite(pFlatStep) || pFlatStep <= 0)) throw new Error('Некорректный шаг округления.');
@@ -144,6 +146,11 @@ async function applyPopupBulkLots(p = {}, activate = false) {
                         }
                         if (net == null) throw new Error('не удалось получить комиссию раздела');
                         np = finalizeBulkPrice(net, price);
+                    } else if (pMode === 'cost_plus') {
+                        const cost = await window.FPTCostBasis?.get(offerId);
+                        if (!cost || !(Number(cost.amount) > 0)) throw new Error('не указана себестоимость');
+                        if (cost.currency && cost.currency !== 'RUB') throw new Error(`себестоимость указана в ${cost.currency}, а не в рублях`);
+                        np = computeBulkPrice(cur, price, Number(cost.amount));
                     } else {
                         np = computeBulkPrice(cur, price);
                     }

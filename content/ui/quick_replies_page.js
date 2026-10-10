@@ -149,7 +149,7 @@
         wrap.setAttribute('role', 'group');
         wrap.setAttribute('aria-label', 'Вставить переменную');
         for (const [token, label] of list) {
-            const chip = button(label, 'fpt-qr-chip', token === RANDOM_TOKEN ? 'shuffle' : undefined);
+            const chip = button(label, 'fpt-qr-chip', token === RANDOM_TOKEN ? 'shuffle' : 'add');
             chip.title = token;
             chip.addEventListener('click', () => {
                 const start = textarea.selectionStart ?? textarea.value.length;

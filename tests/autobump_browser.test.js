@@ -82,7 +82,7 @@ test('autobump page renders status, saves rules with rollback, picks categories 
         const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
         const content = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js'));
         for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
-        for (const js of content.js) await page.addScriptTag({ path: path.join(root, js) });
+        for (const js of ['content/safe_values.js', ...content.js]) await page.addScriptTag({ path: path.join(root, js) });
         await page.waitForFunction(() => typeof window.__fpEnsurePopup === 'function');
         await page.locator('#fpToolsButton').click();
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));

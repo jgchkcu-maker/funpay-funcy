@@ -233,27 +233,13 @@ class MagicStickStyler {
     }
     
     updateDynamicStyles() {
-        let cssText = '';
-        for (const selector in this.savedStyles) {
-            cssText += `${selector} {\n`;
-            for (const prop in this.savedStyles[selector]) {
-                cssText += `  ${prop}: ${this.savedStyles[selector][prop]} !important;\n`;
-            }
-            cssText += '}\n';
-        }
+        const cssText = FPTSafe.cssDeclarations(this.savedStyles);
         this.ui.dynamicStyleTag.textContent = cssText;
         this.autoSave();
     }
 
     injectPersistentStyles() {
-        let cssText = '';
-        for (const selector in this.savedStyles) {
-            cssText += `${selector} {\n`;
-            for (const prop in this.savedStyles[selector]) {
-                cssText += `  ${prop}: ${this.savedStyles[selector][prop]} !important;\n`;
-            }
-            cssText += '}\n';
-        }
+        const cssText = FPTSafe.cssDeclarations(this.savedStyles);
         this.ui.persistentStyleTag.textContent = cssText;
     }
 
@@ -670,14 +656,7 @@ async function injectMagicStickStylesEarly() {
         const savedStyles = data.fpToolsLiveStyles || {};
         if (!savedStyles || !Object.keys(savedStyles).length) return;
 
-        let cssText = '';
-        for (const selector in savedStyles) {
-            cssText += `${selector} {\n`;
-            for (const prop in savedStyles[selector]) {
-                cssText += `  ${prop}: ${savedStyles[selector][prop]} !important;\n`;
-            }
-            cssText += '}\n';
-        }
+        const cssText = FPTSafe.cssDeclarations(savedStyles);
 
         // Тот же id, что использует редактор - когда меню откроется и редактор
         // проинициализируется, он просто переиспользует/обновит этот же тег.

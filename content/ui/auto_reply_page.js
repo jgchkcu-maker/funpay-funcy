@@ -297,8 +297,9 @@
         wrap.setAttribute('role', 'group');
         wrap.setAttribute('aria-label', 'Переменные: нажмите, чтобы вставить в текст');
         tokens.forEach(token => {
-            const chip = node('button', 'fpt-ad-variable-chip', VARIABLE_HINTS[token] || token);
+            const chip = node('button', 'fpt-ad-variable-chip');
             chip.type = 'button';
+            chip.append(icon('add'), node('span', '', VARIABLE_HINTS[token] || token));
             chip.dataset.templateToken = token;
             chip.title = token;
             chip.addEventListener('click', () => {
@@ -594,7 +595,7 @@
                 cooldown.step = '1';
                 cooldown.inputMode = 'numeric';
                 cooldown.addEventListener('input', () => syncDirty());
-                cooldownField.append(cooldown, node('span', 'fpt-ar-number-unit', 'дн.'));
+                cooldownField.append(root.FPTPopupUI.createNumberStepper(cooldown), node('span', 'fpt-ar-number-unit', 'дн.'));
                 cooldownRow.append(cooldownCopy, cooldownField);
                 const subList = node('div', 'fpt-ar-sub-list');
                 subList.append(sub.onlyNew.element, sub.ignoreSystem.element, cooldownRow);

@@ -58,12 +58,26 @@
         if (label) label.classList.add('fpt-control-label');
     }
 
+    // Every plain <select> in the popup gets the themed list, so no screen shows the browser's native
+    // one. Opt out with data-fpt-native-select (or a size/multiple select, which has no dropdown).
+    function autoEnhanceSelect(select) {
+        if (select.dataset.fptEnhanced === '1' || select.dataset.fptNativeSelect !== undefined) return;
+        if (select.multiple || select.size > 1 || !select.parentNode || select.closest('.fpt-select-host')) return;
+        const host = document.createElement('div');
+        host.className = 'fpt-select-auto';
+        select.parentNode.insertBefore(host, select);
+        host.appendChild(select);
+        enhanceSelect(select, host);
+    }
+
     function normalizeControls(container, node) {
         if (!node || node.nodeType !== 1) return;
         if (node.matches('input[type="checkbox"]')) decorateCheckbox(node, container);
         if (node.matches(FIELD_SELECTOR)) decorateField(node, container);
+        if (node.matches('select')) autoEnhanceSelect(node);
         node.querySelectorAll?.('input[type="checkbox"]').forEach(input => decorateCheckbox(input, container));
         node.querySelectorAll?.(FIELD_SELECTOR).forEach(field => decorateField(field, container));
+        node.querySelectorAll?.('select').forEach(autoEnhanceSelect);
     }
 
     function observePopupControls(popup) {
@@ -252,6 +266,8 @@
         function onKeyDown(event) {
             if (closed) return;
             if (event.key === 'Escape') {
+                // Escape in an open themed list closes only the list (its own handler runs next).
+                if (document.activeElement?.matches?.('.fpt-select-trigger[aria-expanded="true"]')) return;
                 event.preventDefault();
                 event.stopPropagation();
                 if (!busy) close();
@@ -493,13 +509,53 @@
             });
             menu.replaceChildren(...items);
         }
+        // Scrolls only the menu: scrollIntoView would also scroll the dialog and the popup page.
         function setActive(index, scroll = true) {
             items[active]?.classList.remove('is-active');
             active = index;
             const item = items[active];
             if (!item) return;
             item.classList.add('is-active');
-            if (scroll) item.scrollIntoView({ block: 'nearest' });
+            if (!scroll) return;
+            if (item.offsetTop < menu.scrollTop) menu.scrollTop = item.offsetTop;
+            else if (item.offsetTop + item.offsetHeight > menu.scrollTop + menu.clientHeight) {
+                menu.scrollTop = item.offsetTop + item.offsetHeight - menu.clientHeight;
+            }
+        }
+        // The menu floats (position: fixed) so it never stretches a scroll container it sits in.
+        // The popup's transform and the dialog backdrop's filter move the fixed origin, so the
+        // wanted viewport position is corrected by the measured offset.
+        function place() {
+            // The opening animation translates the menu; measure the settled position.
+            menu.getAnimations?.().forEach(animation => animation.finish());
+            const rect = trigger.getBoundingClientRect();
+            const bounds = host.closest('.fp-tools-popup')?.getBoundingClientRect()
+                || { top: 0, left: 0, right: root.innerWidth, bottom: root.innerHeight };
+            const gap = 6;
+            const top = Math.max(0, bounds.top);
+            const bottom = Math.min(root.innerHeight, bounds.bottom);
+            const below = bottom - rect.bottom - gap - 8;
+            const above = rect.top - top - gap - 8;
+            const up = below < 200 && above > below;
+            menu.classList.toggle('is-up', up);
+            menu.style.minWidth = `${Math.round(rect.width)}px`;
+            menu.style.maxHeight = `${Math.round(Math.max(120, Math.min(280, up ? above : below)))}px`;
+            menu.style.left = '0px';
+            menu.style.top = '0px';
+            const origin = menu.getBoundingClientRect();
+            const width = origin.width;
+            const height = origin.height;
+            const minLeft = Math.max(0, bounds.left) + 8;
+            const maxLeft = Math.min(root.innerWidth, bounds.right) - width - 8;
+            const left = Math.max(minLeft, Math.min(rect.left, maxLeft));
+            const y = up ? rect.top - gap - height : rect.bottom + gap;
+            menu.style.left = `${Math.round(left - origin.left)}px`;
+            menu.style.top = `${Math.round(y - origin.top)}px`;
+        }
+        function onReflow(event) {
+            if (event?.type === 'scroll' && event.target === menu) return;
+            if (!host.isConnected) { close(); return; }
+            place();
         }
         function step(from, dir) {
             for (let i = from + dir; i >= 0 && i < items.length; i += dir) {
@@ -511,18 +567,23 @@
             if (isOpen() || select.disabled || !items.length) return;
             rebuild();
             menu.hidden = false;
-            const rect = trigger.getBoundingClientRect();
-            const room = root.innerHeight - rect.bottom;
-            menu.classList.toggle('is-up', room < 260 && rect.top > room);
+            menu.style.animation = 'none';
+            place();
+            void menu.offsetWidth;
+            menu.style.animation = '';
             trigger.setAttribute('aria-expanded', 'true');
             setActive(Math.max(0, select.selectedIndex));
             document.addEventListener('pointerdown', onOutside, true);
+            document.addEventListener('scroll', onReflow, true);
+            root.addEventListener('resize', onReflow);
         }
         function close(focus = false) {
             if (!isOpen()) return;
             menu.hidden = true;
             trigger.setAttribute('aria-expanded', 'false');
             document.removeEventListener('pointerdown', onOutside, true);
+            document.removeEventListener('scroll', onReflow, true);
+            root.removeEventListener('resize', onReflow);
             if (focus) trigger.focus();
         }
         function onOutside(event) {
@@ -583,7 +644,41 @@
         return () => observer.disconnect();
     }
 
+    // Wraps a number input in the − value + stepper used on the support page. The caller appends the
+    // returned element instead of the input; page listeners keep getting the usual input/change events.
+    function createNumberStepper(input) {
+        const wrap = document.createElement('div');
+        wrap.className = 'fpt-sp-stepper fpt-stepper';
+        const button = (iconName, label, delta) => {
+            const el = document.createElement('button');
+            el.type = 'button';
+            el.className = 'fpt-sp-step';
+            el.tabIndex = -1;
+            el.setAttribute('aria-label', label);
+            const glyph = document.createElement('span');
+            glyph.className = 'material-symbols-rounded';
+            glyph.setAttribute('aria-hidden', 'true');
+            glyph.textContent = iconName;
+            el.appendChild(glyph);
+            el.addEventListener('click', () => {
+                if (input.disabled) return;
+                const min = input.min === '' ? -Infinity : Number(input.min);
+                const max = input.max === '' ? Infinity : Number(input.max);
+                const step = Number(input.step) > 0 ? Number(input.step) : 1;
+                const next = Math.round(((Number(input.value) || 0) + delta * step) * 1000) / 1000;
+                input.value = String(Math.min(max, Math.max(min, next)));
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+            return el;
+        };
+        input.classList.add('fpt-sp-number-input');
+        wrap.append(button('remove', 'Меньше', -1), input, button('add', 'Больше', 1));
+        return wrap;
+    }
+
     root.FPTPopupUI = Object.freeze({
+        createNumberStepper,
         onPageActivated,
         enhanceSelect,
         createCategoryHeader,

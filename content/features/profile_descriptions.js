@@ -176,20 +176,19 @@
       if (!r.ok) return null;
       const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
       const ids = Array.from(doc.querySelectorAll('a.tc-item[data-offer]'))
-        .filter((el) => { const t = el.querySelector('.tc-desc-text'); return (t ? t.textContent : '').includes(VERIFY_TITLE); })
         .map((el) => Number(el.getAttribute('data-offer')))
         .filter((n) => Number.isFinite(n) && n > 0);
-      for (const id of ids.slice(0, 10)) {
+      for (const id of new Set(ids)) {
         try {
-          const a = await fetch('/lots/offer?id=' + id, { credentials: 'same-origin', headers: { accept: 'text/html' } });
-          if (a.ok && (await a.text()).includes(code)) return id;
+          const a = await fetch('/lots/offerEdit?offer=' + id, { credentials: 'same-origin', headers: { accept: 'text/html' }, cache: 'no-store' });
+          if (a.ok && verificationLotMatches(new DOMParser().parseFromString(await a.text(), 'text/html'), { code })) return id;
         } catch {}
       }
-      if (ids.length === 1) return ids[0];
     } catch {}
     return null;
   }
   async function createVerificationLot(code) {
+    if (typeof code !== 'string' || !code.trim()) throw new Error('VERIFY_CODE_MISSING');
     const formRes = await fetch('/lots/offerEdit?node=' + VERIFY_NODE_ID, {
       credentials: 'same-origin', headers: { accept: 'text/html' },
     });
@@ -237,10 +236,13 @@
   // Решение: как только лот создан, записываем его id в chrome.storage. Удаление
   // снимает запись ТОЛЬКО при подтверждённом успехе. На каждом заходе (и по таймеру)
   // «подметаем» все оставшиеся id и дочищаем их с повторными попытками.
-  async function trackPendingLot(offerId) {
+  async function trackPendingLot(offerId, code) {
     if (offerId == null) return;
     const cur = (await storageGet([PENDING_LOTS_KEY]))[PENDING_LOTS_KEY] || {};
-    cur[String(offerId)] = Date.now();
+    const accountId = getMyUserId();
+    if (!accountId || !/^\d+$/.test(String(offerId))) return;
+    if (typeof code !== 'string' || !code.trim()) throw new Error('VERIFY_CODE_MISSING');
+    cur[String(offerId)] = { at: Date.now(), accountId, code: code.trim() };
     await storageSet({ [PENDING_LOTS_KEY]: cur });
   }
   async function untrackPendingLot(offerId) {
@@ -251,16 +253,40 @@
     }
   }
 
+  function verificationLotMatches(doc, entry) {
+    if (Object.hasOwn(entry, 'code')) {
+      if (typeof entry.code !== 'string' || !entry.code.trim()) return false;
+      const code = entry.code.trim();
+      return ['ru', 'en'].some(lang => doc.querySelector('[name="fields[desc][' + lang + ']"]')?.value?.trim() === code);
+    }
+    // Compatibility for account-bound entries created before codes were stored.
+    return ['ru', 'en'].some(lang => (doc.querySelector('[name="fields[summary][' + lang + ']"]')?.value || '').includes(VERIFY_TITLE));
+  }
+
   // Удаляет лот с несколькими попытками. Снимает из очереди только при успехе.
   async function cleanupVerificationLot(offerId, attempts) {
     const tries = attempts || 3;
     for (let i = 0; i < tries; i++) {
       try {
+        const cur = (await storageGet([PENDING_LOTS_KEY]))[PENDING_LOTS_KEY] || {};
+        const entry = cur[String(offerId)];
+        const accountId = getMyUserId();
+        if (!/^\d+$/.test(String(offerId)) || !accountId || !entry || typeof entry !== 'object' || String(entry.accountId) !== String(accountId)) return;
+        const response = await fetch('/lots/offerEdit?offer=' + offerId, { credentials: 'same-origin', headers: { accept: 'text/html' }, cache: 'no-store' });
+        if (!response.ok) throw new Error('FUNPAY_VERIFY_READ_' + response.status);
+        const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+        if (!verificationLotMatches(doc, entry)) { await untrackPendingLot(offerId); return; }
+        if (String(getMyUserId()) !== String(accountId)) return;
         await deleteVerificationLot(offerId);
         await untrackPendingLot(offerId);
         console.log('[FPT PD] verify lot deleted, offerId=', offerId);
         return true;
       } catch (e) {
+        const entry = ((await storageGet([PENDING_LOTS_KEY]))[PENDING_LOTS_KEY] || {})[String(offerId)];
+        if (entry && Date.now() - Number(entry.at) > 7 * 24 * 60 * 60 * 1000) {
+          await untrackPendingLot(offerId);
+          return false;
+        }
         console.warn('[FPT PD] delete attempt', i + 1, 'failed for', offerId, e && e.message);
         // экспоненциальная пауза перед следующей попыткой (2s, 4s, 8s…)
         if (i < tries - 1) await new Promise((r) => setTimeout(r, 2000 * Math.pow(2, i)));
@@ -283,6 +309,12 @@
       if (!getCsrf()) return;
       console.log('[FPT PD] sweeping', ids.length, 'pending verify lot(s)…');
       for (const id of ids) {
+        const entry = cur[id];
+        const at = typeof entry === 'number' ? entry : Number(entry?.at);
+        if (!entry || typeof entry !== 'object' || String(entry.accountId) !== String(getMyUserId())) {
+          if (Date.now() - at > 7 * 24 * 60 * 60 * 1000) await untrackPendingLot(id);
+          continue;
+        }
         await cleanupVerificationLot(id, 2);
       }
     } catch (e) {
@@ -322,7 +354,7 @@
       offerId = await createVerificationLot(start.code);
       // Сразу фиксируем id в хранилище — чтобы лот гарантированно удалился даже
       // если страницу закроют или упадёт сеть до штатного удаления.
-      await trackPendingLot(offerId);
+      await trackPendingLot(offerId, start.code);
       console.log('[FPT PD] lot created, offerId=', offerId, '- ждём проверку сервером…');
       const conf = await pollConfirm(id, 90000);
       console.log('[FPT PD] confirmed by server');

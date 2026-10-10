@@ -320,10 +320,7 @@
     // ──────────────────────────────────────────────────────────────────────────
     ES.buildCSV = function (cols, rows, opt) {
         const sep = opt.csvSep || ';';
-        const q = s => {
-            s = String(s == null ? '' : s);
-            return /[";\n\r,]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-        };
+        const q = s => FPTSafe.csvCell(s);
         const lines = [];
         lines.push(cols.map(c => q(c.label)).join(sep));
         for (const r of rows) lines.push(cols.map(c => q(c.disp(r))).join(sep));
@@ -1777,12 +1774,7 @@
     }
 
     function formatString(s) {
-        if (s === null || s === undefined) return 'null';
-        s = String(s);
-        if (/[";\n\r,]/.test(s)) {
-            return '"' + s.replace(/"/g, '""') + '"';
-        }
-        return s;
+        return FPTSafe.csvCell(s == null ? 'null' : s);
     }
 
     function formatBool(b) {

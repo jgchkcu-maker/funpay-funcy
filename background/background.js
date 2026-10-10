@@ -13,6 +13,7 @@ import {
 import { createAccountGuard, sha256Short, ACCOUNT_EPOCH_KEY } from './account_guard.js';
 import { createOrderDetailsLoader } from './order_details.js';
 import { orderRole } from './order_facts.js';
+import { autoReplyOrderStatus } from './auto_reply_order_guard.js';
 import { createFulfillmentDispatcher } from './fulfillment_dispatcher.js';
 import { createOrderReconcile } from './order_reconcile.js';
 import { createOrderCommands } from './order_commands.js';
@@ -843,6 +844,14 @@ async function parseHtmlViaOffscreen(html, action, extra = {}) {
     });
 }
 
+async function parseLotEditPageViaOffscreen(html) {
+    const result = await parseHtmlViaOffscreen(html, 'parseLotEditPage', { detailed: true });
+    if (!result || result.ok !== true || !result.data || typeof result.data !== 'object') {
+        throw new Error(result?.error?.message || 'Не удалось разобрать форму лота.');
+    }
+    return result.data;
+}
+
 async function readAutoDeliveryLotForm(lot) {
     const offerId = String(lot?.id || '');
     const nodeId = String(lot?.nodeId || '');
@@ -858,9 +867,7 @@ async function readAutoDeliveryLotForm(lot) {
     if (/account\/login|name="login"/i.test(html) && !/form-offer-editor/i.test(html)) {
         throw new Error(GOLDEN_SEAL_ERROR);
     }
-    const data = await parseHtmlViaOffscreen(html, 'parseLotEditPage');
-    if (!data) throw new Error('Не удалось разобрать форму лота.');
-    return data;
+    return parseLotEditPageViaOffscreen(html);
 }
 
 configureAutoDeliveryStore(chrome.storage.local, readAutoDeliveryLotForm);
@@ -1000,6 +1007,14 @@ if (opsJournal && fulfillmentDispatcher) {
 configureOrderAutomation({
     dispatcher: fulfillmentDispatcher,
     reconcile: orderReconcile,
+    statusOf: async (orderId, chatId) => {
+        const account = await accountGuard.current();
+        if (!account.accountId) return 'unknown';
+        const facts = await orderLoader.load(orderId, { accountId: account.accountId, epoch: account.epoch, fresh: true });
+        const current = await accountGuard.current();
+        if (current.accountId !== account.accountId || current.epoch !== account.epoch) return 'unknown';
+        return autoReplyOrderStatus(facts, { accountId: account.accountId, orderId, chatId });
+    },
     roleOf: async orderId => {
         const account = await accountGuard.current();
         if (!account.accountId) return 'unknown';
@@ -1391,11 +1406,16 @@ async function isAutomationActive() {
 
 let _fptSnapChain = Promise.resolve();
 
+function withCookieLock(fn) {
+    const next = _fptSnapChain.then(fn, fn);
+    _fptSnapChain = next.catch(() => {});
+    return next;
+}
+
 function fptSnapshotForKey(key) {
     const run = async () => {
         // 1) Запоминаем текущую golden_key, чтобы вернуть её после запроса.
-        let original = null;
-        try { original = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' }); } catch (_) {}
+        const original = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
 
         // Главная даёт имя, аватар и баланс; оплаченные, но не подтверждённые заказы — деньги «в ожидании».
         const loadSnapshot = async () => {
@@ -1432,16 +1452,21 @@ function fptSnapshotForKey(key) {
         }
 
         const setKey = async (value) => {
-            return chrome.cookies.set({
-                url: 'https://funpay.com',
+            const result = await chrome.cookies.set({
+                url: 'https://funpay.com' + (original?.path || '/'),
                 name: 'golden_key',
                 value,
-                domain: '.funpay.com',
-                path: '/',
+                ...(original ? (original.hostOnly ? {} : { domain: original.domain }) : { domain: '.funpay.com' }),
+                path: original?.path || '/',
+                ...(original?.storeId ? { storeId: original.storeId } : {}),
+                ...(original?.partitionKey ? { partitionKey: original.partitionKey } : {}),
                 secure: true,
+                httpOnly: true,
                 sameSite: 'lax',
                 expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
             });
+            if (!result) throw new Error('Не удалось записать временную cookie аккаунта.');
+            return result;
         };
 
         try {
@@ -1453,16 +1478,21 @@ function fptSnapshotForKey(key) {
             return null;
         } finally {
             // 4) ВСЕГДА возвращаем исходную golden_key (или удаляем, если её не было).
-            try {
-                if (original && original.value) await setKey(original.value);
-                else await chrome.cookies.remove({ url: 'https://funpay.com', name: 'golden_key' });
-            } catch (_) {}
+            if (original && original.value) {
+                const restored = await chrome.cookies.set({
+                    url: 'https://funpay.com' + (original.path || '/'),
+                    name: 'golden_key', value: original.value,
+                    ...(original.hostOnly ? {} : { domain: original.domain }),
+                    path: original.path || '/', secure: original.secure, httpOnly: true,
+                    sameSite: original.sameSite, storeId: original.storeId,
+                    ...(original.partitionKey ? { partitionKey: original.partitionKey } : {}),
+                    ...(original.expirationDate === undefined ? {} : { expirationDate: original.expirationDate })
+                });
+                if (!restored) throw new Error('Не удалось восстановить cookie исходного аккаунта.');
+            } else await chrome.cookies.remove({ url: 'https://funpay.com', name: 'golden_key' });
         }
     };
-    // сериализация
-    const next = _fptSnapChain.then(run, run);
-    _fptSnapChain = next.catch(() => {});
-    return next;
+    return withCookieLock(run);
 }
 
 
@@ -1672,7 +1702,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (/account\/login|name="login"/i.test(html) && !/form-offer-editor/i.test(html)) {
                     throw new Error(GOLDEN_SEAL_ERROR);
                 }
-                const data = await parseHtmlViaOffscreen(html, 'parseLotEditPage');
+                const data = await parseLotEditPageViaOffscreen(html);
                 sendResponse({ success: true, data: data });
             } catch (e) {
                 sendResponse({ success: false, error: e.message });
@@ -1706,8 +1736,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (/account\/login|name="login"/i.test(html) && !/form-offer-editor/i.test(html)) {
                     throw new Error(GOLDEN_SEAL_ERROR);
                 }
-                const data = await parseHtmlViaOffscreen(html, 'parseLotEditPage');
-                if (!data) throw new Error('Не удалось разобрать форму лота.');
+                const data = await parseLotEditPageViaOffscreen(html);
 
                 // Формируем source для превью импорта из полного набора полей формы.
                 const g = (k) => (data[k] != null ? data[k] : '');
@@ -2331,7 +2360,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
     if (request.action === 'setGoldenKey') {
-        (async () => {
+        withCookieLock(async () => {
             try {
                 if (!request.key) throw new Error('Пустой ключ аккаунта.');
 
@@ -2342,11 +2371,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 //
                 // Важные детали, без которых вход не срабатывал:
                 //  1. FunPay ставит golden_key как httpOnly на домен ".funpay.com".
-                //     chrome.cookies.set НЕ может пометить куку httpOnly, поэтому если
-                //     просто записать новую — она будет ОТДЕЛЬНОЙ (non-httpOnly), а сервер
-                //     продолжит видеть старую httpOnly → пустая/старая сессия.
-                //     Поэтому СНАЧАЛА удаляем все существующие golden_key (remove умеет
-                //     убирать и httpOnly-куки), и только потом ставим новую.
+                //     chrome.cookies.set поддерживает httpOnly; сохраняем защиту ключа.
+                //     Удаляем старые варианты cookie перед записью.
                 //  2. domain ставим как у FunPay — с ведущей точкой ".funpay.com".
 
                 // 1) Снимаем все варианты golden_key (host-only и доменные, вкл. httpOnly).
@@ -2375,6 +2401,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     domain: '.funpay.com',
                     path: '/',
                     secure: true,
+                    httpOnly: true,
                     sameSite: 'lax',
                     expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
                 });
@@ -2388,6 +2415,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         value: request.key,
                         path: '/',
                         secure: true,
+                        httpOnly: true,
                         sameSite: 'lax',
                         expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
                     });
@@ -2405,7 +2433,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 console.error('FunPay Funcy: setGoldenKey error:', e);
                 sendResponse({ success: false, error: e.message });
             }
-        })();
+        }).catch(error => sendResponse({ success: false, error: error.message }));
         return true;
     }
     // ACCOUNT SNAPSHOT (avatar / balance / unread) для вкладки мультиаккаунтов
@@ -2431,13 +2459,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === 'deleteCookiesAndReload') {
-        (async () => {
+        withCookieLock(async () => {
             const allCookies = await chrome.cookies.getAll({ url: "https://funpay.com" });
             for (const cookie of allCookies) {
                 await chrome.cookies.remove({ url: "https://funpay.com", name: cookie.name, storeId: cookie.storeId });
             }
             chrome.tabs.reload(sender.tab.id);
-        })();
+        }).catch(error => sendResponse({ success: false, error: error.message }));
         return true;
     }
     

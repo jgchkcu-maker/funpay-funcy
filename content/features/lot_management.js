@@ -36,8 +36,44 @@ function waitForProfileContainer(timeout = 8000) {
     });
 }
 
+function normalizeProfilePinnedLot(lot) {
+    if (!lot || typeof lot !== 'object') return null;
+    let offerId = String(lot.offerId || '');
+    let title = lot.title, price = lot.price;
+    if (typeof lot.html === 'string') {
+        const doc = new DOMParser().parseFromString(lot.html, 'text/html');
+        const href = doc.querySelector('a.tc-item')?.getAttribute('href') || '';
+        const match = href.match(/[?&](?:id|offer)=(\d+)(?:&|$)/);
+        if (!/^\d+$/.test(offerId)) offerId = match?.[1] || '';
+        title = doc.querySelector('.tc-desc-text, .tc-desc')?.textContent || '';
+        price = doc.querySelector('.tc-price')?.textContent || '';
+    }
+    if (!/^\d+$/.test(offerId) || (!lot.nodeId && !lot.html)) return null;
+    return { offerId, nodeId: /^\d+$/.test(String(lot.nodeId)) ? String(lot.nodeId) : '',
+        gameName: String(lot.gameName || ''), title: String(title || ''), price: String(price || '') };
+}
+
+let _pinnedLotsMigration;
+function migratePinnedLotStorage() {
+    // Both features share one migration, so concurrent loads cannot restore stale HTML.
+    if (!_pinnedLotsMigration) _pinnedLotsMigration = (async () => {
+        const stored = await chrome.storage.local.get(['fpToolsPinnedLots', 'fpToolsCtxPinnedLots']);
+        const legacy = Array.isArray(stored.fpToolsPinnedLots) ? stored.fpToolsPinnedLots : [];
+        const moved = legacy.filter(lot => lot && !lot.html && !lot.nodeId);
+        if (!moved.length && !legacy.some(lot => typeof lot?.html === 'string')) return;
+        const context = [...(Array.isArray(stored.fpToolsCtxPinnedLots) ? stored.fpToolsCtxPinnedLots : []), ...moved]
+            .filter((lot, i, all) => lot && /^\d+$/.test(String(lot.offerId)) && all.findIndex(other => String(other?.offerId) === String(lot.offerId)) === i)
+            .map(lot => ({ offerId: String(lot.offerId), nodeId: /^\d+$/.test(String(lot.nodeId)) ? String(lot.nodeId) : '',
+                title: String(lot.title || ''), sellerName: String(lot.sellerName || ''), sellerId: /^\d+$/.test(String(lot.sellerId)) ? String(lot.sellerId) : '', pinnedAt: Number(lot.pinnedAt) || 0 }));
+        await chrome.storage.local.set({ fpToolsPinnedLots: legacy.map(normalizeProfilePinnedLot).filter(Boolean), fpToolsCtxPinnedLots: context });
+    })().catch(error => { _pinnedLotsMigration = null; throw error; });
+    return _pinnedLotsMigration;
+}
+
 async function displayPinnedLotsOnLoad() {
-    const { fpToolsPinnedLots = [] } = await chrome.storage.local.get('fpToolsPinnedLots');
+    await migratePinnedLotStorage();
+    const stored = await chrome.storage.local.get('fpToolsPinnedLots');
+    const fpToolsPinnedLots = (Array.isArray(stored.fpToolsPinnedLots) ? stored.fpToolsPinnedLots : []).map(normalizeProfilePinnedLot).filter(Boolean);
     if (fpToolsPinnedLots.length === 0) return;
 
     // Don't re-insert if already there
@@ -48,17 +84,7 @@ async function displayPinnedLotsOnLoad() {
     if (!profileDataContainerEl) return;
     const profileDataContainer = $(profileDataContainerEl);
 
-    let pinnedLotsHtml = '';
-    fpToolsPinnedLots.forEach(lotData => {
-        if (!lotData.html) return;
-        const $lot = $(lotData.html);
-        if (!$lot.length) return;
-        $lot.attr('data-fp-tooltip', lotData.gameName);
-        $lot.addClass('fp-tooltip-host');
-        pinnedLotsHtml += $lot[0].outerHTML;
-    });
-
-    if (!pinnedLotsHtml) return;
+    if (!fpToolsPinnedLots.length) return;
 
     const pinnedContainer = $(`
         <div class="offer" id="fp-tools-pinned-lots-container">
@@ -67,11 +93,20 @@ async function displayPinnedLotsOnLoad() {
                 <button id="fp-tools-edit-pinned-lots-btn" class="btn btn-default btn-xs" title="Выбрать закрепленные" style="padding: 2px 8px; font-size: 14px; line-height: 1;">✏️</button>
             </div>
             <div class="tc showcase-table tc-b-main">
-                ${pinnedLotsHtml}
             </div>
         </div>
     `);
 
+    const table = pinnedContainer[0].querySelector('.tc');
+    fpToolsPinnedLots.forEach(lot => {
+        const row = document.createElement('a'); row.className = 'tc-item fp-tooltip-host';
+        row.href = `https://funpay.com/lots/offer?id=${lot.offerId}`;
+        row.setAttribute('data-fp-tooltip', lot.gameName);
+        const desc = document.createElement('div'); desc.className = 'tc-desc';
+        const text = document.createElement('div'); text.className = 'tc-desc-text'; text.textContent = lot.title;
+        const price = document.createElement('div'); price.className = 'tc-price'; price.textContent = lot.price;
+        desc.appendChild(text); row.append(desc, price); table.appendChild(row);
+    });
     profileDataContainer.prepend(pinnedContainer);
 }
 
@@ -570,16 +605,12 @@ function setupActionProcessing() {
                     const priceElement = $lotLink.find('.tc-price');
 
                     if (gameName && nodeId && descElement.length && priceElement.length) {
-                        const cleanLotHtml = $('<a>', { href: offerLink, class: 'tc-item' })
-                            .append(descElement.clone())
-                            .append(priceElement.clone())
-                            .prop('outerHTML');
-
                         fpToolsPinnedLots.push({
                             offerId: offerId,
                             nodeId: nodeId,
                             gameName: gameName,
-                            html: cleanLotHtml
+                            title: descElement.text().trim(),
+                            price: priceElement.text().trim()
                         });
                         pinnedOfferIds.add(offerId);
                         changesMade++;

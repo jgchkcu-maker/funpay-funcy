@@ -20,7 +20,9 @@
         if (!response.ok) throw new Error('Не удалось загрузить тему.');
         const data = await response.json();
         if (!data?.bgColor1 || !data.font) throw new Error('Неверный формат темы.');
-        const settings = fptSanitizeThemeColors(data);
+        const settings = FPTSafe.themeSettings(fptSanitizeThemeColors(data));
+        settings.font = FPTSafe.fontName(settings.font) || 'Helvetica Neue';
+        if (!FPTSafe.cssImageUrl(settings.bgImage)) settings.bgImage = '';
         if (p.draftOnly) return settings;
         const patch = enable ? { fpToolsTheme: { ...settings, enableCustomTheme: true }, enableCustomTheme: true } : { fpToolsTheme: settings };
         await window.fptPopupActions.updateSettings(Object.keys(patch), () => patch,

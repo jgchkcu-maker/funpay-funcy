@@ -65,7 +65,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
         const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
         for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
-        for (const js of content.js) await page.addScriptTag({ path: path.join(root, js) });
+        for (const js of ['content/safe_values.js', ...content.js]) await page.addScriptTag({ path: path.join(root, js) });
         assert.equal(await page.evaluate(() => typeof window.FPTPopupUI?.ensureCategoryHeader), 'function');
         await page.evaluate(() => document.fonts.ready);
         await page.waitForFunction(() => typeof window.__fpEnsurePopup === 'function');

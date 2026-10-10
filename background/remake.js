@@ -54,6 +54,7 @@ async function handleFiles(files) {
     log(`Обрабатываю ${files.length} файл(ов)...`, 'info');
 
     const results = await Promise.all(Array.from(files).map(file => new Promise(resolve => {
+        if (file.size > 20 * 1024 * 1024) { log('Файл больше 20 МБ.', 'error'); resolve([]); return; }
         if (!file.name.endsWith('.json')) {
             log(`Пропущен: "${file.name}" - нужен .json.`, 'error');
             resolve([]); return;

@@ -1,5 +1,8 @@
 // content/features/buyer_history.js
 
+function bhEsc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
 let _bhCache = {};
 
 async function loadBuyerHistory(buyerUsername) {
@@ -62,19 +65,19 @@ function renderHistoryPanel(orders, name, anchor) {
         <div class="fp-bh-header">
             <div class="fp-bh-title">
                 <span class="fp-bh-icon">📦</span>
-                <span>История покупок <strong>${name}</strong></span>
+                <span>История покупок <strong>${bhEsc(name)}</strong></span>
             </div>
             <button class="fp-bh-close" title="Закрыть">✕</button>
         </div>
         <div class="fp-bh-meta">${orders.length} заказ${orders.length === 1 ? '' : (orders.length < 5 ? 'а' : 'ов')} · ~${Math.round(total).toLocaleString('ru')} ₽</div>
         <div class="fp-bh-list">
-            ${orders.slice(0, 20).map(o => `
+            ${orders.filter(o => /^[A-Z0-9]{8}$/.test(String(o.orderId))).slice(0, 20).map(o => `
                 <a href="https://funpay.com/orders/${o.orderId}/" target="_blank" class="fp-bh-item">
-                    <div class="fp-bh-item-desc">${o.desc || o.orderId}</div>
+                    <div class="fp-bh-item-desc">${bhEsc(o.desc || o.orderId)}</div>
                     <div class="fp-bh-item-meta">
-                        <span class="fp-bh-price">${o.price}</span>
+                        <span class="fp-bh-price">${bhEsc(o.price)}</span>
                         <span class="fp-bh-dot">·</span>
-                        <span class="fp-bh-date">${o.date}</span>
+                        <span class="fp-bh-date">${bhEsc(o.date)}</span>
                     </div>
                 </a>`).join('')}
         </div>`;
@@ -121,7 +124,7 @@ async function appendTranslation(msgTextEl) {
     wrap.className = 'fp-trans-wrap';
     wrap.innerHTML =
         '<div class="fp-trans-divider"></div>' +
-        '<div class="fp-trans-text">' + translated + '</div>';
+        '<div class="fp-trans-text">' + bhEsc(translated) + '</div>';
 
     msgTextEl.appendChild(wrap);
 }

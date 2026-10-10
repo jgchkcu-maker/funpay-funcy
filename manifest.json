@@ -54,6 +54,7 @@
         "https://support.funpay.com/*"
       ],
       "js": [
+        "content/safe_values.js",
         "content/features/support_theme.js"
       ],
       "run_at": "document_start",
@@ -64,6 +65,7 @@
         "https://funpay.com/*"
       ],
       "js": [
+        "content/safe_values.js",
         "content/theme_buttons.js",
         "content/theme_flash_fix.js",
         "content/early_custom_styles.js"
@@ -155,6 +157,7 @@
         "content/features/lot_context_menu.js",
         "background/retired_integrations.js",
         "content/features/settings_io.js",
+        "content/ui/settings_io_page.js",
         "content/features/bulk_lot_editor.js",
         "content/features/buyer_history.js",
         "content/features/chat_enhancements.js",

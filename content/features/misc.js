@@ -72,8 +72,10 @@ async function initializeQuickGamesMenu() {
             listContainer.appendChild(emptyLi);
         } else {
             games.forEach((game, index) => {
+                const url = FPTSafe.funpayUrl(game?.url);
+                if (!url) return;
                 const gameLi = createElement('li');
-                const gameLink = createElement('a', { href: game.url, target: '_blank', title: game.title });
+                const gameLink = createElement('a', { href: url, target: '_blank', title: game.title });
                 gameLink.textContent = game.title;
 
                 gameLink.addEventListener('contextmenu', async (e) => {

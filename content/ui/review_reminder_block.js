@@ -13,7 +13,6 @@
         ['{buyername}', 'Имя покупателя'], ['{lotname}', 'Название лота'],
         ['{orderid}', 'Номер заказа'], ['{orderlink}', 'Ссылка на заказ']
     ];
-    const DEMO = { buyername: 'Алексей', lotname: 'Игровой аккаунт', orderid: 'DEMO123', orderlink: 'https://funpay.com/orders/DEMO123/' };
     const LIMITS = {
         reviewReminderDelayHours: [1, 336, 24, 'Задержка — от 1 до 336 часов.'],
         reviewReminderExpiryDays: [1, 60, 7, 'Актуальность — от 1 до 60 дней.'],
@@ -40,10 +39,6 @@
             reviewReminderExcludedBuyers: list(source.reviewReminderExcludedBuyers),
             reviewReminderExcludedLots: list(source.reviewReminderExcludedLots)
         };
-    }
-
-    function renderTemplate(text) {
-        return String(text || '').replace(/\{(orderlink|orderid|buyername|lotname)\}/gi, (_, key) => DEMO[key.toLowerCase()]).trim();
     }
 
     async function mount(grid, popup, kit = {}) {
@@ -148,14 +143,8 @@
         const textHint = hint('info', 'Нужна ссылка {orderlink} или номер {orderid}. Без условий вроде «только за 5★».');
         const editorPane = node('div', 'fpt-rm-editor');
         editorPane.append(editor.wrap, chips, textHint);
-        const preview = node('aside', 'fpt-qr-preview fpt-rm-preview');
-        const previewHead = node('div', 'fpt-qr-preview-head');
-        previewHead.append(icon('visibility'), node('span', '', 'Так увидит покупатель'));
-        const previewBody = node('div', 'fpt-qr-preview-body');
-        previewBody.setAttribute('aria-live', 'polite');
-        preview.append(previewHead, previewBody);
         const compose = node('div', 'fpt-rm-compose');
-        compose.append(editorPane, preview);
+        compose.append(editorPane);
 
         function timing(key, iconName, label, unit, title) {
             const [min, max] = LIMITS[key];
@@ -173,7 +162,7 @@
             input.max = String(max);
             input.step = '1';
             input.inputMode = 'numeric';
-            control.append(input, node('span', 'fpt-rv-muted', unit));
+            control.append(root.FPTPopupUI?.createNumberStepper ? root.FPTPopupUI.createNumberStepper(input) : input, node('span', 'fpt-rv-muted', unit));
             wrap.append(copy, control);
             return input;
         }
@@ -256,27 +245,12 @@
         function renderSwitch() {
             settingsCard.card.dataset.state = enabled.checked ? 'on' : 'off';
         }
-        function renderPreview() {
+        function renderCounter() {
             counter.textContent = `${text.value.length} / 500`;
-            const label = node('div', 'fpt-qr-preview-label');
-            label.append(icon('forum'), node('span', '', `${DEMO.buyername} · ${DEMO.lotname}`));
-            const message = node('div', 'fpt-qr-message');
-            const avatar = node('span', 'fpt-qr-avatar', 'В');
-            avatar.setAttribute('aria-hidden', 'true');
-            const body = node('div', 'fpt-qr-message-body');
-            const meta = node('div', 'fpt-qr-message-meta');
-            const hours = Number(delay.value) || LIMITS.reviewReminderDelayHours[2];
-            meta.append(node('strong', '', 'Вы'), node('span', '', `через ${hours} ч после подтверждения`));
-            const content = renderTemplate(text.value);
-            const bubble = node('div', 'fpt-qr-bubble', content || 'Сообщение пустое');
-            if (!content) bubble.dataset.empty = 'true';
-            body.append(meta, bubble);
-            message.append(avatar, body);
-            previewBody.replaceChildren(label, message);
         }
         function changed() {
             renderSwitch();
-            renderPreview();
+            renderCounter();
             const isDirty = dirty();
             if (settingsCard.status.dataset.kind !== 'error' || !isDirty) {
                 setStatus(settingsCard.status, isDirty ? 'Есть несохранённые изменения' : '', isDirty ? 'dirty' : '');
@@ -732,7 +706,7 @@
         ordersPane.addEventListener('change', () => { if (activity.status.dataset.kind === 'error') { setStatus(activity.status, ''); renderSelection(); } });
 
         selectTab('orders');
-        renderPreview();
+        renderCounter();
         try {
             await loadSettings();
             settingsCard.controls.disabled = false;
@@ -755,5 +729,5 @@
         return settingsCard.card;
     }
 
-    root.FPTReviewReminderBlock = Object.freeze({ mount, normalize, renderTemplate });
+    root.FPTReviewReminderBlock = Object.freeze({ mount, normalize });
 })(window);

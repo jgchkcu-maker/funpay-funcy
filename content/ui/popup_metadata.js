@@ -1,43 +1,6 @@
 // Search terms and routes retained independently of replacement views.
 window.FPTPopupMetadata = Object.freeze({
   "pages": {
-    "general": {
-      "features": [
-        {
-          "text": "Отображение FunPay"
-        },
-        {
-          "text": "Скрыть баланс"
-        },
-        {
-          "text": "Отображение иконок промо-лотов"
-        },
-        {
-          "text": "Показывать комиссию разделов"
-        },
-        {
-          "text": "Показывать реальные цены лотов"
-        },
-        {
-          "text": "Заказы и статистика"
-        },
-        {
-          "text": "Показывать историю покупок в чате"
-        },
-        {
-          "text": "Показывать сумму неподтверждённых заказов"
-        },
-        {
-          "text": "Метка FunPay Funcy"
-        },
-        {
-          "text": "Показывать метку «FunPay Funcy» рядом с ником собеседника"
-        }
-      ],
-      "modes": [],
-      "defaultMode": null,
-      "buttons": []
-    },
     "accounts": {
       "features": [
         {
@@ -691,9 +654,15 @@ window.FPTPopupMetadata = Object.freeze({
         {
           "text": "Перенос настроек"
         },
+        { "text": "Скачать .fpconfig" },
+        { "text": "Импорт настроек из файла" },
+        { "text": "Выбор разделов при импорте" },
         {
           "text": "Сброс данных"
-        }
+        },
+        { "text": "Обработанные сообщения" },
+        { "text": "Поприветствованные покупатели" },
+        { "text": "Закреплённые лоты" }
       ],
       "modes": [],
       "defaultMode": null,

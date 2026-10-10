@@ -119,7 +119,7 @@
         wrap.setAttribute('role', 'group');
         wrap.setAttribute('aria-label', 'Вставить переменную');
         for (const [token, label] of list) {
-            const chip = button(label, 'fpt-rv-variable');
+            const chip = button(label, 'fpt-rv-variable', 'add');
             chip.title = token;
             chip.addEventListener('click', () => {
                 const start = textarea.selectionStart;
@@ -375,7 +375,7 @@
         const delayControl = node('div', 'fpt-rv-delay-control');
         const delay = node('input', 'fpt-rv-number fpt-control-field'); delay.id = 'fpt-rv-delay'; delay.type = 'number'; delay.min = '0'; delay.step = 'any';
         delay.addEventListener('input', () => { state.draft.bonusForReviewDelaySec = delay.value === '' ? '' : Number(delay.value); changed('bonuses'); });
-        delayControl.append(delay, node('span', 'fpt-rv-muted', 'сек')); delayWrap.append(delayCopy, delayControl);
+        delayControl.append(ui.createNumberStepper(delay), node('span', 'fpt-rv-muted', 'сек')); delayWrap.append(delayCopy, delayControl);
         const bonusToolbar = node('div', 'fpt-rv-bonus-toolbar');
         bonusToolbar.append(modes, delayWrap);
         bonuses.content.append(bonusToolbar, singleWrap, randomWrap);

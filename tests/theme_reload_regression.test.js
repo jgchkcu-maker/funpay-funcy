@@ -15,7 +15,7 @@ test('early theme loading preserves original, empty and legacy custom themes', a
             createElement: () => ({ remove() { styles.delete(this.id); } })
         };
         await vm.runInNewContext(fs.readFileSync(require.resolve('../content/theme_flash_fix.js'), 'utf8'), {
-            document, console, requestAnimationFrame: fn => fn(),
+            FPTSafe: require('../content/safe_values.js'), document, console, requestAnimationFrame: fn => fn(),
             chrome: { storage: { local: { get: async () => ({ enableCustomTheme: true, fpToolsTheme: saved }) } } }
         });
         assert.equal(styles.has('fp-tools-custom-theme'), custom, JSON.stringify(saved));

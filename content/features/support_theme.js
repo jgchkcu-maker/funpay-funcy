@@ -54,6 +54,7 @@
     }
 
     function manageFont(font) {
+        font = FPTSafe.fontName(font) || 'Helvetica Neue';
         let el = document.getElementById(FONT_ID);
         const isGoogle = GOOGLE_FONTS.includes(font);
         const content = isGoogle
@@ -68,7 +69,8 @@
     }
 
     function buildCss(s) {
-        const bgImageUrl = s.bgImage ? `url(${s.bgImage})` : 'url(https://i.ibb.co/ZpS0d56R/PH6-UEvp-Kn-KI.jpg)';
+        s = FPTSafe.themeSettings(s);
+        const bgImageUrl = FPTSafe.cssImageUrl(s.bgImage) || 'url(https://i.ibb.co/ZpS0d56R/PH6-UEvp-Kn-KI.jpg)';
         const op = s.containerBgOpacity;
 
         // Поверхности на основе цвета контейнера
@@ -146,7 +148,7 @@
         }
 
         body {
-            font-family: '${s.font}', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
+            font-family: '${FPTSafe.fontName(s.font) || 'Helvetica Neue'}', 'Helvetica Neue', Helvetica, Arial, sans-serif !important;
             color: ${s.textColor};
         }
 

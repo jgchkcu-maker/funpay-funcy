@@ -830,6 +830,19 @@ button.add-image-btn .material-symbols-rounded {
     background: var(--fptm-accent, #7663f6);
 }
 .fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:checked + .fpt-checkbox-indicator::after { opacity: 1; }
+/* Partly selected (e.g. some lots of a category): a dash instead of the tick. */
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:indeterminate + .fpt-checkbox-indicator {
+    border-color: var(--fptm-accent, #7663f6);
+    background: var(--fptm-accent, #7663f6);
+}
+.fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:indeterminate + .fpt-checkbox-indicator::after {
+    width: 9px;
+    height: 2px;
+    border: 0;
+    background: var(--fptm-on-accent, #fff);
+    opacity: 1;
+    transform: none;
+}
 .fp-tools-popup.fptm-themed .fpt-checkbox-control input[type="checkbox"]:focus-visible + .fpt-checkbox-indicator {
     outline: 2px solid var(--fptm-accent, #7663f6);
     outline-offset: 2px;
@@ -1482,22 +1495,12 @@ button.add-image-btn .material-symbols-rounded {
     color: var(--fptm-text, #16181d);
     background: var(--fptm-nav-field, #f4f3ff);
 }
-.fp-tools-popup.fptm-themed .fpt-bulk-group {
-    padding: 15px;
-    border-radius: 14px;
-    background: var(--fptm-bg, #fff);
-}
-.fp-tools-popup.fptm-themed .fpt-bulk-checks { align-items: center; gap: 12px 16px; }
 .fp-tools-popup.fptm-themed .fpt-lot-check-row {
     min-height: 24px;
     color: var(--fptm-muted, #626473);
     font-size: 13px;
     line-height: 18px;
 }
-.fp-tools-popup.fptm-themed .fpt-bulk-checks #fptBulkPriceMinimum { width: 126px; }
-.fp-tools-popup.fptm-themed .fpt-bulk-inline-fields #fptBulkPriceMode { width: min(320px, 100%); }
-.fp-tools-popup.fptm-themed .fpt-bulk-inline-fields #fptBulkPriceValue { width: 180px; }
-.fp-tools-popup.fptm-themed .fpt-bulk-inline-fields #fptBulkPriceStep { width: 140px; }
 .fp-tools-popup.fptm-themed .fpt-lot-category-row,
 .fp-tools-popup.fptm-themed .fpt-bulk-lot-row { min-height: 42px; }
 .fp-tools-popup.fptm-themed :is(.fp-tools-content, [role="dialog"], [aria-modal="true"]) :is(button, input[type="button"], input[type="submit"]) {

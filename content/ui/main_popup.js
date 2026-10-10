@@ -93,7 +93,6 @@ function createMainPopup() {
                 </div>
                 <ul>
                     <li class="fp-nav-divider">Основное</li>
-                    <li data-page="general"><a><span class="nav-icon material-symbols-rounded">settings</span><span>Отображение FunPay</span></a></li>
                     <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>
                     <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>
                     <li class="fp-nav-divider">Интерфейс</li>
@@ -119,7 +118,6 @@ function createMainPopup() {
                 <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>
             </nav>
             <main class="fp-tools-content">
-                <div class="fp-tools-page-content" data-page="general"></div>
                 <div class="fp-tools-page-content" data-page="accounts"></div>
                 <div class="fp-tools-page-content" data-page="needs"></div>
                 <div class="fp-tools-page-content" data-page="templates"></div>
@@ -641,7 +639,7 @@ const FPT_NAV_SECTIONS = Object.freeze([
     { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds']) },
     { id: 'finance', label: 'Финансы', icon: 'analytics', pages: Object.freeze(['finance_hub']) },
     { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'needs']) },
-    { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['accounts', 'general', 'settings_io']) },
+    { id: 'settings', label: 'Настройки', icon: 'settings', pages: Object.freeze(['accounts', 'settings_io']) },
     { id: 'help', label: 'Справка', icon: 'help', pages: Object.freeze(['tickets']) }
 ]);
 
@@ -659,7 +657,6 @@ const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     effects: 'Эффекты',
     needs: 'Элементы интерфейса',
     accounts: 'Аккаунты',
-    general: 'Отображение FunPay',
     settings_io: 'Перенос настроек',
     tickets: 'Поддержка FunPay',
 });

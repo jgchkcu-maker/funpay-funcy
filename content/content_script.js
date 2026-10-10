@@ -387,6 +387,13 @@
                         console.error('FunPay Funcy: не удалось открыть раздел поддержки:', error);
                     }
                 }
+                if (window.FPTSettingsIOPage && typeof window.FPTSettingsIOPage.mount === 'function') {
+                    try {
+                        await window.FPTSettingsIOPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел переноса настроек:', error);
+                    }
+                }
 
                 __fpPopupReady = true;
                 return toolsPopup;
