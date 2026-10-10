@@ -1,7 +1,7 @@
 // content/ui/page_windows.js
 // Shell for the windows the extension opens on FunPay pages: lot copy and import, the price
 // editor, generators, the label manager and so on. Every window gets the extension menu's
-// palette (fptApplyMenuTheme from content/ui/menu_theme.js) and the shared look from
+// palette (fptApplyMenuTheme from content/ui/main_popup.js) and the shared look from
 // css/page_windows.css, closes on Escape, the close button or a backdrop click, keeps Tab
 // inside itself and returns focus to where it was opened from.
 (function (root) {

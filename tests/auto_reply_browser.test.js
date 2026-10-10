@@ -72,7 +72,7 @@ async function openAutoReply(browser, autoReplies) {
         };
         window.fetch = async () => ({ ok: true, json: async () => ({}), text: async () => '' });
     }, autoReplies);
-    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'))));
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
     const content = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
     for (const js of content.js) await page.addScriptTag({ path: path.join(root, js) });

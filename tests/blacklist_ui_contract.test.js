@@ -18,12 +18,12 @@ test('blacklist: static markup stays empty and search metadata remains', () => a
 
 test('blacklist: the page is loaded by the manifest and mounted by the popup', () => {
     assert.ok(read('content/content_script.js').includes('FPTBlacklistPage.mount(toolsPopup)'));
-    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
+    const manifest = JSON.parse(read('manifest.json'));
     const scripts = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js')).js;
     const at = file => scripts.indexOf(file);
     assert.ok(at('content/ui/popup_components.js') < at('content/ui/blacklist_page.js'));
     assert.ok(at('content/features/blacklist.js') < at('content/ui/blacklist_page.js'), 'the actions register before the page');
-    assert.ok(at('content/ui/blacklist_page.js') < at('content/ui/popup_bundle_ready.js'));
+    assert.ok(at('content/ui/blacklist_page.js') < at('content/content_script.js'));
 });
 
 test('blacklist: the page uses the shared frame and blacklist popup actions only', () => {

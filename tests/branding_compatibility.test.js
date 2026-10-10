@@ -10,7 +10,7 @@ function read(relativePath) {
 }
 
 test('manifest exposes FunPay Funcy without changing extension wiring', () => {
-    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
+    const manifest = JSON.parse(read('manifest.json'));
 
     assert.equal(manifest.name, 'FunPay Funcy');
     assert.equal(manifest.action.default_title, 'FunPay Funcy');

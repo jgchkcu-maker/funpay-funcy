@@ -58,11 +58,11 @@ async function openReviews(browser, initial = {}, { dark = true, width = 1480, h
                 async sendMessage(message) { return message.action === 'fptReviewReminders' ? window.qaReminders(message) : window.qaSave(message.patch); } }
         };
     });
-    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_shared.css', 'css/popup_categories.css', ...(reminders ? ['css/automation.css'] : [])]) await page.addStyleTag({ path: path.join(root, file) });
+    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css', ...(reminders ? ['css/automation.css'] : [])]) await page.addStyleTag({ path: path.join(root, file) });
     // Reproduce the host rule responsible for the original heading underlay.
     await page.addStyleTag({ content: 'header { background: rgba(0,0,0,.08) !important; }' });
     for (const file of ['content/features/auto_reply_store.js', 'content/ui/popup_metadata.js', 'content/ui/popup_actions.js',
-        'content/ui/popup_attachments.js', 'content/ui/popup_components.js', 'content/ui/menu_theme.js', 'content/ui/main_popup.js',
+        'content/ui/popup_attachments.js', 'content/ui/popup_components.js', 'content/ui/main_popup.js',
         ...(reminders ? ['content/ui/automation_ui.js', 'content/ui/review_reminder_block.js'] : []), 'content/ui/auto_review_page.js']) {
         await page.addScriptTag({ path: path.join(root, file) });
     }

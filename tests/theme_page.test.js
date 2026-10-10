@@ -8,7 +8,7 @@ const { context } = require('./helpers/popup_actions_harness');
 const root = path.join(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const pageSource = read('content/ui/theme_page.js');
-const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
+const manifest = JSON.parse(read('manifest.json'));
 const contentScripts = manifest.content_scripts.find(entry => entry.js?.includes('content/content_script.js')).js;
 const styles = read('css/popup_categories.css');
 

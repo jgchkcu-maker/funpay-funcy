@@ -128,7 +128,7 @@ async function boot({ width = 1204, height = 900, data = seed() } = {}) {
             }
         };
     }, data);
-    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8')));
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
     const content = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
     for (const js of content.js) await page.addScriptTag({ path: path.join(root, js) });

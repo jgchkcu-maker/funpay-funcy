@@ -54,7 +54,7 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
             return { ok: true, json: async () => ({}), text: async () => '' };
         };
     }, { catalog: CATALOG, graphite: GRAPHITE, seed: initial });
-    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'))));
+    const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
     const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
     // Theme button colours load at document_start in the extension; the page shares that world.

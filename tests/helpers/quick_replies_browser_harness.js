@@ -64,9 +64,9 @@ async function openQuickReplies(browser, initial = {}, { dark = true, width = 14
             runtime: { id: 'qa', getURL: file => `https://funpay.com/${file}`, async sendMessage() { return {}; } }
         };
     }, { initial, failFirstRead });
-    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_shared.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
+    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
     for (const file of ['content/ui/popup_metadata.js', 'content/ui/popup_actions.js', 'content/ui/popup_attachments.js',
-        'content/ui/popup_components.js', 'content/ui/menu_theme.js', 'content/ui/main_popup.js', 'content/features/templates.js',
+        'content/ui/popup_components.js', 'content/ui/main_popup.js', 'content/features/templates.js',
         'content/features/slash_commands_ui.js', 'content/ui/quick_replies_page.js']) {
         await page.addScriptTag({ path: path.join(root, file) });
     }

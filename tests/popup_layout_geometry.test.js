@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
-const mainPopup = fs.readFileSync(path.join(root, 'content/ui/menu_theme.js'), 'utf8') + fs.readFileSync(path.join(root, 'content/ui/main_popup.js'), 'utf8');
+const mainPopup = fs.readFileSync(path.join(root, 'content/ui/main_popup.js'), 'utf8');
 const contentStyles = fs.readFileSync(path.join(root, 'css/content_styles.css'), 'utf8');
 const settingsLoader = fs.readFileSync(path.join(root, 'content/ui/settings_loader.js'), 'utf8');
 

@@ -18,12 +18,12 @@ test('auto_reply: static markup stays empty and search metadata remains', () => 
 
 test('auto_reply: the category view is mounted into the existing popup shell', () => {
     assert.ok(read('content/content_script.js').includes('FPTAutoReplyPage'), 'the popup boot path mounts the autoresponder view');
-    const manifest = require('./helpers/popup_bundle_harness').withPopupBundle(JSON.parse(read('manifest.json')));
+    const manifest = JSON.parse(read('manifest.json'));
     const content = manifest.content_scripts.find(script => script.js?.includes('content/content_script.js'));
     const scripts = content.js;
     assert.ok(scripts.includes('content/ui/auto_reply_page.js'), 'manifest loads the autoresponder page module');
-    assert.ok(scripts.indexOf('content/ui/auto_reply_page.js') < scripts.indexOf('content/ui/popup_bundle_ready.js'),
-        'the module loads before the readiness marker that permits mounting it');
+    assert.ok(scripts.indexOf('content/ui/auto_reply_page.js') < scripts.indexOf('content/content_script.js'),
+        'the module loads before the content script that mounts it');
     assert.ok(scripts.indexOf('content/ui/popup_components.js') < scripts.indexOf('content/ui/auto_reply_page.js'),
         'the shared popup components load first');
 });

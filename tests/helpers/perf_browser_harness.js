@@ -4,7 +4,7 @@ const root = path.resolve(__dirname, '../..');
 const { chromium } = require(process.env.FPT_PLAYWRIGHT || 'playwright');
 const launch = () => chromium.launch({ executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
 
-async function openSite(browser, { sourceRoot = root, dark = false, url = 'https://funpay.com/users/123/', seed = {}, eager = true, width = 1204, beforeScripts } = {}) {
+async function openSite(browser, { sourceRoot = root, dark = false, url = 'https://funpay.com/users/123/', seed = {}, width = 1204 } = {}) {
     const page = await browser.newPage({ viewport: { width, height: 789 } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -45,16 +45,10 @@ async function openSite(browser, { sourceRoot = root, dark = false, url = 'https
             }
         };
     }, seed);
-    if (beforeScripts) await beforeScripts(page);
     const manifest = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'manifest.json'), 'utf8'));
     const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(sourceRoot, css) });
     for (const js of ['content/safe_values.js', ...content.js]) await page.addScriptTag({ path: path.join(sourceRoot, js) });
-    if (eager && fs.existsSync(path.join(sourceRoot, 'background/popup_bundle.json'))) {
-        const bundle = JSON.parse(fs.readFileSync(path.join(sourceRoot, 'background/popup_bundle.json'), 'utf8'));
-        for (const css of bundle.css) await page.addStyleTag({ path: path.join(sourceRoot, css) });
-        for (const js of bundle.js) await page.addScriptTag({ path: path.join(sourceRoot, js) });
-    }
     await page.waitForFunction(() => typeof window.__fpEnsurePopup === 'function');
     return { page, errors };
 }

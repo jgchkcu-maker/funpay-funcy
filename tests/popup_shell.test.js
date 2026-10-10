@@ -11,7 +11,7 @@ function popupContext() {
             head: { appendChild() {} }, documentElement: {},
             createElement() { return { style: {}, dataset: {}, querySelectorAll() { return []; }, addEventListener() {} }; } }
     });
-    for (const file of ['content/ui/popup_metadata.js', 'content/ui/menu_theme.js', 'content/ui/main_popup.js']) {
+    for (const file of ['content/ui/popup_metadata.js', 'content/ui/main_popup.js']) {
         const absolute = path.join(__dirname, '..', file);
         if (fs.existsSync(absolute)) vm.runInContext(fs.readFileSync(absolute, 'utf8'), context, { filename: file });
     }

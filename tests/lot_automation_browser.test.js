@@ -12,7 +12,7 @@ async function createPage(width = 1204) {
     const browser = await chromium.launch({ executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
     const page = await browser.newPage({ viewport: { width, height: 900 } });
     await page.setContent(`<body data-app-data='{"userId":100}'><div class="fp-tools-popup fptm-themed active"><main class="fp-tools-content"><div class="fp-tools-page-content active" data-page="lot_io"></div></main></div></body>`);
-    for (const file of ['css/content_styles.css', 'css/popup_shared.css', 'css/popup_categories.css', 'css/fpt_icons_theme.css', 'css/automation.css']) {
+    for (const file of ['css/content_styles.css', 'css/popup_categories.css', 'css/fpt_icons_theme.css', 'css/automation.css']) {
         await page.addStyleTag({ path: path.join(root, file) });
     }
     const iconFont = fs.readFileSync(path.join(root, 'fonts/material-symbols-rounded.woff2')).toString('base64');
