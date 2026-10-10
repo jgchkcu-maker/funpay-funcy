@@ -407,7 +407,7 @@
         const heroActions = node('div', 'fpt-sp-hero-actions');
         const createButtonEl = createButton('fpt-sp-button fpt-sp-button--primary', 'add', 'Новая заявка');
         createButtonEl.id = 'fp-create-ticket-btn';
-        const refreshButton = createButton('fpt-sp-button', 'refresh', 'Обновить');
+        const refreshButton = createButton('fpt-toolbar-button', 'refresh', 'Обновить');
         refreshButton.id = 'fp-ticket-refresh-btn';
         const siteLink = externalLink('fpt-sp-link', `${SUPPORT_URL}/tickets`, 'Открыть сайт поддержки');
         heroActions.append(createButtonEl, refreshButton, siteLink);

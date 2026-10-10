@@ -303,6 +303,13 @@
                         console.error('FunPay Funcy: не удалось открыть раздел автовыдачи:', error);
                     }
                 }
+                if (window.FPTAutoOrdersPage && typeof window.FPTAutoOrdersPage.mount === 'function') {
+                    try {
+                        await window.FPTAutoOrdersPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('FunPay Funcy: не удалось открыть раздел заказов и выдач:', error);
+                    }
+                }
                 if (window.FPTAutoBumpPage && typeof window.FPTAutoBumpPage.mount === 'function') {
                     try {
                         await window.FPTAutoBumpPage.mount(toolsPopup);

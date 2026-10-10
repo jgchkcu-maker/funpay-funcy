@@ -159,6 +159,11 @@ test('refresh updates every account in turn and stale data refreshes on open', a
         // Opening the page with hour-old data refreshes it once, without toasts.
         await page.waitForFunction(() => window.qaStorage.read().fpToolsAccounts[0].balance === '15 000 ₽');
         await page.waitForFunction(() => !document.querySelector('#fptRefreshAccountsBtn').disabled);
+        // «Обновить» uses the shared toolbar button: same size as on the other category pages.
+        assert.deepEqual(await page.locator('#fptRefreshAccountsBtn').evaluate(el => {
+            const css = getComputedStyle(el);
+            return [Math.round(el.getBoundingClientRect().height), css.borderTopLeftRadius, css.fontSize];
+        }), [40, '12px', '14px']);
         assert.equal((await state()).fpToolsAccounts[1].balance, '900 ₽');
         assert.equal(await page.locator('.fpt-am-row[data-active="true"] .fpt-am-unread').textContent(), '7');
         assert.equal(await page.locator('.fpt-popup-toast').count(), 0);

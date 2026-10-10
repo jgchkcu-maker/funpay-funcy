@@ -186,9 +186,9 @@
         const actions = root.fptPopupActions;
         actions.register('lot_io', 'lotSchedules', forward('fptLotSchedules'));
         actions.register('lot_io', 'lotPricing', forward('fptPricing'));
-        actions.register('auto_delivery', 'ordersList', forward('fptOrders', { command: 'list' }));
-        actions.register('auto_delivery', 'orderCard', forward('fptOrders', { command: 'card' }));
-        actions.register('auto_delivery', 'orderCommand', forward('fptOrders'));
+        actions.register('auto_orders', 'ordersList', forward('fptOrders', { command: 'list' }));
+        actions.register('auto_orders', 'orderCard', forward('fptOrders', { command: 'card' }));
+        actions.register('auto_orders', 'orderCommand', forward('fptOrders'));
         actions.register('auto_review', 'reminders', forward('fptReviewReminders'));
     }
 })(window);

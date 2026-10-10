@@ -264,7 +264,8 @@
         search.placeholder = 'Найти аккаунт';
         search.setAttribute('aria-label', 'Найти аккаунт');
         search.hidden = true;
-        const refreshButton = button('Обновить', 'fpt-qr-ghost fpt-am-refresh', 'sync');
+        const refreshButton = button('Обновить', '', 'refresh');
+        refreshButton.className = 'fpt-toolbar-button fpt-am-refresh';
         refreshButton.id = 'fptRefreshAccountsBtn';
         refreshButton.title = 'Обновить баланс, аватары и непрочитанные';
         listHead.append(listTitle, countPill, updated, search, refreshButton);

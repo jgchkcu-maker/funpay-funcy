@@ -1,10 +1,10 @@
-// «Заказы и выдачи» — journal tab inside «Автовыдача». Lists orders by what needs a
+// «Заказы и выдачи» category. Lists orders by what needs a
 // decision and opens a card with stages, delivery parts, history and the actions
 // the background allows for this order right now.
 (function (root) {
     'use strict';
 
-    const PAGE_ID = 'auto_delivery';
+    const PAGE_ID = 'auto_orders';
     const ui = () => root.FPTAutomationUI;
     const run = (actionId, payload) => root.fptPopupActions.run(PAGE_ID, actionId, payload);
 
@@ -24,35 +24,149 @@
 
     function mount(container, popup) {
         const { node, button, pill, notice, formatDateTime } = ui();
+        const icon = name => {
+            const element = node('span', 'material-symbols-rounded', name);
+            element.setAttribute('aria-hidden', 'true');
+            return element;
+        };
+        const metric = (iconName, label) => {
+            const element = node('div', 'fpt-qr-metric fpt-ord-metric');
+            const badge = node('span', 'fpt-qr-metric-icon');
+            badge.appendChild(icon(iconName));
+            const copy = node('div', 'fpt-qr-metric-copy');
+            const value = node('strong', 'fpt-qr-metric-value', '—');
+            copy.append(node('span', 'fpt-qr-metric-label', label), value);
+            element.append(badge, copy);
+            return { element, value };
+        };
         const root$ = node('div', 'fpt-auto-orders');
-        const tabs = node('div', 'fpt-auto-tabs');
+
+        // Hero: journal state and the numbers a seller checks first, like the other categories.
+        const hero = node('section', 'fpt-qr-hero fpt-ord-hero');
+        hero.setAttribute('aria-labelledby', 'fpt-ord-hero-title');
+        hero.dataset.state = 'off';
+        const heroMain = node('div', 'fpt-qr-hero-main');
+        const heroIcon = node('span', 'fpt-qr-hero-icon');
+        heroIcon.appendChild(icon('local_shipping'));
+        const heroCopy = node('div', 'fpt-qr-hero-copy');
+        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
+        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Каждая выдача под контролем');
+        heroTitle.id = 'fpt-ord-hero-title';
+        const heroPill = node('span', 'fpt-qr-pill fpt-ord-hero-pill', 'Загрузка…');
+        heroPill.setAttribute('role', 'status');
+        heroTitleRow.append(heroTitle, heroPill);
+        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
+            'Заказы, которые обработала автовыдача: что уже выдано, что ещё в пути и где нужно ваше решение.'));
+        heroMain.append(heroIcon, heroCopy);
+        const metricAttention = metric('priority_high', 'Требуют решения');
+        const metricDelivery = metric('local_shipping', 'В выдаче');
+        const metricDone = metric('task_alt', 'Завершены');
+        const metrics = node('div', 'fpt-qr-metrics fpt-ord-metrics');
+        metrics.append(metricAttention.element, metricDelivery.element, metricDone.element);
+        hero.append(heroMain, metrics);
+
+        // Filters reuse the quick replies segmented strip: one track and a sliding thumb.
+        const tabs = node('div', 'fpt-qr-tabs fpt-ord-tabs');
         tabs.setAttribute('role', 'tablist');
         tabs.setAttribute('aria-label', 'Фильтр заказов');
+        tabs.appendChild(node('span', 'fpt-qr-tabs-pill'));
         const status = node('div', 'fpt-auto-status');
         status.setAttribute('aria-live', 'polite');
-        const list = node('div', 'fpt-auto-cards');
+        const list = node('div', 'fpt-auto-cards fpt-ord-list');
+        list.id = 'fpt-ord-list';
+        list.setAttribute('role', 'tabpanel');
         const refresh = button('Обновить', { iconName: 'refresh' });
-        const head = node('div', 'fpt-auto-actions');
+        refresh.className = 'fpt-toolbar-button fpt-ord-refresh';
+        refresh.title = 'Обновить список заказов';
+        const head = node('div', 'fpt-ord-toolbar');
         head.append(tabs, refresh);
-        root$.append(head, status,
-            notice('Здесь видны заказы, которые обработал единый исполнитель. «Подтверждена» значит, что FunPay вернул наше сообщение; иначе исход проверяется вручную.', 'info'),
-            list);
+        root$.append(hero, head, status, list);
         container.appendChild(root$);
 
         let filter = 'attention';
+        let loadSeq = 0;
         const setStatus = (text, tone = 'info') => { status.replaceChildren(); if (text) status.appendChild(notice(text, tone)); };
 
-        const renderTabs = counts => {
-            tabs.replaceChildren();
-            for (const [id, label] of FILTERS) {
-                const tab = node('button', 'fpt-auto-tab');
-                tab.type = 'button';
-                tab.setAttribute('role', 'tab');
-                tab.setAttribute('aria-selected', String(filter === id));
-                tab.append(node('span', '', label), node('span', 'fpt-auto-tab-count', counts?.[id] ?? 0));
-                tab.addEventListener('click', () => { filter = id; load(); });
-                tabs.appendChild(tab);
+        const tabButtons = FILTERS.map(([id, label], index) => {
+            const tab = node('button', 'fpt-qr-tab fpt-ord-tab');
+            tab.type = 'button';
+            tab.id = `fpt-ord-tab-${id}`;
+            tab.dataset.filter = id;
+            tab.setAttribute('role', 'tab');
+            tab.setAttribute('aria-controls', list.id);
+            const count = node('span', 'fpt-qr-tab-count', '0');
+            tab.append(node('span', 'fpt-ord-tab-label', label), count);
+            tab._count = count;
+            tab.addEventListener('click', () => {
+                if (filter === id) return;
+                selectFilter(id);
+                load();
+            });
+            tab.addEventListener('keydown', event => {
+                let next = -1;
+                if (event.key === 'ArrowRight') next = (index + 1) % FILTERS.length;
+                else if (event.key === 'ArrowLeft') next = (index - 1 + FILTERS.length) % FILTERS.length;
+                else if (event.key === 'Home') next = 0;
+                else if (event.key === 'End') next = FILTERS.length - 1;
+                if (next < 0) return;
+                event.preventDefault();
+                tabButtons[next].focus();
+                tabButtons[next].click();
+            });
+            tabs.appendChild(tab);
+            return tab;
+        });
+
+        function selectFilter(id) {
+            filter = id;
+            tabs.style.setProperty('--qr-tab-index', String(FILTERS.findIndex(([key]) => key === id)));
+            tabButtons.forEach(tab => {
+                const selected = tab.dataset.filter === id;
+                tab.setAttribute('aria-selected', String(selected));
+                tab.tabIndex = selected ? 0 : -1;
+                if (selected) list.setAttribute('aria-labelledby', tab.id);
+            });
+        }
+
+        const renderCounts = counts => {
+            tabButtons.forEach(tab => { tab._count.textContent = String(counts?.[tab.dataset.filter] ?? 0); });
+            const value = key => (Number.isFinite(counts?.[key]) ? String(counts[key]) : '—');
+            metricAttention.value.textContent = value('attention');
+            metricDelivery.value.textContent = value('delivery');
+            metricDone.value.textContent = value('done');
+            const attention = Number(counts?.attention) || 0;
+            const all = Number(counts?.all) || 0;
+            metricAttention.element.dataset.tone = attention ? 'warning' : '';
+            hero.dataset.state = all ? 'on' : 'off';
+            if (attention) {
+                heroPill.textContent = 'Нужно ваше решение';
+                heroPill.dataset.kind = 'warning';
+            } else if (all) {
+                heroPill.textContent = 'Всё под контролем';
+                heroPill.dataset.kind = 'success';
+            } else {
+                heroPill.textContent = 'Заказов пока нет';
+                delete heroPill.dataset.kind;
             }
+        };
+
+        const emptyState = () => {
+            const attentionFilter = filter === 'attention';
+            const element = node('div', 'fpt-qr-empty fpt-ord-empty');
+            element.setAttribute('role', 'status');
+            element.append(icon(attentionFilter ? 'task_alt' : 'inbox'),
+                node('strong', '', attentionFilter ? 'Нет заказов, которые требуют решения' : 'Заказов нет'),
+                node('span', '', attentionFilter
+                    ? 'Когда выдача остановится или её исход будет неясен, заказ появится здесь.'
+                    : 'Заказы появятся, когда автовыдача обработает первую покупку.'));
+            return element;
+        };
+
+        // Each new result replays the list entry, like a pane switch in quick replies.
+        const replayListAnimation = () => {
+            list.classList.remove('fpt-ord-list--in');
+            void list.offsetWidth;
+            list.classList.add('fpt-ord-list--in');
         };
 
         const stageLine = item => {
@@ -67,16 +181,21 @@
         };
 
         async function load() {
+            const seq = ++loadSeq;
+            refresh.disabled = true;
+            refresh.setAttribute('aria-busy', 'true');
+            list.setAttribute('aria-busy', 'true');
             try {
                 const result = await run('ordersList', { filter });
-                renderTabs(result.counts);
+                // A newer filter click or refresh owns the list now.
+                if (seq !== loadSeq) return;
+                setStatus('');
+                renderCounts(result.counts);
                 list.replaceChildren();
-                if (!result.items.length) {
-                    list.appendChild(node('p', 'fpt-auto-empty', filter === 'attention' ? 'Нет заказов, которые требуют решения.' : 'Заказов нет.'));
-                    return;
-                }
-                for (const item of result.items) {
+                if (!result.items.length) list.appendChild(emptyState());
+                result.items.forEach((item, index) => {
                     const card = node('article', 'fpt-auto-card');
+                    card.style.setProperty('--fpt-ord-index', String(Math.min(index, 8)));
                     if (item.attention) card.dataset.tone = 'warning';
                     const cardHead = node('div', 'fpt-auto-card-head');
                     const title = node('strong', '', `#${item.orderId} · ${item.lotName || 'Лот'}`);
@@ -90,9 +209,16 @@
                     actions.appendChild(open);
                     card.appendChild(actions);
                     list.appendChild(card);
-                }
+                });
+                replayListAnimation();
             } catch (error) {
-                setStatus(error.message, 'error');
+                if (seq === loadSeq) setStatus(error.message, 'error');
+            } finally {
+                if (seq === loadSeq) {
+                    refresh.disabled = false;
+                    refresh.setAttribute('aria-busy', 'false');
+                    list.removeAttribute('aria-busy');
+                }
             }
         }
 
@@ -207,7 +333,7 @@
         }
 
         refresh.addEventListener('click', load);
-        renderTabs({});
+        selectFilter(filter);
         return { load };
     }
 

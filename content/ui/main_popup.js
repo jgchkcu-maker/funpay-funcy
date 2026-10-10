@@ -103,6 +103,7 @@ function createMainPopup() {
                     <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>
                     <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>
                     <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>
+                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>
                     <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>
                     <li class="fp-nav-divider">Торговля</li>
                     <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>
@@ -131,6 +132,7 @@ function createMainPopup() {
                 <div class="fp-tools-page-content" data-page="settings_io"></div>
                 <div class="fp-tools-page-content" data-page="blacklist"></div>
                 <div class="fp-tools-page-content" data-page="auto_delivery"></div>
+                <div class="fp-tools-page-content" data-page="auto_orders"></div>
                 <div class="fp-tools-page-content" data-page="tickets"></div>
                 <div class="fp-tools-page-content" data-page="sounds"></div>
             </main>
@@ -358,10 +360,10 @@ const FPT_MENU_THEME_CSS = `
     outline:none !important; box-shadow:none !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; align-items:stretch; gap:6px; min-width:0; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group{ width:100%; min-width:0; border-radius:22px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group{ width:100%; min-width:0; border-radius:18px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{
     box-sizing:border-box; width:100%; min-width:0; height:54px; min-height:54px; display:flex; align-items:center; gap:12px; margin-inline:auto; padding:0 12px;
-    border:1px solid transparent !important; border-radius:22px; background:transparent !important;
+    border:1px solid transparent !important; border-radius:18px; background:transparent !important;
     color:var(--fptm-text) !important; box-shadow:none !important; font:inherit; font-size:16px; font-weight:500;
     text-align:left; cursor:pointer; transition:padding-left .38s cubic-bezier(.4,0,.2,1), gap .38s cubic-bezier(.4,0,.2,1), transform .38s cubic-bezier(.34,1.16,.64,1), background-color .24s cubic-bezier(.22,1,.36,1), color .24s cubic-bezier(.22,1,.36,1), border-color .24s cubic-bezier(.22,1,.36,1), box-shadow .24s cubic-bezier(.22,1,.36,1);
 }
@@ -369,22 +371,11 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav:not(.is-nav-collapsed):not(.is-nav-opening) .fpt-nav-group-toggle:hover:not(:active){ transform:translateY(-1px) scale(1.012); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded{ background:transparent !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle{
-    background:#7663f6 !important; border-color:transparent !important; color:#fff !important; box-shadow:0 8px 10px rgba(118,99,246,.22) !important;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-toggle{
     background:transparent !important; border-color:transparent !important; color:var(--fptm-text) !important; box-shadow:none !important;
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-toggle:hover:not(:active){ background:transparent !important; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:active{
-    background:#7663f6 !important; border-color:transparent !important; color:#fff !important; box-shadow:0 8px 10px rgba(118,99,246,.22) !important;
-}
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:active:hover{ background:#6d59ed !important; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:active{ background:var(--fptm-accent-soft, rgba(118,99,246,.12)) !important; border-color:transparent !important; box-shadow:none !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-icon{ width:34px; height:34px; flex:0 0 34px; object-fit:contain; display:block; filter:brightness(0) invert(0) opacity(.82); transition:filter .24s ease; }
 .fp-tools-popup.fptm-themed.fptm-dark .fp-tools-nav .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(.85); }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-icon,
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle:active .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(1); }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-icon{ filter:brightness(0) invert(0) opacity(.82); }
-.fp-tools-popup.fptm-themed.fptm-dark .fp-tools-nav.is-nav-opening .fpt-nav-group.is-expanded .fpt-nav-group-icon{ filter:brightness(0) invert(1) opacity(.85); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{
     min-width:0; max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:inherit !important; opacity:1;
     transition:max-width .38s cubic-bezier(.4,0,.2,1), opacity .26s ease .06s;
@@ -400,14 +391,18 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav ul.fpt-nav-group-list{ list-style:none; margin:0; padding:6px 0 8px 0; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a{
     display:flex; align-items:center; min-height:44px; padding:8px 10px 8px 0; gap:10px; color:var(--fptm-text) !important;
-    background:transparent !important; border-radius:10px !important; box-shadow:none !important; border:1px solid transparent !important;
+    background:transparent !important; border-radius:14px !important; box-shadow:none !important; border:1px solid transparent !important;
     font-size:15px; font-weight:500; transition:background .15s ease, color .15s ease;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a:hover{ background:var(--fptm-nav-row-hover, rgba(118,99,246,.08)) !important; color:var(--fptm-text) !important; }
+/* The selected page carries the accent; its category stays neutral. */
 .fp-tools-popup.fptm-themed .fp-tools-nav li.active a,
+.fp-tools-popup.fptm-themed .fp-tools-nav li.active a:hover,
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child.active a{
-    background:transparent !important; color:var(--fptm-text) !important; border-color:transparent !important; font-weight:500 !important;
+    background:rgba(118,99,246,.86) !important; color:#fff !important; border-color:transparent !important;
+    box-shadow:0 6px 12px rgba(118,99,246,.18) !important; font-weight:500 !important;
 }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child.active a .nav-icon{ color:#fff !important; opacity:1; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li[data-page] a > span:last-child{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:15px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav li a .nav-icon{ color:inherit !important; opacity:.92; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child a::before{ display:none !important; }
@@ -438,7 +433,7 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-search-input{ opacity:0; visibility:hidden; pointer-events:none; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-search-clear{ display:none !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-groups{ gap:6px; }
-.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle{ width:100%; height:54px; min-height:54px; justify-content:flex-start; gap:0; padding:0 0 0 23px; border-radius:22px; }
+.fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle{ width:100%; height:54px; min-height:54px; justify-content:flex-start; gap:0; padding:0 0 0 23px; border-radius:18px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active,
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active:hover{ background:transparent !important; color:var(--fptm-text) !important; box-shadow:none !important; }
 .fp-tools-popup.fptm-themed .fp-tools-nav.is-nav-collapsed .fpt-nav-group-toggle:active .fpt-nav-group-icon{ filter:brightness(0) invert(0) opacity(.82); }
@@ -635,7 +630,7 @@ let _fpThemeCatalog = null;   // массив тем после загрузки
 let _fpThemeCatalogLoaded = false;
 
 const FPT_NAV_SECTIONS = Object.freeze([
-    { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'autobump']) },
+    { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'auto_orders', 'autobump']) },
     { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds']) },
     { id: 'finance', label: 'Финансы', icon: 'analytics', pages: Object.freeze(['finance_hub']) },
     { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'needs']) },
@@ -646,6 +641,7 @@ const FPT_NAV_SECTIONS = Object.freeze([
 const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     lot_io: 'Управление лотами',
     auto_delivery: 'Автовыдача',
+    auto_orders: 'Заказы и выдачи',
     autobump: 'Автоподнятие',
     auto_reply: 'Автоответчик',
     auto_review: 'Отзывы и бонусы',

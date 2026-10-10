@@ -162,7 +162,7 @@ function testNavigationGeometryAndTypographyContract() {
         const toggle = extractRule(layer.css, layer.toggle);
         assert.match(toggle, /min-height:\s*54px/, layer.name + ' must use compact category hit areas');
         assert.match(toggle, /padding:\s*0\s+12px/, layer.name + ' must use 12px horizontal category padding');
-        assert.match(toggle, /border-radius:\s*22px/, layer.name + ' must use the rounded reference row radius');
+        assert.match(toggle, /border-radius:\s*18px/, layer.name + ' must use the rounded reference row radius');
         assert.match(toggle, /font-size:\s*16px/, layer.name + ' category labels must remain 16px');
         assert.match(toggle, /font-weight:\s*500/, layer.name + ' category labels must use medium weight');
         assert.match(toggle, /border:\s*1px solid transparent/, layer.name + ' inactive sections must not look like separate cards');
@@ -223,9 +223,9 @@ function testExpandedSpriteStateAndStableCategorySurface() {
     ];
     for (const [stylesheet, selector] of activeRules) {
         const active = extractRule(stylesheet, selector);
-        assert.match(active, /background:\s*#7663f6/i, 'expanded category must use the reference violet pill');
-        assert.match(active, /color:\s*#fff/i, 'expanded category label and icon must be white');
-        assert.match(active, /border-color:\s*transparent/i, 'the expanded pill must not add a second border');
+        assert.match(active, /background:\s*transparent/i, 'expanded category must stay neutral; the selected page carries the accent');
+        assert.doesNotMatch(active, /#7663f6/i, 'expanded category must not use the violet pill');
+        assert.match(active, /border-color:\s*transparent/i, 'the expanded row must not add a border');
         assert.doesNotMatch(active, /transform\s*:/, 'expanded category row must not scale');
     }
 
@@ -301,7 +301,7 @@ function testMenuHasIndependentReferenceSurface() {
 
     const toggleBlock = extractRule(css, '.fp-tools-nav .fpt-nav-group-toggle {');
     assert.match(toggleBlock, /min-height:\s*54px/);
-    assert.match(toggleBlock, /border-radius:\s*22px/);
+    assert.match(toggleBlock, /border-radius:\s*18px/);
 
     const iconBlock = extractRule(css, '.fp-tools-nav .fpt-nav-group-icon {');
     assert.match(iconBlock, /width:\s*34px/);

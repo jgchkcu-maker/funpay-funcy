@@ -42,6 +42,7 @@ test('feature search metadata remains available after removing category headings
     assert.ok(features, 'search must not depend on removed DOM');
     assert.ok(features.pages.auto_reply.features.some(entry => entry.text.includes('Приветствие')));
     assert.ok(features.pages.theme.features.some(entry => entry.text.includes('Цвет')));
+    assert.ok(features.pages.auto_orders.features.some(entry => entry.text.includes('Заказы и выдачи')));
     assert.equal(Object.hasOwn(features.pages, 'piggy_banks'), false);
     assert.equal(Object.hasOwn(features.pages, 'calculator'), false);
     assert.deepEqual(Array.from(features.pages.finance_hub.modes), ['overview', 'sales', 'purchases', 'profit', 'potential', 'operations']);

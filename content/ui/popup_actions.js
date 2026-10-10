@@ -4,7 +4,7 @@
     'use strict';
     const pages = new Set(['accounts', 'needs', 'templates', 'auto_review',
         'auto_reply', 'lot_io', 'finance_hub', 'theme', 'autobump',
-        'effects', 'settings_io', 'blacklist', 'auto_delivery', 'tickets', 'sounds']);
+        'effects', 'settings_io', 'blacklist', 'auto_delivery', 'auto_orders', 'tickets', 'sounds']);
     const actions = new Map();
     let writeQueue = Promise.resolve();
     const object = value => value && typeof value === 'object' && !Array.isArray(value);

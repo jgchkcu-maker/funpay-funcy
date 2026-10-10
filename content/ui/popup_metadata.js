@@ -720,6 +720,25 @@ window.FPTPopupMetadata = Object.freeze({
         "fp-load-delivery-lots-btn"
       ]
     },
+    "auto_orders": {
+      "features": [
+        {
+          "text": "Заказы и выдачи"
+        },
+        {
+          "text": "Заказы, требующие решения"
+        },
+        {
+          "text": "Статус и история выдачи"
+        },
+        {
+          "text": "Карточка заказа и повторная отправка части"
+        }
+      ],
+      "modes": [],
+      "defaultMode": null,
+      "buttons": []
+    },
     "tickets": {
       "features": [
         {

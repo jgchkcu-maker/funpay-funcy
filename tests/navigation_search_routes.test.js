@@ -10,7 +10,7 @@ const searchEnd = popupSource.indexOf('async function loadLastActivePage()', sea
 assert.ok(searchStart >= 0 && searchEnd > searchStart, 'setupNavSearch source block exists');
 
 const sections = [
-    { id: 'sales', label: 'Лоты и продажи', pages: ['lot_io', 'auto_delivery', 'autobump'] },
+    { id: 'sales', label: 'Лоты и продажи', pages: ['lot_io', 'auto_delivery', 'auto_orders', 'autobump'] },
     { id: 'customers', label: 'Покупатели', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds'] },
     { id: 'finance', label: 'Финансы', pages: ['finance_hub'] },
     { id: 'interface', label: 'Интерфейс', pages: ['theme', 'effects', 'needs'] },
@@ -18,7 +18,7 @@ const sections = [
     { id: 'help', label: 'Справка', pages: ['tickets'] }
 ];
 const labels = {
-    lot_io: 'Управление лотами', auto_delivery: 'Автовыдача', autobump: 'Автоподнятие',
+    lot_io: 'Управление лотами', auto_delivery: 'Автовыдача', auto_orders: 'Заказы и выдачи', autobump: 'Автоподнятие',
     auto_reply: 'Автоответчик', auto_review: 'Отзывы и бонусы', templates: 'Быстрые ответы', blacklist: 'Чёрный список',
     sounds: 'Звук уведомлений',
     finance_hub: 'Обзор и аналитика', theme: 'Темы', effects: 'Эффекты',

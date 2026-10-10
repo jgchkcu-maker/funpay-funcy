@@ -314,7 +314,7 @@
         }
 
         const actions = node('div', 'fpt-fin-actions');
-        const refreshBtn = button('fpt-fin-btn', 'refresh', 'Обновить', { title: 'Обновить данные с FunPay' });
+        const refreshBtn = button('fpt-fin-btn fpt-toolbar-button', 'refresh', 'Обновить', { title: 'Обновить данные с FunPay' });
         refreshBtn.id = 'fptFinRefreshBtn';
         const exportWrap = node('div', 'fpt-fin-export');
         const exportBtn = button('fpt-fin-btn', 'download', 'Экспорт', { title: 'Экспорт данных' });

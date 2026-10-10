@@ -317,7 +317,7 @@
 }
 .fp-tools-popup.fptm-themed .fpt-auto-table td:last-child { color: var(--fptm-muted); }
 
-/* Tabs inside an existing category page (Автовыдача: Лоты / Заказы и выдачи). */
+/* Tabs inside category pages, including the order journal filters. */
 .fp-tools-popup.fptm-themed .fpt-auto-tabs {
     display: inline-flex;
     gap: 4px;
@@ -375,11 +375,91 @@
     overflow-wrap: anywhere;
     user-select: text;
 }
-.fp-tools-popup.fptm-themed .fpt-ad-view-tabs { margin-bottom: 14px; justify-self: start; }
 /* Вкладка «Лоты и склад»: hero и список лотов — отдельные блоки с тем же шагом, что у .fpt-auto-delivery. */
 .fp-tools-popup.fptm-themed .fpt-ad-panel[data-panel="lots"] { min-width: 0; display: grid; gap: 18px; }
-.fp-tools-popup.fptm-themed .fpt-auto-orders { display: flex; flex-direction: column; gap: 12px; }
-.fp-tools-popup.fptm-themed .fpt-auto-orders .fpt-auto-tabs { flex-wrap: wrap; }
+/* «Заказы и выдачи»: same rhythm, hero, segmented tabs and motion as «Быстрые ответы». */
+.fp-tools-popup.fptm-themed .fpt-auto-orders {
+    position: relative;
+    min-width: 0;
+    margin-top: 8px;
+    display: grid;
+    gap: 18px;
+    container-type: inline-size;
+    container-name: fpt-auto-orders;
+    color: var(--fptm-text);
+}
+.fp-tools-popup.fptm-themed .fpt-auto-orders [hidden] { display: none !important; }
+.fp-tools-popup.fptm-themed .fpt-auto-orders .material-symbols-rounded { width: 1em; overflow: hidden; text-align: center; }
+.fp-tools-popup.fptm-themed .fpt-ord-help:not([hidden]) { animation: fpt-ad-panel-in .42s cubic-bezier(.2, 1.35, .4, 1) both; transform-origin: top right; }
+.fp-tools-popup.fptm-themed .fpt-auto-orders .fpt-auto-status:empty { display: none; }
+.fp-tools-popup.fptm-themed .fpt-qr-pill.fpt-ord-hero-pill { transition: color .25s ease, background .25s ease, border-color .25s ease; }
+.fp-tools-popup.fptm-themed .fpt-ord-metric .fpt-qr-metric-icon { transition: color .2s ease, background .2s ease; }
+.fp-tools-popup.fptm-themed .fpt-ord-metric[data-tone="warning"] { border-color: var(--fptm-warning-border); }
+.fp-tools-popup.fptm-themed .fpt-ord-metric[data-tone="warning"] .fpt-qr-metric-icon { color: var(--fptm-warning); background: var(--fptm-warning-soft); }
+.fp-tools-popup.fptm-themed .fpt-ord-toolbar {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.fp-tools-popup.fptm-themed .fpt-qr-tabs.fpt-ord-tabs { --fpt-seg-pad: 3px; --fpt-tab-height: 32px; flex: 0 1 auto; width: min(100%, 620px); grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.fp-tools-popup.fptm-themed .fpt-ord-tabs .fpt-qr-tabs-pill { width: calc((100% - 2 * var(--fpt-seg-pad)) / 4); }
+.fp-tools-popup.fptm-themed .fpt-ord-tab { padding: 0 8px; }
+.fp-tools-popup.fptm-themed .fpt-ord-tab-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fp-tools-popup.fptm-themed .fpt-ord-refresh { flex: 0 0 auto; }
+.fp-tools-popup.fptm-themed .fpt-ord-refresh .material-symbols-rounded { transition: transform .5s cubic-bezier(.22, 1, .36, 1); }
+.fp-tools-popup.fptm-themed .fpt-ord-refresh:hover:not(:disabled) .material-symbols-rounded { transform: rotate(180deg); }
+.fp-tools-popup.fptm-themed .fpt-ord-refresh:disabled { cursor: wait; }
+.fp-tools-popup.fptm-themed .fpt-ord-refresh[aria-busy="true"] .material-symbols-rounded { animation: fpt-ad-spin .9s linear infinite; }
+.fp-tools-popup.fptm-themed .fpt-ord-list { transition: opacity .2s ease; }
+.fp-tools-popup.fptm-themed .fpt-ord-list[aria-busy="true"] { opacity: .6; }
+.fp-tools-popup.fptm-themed .fpt-ord-list--in { animation: fpt-ad-panel-in .42s cubic-bezier(.2, 1.35, .4, 1) both; transform-origin: top center; }
+.fp-tools-popup.fptm-themed .fpt-ord-list .fpt-auto-card {
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: var(--fptm-nav-field);
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    animation: fpt-fin-pane-in .36s cubic-bezier(.2, .75, .25, 1) both;
+    animation-delay: calc(var(--fpt-ord-index, 0) * 40ms);
+}
+.fp-tools-popup.fptm-themed .fpt-ord-list .fpt-auto-card:hover { border-color: var(--fptm-accent-border); box-shadow: 0 8px 22px color-mix(in srgb, var(--fptm-accent) 8%, transparent); transform: translateY(-1px); }
+.fp-tools-popup.fptm-themed .fpt-ord-list .fpt-auto-card[data-tone="warning"]:hover { border-color: var(--fptm-warning-border); }
+@container fpt-auto-orders (max-width: 680px) {
+    .fp-tools-popup.fptm-themed .fpt-ord-toolbar { flex-wrap: wrap; }
+    .fp-tools-popup.fptm-themed .fpt-qr-tabs.fpt-ord-tabs { width: 100%; }
+}
+@container fpt-auto-orders (max-width: 600px) {
+    .fp-tools-popup.fptm-themed .fpt-ord-hero.fpt-qr-hero { padding: 16px; }
+    .fp-tools-popup.fptm-themed .fpt-ord-hero .fpt-qr-hero-main { grid-template-columns: 52px minmax(0, 1fr); gap: 12px; }
+    .fp-tools-popup.fptm-themed .fpt-ord-hero .fpt-qr-hero-icon { width: 52px; height: 52px; }
+    .fp-tools-popup.fptm-themed .fpt-ord-hero .fpt-qr-hero-icon .material-symbols-rounded { font-size: 27px; }
+    .fp-tools-popup.fptm-themed .fpt-ord-hero .fpt-qr-metric { padding: 10px 12px; }
+    .fp-tools-popup.fptm-themed .fpt-ord-hero .fpt-qr-metric-icon { display: none; }
+}
+@container fpt-auto-orders (max-width: 520px) {
+    .fp-tools-popup.fptm-themed .fpt-ord-hero .fpt-qr-hero-title { font-size: 18px; }
+    .fp-tools-popup.fptm-themed .fpt-ord-hero .fpt-qr-hero-description { font-size: 13px; }
+    .fp-tools-popup.fptm-themed .fpt-qr-tabs.fpt-ord-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .fp-tools-popup.fptm-themed .fpt-ord-tabs .fpt-qr-tabs-pill {
+        width: calc((100% - 2 * var(--fpt-seg-pad)) / 2);
+        height: var(--fpt-tab-height);
+        bottom: auto;
+        transform: translate(calc(mod(var(--qr-tab-index), 2) * 100%), calc(round(down, var(--qr-tab-index) / 2) * 100%));
+    }
+    .fp-tools-popup.fptm-themed .fpt-ord-refresh { width: 100%; justify-content: center; }
+}
+@container fpt-auto-orders (max-width: 420px) {
+    .fp-tools-popup.fptm-themed .fpt-qr-metrics.fpt-ord-metrics { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup.fptm-themed .fpt-ord-help:not([hidden]),
+    .fp-tools-popup.fptm-themed .fpt-ord-list--in,
+    .fp-tools-popup.fptm-themed .fpt-ord-list .fpt-auto-card { animation: none !important; }
+    .fp-tools-popup.fptm-themed .fpt-ord-tabs .fpt-qr-tabs-pill,
+    .fp-tools-popup.fptm-themed .fpt-ord-refresh .material-symbols-rounded,
+    .fp-tools-popup.fptm-themed .fpt-ord-list .fpt-auto-card { transition: none; }
+}
 .fp-tools-popup.fptm-themed .fpt-auto-section a {
     align-self: flex-start;
     color: var(--fptm-accent);

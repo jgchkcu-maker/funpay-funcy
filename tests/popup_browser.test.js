@@ -53,6 +53,8 @@ test('real browser: lot management screen, navigation and shell geometry', async
                                 { id: '/lots/42', name: 'Аккаунты', lots: [{ id: '501', nodeId: '42', title: 'Премиум аккаунт' }] },
                                 { id: '/lots/43', name: 'Пустая категория', lots: [] }
                             ] }
+                            : message?.action === 'fptOrders'
+                                ? { success: true, data: { counts: { attention: 0, delivery: 0, done: 0, all: 0 }, items: [] } }
                             : message?.action === 'getLotForExport'
                                 ? { success: true, data: { 'fields[summary][ru]': 'Премиум аккаунт', price: '100' } }
                                 : { success: true, data: [], ok: true };
@@ -73,7 +75,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));
         await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'lot_io');
         const pages = await page.locator('.fp-tools-page-content').evaluateAll(nodes => nodes.map(n => n.dataset.page));
-        assert.equal(pages.length, 17);
+        assert.equal(pages.length, 16);
         assert.ok(!pages.includes('telegram') && !pages.includes('support') && !pages.includes('global_chat'));
         assert.equal(await page.locator('.fpt-nav-footer, .fpt-nav-quick-actions, [data-page="telegram"], [data-page="support"]').count(), 0);
         await page.evaluate(() => window.fptOpenPopupPage('lot_io'));
@@ -212,6 +214,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         }
         await page.setViewportSize({ width: 1200, height: 780 });
         await page.waitForTimeout(380);
+        const headerSignatures = new Map();
         for (const id of pages) {
             await page.evaluate(id => document.querySelector('.fp-tools-popup')._fptNavSections.showSectionForPage(id), id);
             await page.locator(`.fp-tools-nav li[data-page="${id}"] a`).click();
@@ -237,10 +240,36 @@ test('real browser: lot management screen, navigation and shell geometry', async
             });
             assert.equal(headingMetrics.weight, '600', `${id} title should use the shared lighter weight`);
             assert.equal(headingMetrics.headerOffset, '0px', `${id} category header has no visual offset`);
+            headerSignatures.set(id, await header.evaluate(element => {
+                const screen = element.parentElement;
+                const pick = (node, keys) => {
+                    if (!node) return null;
+                    const style = getComputedStyle(node);
+                    return Object.fromEntries(keys.map(key => [key, style[key]]));
+                };
+                const motion = ['animationName', 'animationDuration', 'animationTimingFunction', 'animationDelay', 'transitionProperty', 'transitionDuration', 'transitionTimingFunction'];
+                const rect = element.getBoundingClientRect();
+                const screenRect = screen.getBoundingClientRect();
+                return {
+                    geometry: {
+                        width: Math.round(rect.width),
+                        height: Math.round(rect.height),
+                        insetLeft: Math.round(rect.left - screenRect.left),
+                        insetRight: Math.round(screenRect.right - rect.right),
+                        insetTop: Math.round(rect.top - screenRect.top)
+                    },
+                    screen: pick(screen, ['paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', ...motion]),
+                    header: pick(element, ['display', 'gridTemplateColumns', 'alignItems', 'gap', 'minHeight', 'margin', 'padding', 'borderTopWidth', 'borderBottomWidth', 'backgroundColor', 'boxShadow', ...motion]),
+                    title: pick(element.querySelector('.fpt-category-title'), ['fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'color', 'margin', ...motion]),
+                    help: pick(element.querySelector('.fpt-category-help'), ['width', 'height', 'borderRadius', 'borderTopWidth', ...motion])
+                };
+            }));
             if (id === 'lot_io') {
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="lot_io"] > .fpt-lot-io').count(), 1);
             } else if (id === 'auto_delivery') {
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_delivery"] > .fpt-auto-delivery').count(), 1);
+            } else if (id === 'auto_orders') {
+                assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_orders"] > .fpt-auto-orders').count(), 1);
             } else if (id === 'autobump') {
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="autobump"] > .fpt-auto-bump').count(), 1);
             } else if (id === 'finance_hub') {
@@ -263,9 +292,26 @@ test('real browser: lot management screen, navigation and shell geometry', async
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="tickets"] > .fpt-sp').count(), 1);
             } else if (id === 'sounds') {
                 assert.equal(await page.locator('.fp-tools-page-content[data-page="sounds"] > .fpt-ns').count(), 1);
+            } else if (id === 'settings_io') {
+                assert.equal(await page.locator('.fp-tools-page-content[data-page="settings_io"] > .fpt-sio').count(), 1);
+            } else if (id === 'blacklist') {
+                assert.equal(await page.locator('.fp-tools-page-content[data-page="blacklist"] > .fpt-bl').count(), 1);
             } else {
                 assert.equal(await page.locator(`.fp-tools-page-content[data-page="${id}"] > *:not(.fpt-category-header):not(.fpt-popup-toast-region)`).count(), 0, id);
             }
+        }
+        // «Быстрые ответы» is the reference header: every category matches its design, width and motion.
+        const referenceHeader = headerSignatures.get('templates');
+        assert.ok(referenceHeader, 'quick replies header should be measured');
+        assert.ok(referenceHeader.geometry.width > 0 && referenceHeader.help, 'quick replies header should render with a help button');
+        for (const [id, signature] of headerSignatures) {
+            assert.deepEqual(signature.geometry, referenceHeader.geometry, `${id} header width and position should match «Быстрые ответы»`);
+            assert.deepEqual(signature.screen, referenceHeader.screen, `${id} page padding and entry animation should match «Быстрые ответы»`);
+            // «Интерфейс» keeps its search field inside the header, so only its column template differs.
+            const headerStyle = id === 'needs' ? { ...signature.header, gridTemplateColumns: referenceHeader.header.gridTemplateColumns } : signature.header;
+            assert.deepEqual(headerStyle, referenceHeader.header, `${id} header layout and animation should match «Быстрые ответы»`);
+            assert.deepEqual(signature.title, referenceHeader.title, `${id} header title design and animation should match «Быстрые ответы»`);
+            assert.deepEqual(signature.help, referenceHeader.help, `${id} help button design and animation should match «Быстрые ответы»`);
         }
         await page.setViewportSize({ width: 1440, height: 1000 });
         await page.evaluate(() => {
@@ -677,11 +723,13 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.locator('#fpToolsButton').click();
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));
         assert.equal(await page.locator('.fp-tools-popup').count(), 1);
-        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]):not([data-page="tickets"]):not([data-page="sounds"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
-        assert.equal(await page.locator('.fp-tools-page-content > .fpt-category-header').count(), 17);
+        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="auto_orders"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]):not([data-page="tickets"]):not([data-page="sounds"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
+        assert.equal(await page.locator('.fp-tools-page-content > .fpt-category-header').count(), 16);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="lot_io"] > .fpt-lot-io').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_delivery"] > .fpt-category-header').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_delivery"] > .fpt-auto-delivery').count(), 1);
+        assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_orders"] > .fpt-category-header').count(), 1);
+        assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_orders"] > .fpt-auto-orders').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="autobump"] > .fpt-auto-bump').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="theme"] > .fpt-th').count(), 1);
         const changed = await page.evaluate(() => Object.keys(qaInitial).filter(k => JSON.stringify(qaInitial[k]) !== JSON.stringify(qaSaved[k])));

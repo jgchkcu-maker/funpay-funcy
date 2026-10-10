@@ -31,12 +31,13 @@ test('auto-delivery screen keeps the hero, lot cards and sticky save bar contrac
     const page = fs.readFileSync(path.join(root, 'content/ui/auto_delivery_page.js'), 'utf8');
     const styles = fs.readFileSync(path.join(root, 'css/popup_categories.css'), 'utf8');
     assert.match(page, /fpt-qr-hero fpt-ad-hero/);
+    assert.doesNotMatch(page, /fpt-ad-view-tabs|FPTOrdersView/, 'orders are a separate navigation category');
     for (const id of ['fp-load-delivery-lots-btn', 'autoSaveDeliveryLot']) {
         assert.ok(page.includes(id), `missing ${id}`);
     }
     assert.doesNotMatch(page, /fpToolsAutoRestoreEnabled|fpToolsAutoDisableEnabled|Правила склада/);
     assert.match(styles, /\.fpt-ad-savebar \{[^}]*position:\s*sticky/s);
-    assert.match(styles, /\.fpt-qr-metrics\.fpt-ad-metrics \{[^}]*repeat\(4,/s);
+    assert.match(styles, /\.fpt-qr-metrics\.fpt-ad-metrics \{[^}]*repeat\(2,/s);
     assert.match(styles, /@container fpt-auto-delivery \(max-width:\s*600px\)[^@]*\.fpt-ad-lot-row \{ grid-template-columns: minmax\(0, 1fr\)/s);
     assert.doesNotMatch(styles, /fpt-ad-divider/);
 });

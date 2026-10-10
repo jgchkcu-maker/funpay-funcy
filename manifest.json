@@ -138,6 +138,7 @@
         "content/ui/lot_io_page.js",
         "content/ui/orders_view.js",
         "content/ui/auto_delivery_page.js",
+        "content/ui/auto_orders_page.js",
         "content/ui/auto_bump_page.js",
         "content/ui/auto_reply_page.js",
         "content/ui/review_reminder_block.js",

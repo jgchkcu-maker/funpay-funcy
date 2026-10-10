@@ -10,3 +10,11 @@ test('auto_delivery: the category view is mounted into the existing popup shell'
     const source = fs.readFileSync(path.join(__dirname, '../content/content_script.js'), 'utf8');
     assert.ok(source.includes('FPTAutoDeliveryPage'), 'the existing popup boot path mounts the auto-delivery category view');
 });
+
+test('orders and deliveries mount as a separate popup category', () => {
+    const boot = fs.readFileSync(path.join(__dirname, '../content/content_script.js'), 'utf8');
+    const page = fs.readFileSync(path.join(__dirname, '../content/ui/auto_orders_page.js'), 'utf8');
+    assert.ok(boot.includes('FPTAutoOrdersPage'), 'the popup boot path mounts the standalone orders page');
+    assert.match(page, /const PAGE_ID = 'auto_orders'/);
+    assert.match(page, /FPTOrdersView\.mount/);
+});

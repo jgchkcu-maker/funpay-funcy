@@ -225,7 +225,7 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         assert.ok(helpGeometry.top >= helpGeometry.buttonBottom, `help should open below its button: ${JSON.stringify(helpGeometry)}`);
         assert.ok(Math.abs(helpGeometry.right - helpGeometry.buttonRight) <= 1, `help should align to the right edge of its button: ${JSON.stringify(helpGeometry)}`);
         assert.ok(helpGeometry.left >= 0 && helpGeometry.width >= 220 && helpGeometry.width <= 340, `help should remain readable inside the viewport: ${JSON.stringify(helpGeometry)}`);
-        await page.locator('#fpt-ad-lots-title').click();
+        await page.locator('#fpt-ad-hero-title').click();
 
         await page.locator('.fpt-auto-delivery .fpt-ad-rule-row .fpt-ad-global-switch').first().evaluate(input => input.click());
         await page.locator('.fpt-popup-toast[data-kind="success"]').waitFor();

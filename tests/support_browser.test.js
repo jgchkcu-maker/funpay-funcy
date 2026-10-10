@@ -146,7 +146,7 @@ test('support page: tickets load on open, filter, search and sort locally', asyn
         assert.deepEqual(await rowIds(page), ['120045', '119870', '118511', '117004']);
         assert.deepEqual(await page.locator('.fpt-sp-ticket .fpt-sp-status').evaluateAll(items => items.map(item => item.dataset.kind)), ['open', 'pending', 'solved', 'closed']);
         assert.equal(await page.locator('.fpt-sp-ticket[data-kind="open"] .fpt-sp-row-action').count(), 1, 'only active tickets offer closing');
-        const heights = await page.locator('.fpt-sp-hero-actions .fpt-sp-button').evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().height)));
+        const heights = await page.locator('.fpt-sp-hero-actions :is(.fpt-sp-button, .fpt-toolbar-button)').evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().height)));
         assert.deepEqual(heights, [40, 40], 'hero buttons share one height');
         if (shotDir) {
             await settle(page);

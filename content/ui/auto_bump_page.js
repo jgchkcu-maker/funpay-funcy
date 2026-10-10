@@ -262,9 +262,9 @@
         logTitle.id = 'fpt-ab-log-title';
         logCopy.append(logTitle, node('p', 'fpt-ad-section-description', 'Последние события автоподнятия сохраняются между открытиями панели.'));
         const logTools = node('div', 'fpt-ab-log-tools');
-        const refreshLogButton = createButton('fpt-ab-ghost-button', 'refresh', 'Обновить');
+        const refreshLogButton = createButton('fpt-toolbar-button', 'refresh', 'Обновить');
         refreshLogButton.id = 'autoBumpLogToggle';
-        const clearLogButton = createButton('fpt-ab-ghost-button', 'delete_sweep', 'Очистить');
+        const clearLogButton = createButton('fpt-toolbar-button', 'delete_sweep', 'Очистить');
         logTools.append(refreshLogButton, clearLogButton);
         logHeading.append(logCopy, logTools);
         const logList = node('ol', 'fpt-ab-log');

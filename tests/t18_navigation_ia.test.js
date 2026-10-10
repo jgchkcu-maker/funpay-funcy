@@ -49,11 +49,11 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
 function testSixIndependentAccordionSections() {
     const { schema, sections } = extractSchema();
     const expected = [
-        { id: 'sales', pages: ['lot_io', 'auto_delivery', 'autobump'] },
+        { id: 'sales', pages: ['lot_io', 'auto_delivery', 'auto_orders', 'autobump'] },
         { id: 'customers', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds'] },
         { id: 'finance', pages: ['finance_hub'] },
         { id: 'interface', pages: ['theme', 'effects', 'needs'] },
-        { id: 'settings', pages: ['accounts', 'general', 'settings_io'] },
+        { id: 'settings', pages: ['accounts', 'settings_io'] },
         { id: 'help', pages: ['tickets'] }
     ];
     assert.deepEqual(sections, expected, 'the six navigation groups must use the final order and exact page sets');
@@ -128,11 +128,11 @@ function testFinalLabelsAndRatingRoute() {
             id + ' must use the approved section title');
     }
     const pageLabels = [
-        ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['autobump', 'Автоподнятие'],
+        ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['auto_orders', 'Заказы и выдачи'], ['autobump', 'Автоподнятие'],
         ['auto_reply', 'Автоответчик'], ['auto_review', 'Отзывы и бонусы'], ['templates', 'Быстрые ответы'], ['blacklist', 'Чёрный список'], ['sounds', 'Звук уведомлений'],
         ['finance_hub', 'Обзор и аналитика'],
         ['theme', 'Темы'], ['effects', 'Эффекты'], ['needs', 'Элементы интерфейса'],
-        ['accounts', 'Аккаунты'], ['general', 'Отображение FunPay'], ['settings_io', 'Перенос настроек'],
+        ['accounts', 'Аккаунты'], ['settings_io', 'Перенос настроек'],
         ['tickets', 'Поддержка FunPay'],
     ];
     for (const [id, label] of pageLabels) {
@@ -270,13 +270,14 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const staticActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle {');
     const staticActiveEnd = css.indexOf('\n}', staticActiveStart);
     const staticActive = css.slice(staticActiveStart, staticActiveEnd + 2);
-    assert.match(staticActive, /background:\s*#7663f6/i, 'an expanded category must use the reference violet surface');
-    assert.match(staticActive, /color:\s*#fff/i, 'an expanded category must use white text and icon');
+    assert.match(staticActive, /background:\s*transparent/i, 'an expanded category must stay neutral');
+    assert.doesNotMatch(staticActive, /#7663f6/i, 'the accent belongs to the selected page, not its category');
 
-    const staticChildActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-child.active a {');
+    const staticChildActiveStart = css.indexOf('.fp-tools-nav .fpt-nav-child.active a,');
     const staticChildActiveEnd = css.indexOf('\n}', staticChildActiveStart);
     const staticChildActive = css.slice(staticChildActiveStart, staticChildActiveEnd + 2);
-    assert.match(staticChildActive, /background:\s*transparent/, 'the selected page must not create a nested card');
+    assert.match(staticChildActive, /background:\s*rgba\(118,\s*99,\s*246,\s*\.8\d\)/, 'the selected page must carry a slightly translucent accent');
+    assert.match(staticChildActive, /color:\s*#fff/i, 'the selected page must use white text');
 
     const staticChildStart = css.indexOf('.fp-tools-nav .fpt-nav-child a {');
     const staticChildEnd = css.indexOf('\n}', staticChildStart);
@@ -296,8 +297,8 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const themeActiveStart = themeCss.lastIndexOf('.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-toggle{');
     const themeActiveEnd = themeCss.indexOf('\n}', themeActiveStart);
     const themeActive = themeCss.slice(themeActiveStart, themeActiveEnd + 2);
-    assert.match(themeActive, /background:#7663f6/i, 'runtime theme must show violet while a category is expanded');
-    assert.match(themeActive, /color:#fff/i, 'runtime theme must use white text while a category is expanded');
+    assert.match(themeActive, /background:transparent/i, 'runtime theme must keep an expanded category neutral');
+    assert.doesNotMatch(themeActive, /#7663f6/i, 'runtime theme must not paint the expanded category');
 
     const themeChildStart = themeCss.lastIndexOf('.fp-tools-popup.fptm-themed .fp-tools-nav li a{');
     const themeChildEnd = themeCss.indexOf('\n}', themeChildStart);
@@ -308,7 +309,8 @@ function testSelectedReferenceKeepsSpaciousActiveHierarchy() {
     const themeChildActiveStart = themeCss.lastIndexOf('.fp-tools-popup.fptm-themed .fp-tools-nav li.active a,');
     const themeChildActiveEnd = themeCss.indexOf('\n}', themeChildActiveStart);
     const themeChildActive = themeCss.slice(themeChildActiveStart, themeChildActiveEnd + 2);
-    assert.match(themeChildActive, /background:transparent/, 'runtime theme must keep selected subpages free of nested cards');
+    assert.match(themeChildActive, /background:rgba\(118,99,246,\.8\d\)/, 'runtime theme must accent the selected subpage');
+    assert.match(themeChildActive, /color:#fff/i, 'runtime theme must use white text on the selected subpage');
 }
 
 function testNavigationRegressionGuards() {
