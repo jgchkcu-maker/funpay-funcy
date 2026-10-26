@@ -24,7 +24,7 @@ async function setup(pages) {
     return { journal, reconcile, observed, fetched, clock, pages };
 }
 
-const row = (orderId, orderDate, orderStatus = 'paid') => ({ orderId, orderDate, orderStatus, buyerUsername: 'b', description: 'd' });
+const row = (orderId, orderDate, orderStatus = 'paid') => ({ orderId, orderDate, orderDateStrict: orderDate, orderDatePrecisionMs: 60000, orderStatus, buyerUsername: 'b', description: 'd' });
 
 test('the first pass only records a baseline and never executes old orders', async () => {
     const { journal, reconcile, observed } = await setup({ first: { orders: [row('OLDPAID1', 9_000_000_000)], nextOrderId: 'X' } });
@@ -64,12 +64,14 @@ test('pages are followed with continue until the previous border, missed paid or
     assert.equal((await env.journal.getAccountOrder('100', 'NEWB0001')).adopted, undefined, 'a closed order is only recorded');
 });
 
-test('a repeating continue cursor ends the pass', async () => {
+test('a repeating continue cursor reports failure without advancing the completed border', async () => {
     const env = await setup({ first: { orders: [] } });
     await env.reconcile.run();
     env.clock.now += 1000;
     env.pages.first = { orders: [row('LOOP0001', env.clock.now)], nextOrderId: 'SAME' };
     env.pages.SAME = { orders: [row('LOOP0002', env.clock.now)], nextOrderId: 'SAME' };
-    await env.reconcile.run();
+    const before = await env.journal.getMeta('reconcileBaseline:100');
+    await assert.rejects(env.reconcile.run(), /Повтор курсора/);
+    assert.equal((await env.journal.getMeta('reconcileBaseline:100')).scannedAt, before.scannedAt);
     assert.deepEqual(env.fetched.slice(1), ['first', 'SAME']);
 });

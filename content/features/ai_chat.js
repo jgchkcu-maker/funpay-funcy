@@ -52,6 +52,7 @@ function getChatContext() {
 }
 
 async function getAIProcessedText(text, type = "rewrite") {
+    if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) return text;
     const chatInput = document.querySelector('.chat-form-input .form-control');
     let shouldManageLoadingState = type === "rewrite";
 
@@ -120,6 +121,7 @@ function setupProfanityChecker(chatTextarea, warningDiv) {
 }
 
 function setupAIChatFeature() {
+    if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) return;
     setupChatObserver(); // <--- ВЫЗЫВАЕМ ПУСТУЮ ФУНКЦИЮ, КОТОРАЯ НИЧЕГО НЕ ДЕЛАЕТ
 
     const chatFormInputDiv = document.querySelector('.chat-form-input');

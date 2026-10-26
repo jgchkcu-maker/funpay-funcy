@@ -44,7 +44,7 @@ async function loadSavedSettings() {
     window.__fptAutoReplySettingsReady = false;
     const settings = await chrome.storage.local.get(null);
     fpToolsAccounts = settings.fpToolsAccounts || [];
-    aiModeActive = settings.aiModeActive === true;
+    aiModeActive = globalThis.FPTFeatureAvailability?.isAvailable('ai') === true && settings.aiModeActive === true;
     if (typeof loadTemplateSettings === 'function') await loadTemplateSettings();
     const logoutLink = document.querySelector('.menu-item-logout');
     if(logoutLink && !document.querySelector('.fp-tools-logout-clean')) {

@@ -1,11 +1,10 @@
+import { parseHtmlViaOffscreen as parseViaOffscreen } from './offscreen_parser.js';
 
 import { updateAutoReplies } from './auto_reply_store.js';
 import { createStrictChatSender } from './chat_sender.js';
+import { createChatReader } from './chat_reader.js';
+import { createChatStream } from './chat_stream.js';
 export { countAutoDeliverySecrets, createAutoDeliveryStore, isAutoDeliveryLotEnabled } from './auto_delivery_store.js';
-
-function randomTag() {
-    return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
-}
 
 const BOT_MARKER = '\u2061';
 const OLD_BOT_MARKER = '\u2064';
@@ -16,11 +15,6 @@ function markOutgoing(text) {
     if (t.startsWith(BOT_MARKER) || t.startsWith(OLD_BOT_MARKER)) return t;
     return BOT_MARKER + t;
 }
-function isBotMarked(text) {
-    return typeof text === 'string' && (text.startsWith(BOT_MARKER) || text.startsWith(OLD_BOT_MARKER));
-}
-
-
 async function fetchWithRetry(url, options, { retries = 4, baseDelay = 800 } = {}) {
     let lastErr;
     // FIX 2.8.1: браузер ИГНОРИРУЕТ заголовок Cookie в fetch() (forbidden header),
@@ -34,6 +28,7 @@ async function fetchWithRetry(url, options, { retries = 4, baseDelay = 800 } = {
     options = _opts;
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
+            await assertMessageAccount();
             const res = await fetch(url, options);
             // Retry on rate-limit / server errors; return everything else to caller.
             if (res.status === 429 || res.status >= 500) {
@@ -120,23 +115,14 @@ async function getAuth() {
     return { golden_key, phpsessid };
 }
 
-async function parseViaOffscreen(html, action) {
-    const OFFSCREEN_PATH = 'offscreen/offscreen.html';
-    const existing = await chrome.runtime.getContexts({
-        contextTypes: ['OFFSCREEN_DOCUMENT'],
-        documentUrls: [chrome.runtime.getURL(OFFSCREEN_PATH)]
-    });
-    if (!existing.length) {
-        await chrome.offscreen.createDocument({ url: OFFSCREEN_PATH, reasons: ['DOM_PARSER'], justification: 'parse' });
-    }
-    return chrome.runtime.sendMessage({ target: 'offscreen', action, html });
-}
+
 
 // Сообщения уходят строгим отправителем: один POST без повторов. Неясный исход
 // (таймаут, 5xx, нечитаемый ответ) не повторяется — сообщение могло дойти.
 const strictSender = createStrictChatSender({ mark: markOutgoing });
 
 export async function sendChatMessage(chatId, text, auth) {
+    await assertMessageAccount();
     const result = await strictSender.send({ chatId, text, auth, accountId: auth?.userId ? String(auth.userId) : null });
     if (result.status === 'rejected' || result.status === 'uncertain') {
         throw Object.assign(new Error(result.error || `sendMessage: ${result.status}`), { definite: result.status === 'rejected', outcome: result.status });
@@ -148,6 +134,10 @@ export async function sendChatMessage(chatId, text, auth) {
 export function getStrictChatSender() {
     return strictSender;
 }
+
+// Fulfillment bodies must remain byte-for-byte user content, without bot marks.
+const deliverySender = createStrictChatSender();
+export function getDeliveryChatSender() { return deliverySender; }
 
 // 3.0: upload an image (data URL) to FunPay and send it to a chat, in the background.
 async function sendChatImage(chatId, dataUrl, auth) {
@@ -164,7 +154,7 @@ async function sendChatImage(chatId, dataUrl, auth) {
         method: 'POST',
         headers: { 'cookie': cookieStr, 'x-requested-with': 'XMLHttpRequest' },
         body: fd
-    });
+    }, { retries: 0 });
     if (!upRes.ok) throw new Error(`uploadImage HTTP ${upRes.status}`);
     const upJson = await upRes.json().catch(() => ({}));
     const fileId = upJson.fileId;
@@ -176,6 +166,7 @@ async function sendChatImage(chatId, dataUrl, auth) {
         csrf_token: auth.csrf_token
     };
     // Отправка картинки в чат — внешний эффект: один POST без автоматических повторов.
+    await assertMessageAccount();
     const res = await fetch('https://funpay.com/runner/', {
         method: 'POST',
         credentials: 'include',
@@ -228,7 +219,7 @@ async function sendReviewReply(orderId, text, auth, rating) {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', cookie: `golden_key=${auth.golden_key}` },
         body: payload
-    });
+    }, { retries: 0 });
     if (!res.ok) throw new Error(`sendReviewReply HTTP ${res.status}`);
 }
 
@@ -245,6 +236,7 @@ export function applyVariables(template, vars = {}) {
         
         .replace(/{buyername}/gi,  vars.buyerName  || '')
         .replace(/{lotname}/gi,    vars.lotName    || '')
+        .replace(/{quantity}/gi, () => vars.quantity == null ? '' : String(vars.quantity))
         .replace(/{orderid}/gi,    vars.orderId    || '')
         .replace(/{orderlink}/gi,  orderLink)
         .replace(/{welcome}/gi,    greeting)
@@ -263,7 +255,10 @@ export function applyVariables(template, vars = {}) {
 }
 
 async function atomicUpdate(updater) {
-    return updateAutoReplies(updater);
+    return updateAutoReplies(async settings => {
+        await assertMessageAccount();
+        return updater(settings);
+    });
 }
 
 export async function isBlacklisted(username, feature) {
@@ -279,10 +274,10 @@ async function handleGreeting(msg, auth, settings) {
     if (!settings.greetingEnabled || !settings.greetingText) return;
 
     
-    if (getMessageType(msg.messageText) === 'DEAR_VENDORS') return;
+    if (msg.msgType === 'DEAR_VENDORS') return;
 
     
-    if (settings.ignoreSystemMessages && getMessageType(msg.messageText) !== 'NON_SYSTEM') return;
+    if (settings.ignoreSystemMessages && msg.msgType !== 'NON_SYSTEM') return;
 
     
     if (await isBlacklisted(msg.buyerName, 'response')) return;
@@ -324,7 +319,7 @@ async function handleGreeting(msg, auth, settings) {
 
 async function handleKeywords(msg, auth, settings) {
     if (!settings.keywordsEnabled || !settings.keywords?.length) return;
-    if (getMessageType(msg.messageText) !== 'NON_SYSTEM') return;
+    if (msg.msgType !== 'NON_SYSTEM') return;
     if (await isBlacklisted(msg.buyerName, 'response')) return;
 
     // 3.0: strip zero-width identifier chars and collapse whitespace before matching.
@@ -435,17 +430,6 @@ async function handleReview(msg, auth, settings) {
     } catch (e) {
         console.error(`FunPay Funcy AR: ошибка обработки отзыва #${orderId}`, e.message);
     }
-}
-
-function isMyOwnAction(messageText, myUsername) {
-    if (!messageText || !myUsername) return false;
-    const clean = String(messageText)
-        .replace(/[\u200B\u200C\u200D\uFEFF\u2060\u2061\u2064]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
-    const esc = myUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp(`(^|[^\\p{L}\\p{N}_])${esc}([^\\p{L}\\p{N}_]|$)`, 'iu');
-    return re.test(clean);
 }
 
 // --- Исполнение заказов ---------------------------------------------------------
@@ -599,154 +583,69 @@ export async function runOrderReconcile() {
     }
 }
 
-async function _runAutoResponderCycleInner() {
-    const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+let messageStream = null;
+let activeMessageAccount = null;
 
-    if (!isAutoResponderActive(fpToolsAutoReplies)) return;
-
-    const auth = await getAuth();
-    if (!auth.golden_key || !auth.csrf_token || !auth.userId) return;
-
-    try {
-        // FunPay Funcy's approach: use a FRESH RANDOM tag every cycle. A single persisted tag
-        // (the old behaviour) goes stale and FunPay stops returning chat updates - the
-        // classic "autoresponder stops working until reload". We also request
-        // orders_counters alongside chat_bookmarks so order events surface immediately.
-        const msgTag = randomTag();
-        const orderTag = randomTag();
-
-        const runnerPayload = {
-            objects: JSON.stringify([
-                { type: 'chat_bookmarks',  id: auth.userId, tag: msgTag,   data: false },
-                { type: 'orders_counters', id: auth.userId, tag: orderTag, data: false }
-            ]),
-            request: false,
-            csrf_token: auth.csrf_token
-        };
-
-        // FunPay runner requires BOTH golden_key AND PHPSESSID - without PHPSESSID it
-        // returns 200 but silently drops the request.
-        const pollingCookieStr = auth.phpsessid
-            ? `golden_key=${auth.golden_key}; PHPSESSID=${auth.phpsessid}`
-            : `golden_key=${auth.golden_key}`;
-
-        const res = await fetchWithRetry('https://funpay.com/runner/', {
-            method: 'POST',
-            headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', cookie: pollingCookieStr },
-            body: new URLSearchParams(runnerPayload)
-        }, { retries: 2, baseDelay: 600 });
-
-        if (!res.ok) throw new Error(`Runner HTTP ${res.status}`);
-        const data = await res.json();
-        const chatObj = data.objects?.find(o => o.type === 'chat_bookmarks');
-        if (!chatObj || !chatObj.data?.html) return;
-
-        const chats = await parseViaOffscreen(chatObj.data.html, 'parseChatList');
-        const { fpToolsAutoReplies: fresh = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-
-        const lastSeen = fresh.lastSeenMsgIds || {};
-        const isFirstRun = !fresh.autoResponderSeeded;
-
-        const updates = {}; // chatId -> newest msgId to persist
-        const textUpdates = {}; // chatId -> last handled message text 
-
-        for (const chat of chats) {
-            const nodeMsg = chat.nodeMsg;            // last message id in the chat
-            const userMsg = chat.userMsg;            // last id the account has read
-            const prevSeen = lastSeen[chat.chatId] || 0;
-
-            let hasNew;
-            if (nodeMsg != null) {
-                hasNew = nodeMsg > prevSeen;
-            } else {
-                hasNew = chat.isUnread && !( (fresh.processedMessageIds || []).includes(chat.msgId) );
-            }
-            if (chat.lastByBot) {
-                if (nodeMsg != null) updates[chat.chatId] = Math.max(prevSeen, nodeMsg);
-                continue;
-            }
-
-            if (!hasNew) continue;
-
-            // Always advance our per-chat marker so we never re-handle this id, even on first run.
-            if (nodeMsg != null) updates[chat.chatId] = Math.max(prevSeen, nodeMsg);
-
-            if (isFirstRun) continue; 
-            const lastText = (fresh.lastHandledText || {})[chat.chatId];
-            const isSameText = lastText != null && lastText === chat.messageText;
-
-            const msgType = getMessageType(chat.messageText);
-            const msg = {
-                chatId:      chat.chatId,
-                messageId:   chat.msgId,
-                messageText: chat.messageText,
-                buyerName:   chat.chatName,
-                msgType,
-                orderId:     (chat.messageText.match(RX.ORDER_ID) || [])[1] || null,
-                source:      'chat'
-            };
-
-            const iAmInitiator = isMyOwnAction(chat.messageText, auth.username);
-
-            if (msgType === 'DEAR_VENDORS') {
-                await notifyDearVendors(msg);
-            } else if (msgType === 'ORDER_PURCHASED' || msgType === 'ORDER_CONFIRMED'
-                       || msgType === 'NEW_FEEDBACK' || msgType === 'FEEDBACK_CHANGED') {
-                const role = iAmInitiator ? 'buyer' : await roleForOrder(msg.orderId);
-                if (role !== 'seller') {
-                    console.log(`FunPay Funcy AR: пропуск события по заказу #${msg.orderId} — роль продавца не подтверждена (${role}).`);
-                } else if (msgType === 'ORDER_PURCHASED') {
-                    await handleOrderPurchased(msg, auth, fresh);
-                    await observeOrder(msg);
-                } else if (msgType === 'ORDER_CONFIRMED') {
-                    await handleOrderConfirmed(msg, auth, fresh);
-                    await observeOrder(msg, { adopt: false });
-                } else {
-                    await handleReview(msg, auth, fresh);
-                    await observeOrder(msg, { adopt: false });
-                }
-            } else if ((msgType === 'REFUND' || msgType === 'PARTIAL_REFUND' || msgType === 'ORDER_REOPENED') && orderIdOf(msg)) {
-                // Возврат или повторное открытие: перечитываем заказ, чтобы остановить эффекты.
-                await observeOrder(msg, { adopt: false });
-            } else if (msgType === 'NON_SYSTEM' && !isSameText) {
-                await handleGreeting(msg, auth, fresh);
-                await handleKeywords(msg, auth, fresh);
-            }
-
-            // remember the text we just handled for this chat (text guard above)
-            textUpdates[chat.chatId] = chat.messageText;
-        }
-
-        if (Object.keys(updates).length > 0 || Object.keys(textUpdates).length > 0 || isFirstRun) {
-            await atomicUpdate(s => {
-                const m = s.lastSeenMsgIds || {};
-                for (const [cid, id] of Object.entries(updates)) {
-                    m[cid] = Math.max(m[cid] || 0, id);
-                }
-                // cap size
-                const keys = Object.keys(m);
-                if (keys.length > 1000) {
-                    // drop the lowest-id (oldest) entries
-                    keys.sort((a, b) => m[a] - m[b]).slice(0, keys.length - 1000).forEach(k => delete m[k]);
-                }
-                s.lastSeenMsgIds = m;
-
-                const t = s.lastHandledText || {};
-                for (const [cid, txt] of Object.entries(textUpdates)) t[cid] = txt;
-                const tkeys = Object.keys(t);
-                if (tkeys.length > 1000) {
-                    // drop oldest by id ordering if available, else arbitrary
-                    tkeys.slice(0, tkeys.length - 1000).forEach(k => delete t[k]);
-                }
-                s.lastHandledText = t;
-
-                s.autoResponderSeeded = true;
-            });
-        }
-
-    } catch (e) {
-        console.error('FunPay Funcy AR: ошибка цикла', e.message);
+async function assertMessageAccount() {
+    if (activeMessageAccount) {
+        await orderAutomation.guard.assertCurrent(activeMessageAccount);
+        const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+        if (!isAutoResponderActive(settings)) throw new Error('Автоответы выключены.');
     }
+}
+
+async function processIncoming(message, account, auth) {
+    activeMessageAccount = account;
+    try {
+        await assertMessageAccount();
+        const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+        const msg = { chatId: message.chatId, messageId: message.id, messageText: message.text,
+            buyerName: message.buyerName, msgType: message.system ? getMessageType(message.text) : 'NON_SYSTEM',
+            orderId: message.system ? (message.text.match(RX.ORDER_ID) || [])[1] || null : null, source: 'chat' };
+        if (!message.system) {
+            if (message.kind !== 'text') return;
+            await handleGreeting(msg, auth, settings);
+            await assertMessageAccount();
+            await handleKeywords(msg, auth, settings);
+            return;
+        }
+        if (msg.msgType === 'DEAR_VENDORS') return notifyDearVendors(msg);
+        if (['ORDER_PURCHASED', 'ORDER_CONFIRMED', 'NEW_FEEDBACK', 'FEEDBACK_CHANGED', 'REFUND', 'PARTIAL_REFUND', 'ORDER_REOPENED'].includes(msg.msgType) && orderIdOf(msg)) {
+            // Register the order before advancing the incoming cursor. The durable
+            // fulfillment dispatcher owns replay/deduplication, never the preview.
+            const observation = await observeOrder(msg, { adopt: msg.msgType === 'ORDER_PURCHASED' });
+            if (!observation || observation.error || observation.status === 'error' ||
+                (observation.status === 'skipped' && !['not-seller', 'buyer'].includes(observation.role))) throw new Error('Заказ не записан в журнал.');
+            if (await roleForOrder(msg.orderId) !== 'seller') return;
+            await assertMessageAccount();
+            if (msg.msgType === 'ORDER_PURCHASED') await handleOrderPurchased(msg, auth, settings);
+            else if (msg.msgType === 'ORDER_CONFIRMED') await handleOrderConfirmed(msg, auth, settings);
+            else if (['NEW_FEEDBACK', 'FEEDBACK_CHANGED'].includes(msg.msgType)) await handleReview(msg, auth, settings);
+        }
+    } finally { activeMessageAccount = null; }
+}
+
+async function _runAutoResponderCycleInner() {
+    const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+    if (!isAutoResponderActive(settings) || !orderAutomation?.guard) return;
+    const account = await orderAutomation.guard.current({ fresh: true });
+    if (!account.accountId) return;
+    const auth = await getAuth();
+    if (!auth.golden_key || !auth.csrf_token || String(auth.userId) !== account.accountId) return;
+    if (!messageStream) {
+        const reader = createChatReader({
+            parseMessages: (messages, chatId) => parseViaOffscreen('', 'parseChatMessages', { messages, chatId }),
+            parseChatList: html => parseViaOffscreen(html, 'parseChatList'),
+            assertCurrent: value => orderAutomation.guard.assertCurrent(value),
+            getCooldown: value => messageStream.cooldown(value),
+            setCooldown: (...args) => messageStream.setCooldown(...args)
+        });
+        messageStream = createChatStream({ reader, guard: orderAutomation.guard,
+            readSettings: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {},
+            updateSettings: updateAutoReplies, processMessage: processIncoming });
+    }
+    try { await messageStream.poll(account, auth); }
+    catch (error) { console.error('FunPay Funcy AR: чтение сообщений остановлено', error.message); }
 }
 
 export async function resetAutoResponderState() {
@@ -756,5 +655,6 @@ export async function resetAutoResponderState() {
         delete settings.lastSeenMsgIds;
         delete settings.lastHandledText;
         delete settings.autoResponderSeeded;
+        delete settings.chatStreams;
     });
 }

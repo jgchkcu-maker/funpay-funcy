@@ -12,7 +12,6 @@ function read(relativePath) {
 test('theme contrast utilities exist and maintain readability standards', () => {
     const themeJs = read('content/features/theme.js');
     const flashFixJs = read('content/theme_flash_fix.js');
-    const galleryJs = read('content/features/theme_gallery.js');
 
     // Both runtime theme injector and document_start flash fix have contrast functions
     assert.match(themeJs, /function fptEnsureReadableColor/);
@@ -21,9 +20,6 @@ test('theme contrast utilities exist and maintain readability standards', () => 
 
     assert.match(flashFixJs, /function fptEnsureReadableColor/);
     assert.match(flashFixJs, /function fptEnsureButtonColor/);
-
-    // Gallery sanitizes theme colors before storing
-    assert.match(galleryJs, /fptSanitizeThemeColors/);
 
     // CSS contains improved game title shadows and glowing hover effects
     assert.match(themeJs, /\.game-title a \{ color: #ACCENT_COLOR#; text-decoration: none; font-weight: 600;/);

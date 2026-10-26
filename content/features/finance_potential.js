@@ -1,5 +1,5 @@
 /**
- * FunPay Funcy — Finance Potential Inventory Source & Normalization (T06A)
+ * Funcy — Finance Potential Inventory Source & Normalization (T06A)
  *
  * Слой сбора и нормализации данных инвентаря лотов продавца:
  * - Каноническая модель строки:

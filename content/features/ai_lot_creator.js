@@ -3,6 +3,7 @@ let isHoveringAIGenBtn = false;
 let animationFrameId = null;
 
 function createAIGeneratorUI() {
+    if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) return;
     const header = Array.from(document.querySelectorAll('h1.page-header, h1.page-header.page-header-no-hr'))
         .find(h1 => h1.textContent.includes('Добавление предложения') || h1.textContent.includes('Редактирование предложения'));
 
@@ -172,10 +173,14 @@ function addTranslateButton() {
     const translateBtn = createElement('button', {
         type: 'button',
         id: 'fp-tools-translate-btn',
-        title: 'Перевести'
+        title: 'Перевести: выбранные поля будут отправлены Google Translate'
     }, {}, 'Перевод');
 
     enTabLink.parentNode.insertBefore(translateBtn, enTabLink.nextSibling);
+    const translationDisclosure = document.createElement('small');
+    translationDisclosure.className = 'text-muted';
+    translationDisclosure.textContent = 'При переводе выбранные поля передаются Google Translate.';
+    enTabLink.parentNode.insertBefore(translationDisclosure, translateBtn.nextSibling);
 
     translateBtn.addEventListener('click', async (e) => {
         e.preventDefault();

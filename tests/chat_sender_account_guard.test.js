@@ -29,11 +29,11 @@ test('strict sender posts exactly once and classifies every outcome', async () =
     for (const [impl, expected] of cases) {
         calls.length = 0;
         const sender = createStrictChatSender({ fetchImpl: counting(impl) });
-        const result = await sender.send({ chatId: '77', text: 'Ваш ключ: K-1', auth, accountId: '100' });
+        const result = await sender.send({ chatId: '77', text: 'Ваш ключ: K-1', auth, accountId: '100', afterMessageId: '900' });
         assert.equal(result.status, expected);
         assert.equal(calls.length, 1, 'the sender never repeats a POST');
     }
-    const confirmed = await createStrictChatSender({ fetchImpl: cases[0][0] }).send({ chatId: '77', text: 'Ваш ключ: K-1', auth, accountId: '100' });
+    const confirmed = await createStrictChatSender({ fetchImpl: cases[0][0] }).send({ chatId: '77', text: 'Ваш ключ: K-1', auth, accountId: '100', afterMessageId: '900' });
     assert.equal(confirmed.messageId, '901');
     const otherAuthor = await createStrictChatSender({ fetchImpl: cases[0][0] }).send({ chatId: '77', text: 'Ваш ключ: K-1', auth, accountId: '555' });
     assert.equal(otherAuthor.status, 'accepted', 'a message by someone else is not our receipt');

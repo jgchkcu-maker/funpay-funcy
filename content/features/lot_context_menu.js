@@ -15,7 +15,7 @@
         _ctxInverted = d.fpToolsCtxInverted  || false;
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', waitForLotsAndRender);
         else waitForLotsAndRender();
-    })().catch(error => console.warn('FunPay Funcy: pinned lot migration failed', error));
+    })().catch(error => console.warn('Funcy: pinned lot migration failed', error));
 
     function cleanPinnedLot(lot) {
         return { offerId: String(lot.offerId), title: String(lot.title || ''),

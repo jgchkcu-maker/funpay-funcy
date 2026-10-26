@@ -32,86 +32,57 @@ test('auto replies reject wrong order/account/chat and forged confirmation on pa
     status = 'paid'; await sandbox.handleOrderPurchased(msg, {}, settings); assert.equal(sent.length, 2);
 });
 
-test('cookie snapshot restores attributes before a queued account switch or logout', async () => {
+test('cookie snapshot swaps the whole session and restores it before a queued account switch or logout', async () => {
     const source = read('background/background.js');
-    const code = source.slice(source.indexOf('let _fptSnapChain'), source.indexOf('// --- Главный обработчик сообщений ---'));
-    let current = { value: 'original', hostOnly: true, domain: 'funpay.com', path: '/', secure: true, sameSite: 'strict', storeId: '0', expirationDate: 1234567890 };
-    const calls = []; let release;
+    const code = source.slice(source.indexOf('let _fptSnapChain'), source.indexOf('// --- Сохранённые аккаунты и свой конфиг у каждого ---'));
+    // FunPay cookie jar: PHPSESSID and golden_seal belong to the session of the original key.
+    const jar = new Map([
+        ['golden_key', { name: 'golden_key', value: 'original', hostOnly: true, domain: 'funpay.com', path: '/', secure: true, httpOnly: true, sameSite: 'strict', storeId: '0', expirationDate: 1234567890 }],
+        ['PHPSESSID', { name: 'PHPSESSID', value: 'sess-a', hostOnly: false, domain: '.funpay.com', path: '/', secure: true, httpOnly: true, sameSite: 'lax', storeId: '0', session: true }],
+        ['golden_seal', { name: 'golden_seal', value: 'seal-a', hostOnly: false, domain: '.funpay.com', path: '/', secure: true, httpOnly: false, sameSite: 'lax', storeId: '0', expirationDate: 1999999999 }]
+    ]);
+    const value = name => jar.get(name)?.value;
+    const calls = []; const seen = []; let release;
     const gate = new Promise(resolve => { release = resolve; });
     const sandbox = { Date, console, chrome: { cookies: {
-        get: async () => ({ ...current }), set: async details => { calls.push(details); current = details; return details; }, remove: async () => { current = null; }
-    } }, fetch: async () => { await gate; return { text: async () => '' }; }, parseHtmlViaOffscreen: async () => ({ loggedIn: false }) };
+        get: async ({ name }) => (jar.has(name) ? { ...jar.get(name) } : null),
+        getAll: async ({ name }) => (jar.has(name) ? [{ ...jar.get(name) }] : []),
+        set: async details => { calls.push(details); jar.set(details.name, { ...details, hostOnly: !details.domain }); return details; },
+        remove: async ({ name }) => { jar.delete(name); }
+    } }, fetch: async () => {
+        await gate;
+        seen.push({ key: value('golden_key'), sess: value('PHPSESSID'), seal: value('golden_seal') });
+        jar.set('PHPSESSID', { name: 'PHPSESSID', value: 'sess-b', domain: '.funpay.com', path: '/', secure: true, session: true });
+        return { text: async () => '' };
+    }, parseHtmlViaOffscreen: async () => ({ loggedIn: false }) };
     vm.createContext(sandbox); vm.runInContext(code, sandbox);
     const snapshot = sandbox.fptSnapshotForKey('temporary');
-    const change = sandbox.withCookieLock(async () => { assert.equal(current.value, 'original'); current = { value: 'selected' }; });
-    await Promise.resolve(); release(); await snapshot; await change;
-    assert.equal(current.value, 'selected');
-    assert.equal(calls[0].httpOnly, true); assert.equal(calls[1].httpOnly, true);
-    assert.equal(calls[0].domain, undefined); assert.equal(calls[1].domain, undefined);
-    assert.equal(calls[1].expirationDate, 1234567890); assert.equal(calls[1].sameSite, 'strict');
+    const change = sandbox.withCookieLock(async () => {
+        assert.equal(value('golden_key'), 'original');
+        jar.set('golden_key', { name: 'golden_key', value: 'selected' });
+    });
+    await Promise.resolve(); release(); await snapshot;
+    assert.deepEqual(seen, [{ key: 'temporary', sess: undefined, seal: undefined }], 'the other key never meets the current session');
+    const key = calls.find(details => details.name === 'golden_key' && details.value === 'original');
+    assert.equal(key.httpOnly, true); assert.equal(key.domain, undefined);
+    assert.equal(key.expirationDate, 1234567890); assert.equal(key.sameSite, 'strict');
+    assert.equal(value('PHPSESSID'), 'sess-a'); assert.equal(value('golden_seal'), 'seal-a');
+    assert.equal(calls.find(details => details.name === 'PHPSESSID').expirationDate, undefined, 'session cookie stays a session cookie');
+    await change;
+    assert.equal(value('golden_key'), 'selected');
     await assert.rejects(sandbox.withCookieLock(async () => { throw Error('failure'); }));
-    await sandbox.withCookieLock(async () => { current = null; }); assert.equal(current, null);
-    for (const action of ['setGoldenKey', 'deleteCookiesAndReload']) {
-        assert.match(source.slice(source.indexOf(`if (request.action === '${action}')`), source.indexOf('return true;', source.indexOf(`if (request.action === '${action}')`))), /withCookieLock/);
-    }
+    await sandbox.withCookieLock(async () => { jar.clear(); }); assert.equal(jar.size, 0);
+    const logout = source.indexOf("if (request.action === 'deleteCookiesAndReload')");
+    assert.match(source.slice(logout, source.indexOf('return true;', logout)), /withCookieLock/);
+    // Account switches run inside the same queue: the service receives it as cookieLock.
+    assert.match(source, /cookieLock: withCookieLock/);
 });
 
-test('verification sweep never deletes ordinary lots, old unowned records, or another account', async () => {
-    const source = read('content/features/profile_descriptions.js');
-    const code = source.slice(source.indexOf('  async function trackPendingLot'), source.indexOf('  async function pollConfirm'));
-    const pending = { 11: { at: Date.now(), accountId: 1 }, 12: { at: Date.now(), accountId: 1 }, 13: { at: Date.now(), accountId: 2 }, 14: Date.now() - 8 * 86400000 };
-    const deleted = [], fetched = [];
-    const sandbox = { console, Date, PENDING_LOTS_KEY: 'pending', VERIFY_TITLE: 'FPT Verify',
-        getMyUserId: () => 1, getCsrf: () => 'csrf', storageGet: async () => ({ pending }), storageSet: async () => {},
-        fetch: async url => { fetched.push(url); return { ok: true, text: async () => url.includes('11') ? 'Ordinary lot' : 'FPT Verify CODE' }; },
-        DOMParser: class { parseFromString(title) { return { querySelector: () => ({ value: title }) }; } },
-        deleteVerificationLot: async id => deleted.push(id) };
-    vm.createContext(sandbox); vm.runInContext(code, sandbox);
-    await sandbox.sweepPendingLots();
-    assert.deepEqual(deleted, ['12']); assert.deepEqual(Object.keys(pending), ['13']);
-    assert.equal(fetched.length, 2);
-    await sandbox.trackPendingLot('15', 'CODE_15'); assert.equal(pending['15'].accountId, 1); assert.equal(pending['15'].code, 'CODE_15');
-});
-
-test('verification code identifies titleless lots exactly and never falls back to a title on mismatch', async () => {
-    const source = read('content/features/profile_descriptions.js');
-    const code = source.slice(source.indexOf('  async function trackPendingLot'), source.indexOf('  async function pollConfirm'));
-    const pending = Object.fromEntries(['21', '22', '23', '24', '25', '26'].map(id => [id, { at: Date.now(), accountId: 1, code: 'CHALLENGE_' + id }]));
-    const forms = {
-        21: { 'fields[desc][ru]': 'CHALLENGE_21' },
-        22: { 'fields[desc][en]': ' CHALLENGE_22 ' },
-        23: { 'fields[desc][ru]': 'ordinary lot with CHALLENGE_23 mentioned' },
-        24: { 'fields[summary][ru]': 'FPT Verify', 'fields[desc][ru]': 'WRONG' },
-        25: { 'fields[summary][ru]': 'FPT Verify' },
-        26: { 'fields[desc][ru]': 'CHALLENGE_26', switchAccount: true }
-    };
-    const deleted = []; let accountId = 1;
-    const sandbox = { console, Date, PENDING_LOTS_KEY: 'pending', VERIFY_TITLE: 'FPT Verify',
-        getMyUserId: () => accountId, getCsrf: () => 'csrf', storageGet: async () => ({ pending }), storageSet: async () => {},
-        fetch: async url => ({ ok: true, text: async () => JSON.stringify(forms[url.match(/offer=(\d+)/)[1]]) }),
-        DOMParser: class { parseFromString(json) { const fields = JSON.parse(json); if (fields.switchAccount) accountId = 2;
-            return { querySelector: selector => { const name = selector.match(/name="([^"]+)"/)[1]; return name in fields ? { value: fields[name] } : null; } }; } },
-        deleteVerificationLot: async id => deleted.push(id) };
-    vm.createContext(sandbox); vm.runInContext(code, sandbox);
-    await sandbox.sweepPendingLots();
-    assert.deepEqual(deleted, ['21', '22']); assert.deepEqual(Object.keys(pending), ['26']);
-    accountId = 1;
-    await assert.rejects(sandbox.trackPendingLot('27', ''), /VERIFY_CODE_MISSING/);
-    assert.equal(pending['27'], undefined);
-});
-
-test('verification fallback finds a titleless lot only by its exact description code', async () => {
-    const source = read('content/features/profile_descriptions.js');
-    const find = source.slice(source.indexOf('  async function findLotByCode'), source.indexOf('  async function createVerificationLot'));
-    const match = source.slice(source.indexOf('  function verificationLotMatches'), source.indexOf('  // Удаляет лот с несколькими попытками'));
-    const requested = [];
-    const sandbox = { VERIFY_NODE_ID: '2046', VERIFY_TITLE: 'FPT Verify',
-        fetch: async url => { requested.push(url); return { ok: true, text: async () => url.endsWith('/trade') ? 'list' : url.endsWith('=32') ? 'correct' : 'wrong' }; },
-        DOMParser: class { parseFromString(body) {
-            if (body === 'list') return { querySelectorAll: () => [...Array.from({ length: 12 }, (_, i) => String(40 + i)), '31', '32', '32'].map(id => ({ getAttribute: () => id })) };
-            return { querySelector: selector => selector.includes('fields[desc][en]') ? { value: body === 'correct' ? 'CODE' : 'mentions CODE' } : null };
-        } } };
-    vm.createContext(sandbox); vm.runInContext(match + find, sandbox);
-    assert.equal(await sandbox.findLotByCode('CODE'), 32);
-    assert.equal(requested.length, 15); assert.ok(requested[13].includes('offerEdit?offer=31'));
+test('retired profile descriptions cannot create, verify, delete lots or contact their server', () => {
+    const forbidden = () => assert.fail('retired profile service ran');
+    vm.runInNewContext(read('content/features/profile_descriptions.js'), {
+        fetch: forbidden, setTimeout: forbidden, setInterval: forbidden,
+        document: new Proxy({}, { get: forbidden }), chrome: new Proxy({}, { get: forbidden })
+    });
+    assert.doesNotMatch(read('content/features/profile_descriptions.js'), /SHARED_KEY|workers\.dev|createVerificationLot|sweepPendingLots/);
 });

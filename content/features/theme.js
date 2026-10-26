@@ -90,12 +90,13 @@ const DEFAULT_THEME = {
     textColor: '#f0f0f0',
     linkColor: '#2d6bb3',
     bgImage: null,
+    bgVideo: null,
     font: 'Helvetica Neue',
     bgBlur: 0,
     bgBrightness: 100,
-    borderRadius: 8,
+    borderRadius: 16,
     enableCircleCustomization: false,
-    showCircles: true,
+    showCircles: false,
     circleSize: 100,
     circleOpacity: 100,
     circleBlur: 0,
@@ -107,7 +108,7 @@ const DEFAULT_THEME = {
     scrollbarThumbColor: '#555555',
     scrollbarTrackColor: '#222222',
     scrollbarWidth: 8,
-    // Прозрачное меню FunPay Funcy
+    // Прозрачное меню Funcy
     menuTransparent: false,
     menuTintColor: '#2a1033',   // тёмно-пурпурный
     menuOpacity: 3,             // %
@@ -119,7 +120,13 @@ const DEFAULT_THEME = {
     textOutlineWidth: 1,        // px
     // Кнопки FunPay (content/theme_buttons.js). Пусто - «Авто»: цвет выводится из палитры темы.
     buttonColor: '',            // обычные: поиск, «…», серые кнопки
-    buttonActiveColor: ''       // активные: «Включены оповещения», успех
+    buttonActiveColor: '',      // активные: «Включены оповещения», успех
+    // Модульный чат (content/theme_chat_layout.js): колонки /chat/ - отдельными карточками.
+    chatModular: false,
+    chatModuleGap: 12,          // px
+    chatContactsWidth: 280,     // px, как у FunPay на широком экране
+    chatDetailWidth: 280,       // px
+    chatHideDetail: false
 };
 
 
@@ -299,22 +306,31 @@ function fptButtonsCss(settings, options) {
     return typeof fptThemeButtonsCss === 'function' ? fptThemeButtonsCss(settings, options) : '';
 }
 
+// Декоративные круги (главная и шапка профиля) - общий модуль content/theme_circles.js.
+function fptCirclesCss(settings) {
+    return typeof fptThemeCirclesCss === 'function' ? fptThemeCirclesCss(settings) : '';
+}
+
+// Модульный чат на /chat/ - общий модуль content/theme_chat_layout.js.
+function fptChatLayoutCss(settings) {
+    return typeof fptThemeChatLayoutCss === 'function' ? fptThemeChatLayoutCss(settings) : '';
+}
+
+function fptRemoveThemePrehides() {
+    if (typeof fptRemoveCirclesPrehide === 'function') fptRemoveCirclesPrehide();
+    if (typeof fptRemoveChatLayoutPrehide === 'function') fptRemoveChatLayoutPrehide();
+}
+
 function getOriginalThemeCss(settings) {
     settings = FPTSafe.themeSettings(settings);
     const radius = `${settings.borderRadius}px`;
     let css = `
+        :root { --fpt-chat-action-radius: ${radius}; }
         body { font-family: '${FPTSafe.fontName(settings.font) || 'Helvetica Neue'}', Helvetica Neue, Helvetica, Arial, sans-serif; }
         .offer, .tc, .modal-content, .chat, .chat-contacts, .chat-detail, .dropdown-menu, .panel, .payment-card, .details, .form-narrow, .counter-item, .content-with-cd-wide, .btn, .form-control, .alert, .ajax-alert { border-radius: ${radius}; }
     `;
-    if (settings.enableCircleCustomization) {
-        css += `.cd-container .cd, .corner-cd, .profile-cover-img {
-            transition: transform 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
-            transform: scale(${settings.circleSize / 100});
-            filter: blur(${settings.circleBlur}px);
-            opacity: ${settings.circleOpacity / 100};
-        }`;
-        if (!settings.showCircles) css += ` .cd-container { display: none !important; }`;
-    }
+    css += fptCirclesCss(settings);
+    css += fptChatLayoutCss(settings);
     if (settings.enableImprovedSeparators) {
         css += `
             .tc:not(.tc-selling):not(.tc-finance) .tc-item > div { position: relative; border-top: none !important; }
@@ -339,7 +355,7 @@ function getOriginalThemeCss(settings) {
 function getCustomThemeCss(settings) {
     settings = FPTSafe.themeSettings(settings);
     if (settings.baseStyle === 'original') return getOriginalThemeCss(settings);
-    const bgImageUrl = FPTSafe.cssImageUrl(settings.bgImage) || 'url(https://i.ibb.co/ZpS0d56R/PH6-UEvp-Kn-KI.jpg)';
+    const bgImageUrl = FPTSafe.cssImageUrl(settings.bgImage) || 'linear-gradient(135deg, #151726 0%, #25203b 55%, #111827 100%)';
     const containerBgRgba = hexToRgba(settings.containerBgColor, settings.containerBgOpacity);
     // Всплывающие слои (модалки) лежат поверх контента, а не обоев - им прозрачность
     // блоков не нужна: текст страницы под окном просвечивал и сливался с ним.
@@ -368,8 +384,10 @@ function getCustomThemeCss(settings) {
         }
         .wrapper-content, .wrapper-footer, body, .wrapper, .content-orders, .bg-light-color #header, .bg-light-color #footer, .wrapper-footer { background: transparent !important; }
         .wrapper-content, .wrapper-footer { background-color: rgba(0,0,0,0.4) !important; }
+        .banner-cookie-consent { background-color: ${containerBgSolid}; color: #TEXT_COLOR#; border-radius: 10px; box-shadow: 0 8px 24px rgba(0, 0, 0, .45) }
+        .banner-cookie-consent .cc-text, .banner-cookie-consent p { color: #TEXT_COLOR# } .banner-cookie-consent a { color: #LINK_COLOR# }
         body { font-family: '${FPTSafe.fontName(settings.font) || 'Helvetica Neue'}', Helvetica Neue, Helvetica, Arial, sans-serif; font-size: 14px; line-height: 1.428571429; color: #TEXT_COLOR# }
-        .profile-cover-img { background-clip: border-box; background: url(https://funpay.com/img/layout/profile-header.jpg) no-repeat center bottom; background-size: 100% auto } .profile-cover { overflow: unset } .media-user-name { color: #TEXT_COLOR# } .media-user-name a { color: #fff } .bg-light-color { background-color: #fff0 } #header { background: rgba(0,0,0,0.08) !important } .game-title a { color: #ACCENT_COLOR#; text-decoration: none; font-weight: 600; letter-spacing: 0.2px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.5); transition: color 0.15s ease, text-shadow 0.15s ease } .game-title a:hover { color: #ACCENT_HOVER#; text-decoration: none; text-shadow: 0 0 14px #ACCENT_GLOW#, 0 2px 4px rgba(0, 0, 0, 0.9) } .navbar-right.logged .dropdown-menu { border-radius: 8px } .user-link-name { color: #ACCENT_COLOR#; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) } .product-page .page-content { background-color: #0009; border-radius: 10px; margin-top: 12px; margin-bottom: 20px; padding: 20px } .chat-btn-image { background-color: #ff6d1500; border: 0px; color: #fff } .chat-btn-image:hover { background-color: transparent; border: 0px; color: #fff } .chat-btn-image:focus { background-color: transparent; border: 0px; color: #fff } .btn-default:active:hover, .btn-default:active:focus, .btn-default:active.focus, .btn-default.active:hover, .btn-default.active:focus, .btn-default.active.focus { color: #fff; background-color: #ff6d1500; border: 0px } .fa-info-circle:before { filter: brightness(0) invert(1) } .chat-form-input .form-group { transform: translate(-10px); width: 103% } .tc.table-hover .tc-item.transaction-status-waiting { background-color: #b17f2e94 } .tc.table-hover .tc-item.transaction-status-waiting:hover { background-color: #b37f2abf } .tc-finance .tc-header>div, .tc-finance .tc-item>div { border-bottom: #505050 1px solid; border-top: #505050 0px solid } .tc.table-hover .tc-item.info { background-color: #1f508994 } .tc.table-hover .tc-item.info:hover { background-color: #1f5089bf } .tc.table-hover .tc-item:hover { background-color: ${containerBgRgba} } .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus { color: #LINK_COLOR#; font-weight: 700; background-color: #0000 } .counter-list .counter-item { background: #14141480; border: 0px solid #feff00; border-radius: 20px; outline: 0 } .content-with-cd-wide { background: ${containerBgRgba}; border-radius: 10px } a.tc-item { color: #TEXT_COLOR#; text-decoration: none } .cd { position: relative; z-index: 100; border-radius: 50%; width: 700px; height: 700px; filter: brightness(.8); border: 0px } a.cd-satellite { transform: translate(-25px) } .offer { background: ${containerBgRgba}; padding: 20px; border-radius: 10px } .tc { background-color: ${containerBgRgba}; border-radius: 10px } .tc-finance { border-top: 0px solid #322f34; border-bottom: #322f34 0px solid; border-left: #322f34 0px solid; border-right: #322f34 0px solid; border-radius: 10px } .modal-content { background-color: ${containerBgSolid}; border: 0px solid #999; border-radius: 10px; -webkit-box-shadow: 0 3px 9px rgba(0, 0, 0, .5); box-shadow: 0 3px 9px #00000080; background-clip: padding-box; outline: 0 } label.control-label { color: #ACCENT_COLOR# } .counter-item { background: #0b0b0b90; color: #TEXT_COLOR# } .counter-item:hover, .counter-item:focus, .counter-item:active, .counter-item:active:hover { background: #0b0b0bad; color: #TEXT_COLOR# } .counter-item.active { background: ${containerBgRgba}; color: #fff } .counter-item.active:hover, .counter-item.active:focus, .counter-item.active:active, .counter-item.active:active:hover { background: #101010; color: #fff } .form-control-box { background: transparent; border: 1px solid #fff; border-radius: 10px } h5, .h5, .form-group>label { color: #fff } .bootstrap-select .dropdown-menu.inner { background-color: #SURFACE# } .lot-field .lot-field-radio-box button { background-color: #SURFACE#; color: #fbfbfb } .lot-field .lot-field-radio-box button:hover { color: #fff; background-color: #SURFACE_HOVER# } .btn-dark { background-color: #222; border-radius: 10px; border-color: #fff } .btn-gray:hover { background-color: #2a5590; color: #fff; border-radius: 10px; border-color: #2a5590 } .chat-promo { border-radius: 10px; border: 0px; background: #00000073; transform: translate(-10px) } .dropdown-menu { background-color: #SURFACE#; border-radius: 8px } .navbar-default { border-color: #e4e4e466 } .chat-form-btn .btn-round { background-color: #cbcbcb1f; color: #fff; border-radius: 100px; border: 0px } .chat-form-btn .btn-round:hover { background-color: #3466a1; color: #fff } .chat-img { border-radius: 8px } .btn-danger { border: 0px; border-radius: 8px } .btn-gray { background-color: #3466a1; border-radius: 8px; color: #fff; border: 0px } .btn-primary { border: 0px solid #fff; border-radius: 8px; background-color: #PRIMARY_COLOR#; color: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); transition: filter 0.15s ease, box-shadow 0.15s ease } .btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary:active:hover, .btn-primary:active:focus, .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary[disabled]:active:hover, .btn-primary[disabled]:active:focus { filter: brightness(1.18); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); color: #fff } .btn-default { border: 0px solid #fff; border-radius: 8px; background-color: #PRIMARY_COLOR#60; color: #fff } .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default:active:hover, .btn-default:active:focus, .btn-default[disabled]:hover, .btn-default[disabled]:focus, .btn-default[disabled]:active, .btn-default[disabled]:active:hover, .btn-default[disabled]:active:focus { border: 0px solid #1e4f8700; background-color: #PRIMARY_COLOR#; color: #fff } .bg-light-style .btn-default { background-color: transparent; border: 0px; color: #fff } .block-info { color: #ffffffd9 } .navbar-form .form-control { background-color: transparent } .logo-color, .footer-block-als { filter: brightness(0) invert(1) } .nav-abc .nav>li>a { color: rgba(255, 255, 255, 0.65) !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); transition: color 0.15s ease } .nav-abc ul .active a, .nav-abc ul .active a:hover, .nav-abc ul .active a:focus, .nav-abc .nav>li>a:hover, .nav-abc .nav>li>a:focus, .nav-abc .nav>li.active>a { text-decoration: none; cursor: default; color: #ACCENT_COLOR# !important; font-weight: 700; text-shadow: 0 0 10px #ACCENT_GLOW# } a:focus { text-decoration: none; cursor: default; color: #fff } .list-inline>li>a { color: #LINK_COLOR#; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); transition: color 0.15s ease, opacity 0.15s ease } .list-inline>li>a:hover { color: #ACCENT_COLOR#; text-decoration: underline; text-underline-offset: 2px } .list-inline>li:after { content: " ·"; color: rgba(255, 255, 255, 0.35); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) } .media-user.style-circle .avatar-photo:after { background: #a6a6a6; border: 3px solid ${containerBgRgba} } .counter-list-wide { padding-bottom: 20px; padding-top: 20px } .dropdown-menu>li+li, .dropdown-menu .dropdown-menu>li { border-top: #6a6a6a70 1px solid; border: 0px } .dropdown-menu>li:first-child>a { border-radius: 8px 8px 0 0 } .dropdown-menu>li:last-child>a { border-radius: 0 0 8px 8px } .navbar-nav>li>.dropdown-menu, .dropdown-menu, .nav-tabs .dropdown-menu { border-radius: 8px } .navbar-default .navbar-nav>li>a { color: #TEXT_COLOR# } .navbar-default .navbar-nav>li>a:hover, .navbar-default .navbar-nav>li>a:focus { color: #ddd } .ajax-alert { border-radius: 10px } .navbar-default { background-color: transparent } .offer-tc-container { border-top: #ff0000 0px solid } .tc:not(.tc-selling):not(.tc-finance) .tc-item>div { border-top: #505050 1px solid } .review-container { border-top: #505050 1px solid } a:hover { color: #ACCENT_COLOR#; text-decoration: underline; } a.tc-item:hover, a.tc-item:hover div, a.tc-item:hover .tc-desc-text, a.tc-item:hover .tc-server { color: #TEXT_COLOR#; text-decoration: none; } .panel { background-color: #SURFACE_RAISED# } .contact-item:hover { background: #LINK_COLOR#30 } a { color: #LINK_COLOR#; text-decoration: none; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) } .page-header, .nav-header, .lead, h5, .h5, .nav-abc-header { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85) } a.tc-item, .tc-desc-text, .tc-server, .tc-price { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) } .panel-default>.panel-heading { background-color: #SURFACE_RAISED#; border-color: #2d2d2d61 } .tc.table-hover .tc-item { background-color: ${containerBgRgba} } .tc.table-hover a.tc-item:hover { background-color: #LINK_COLOR#20 } .tc.table-hover .tc-item.warning { background-color: ${containerBgRgba} } .tc.table-hover a.tc-item.warning:hover { background-color: #LINK_COLOR#20 } .chat-not-selected .chat-message-container { border-top: 0px solid #fff } .chat-not-selected .chat-message-container { border-bottom: 0px solid #fff } .chat-message-container { border-left: 0px solid #fff; border-right: 0px solid #fff } .dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus { color: #fff; background-color: #SURFACE_HOVER# } .navbar-nav>li>.dropdown-menu>.active>a { background: #LINK_COLOR#85; color: #fff } .navbar-nav>li>.dropdown-menu>.active>a:hover { background: #LINK_COLOR#b5 } .navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.open>a:hover, .navbar-default .navbar-nav>.open>a:focus { color: #LINK_COLOR# } .btn-default:active, .btn-default.active, .open>.btn-default.dropdown-toggle { color: #fff; background-color: #PRIMARY_COLOR#; border-color: transparent } .contact-item-message { color: #ffffff73 } .contact-item.active { background: #LINK_COLOR#60; color: #ffffffd4 } .contact-item.active:hover, .contact-item.active:focus { background: #LINK_COLOR#80 } .contact-item.unread { background: #ff9d00a1 } .contact-item.unread, .contact-item.unread .contact-item-message { color: #ffffffd4 } .chat-form { border: #8924b100 0px solid } .chat-form-input .form-control, .chat-form-input .hiddendiv { padding: 11px 10px 10px; background-color: ${containerBgRgba}; border-radius: 10px } .badge { display: inline-block; min-width: 20px; padding: 3px 5px 5px; font-size: 12px; font-weight: 500; color: #fff; line-height: 12px; vertical-align: middle; white-space: nowrap; text-align: center; background-color: #0b0b0b55; border-radius: 10px } .payment-card { background: #0009; padding: 20px; border-radius: 10px; margin: 12px 0 } .form-control { border: 0px solid #fff; background-color: #SURFACE#; color: #TEXT_COLOR#; border-radius: 10px } .panel-default>.panel-heading { color: #ddd } .review-item-answer { display: inline-block; padding: 15px; background: #SURFACE#; border-radius: 10px; position: relative; color: #fff } .setting-item .btn-gray { background-color: #LINK_COLOR#; color: #fff; border-radius: 8px } .setting-item .btn-gray:hover, .setting-item .btn-gray:focus, .setting-item .btn-gray:active { background-color: #244f81; color: #fff } p { color: #ffffffd9 } .btn-success { border-radius: 8px; border: 0px } .drop-area { background-color: #SURFACE_RAISED#; border-radius: 8px; color: #d3d3d3; border: 1px solid #SURFACE# } .drop-area.hover { background-color: #SURFACE_HOVER# } .drop-area.error { background: #ff3434c7; border: #f00; color: #TEXT_COLOR# } .btn-info { border-radius: 8px; background-color: #11a8d5; border: 0px; margin-right: 5px } .btn-warning { border-radius: 8px; background-color: #ffa002; border: 0px } .details, .form-narrow { background-color: #0009; padding: 20px; margin-bottom: 20px; border-radius: 10px } .form-narrow .btn-block, .form-narrow .form-control, .form-narrow .input-group { background-color: #SURFACE#; border-radius: 8px } .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus { color: #fff; background-color: #0000 } .lot-fields-multilingual .nav-tabs a { color: #b5b5b5 } table.table-clickable tbody tr a { color: #LINK_COLOR#; text-decoration: none } table.table-clickable tbody tr a:hover { color: #fff; text-decoration: underline } .caret { color: #888; } .dropdown-toggle .caret { color: inherit; opacity: .85 } .sort::after { color: #555 !important; } .bootstrap-select .dropdown-toggle .filter-option { background: transparent; height: 100%; width: 100%; border: 0px #fff solid; border-radius: 8px; color: #fff } .bootstrap-select .dropdown-toggle .filter-option:hover { background: transparent; border-radius: 8px } .bootstrap-select .dropdown-toggle .filter-option:focus { background: transparent; border-radius: 8px } .has-feedback .form-control { border-radius: 8px } .withdraw-box .slave { background-color: #SURFACE_RAISED#; border-radius: 8px } .withdraw-box .slave:hover { background-color: #SURFACE_HOVER#; border-radius: 8px } .input-group .form-control:first-child, .input-group-addon:first-child, .input-group-btn:first-child>.btn, .input-group-btn:first-child>.btn-group>.btn, .input-group-btn:first-child>.dropdown-toggle, .input-group-btn:last-child>.btn:not(:last-child):not(.dropdown-toggle), .input-group-btn:last-child>.btn-group:not(:last-child)>.btn { border-radius: 10px 0 0 10px } .bootstrap-select.input-lg .btn, .input-group-lg>.bootstrap-select.form-control .btn, .input-group-lg>.bootstrap-select.input-group-addon .btn, .input-group-lg>.input-group-btn>.bootstrap-select.btn .btn, .bootstrap-select.input-lg .dropdown-menu>li>a, .input-group-lg>.bootstrap-select.form-control .dropdown-menu>li>a, .input-group-lg>.bootstrap-select.input-group-addon .dropdown-menu>li>a, .input-group-lg>.input-group-btn>.bootstrap-select.btn .dropdown-menu>li>a, .input-group-lg>.input-group-btn>.bootstrap-select.btn .dropdown-menu>li>a:hover, .input-group-lg>.input-group-btn>.bootstrap-select.btn .dropdown-menu>li>a:focus { background: transparent; border-radius: 8px } :not(.input-group)>.bootstrap-select.form-control:not([class*=col-]) { background: transparent; border-radius: 8px } .btn-default.dropdown-toggle { color: #fff; border: 0px; background-color: #PRIMARY_COLOR# } .btn-default.dropdown-toggle:hover, .btn-default.dropdown-toggle:focus, .btn-default.dropdown-toggle:active, .btn-default.dropdown-toggle:active:hover, .open>.btn-default.dropdown-toggle, .open>.btn-default.dropdown-toggle:hover, .open>.btn-default.dropdown-toggle:focus, .open>.btn-default.dropdown-toggle:active { color: #fff; border: 0px; background-color: #PRIMARY_COLOR#; filter: brightness(1.18) } .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control { background-color: #SURFACE_RAISED# } .payment-title { color: #fff; font-weight: old } .bootstrap-select .dropdown-menu>li>a { color: #b0b0b0 } .bootstrap-select .dropdown-menu>.active>a, .bootstrap-select .dropdown-menu>.active>a:hover, .bootstrap-select .dropdown-menu>.active>a:focus { background-color: #SURFACE_HOVER#; color: #ACCENT_COLOR# } .chat-header { border: #bd59be00 0px solid } .form-inline .form-control { background-color: #SURFACE#; border-radius: 8px } .chat-contacts, .chat-detail { background: #0009; border: #fff 0px solid } .chat-contacts { border-radius: 10px 0 0 10px } .chat-detail { border-radius: 0 10px 10px 0 } .chat { background: #0009; border-radius: 10px } .contact-item { border-bottom: #fff 0px } .chat-full-header { border-bottom: #fff 0px solid } .chat-full .chat { border-bottom: 0px solid #fff; background-color: #0009; border-radius: 0 } .chat { border-top: 0px solid #fff } .alert-info { background-color: #709fdc3b; border-color: #709fdc; color: #fff !important; border-radius: 8px } .alert-info, .alert-info .chat-msg-text, .alert-info .chat-msg-text * { color: #fff !important; } .alert-info a, .alert-info .chat-msg-text a { color: #LINK_COLOR# !important; } .fa-exclamation-circle:before { filter: brightness(0) invert(1) } .chat-message-list-date .inside { background-color: #SURFACE#; color: #fff; border-radius: 8px } .custom-scroll::-webkit-scrollbar, .chat-message-list::-webkit-scrollbar, .chat-empty::-webkit-scrollbar, .chat-form-input .form-control::-webkit-scrollbar, .chat-form-input .hiddendiv::-webkit-scrollbar { background: #e600ff00; width: 5px; height: 10px } .custom-scroll::-webkit-scrollbar-thumb, .chat-message-list::-webkit-scrollbar-thumb, .chat-empty::-webkit-scrollbar-thumb, .chat-form-input .form-control::-webkit-scrollbar-thumb, .chat-form-input .hiddendiv::-webkit-scrollbar-thumb { background: #1f1f2090 } .chat { border-bottom: 0px solid #90f; background: #0009; border-radius: 10px } .chat-form-input .form-control, .chat-form-input .hiddendiv { transform: translate(-10px) } .form-inline .form-control { background-color: #SURFACE#; border-radius: 10px } .theme-select { color: #d3cfc9; background-color: #SURFACE#; background-image: none; border-color: #SURFACE_HOVER#; box-shadow: #00000012 0 1px 1px inset }
+        .profile-cover-img { background-clip: border-box; background: url(https://funpay.com/img/layout/profile-header.jpg) no-repeat center bottom; background-size: 100% auto } .profile-cover { overflow: unset } .media-user-name { color: #TEXT_COLOR# } .media-user-name a { color: #fff } .bg-light-color { background-color: #fff0 } #header { background: rgba(0,0,0,0.08) !important } .game-title a { color: #ACCENT_COLOR#; text-decoration: none; font-weight: 600; letter-spacing: 0.2px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 10px rgba(0, 0, 0, 0.5); transition: color 0.15s ease, text-shadow 0.15s ease } .game-title a:hover { color: #ACCENT_HOVER#; text-decoration: none; text-shadow: 0 0 14px #ACCENT_GLOW#, 0 2px 4px rgba(0, 0, 0, 0.9) } .navbar-right.logged .dropdown-menu { border-radius: 8px } .user-link-name { color: #ACCENT_COLOR#; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7) } .product-page .page-content { background-color: #0009; border-radius: 10px; margin-top: 12px; margin-bottom: 20px; padding: 20px } .chat-btn-image { background-color: #ff6d1500; border: 0px; color: #fff } .chat-btn-image:hover { background-color: transparent; border: 0px; color: #fff } .chat-btn-image:focus { background-color: transparent; border: 0px; color: #fff } .btn-default:active:hover, .btn-default:active:focus, .btn-default:active.focus, .btn-default.active:hover, .btn-default.active:focus, .btn-default.active.focus { color: #fff; background-color: #ff6d1500; border: 0px } .fa-info-circle:before { filter: brightness(0) invert(1) } .chat-form-input .form-group { transform: translate(-10px); width: 103% } .tc.table-hover .tc-item.transaction-status-waiting { background-color: #b17f2e94 } .tc.table-hover .tc-item.transaction-status-waiting:hover { background-color: #b37f2abf } .tc-finance .tc-header>div, .tc-finance .tc-item>div { border-bottom: #505050 1px solid; border-top: #505050 0px solid } .tc.table-hover .tc-item.info { background-color: #1f508994 } .tc.table-hover .tc-item.info:hover { background-color: #1f5089bf } .tc.table-hover .tc-item:hover { background-color: ${containerBgRgba} } .navbar-default .navbar-nav>.active>a, .navbar-default .navbar-nav>.active>a:hover, .navbar-default .navbar-nav>.active>a:focus { color: #LINK_COLOR#; font-weight: 700; background-color: #0000 } .counter-list .counter-item { background: #14141480; border: 0px solid #feff00; border-radius: 20px; outline: 0 } .content-with-cd-wide { background: ${containerBgRgba}; border-radius: 10px } a.tc-item { color: #TEXT_COLOR#; text-decoration: none } .cd { position: relative; z-index: 100; border-radius: 50%; width: 700px; height: 700px; filter: brightness(.8); border: 0px } a.cd-satellite { transform: translate(-25px) } .cd .spacer { background-color: transparent } .offer { background: ${containerBgRgba}; padding: 20px; border-radius: 10px } .tc { background-color: ${containerBgRgba}; border-radius: 10px } .tc-finance { border-top: 0px solid #322f34; border-bottom: #322f34 0px solid; border-left: #322f34 0px solid; border-right: #322f34 0px solid; border-radius: 10px } .modal-content { background-color: ${containerBgSolid}; border: 0px solid #999; border-radius: 10px; -webkit-box-shadow: 0 3px 9px rgba(0, 0, 0, .5); box-shadow: 0 3px 9px #00000080; background-clip: padding-box; outline: 0 } label.control-label { color: #ACCENT_COLOR# } .counter-item { background: #0b0b0b90; color: #TEXT_COLOR# } .counter-item:hover, .counter-item:focus, .counter-item:active, .counter-item:active:hover { background: #0b0b0bad; color: #TEXT_COLOR# } .counter-item.active { background: ${containerBgRgba}; color: #fff } .counter-item.active:hover, .counter-item.active:focus, .counter-item.active:active, .counter-item.active:active:hover { background: #101010; color: #fff } .form-control-box { background: transparent; border: 1px solid #fff; border-radius: 10px } h5, .h5, .form-group>label { color: #fff } .bootstrap-select .dropdown-menu.inner { background-color: #SURFACE# } .lot-field .lot-field-radio-box button { background-color: #SURFACE#; color: #fbfbfb } .lot-field .lot-field-radio-box button:hover { color: #fff; background-color: #SURFACE_HOVER# } .btn-dark { background-color: #222; border-radius: 10px; border-color: #fff } .btn-gray:hover { background-color: #2a5590; color: #fff; border-radius: 10px; border-color: #2a5590 } .chat-promo { border-radius: 10px; border: 0px; background: #00000073; transform: translate(-10px) } .dropdown-menu { background-color: #SURFACE#; border-radius: 8px } .navbar-default { border-color: #e4e4e466 } .chat-form-btn .btn-round { background-color: #cbcbcb1f; color: #fff; border-radius: 100px; border: 0px } .chat-form-btn .btn-round:hover { background-color: #3466a1; color: #fff } .chat-img { border-radius: 8px } .btn-danger { border: 0px; border-radius: 8px } .btn-gray { background-color: #3466a1; border-radius: 8px; color: #fff; border: 0px } .btn-primary { border: 0px solid #fff; border-radius: 8px; background-color: #PRIMARY_COLOR#; color: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35); transition: filter 0.15s ease, box-shadow 0.15s ease } .btn-primary:hover, .btn-primary:focus, .btn-primary:active, .btn-primary:active:hover, .btn-primary:active:focus, .btn-primary[disabled]:hover, .btn-primary[disabled]:focus, .btn-primary[disabled]:active, .btn-primary[disabled]:active:hover, .btn-primary[disabled]:active:focus { filter: brightness(1.18); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); color: #fff } .btn-default { border: 0px solid #fff; border-radius: 8px; background-color: #PRIMARY_COLOR#60; color: #fff } .btn-default:hover, .btn-default:focus, .btn-default:active, .btn-default:active:hover, .btn-default:active:focus, .btn-default[disabled]:hover, .btn-default[disabled]:focus, .btn-default[disabled]:active, .btn-default[disabled]:active:hover, .btn-default[disabled]:active:focus { border: 0px solid #1e4f8700; background-color: #PRIMARY_COLOR#; color: #fff } .bg-light-style .btn-default { background-color: transparent; border: 0px; color: #fff } .block-info { color: #ffffffd9 } .navbar-form .form-control { background-color: transparent; color: #TEXT_COLOR# } .navbar-form .form-control::placeholder { color: color-mix(in srgb, #TEXT_COLOR# 70%, transparent); opacity: 1 } .navbar-form .btn-link, .navbar-form .form-group .fa { color: color-mix(in srgb, #TEXT_COLOR# 70%, transparent) !important } .logo-color, .footer-block-als { filter: brightness(0) invert(1) } .nav-abc .nav>li>a { color: rgba(255, 255, 255, 0.65) !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); transition: color 0.15s ease } .nav-abc ul .active a, .nav-abc ul .active a:hover, .nav-abc ul .active a:focus, .nav-abc .nav>li>a:hover, .nav-abc .nav>li>a:focus, .nav-abc .nav>li.active>a { text-decoration: none; cursor: default; color: #ACCENT_COLOR# !important; font-weight: 700; text-shadow: 0 0 10px #ACCENT_GLOW# } a:focus { text-decoration: none; cursor: default; color: #fff } .list-inline>li>a { color: #LINK_COLOR#; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); transition: color 0.15s ease, opacity 0.15s ease } .list-inline>li>a:hover { color: #ACCENT_COLOR#; text-decoration: underline; text-underline-offset: 2px } .list-inline>li:after { content: " ·"; color: rgba(255, 255, 255, 0.35); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) } .media-user.style-circle .avatar-photo:after { background: #a6a6a6; border: 3px solid ${containerBgRgba} } .counter-list-wide { padding-bottom: 20px; padding-top: 20px } .dropdown-menu>li+li, .dropdown-menu .dropdown-menu>li { border-top: #6a6a6a70 1px solid; border: 0px } .dropdown-menu>li:first-child>a { border-radius: 8px 8px 0 0 } .dropdown-menu>li:last-child>a { border-radius: 0 0 8px 8px } .navbar-nav>li>.dropdown-menu, .dropdown-menu, .nav-tabs .dropdown-menu { border-radius: 8px } .navbar-default .navbar-nav>li>a { color: #TEXT_COLOR# } .navbar-default .navbar-nav>li>a:hover, .navbar-default .navbar-nav>li>a:focus { color: #ddd } .ajax-alert { border-radius: 10px } .navbar-default { background-color: transparent } .offer-tc-container { border-top: #ff0000 0px solid } .tc:not(.tc-selling):not(.tc-finance) .tc-item>div { border-top: #505050 1px solid } .review-container { border-top: #505050 1px solid } a:hover { color: #ACCENT_COLOR#; text-decoration: underline; } a.tc-item:hover, a.tc-item:hover div, a.tc-item:hover .tc-desc-text, a.tc-item:hover .tc-server { color: #TEXT_COLOR#; text-decoration: none; } .panel { background-color: #SURFACE_RAISED# } .contact-item:hover { background: #LINK_COLOR#30 } a { color: #LINK_COLOR#; text-decoration: none; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) } .page-header, .nav-header, .lead, h5, .h5, .nav-abc-header { text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85) } a.tc-item, .tc-desc-text, .tc-server, .tc-price { text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) } .panel-default>.panel-heading { background-color: #SURFACE_RAISED#; border-color: #2d2d2d61 } .tc.table-hover .tc-item { background-color: ${containerBgRgba} } .tc.table-hover a.tc-item:hover { background-color: #LINK_COLOR#20 } .tc.table-hover .tc-item.warning { background-color: ${containerBgRgba} } .tc.table-hover a.tc-item.warning:hover { background-color: #LINK_COLOR#20 } .chat-not-selected .chat-message-container { border-top: 0px solid #fff } .chat-not-selected .chat-message-container { border-bottom: 0px solid #fff } .chat-message-container { border-left: 0px solid #fff; border-right: 0px solid #fff } .dropdown-menu>li>a:hover, .dropdown-menu>li>a:focus { color: #fff; background-color: #SURFACE_HOVER# } .navbar-nav>li>.dropdown-menu>.active>a { background: #LINK_COLOR#85; color: #fff } .navbar-nav>li>.dropdown-menu>.active>a:hover { background: #LINK_COLOR#b5 } .navbar-default .navbar-nav>.open>a, .navbar-default .navbar-nav>.open>a:hover, .navbar-default .navbar-nav>.open>a:focus { color: #LINK_COLOR# } .btn-default:active, .btn-default.active, .open>.btn-default.dropdown-toggle { color: #fff; background-color: #PRIMARY_COLOR#; border-color: transparent } .contact-item-message { color: #ffffff73 } .contact-item.active { background: #LINK_COLOR#60; color: #ffffffd4 } .contact-item.active:hover, .contact-item.active:focus { background: #LINK_COLOR#80 } .contact-item.unread { background: #ff9d00a1 } .contact-item.unread, .contact-item.unread .contact-item-message { color: #ffffffd4 } .chat-form { border: #8924b100 0px solid } .chat-form-input .form-control, .chat-form-input .hiddendiv { padding: 11px 10px 10px; background-color: ${containerBgRgba}; border-radius: 10px } .badge { display: inline-block; min-width: 20px; padding: 3px 5px 5px; font-size: 12px; font-weight: 500; color: #fff; line-height: 12px; vertical-align: middle; white-space: nowrap; text-align: center; background-color: #0b0b0b55; border-radius: 10px } .payment-card { background: #0009; padding: 20px; border-radius: 10px; margin: 12px 0 } .form-control { border: 0px solid #fff; background-color: #SURFACE#; color: #TEXT_COLOR#; border-radius: 10px } .panel-default>.panel-heading { color: #ddd } .review-item-answer { display: inline-block; padding: 15px; background: #SURFACE#; border-radius: 10px; position: relative; color: #fff } .setting-item .btn-gray { background-color: #LINK_COLOR#; color: #fff; border-radius: 8px } .setting-item .btn-gray:hover, .setting-item .btn-gray:focus, .setting-item .btn-gray:active { background-color: #244f81; color: #fff } p { color: #ffffffd9 } .btn-success { border-radius: 8px; border: 0px } .drop-area { background-color: #SURFACE_RAISED#; border-radius: 8px; color: #d3d3d3; border: 1px solid #SURFACE# } .drop-area.hover { background-color: #SURFACE_HOVER# } .drop-area.error { background: #ff3434c7; border: #f00; color: #TEXT_COLOR# } .btn-info { border-radius: 8px; background-color: #11a8d5; border: 0px; margin-right: 5px } .btn-warning { border-radius: 8px; background-color: #ffa002; border: 0px } .details, .form-narrow { background-color: #0009; padding: 20px; margin-bottom: 20px; border-radius: 10px } .form-narrow .btn-block, .form-narrow .form-control, .form-narrow .input-group { background-color: #SURFACE#; border-radius: 8px } .nav-tabs>li.active>a, .nav-tabs>li.active>a:hover, .nav-tabs>li.active>a:focus { color: #fff; background-color: #0000 } .lot-fields-multilingual .nav-tabs a { color: #b5b5b5 } table.table-clickable tbody tr a { color: #LINK_COLOR#; text-decoration: none } table.table-clickable tbody tr a:hover { color: #fff; text-decoration: underline } .caret { color: #888; } .dropdown-toggle .caret { color: inherit; opacity: .85 } .sort::after { color: #555 !important; } .bootstrap-select .dropdown-toggle .filter-option { background: transparent; height: 100%; width: 100%; border: 0px #fff solid; border-radius: 8px; color: #fff } .bootstrap-select .dropdown-toggle .filter-option:hover { background: transparent; border-radius: 8px } .bootstrap-select .dropdown-toggle .filter-option:focus { background: transparent; border-radius: 8px } .has-feedback .form-control { border-radius: 8px } .withdraw-box .slave { background-color: #SURFACE_RAISED#; border-radius: 8px } .withdraw-box .slave:hover { background-color: #SURFACE_HOVER#; border-radius: 8px } .input-group .form-control:first-child, .input-group-addon:first-child, .input-group-btn:first-child>.btn, .input-group-btn:first-child>.btn-group>.btn, .input-group-btn:first-child>.dropdown-toggle, .input-group-btn:last-child>.btn:not(:last-child):not(.dropdown-toggle), .input-group-btn:last-child>.btn-group:not(:last-child)>.btn { border-radius: 10px 0 0 10px } .bootstrap-select.input-lg .btn, .input-group-lg>.bootstrap-select.form-control .btn, .input-group-lg>.bootstrap-select.input-group-addon .btn, .input-group-lg>.input-group-btn>.bootstrap-select.btn .btn, .bootstrap-select.input-lg .dropdown-menu>li>a, .input-group-lg>.bootstrap-select.form-control .dropdown-menu>li>a, .input-group-lg>.bootstrap-select.input-group-addon .dropdown-menu>li>a, .input-group-lg>.input-group-btn>.bootstrap-select.btn .dropdown-menu>li>a, .input-group-lg>.input-group-btn>.bootstrap-select.btn .dropdown-menu>li>a:hover, .input-group-lg>.input-group-btn>.bootstrap-select.btn .dropdown-menu>li>a:focus { background: transparent; border-radius: 8px } :not(.input-group)>.bootstrap-select.form-control:not([class*=col-]) { background: transparent; border-radius: 8px } .btn-default.dropdown-toggle { color: #fff; border: 0px; background-color: #PRIMARY_COLOR# } .btn-default.dropdown-toggle:hover, .btn-default.dropdown-toggle:focus, .btn-default.dropdown-toggle:active, .btn-default.dropdown-toggle:active:hover, .open>.btn-default.dropdown-toggle, .open>.btn-default.dropdown-toggle:hover, .open>.btn-default.dropdown-toggle:focus, .open>.btn-default.dropdown-toggle:active { color: #fff; border: 0px; background-color: #PRIMARY_COLOR#; filter: brightness(1.18) } .form-control[disabled], .form-control[readonly], fieldset[disabled] .form-control { background-color: #SURFACE_RAISED# } .payment-title { color: #fff; font-weight: old } .bootstrap-select .dropdown-menu>li>a { color: #b0b0b0 } .bootstrap-select .dropdown-menu>.active>a, .bootstrap-select .dropdown-menu>.active>a:hover, .bootstrap-select .dropdown-menu>.active>a:focus { background-color: #SURFACE_HOVER#; color: #ACCENT_COLOR# } .chat-header { border: #bd59be00 0px solid } .form-inline .form-control { background-color: #SURFACE#; border-radius: 8px } .chat-contacts, .chat-detail { background: #0009; border: #fff 0px solid } .chat-contacts { border-radius: 10px 0 0 10px } .chat-detail { border-radius: 0 10px 10px 0 } .chat { background: #0009; border-radius: 10px } .contact-item { border-bottom: #fff 0px } .chat-full-header { border-bottom: #fff 0px solid } .chat-full .chat { border-bottom: 0px solid #fff; background-color: #0009; border-radius: 0 } .chat { border-top: 0px solid #fff } .alert-info { background-color: #709fdc3b; border-color: #709fdc; color: #fff !important; border-radius: 8px } .alert-info, .alert-info .chat-msg-text, .alert-info .chat-msg-text * { color: #fff !important; } .alert-info a, .alert-info .chat-msg-text a { color: #LINK_COLOR# !important; } .fa-exclamation-circle:before { filter: brightness(0) invert(1) } .chat-message-list-date .inside { background-color: #SURFACE#; color: #fff; border-radius: 8px } .custom-scroll::-webkit-scrollbar, .chat-message-list::-webkit-scrollbar, .chat-empty::-webkit-scrollbar, .chat-form-input .form-control::-webkit-scrollbar, .chat-form-input .hiddendiv::-webkit-scrollbar { background: #e600ff00; width: 5px; height: 10px } .custom-scroll::-webkit-scrollbar-thumb, .chat-message-list::-webkit-scrollbar-thumb, .chat-empty::-webkit-scrollbar-thumb, .chat-form-input .form-control::-webkit-scrollbar-thumb, .chat-form-input .hiddendiv::-webkit-scrollbar-thumb { background: #1f1f2090 } .chat { border-bottom: 0px solid #90f; background: #0009; border-radius: 10px } .chat-form-input .form-control, .chat-form-input .hiddendiv { transform: translate(-10px) } .form-inline .form-control { background-color: #SURFACE#; border-radius: 10px } .theme-select { color: #d3cfc9; background-color: #SURFACE#; background-image: none; border-color: #SURFACE_HOVER#; box-shadow: #00000012 0 1px 1px inset }
     `;
 
     let themedCss = baseCss
@@ -388,21 +406,12 @@ function getCustomThemeCss(settings) {
         .replace(/#SURFACE_HOVER#/gi, fptSurfaceColor(settings.containerBgColor, 0.10));
 
     themedCss += fptButtonsCss(settings);
-    themedCss = themedCss.replace(/border-radius: \d+px/g, `border-radius: ${settings.borderRadius}px`);
+    themedCss = FPTSafe.themeRadii(themedCss, settings.borderRadius);
     themedCss = fptScopeOutsidePopup(themedCss);
 
-    if (settings.enableCircleCustomization) {
-        let circleCss = `.cd-container .cd, .corner-cd, .profile-cover-img {
-            transition: transform 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
-            transform: scale(${settings.circleSize / 100});
-            filter: blur(${settings.circleBlur}px);
-            opacity: ${settings.circleOpacity / 100};
-        }`;
-        if (!settings.showCircles) {
-            circleCss += ` .cd-container { display: none !important; }`;
-        }
-        themedCss += circleCss;
-    }
+    themedCss += fptCirclesCss(settings);
+    // После themeRadii: модулям нужны все четыре угла, а склеенные стыки в baseCss - нулевые.
+    themedCss += fptChatLayoutCss(settings);
 
     if (settings.enableImprovedSeparators) {
         themedCss += `
@@ -456,6 +465,7 @@ function getCustomThemeCss(settings) {
         `;
     }
 
+    themedCss += ` :root { --fpt-chat-action-radius: ${settings.borderRadius}px; } `;
     return themedCss;
 }
 
@@ -469,10 +479,12 @@ async function applyCustomTheme() {
     applyFptTextOutline({ ...DEFAULT_THEME, ...fpToolsTheme });
 
     if (!enableCustomTheme) {
+        if (window.FPTThemeVideo) window.FPTThemeVideo.apply({}, false);
         delete document.documentElement.dataset.fptThemeBg;
         document.documentElement.classList.remove('fpt-custom-theme-on');
         document.documentElement.classList.add('fpt-custom-theme-off');
         if (styleEl) styleEl.remove();
+        fptRemoveThemePrehides();
         manageFontImports({font: 'Helvetica Neue'});
         if (!overrideStyleEl) {
             overrideStyleEl = document.createElement('style');
@@ -498,6 +510,7 @@ async function applyCustomTheme() {
     
     const settings = { ...DEFAULT_THEME, ...fpToolsTheme, baseStyle: fptResolveThemeBaseStyle(fpToolsTheme) };
     const original = settings.baseStyle === 'original';
+    if (window.FPTThemeVideo) window.FPTThemeVideo.apply(settings, !original);
 
     // Обои лежат на body::before, поэтому реального «фона страницы» в DOM нет. Палитре меню и
     // фич (fptResolveBg) нужен цвет блоков темы, чтобы понять, тёмная страница или светлая.
@@ -524,50 +537,14 @@ async function applyCustomTheme() {
     let themeCss = getCustomThemeCss(settings);
     if (!original) themeCss += ` body { visibility: visible !important; } `;
     styleEl.textContent = themeCss;
+    // Ранние копии правил кругов и чата из theme_flash_fix.js больше не нужны и не должны пережить смену настроек.
+    fptRemoveThemePrehides();
     // фон становится тёмным не мгновенно - пересчитываем палитру на след. кадрах
     if (typeof fptApplyThemeVars === 'function') {
         requestAnimationFrame(() => { try { fptApplyThemeVars(); } catch (_) {} });
         setTimeout(() => { try { fptApplyThemeVars(); } catch (_) {} }, 120);
         setTimeout(() => { try { fptApplyThemeVars(); } catch (_) {} }, 400);
     }
-}
-
-async function randomizeTheme(payload = {}) {
-    const randomHex = () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-    const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-
-    const fontsWithDefault = ['Helvetica Neue', ...GOOGLE_FONTS];
-
-    const randomTheme = {
-        baseStyle: 'custom',
-        bgColor1: randomHex(),
-        bgColor2: randomHex(),
-        containerBgColor: randomHex(),
-        containerBgOpacity: Math.random() * 0.8 + 0.2, 
-        textColor: randomHex(),
-        linkColor: randomHex(),
-        font: fontsWithDefault[randomInt(0, fontsWithDefault.length - 1)],
-        bgBlur: randomInt(0, 15),
-        bgBrightness: randomInt(50, 120),
-        borderRadius: randomInt(0, 25),
-        enableCircleCustomization: Math.random() > 0.5,
-        showCircles: Math.random() > 0.3,
-        circleSize: randomInt(70, 130),
-        circleOpacity: randomInt(20, 100),
-        circleBlur: randomInt(0, 30),
-        enableImprovedSeparators: Math.random() > 0.5,
-        headerPosition: Math.random() > 0.5 ? 'top' : 'bottom',
-        enableGlassmorphism: Math.random() > 0.5,
-        glassmorphismBlur: randomInt(5, 20),
-        enableCustomScrollbar: Math.random() > 0.5,
-        scrollbarThumbColor: randomHex(),
-        scrollbarTrackColor: randomHex(),
-        scrollbarWidth: randomInt(4, 12)
-    };
-
-    // draftOnly: the replacement view keeps unapplied edits itself, so it only needs the values.
-    if (payload && payload.draftOnly) return randomTheme;
-    return setPopupTheme(randomTheme);
 }
 
 async function generatePaletteFromImage(payload = {}) {
@@ -711,7 +688,7 @@ async function applyFptTextOutline(override) {
 
     const menuTransparent = !!s.menuTransparent;
 
-    // Контур работает ТОЛЬКО в меню FunPay Funcy и ТОЛЬКО когда включено прозрачное меню.
+    // Контур работает ТОЛЬКО в меню Funcy и ТОЛЬКО когда включено прозрачное меню.
     if (!s.textOutlineEnabled || !menuTransparent) {
         if (styleEl) styleEl.remove();
         return;
@@ -755,10 +732,11 @@ async function setPopupTheme(patch, additionalSettings = {}) {
 }
 if (typeof window !== 'undefined' && window.fptPopupActions) {
     const register = (id, fn) => window.fptPopupActions.register('theme', id, fn);
-    register('uploadBgImageBtn', p => setPopupTheme({ bgImage: p.dataUrl }));
+    register('uploadBgImageBtn', p => setPopupTheme({ bgImage: p.dataUrl, bgVideo: null }));
     register('removeBgImageBtn', async () => {
         const result = await window.fptPopupActions.updateSettings('fpToolsTheme', ({ fpToolsTheme = {} }) => {
         delete fpToolsTheme.bgImage;
+        delete fpToolsTheme.bgVideo;
         return { fpToolsTheme };
         }, applyCustomTheme);
         return result.fpToolsTheme;
@@ -768,7 +746,6 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
         return { ...DEFAULT_THEME, ...saved, baseStyle: fptResolveThemeBaseStyle(saved) };
     };
     register('getThemeDefaults', () => ({ ...DEFAULT_THEME, baseStyle: 'original' }));
-    register('randomizeThemeBtn', randomizeTheme);
     register('generatePaletteBtn', generatePaletteFromImage);
     register('exportThemeBtn', savedTheme);
     register('shareThemeBtn', savedTheme);
@@ -790,13 +767,5 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
     register('enableMagicStickBtn', () => {
         initializeMagicStickStyler();
         window.fpToolsMagicStickInstance.toggle();
-    });
-    register('fp-apply-dark-preset', async (p = {}) => {
-        const canvas = document.createElement('canvas'); canvas.width = 2; canvas.height = 2;
-        const context = canvas.getContext('2d'); context.fillStyle = '#1a1a1a'; context.fillRect(0, 0, 2, 2);
-        const preset = { baseStyle: 'custom', bgImage: canvas.toDataURL('image/png'),
-            bgColor1: '#0a0a0a', bgColor2: '#222222', containerBgColor: '#111111', textColor: '#cccccc', linkColor: '#888888' };
-        if (p.draftOnly) return preset;
-        return setPopupTheme(preset, { enableCustomTheme: true });
     });
 }

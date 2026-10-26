@@ -6,16 +6,10 @@ const FUNPAY_DEFAULT_SOUND_URL = 'https://funpay.com/audio/chat_loud.mp3';
 window.FPTNotificationSounds = (() => {
     const groups = Object.freeze([
         { id: 'funpay', label: 'FunPay' },
-        { id: 'messengers', label: 'Мессенджеры' },
         { id: 'custom', label: 'Своя' }
     ]);
     const presets = Object.freeze([
         { id: 'default', group: 'funpay', label: 'Стандартный', hint: 'Звук FunPay', icon: 'storefront' },
-        { id: 'vk', group: 'messengers', label: 'ВКонтакте', hint: 'Сообщение VK', icon: 'forum', file: 'vk.mp3' },
-        { id: 'tg', group: 'messengers', label: 'Telegram', hint: 'Сообщение Telegram', icon: 'send', file: 'telegram.mp3' },
-        { id: 'iphone', group: 'messengers', label: 'iPhone', hint: 'Уведомление iOS', icon: 'smartphone', file: 'iphone.mp3' },
-        { id: 'discord', group: 'messengers', label: 'Discord', hint: 'Сообщение Discord', icon: 'headset_mic', file: 'discord.mp3' },
-        { id: 'whatsapp', group: 'messengers', label: 'WhatsApp', hint: 'Сообщение WhatsApp', icon: 'call', file: 'whatsapp.mp3' },
         { id: 'custom', group: 'custom', label: 'Своя мелодия', hint: 'Загруженный отрывок', icon: 'library_music' }
     ].map(Object.freeze));
     const byId = new Map(presets.map(preset => [preset.id, preset]));

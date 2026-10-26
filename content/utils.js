@@ -547,7 +547,7 @@ window.fptLotWrite = fptLotWrite;
 
 // DOM scheduling helpers: preserve mutation batches and migrate pending work on visibility changes.
 (function installPerfHelpers(root) {
-    function report(name, error) { console.error(`FunPay Funcy [${name}]`, error); }
+    function report(name, error) { console.error(`Funcy [${name}]`, error); }
     root.fptCoalesce = function fptCoalesce(fn, { hiddenDelay = 100, records = false, name = fn.name || 'callback' } = {}) {
         let handle = null, kind = null, generation = 0, disposed = false;
         let batch = [], observer;

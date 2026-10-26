@@ -42,12 +42,30 @@ async function initializeQuickGamesMenu() {
     `;
 
     const style = createElement('style', {}, {}, `
-        .dropdown-menu .info-text { padding: 8px 15px; font-size: 12px; color: #999; white-space: normal; }
-        .dropdown-menu .input-container { padding: 5px 15px; }
-        #quickGameUrlInput { width: 100%; padding: 5px 8px; border: 1px solid #555; background-color: #333; color: #fff; border-radius: 4px; box-sizing: border-box; }
-        #quickGamesListContainer a { color: #c3c3c3 !important; font-size: 13px !important; padding: 6px 15px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-        #quickGamesListContainer a:hover { color: #fff !important; }
-        #quickGamesListContainer .divider { height: 1px; margin: 4px 0 !important; overflow: hidden; background-color: #444 !important; }
+        /* Themed like the page select menus (page_selects.js): extension palette, rounded card. */
+        .menu-item-fp-games > .dropdown-menu {
+            --qg-bg: var(--fptm-bg, #fff);
+            --qg-text: var(--fptm-text, #222);
+            --qg-accent: var(--fptm-accent, #1b75bb);
+            --qg-border: color-mix(in srgb, var(--qg-text) 14%, transparent);
+            --qg-hover: color-mix(in srgb, var(--qg-text) 9%, transparent);
+            width: 260px; margin-top: 6px !important; padding: 6px !important;
+            border: 1px solid var(--qg-border) !important; border-radius: 14px !important;
+            background: var(--qg-bg) !important; color: var(--qg-text) !important;
+            box-shadow: 0 14px 34px rgba(0, 0, 0, .35) !important;
+            animation: fptQgIn .16s cubic-bezier(.4, 0, .2, 1) both;
+        }
+        @keyframes fptQgIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .menu-item-fp-games > .dropdown-menu { animation: none; } }
+        .menu-item-fp-games .info-text { padding: 6px 10px !important; font-size: 12px; line-height: 1.4; color: var(--qg-text); opacity: .62; white-space: normal; }
+        .menu-item-fp-games .input-container { padding: 4px; }
+        #quickGameUrlInput { width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--qg-border); background: var(--qg-hover); color: var(--qg-text); border-radius: 9px; box-sizing: border-box; outline: none; font-size: 13px; transition: border-color .15s, box-shadow .15s; }
+        #quickGameUrlInput::placeholder { color: var(--qg-text); opacity: .45; }
+        #quickGameUrlInput:focus { border-color: var(--qg-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--qg-accent) 22%, transparent); }
+        .menu-item-fp-games .divider { height: 1px !important; margin: 6px 4px !important; background: var(--qg-border) !important; }
+        #quickGamesListContainer .divider { display: none; }
+        #quickGamesListContainer a { color: var(--qg-text) !important; background: transparent !important; font-size: 13px !important; padding: 8px 10px !important; border-radius: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; transition: background .12s; }
+        #quickGamesListContainer a:hover, #quickGamesListContainer a:focus { background: var(--qg-hover) !important; color: var(--qg-accent) !important; }
     `);
     document.head.appendChild(style);
 
@@ -163,93 +181,111 @@ async function initializeQuickGamesMenu() {
 } 
 
 function initializeMarkAllAsRead() {
-    const observer = new MutationObserver(async (mutationsList, obs) => {
+    if (document.getElementById('fp-tools-read-all-btn')) return;
+    const mount = () => {
         const header = document.querySelector('.chat-full-header');
-        if (!header || document.getElementById('fp-tools-read-all-btn')) {
+        if (!header) return;
+        if (document.getElementById('fp-tools-read-all-btn')) {
+            observer.disconnect();
             return;
         }
 
+        const actions = createElement('div', { class: 'fpt-chat-actions', role: 'group', 'aria-label': 'Действия со списком сообщений' });
         const readAllBtn = createElement('button', {
             id: 'fp-tools-read-all-btn',
-            class: 'fp-tooltip-host',
+            type: 'button',
+            class: 'fp-tooltip-host fpt-chat-action',
+            'aria-label': 'Прочитать все',
+            'aria-busy': 'false',
+            'data-state': 'idle',
             'data-fp-tooltip': 'Прочитать все'
         });
-        readAllBtn.innerHTML = '<span class="material-icons">done_all</span>';
+        readAllBtn.innerHTML = '<span class="material-icons" aria-hidden="true">done_all</span>';
         
-        const filterMarkedBtn = createElement('label', {
+        const filterMarkedBtn = createElement('button', {
             id: 'fp-tools-filter-marked-btn',
-            class: 'fp-tooltip-host fp-tools-chat-toggle',
+            type: 'button',
+            class: 'fp-tooltip-host fpt-chat-action',
+            'aria-label': 'Только помеченные',
+            'aria-pressed': 'false',
             'data-fp-tooltip': 'Только помеченные'
         });
-        filterMarkedBtn.innerHTML = `
-            <input type="checkbox" id="filter-marked-checkbox">
-            <span class="fp-tools-chat-toggle-slider">
-                 <span class="material-icons">label</span>
-            </span>
-        `;
+        filterMarkedBtn.innerHTML = '<span class="material-icons" aria-hidden="true">sell</span>';
         
-        header.appendChild(readAllBtn);
-        header.appendChild(filterMarkedBtn);
+        actions.append(readAllBtn, filterMarkedBtn);
+        header.appendChild(actions);
+
+        let stateTimer;
+        const setReadState = (state, label) => {
+            clearTimeout(stateTimer);
+            readAllBtn.dataset.state = state;
+            readAllBtn.disabled = state === 'loading';
+            readAllBtn.setAttribute('aria-busy', String(state === 'loading'));
+            readAllBtn.setAttribute('aria-label', label);
+            readAllBtn.dataset.fpTooltip = label;
+            readAllBtn.querySelector('.material-icons').textContent = {
+                idle: 'done_all', loading: 'progress_activity', success: 'check', empty: 'done_all', error: 'error_outline'
+            }[state];
+            if (state !== 'idle' && state !== 'loading') {
+                stateTimer = setTimeout(() => setReadState('idle', 'Прочитать все'), 2200);
+            }
+        };
+
+        const syncUnreadCount = () => {
+            const counter = header.querySelector('.badge');
+            if (!counter) return;
+            const count = document.querySelectorAll('.contact-item.unread').length;
+            counter.textContent = String(count);
+            counter.style.display = count ? '' : 'none';
+        };
 
         readAllBtn.addEventListener('click', async () => {
+            if (readAllBtn.disabled) return;
             const unreadItems = Array.from(document.querySelectorAll('.contact-item.unread'));
             if (unreadItems.length === 0) {
+                setReadState('empty', 'Все сообщения уже прочитаны');
                 showNotification('Нет непрочитанных сообщений.', false);
                 return;
             }
 
-            // --- Start: Immediate visual update ---
-            readAllBtn.classList.add('loading');
-            readAllBtn.disabled = true;
-
-            const nodeIdsToRead = [];
-            unreadItems.forEach(item => {
-                const nodeId = item.dataset.id;
-                if (nodeId) {
-                    nodeIdsToRead.push(nodeId);
-                }
-                item.classList.remove('unread'); // Visually mark as read immediately
-            });
-
-            const counter = document.querySelector('.chat-full-header .badge');
-            if (counter) {
-                counter.textContent = '0';
-                counter.style.display = 'none';
-            }
-            
+            setReadState('loading', 'Отмечаем сообщения прочитанными…');
+            unreadItems.forEach(item => item.classList.remove('unread'));
+            syncUnreadCount();
             showNotification(`Начинаю отмечать ${unreadItems.length} диалогов как прочитанные...`, false);
-            // --- End: Immediate visual update ---
 
             let processedCount = 0;
-            const intervalId = setInterval(async () => {
-                // If the list of IDs is empty, we're done.
-                if (nodeIdsToRead.length === 0) {
-                    clearInterval(intervalId);
-                    readAllBtn.classList.remove('loading');
-                    readAllBtn.disabled = false;
-                    showNotification(`Завершено: ${processedCount} диалогов отмечены прочитанными.`, false);
-                    return;
-                }
-
-                const nodeId = nodeIdsToRead.shift();
-                const chatUrl = `https://funpay.com/chat/?node=${nodeId}`;
-
+            let failedCount = 0;
+            // Keep the existing pacing, but finish only after every request has settled.
+            // A slow request must not overlap the next one or show a false success state.
+            for (const item of unreadItems) {
+                await new Promise(resolve => setTimeout(resolve, 800));
                 try {
-                    // Just making the GET request is enough to mark it as read on the server
-                    await fetch(chatUrl);
+                    const nodeId = item.dataset.id;
+                    if (!/^\d+$/.test(nodeId || '')) throw new Error('Нет идентификатора диалога');
+                    const response = await fetch(`https://funpay.com/chat/?node=${nodeId}`);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     processedCount++;
                 } catch (error) {
-                    console.error(`FunPay Funcy: Ошибка при "посещении" чата ${nodeId} для прочтения`, error);
-                    // We don't re-add the nodeId to the list to avoid getting stuck on a failing one.
+                    failedCount++;
+                    item.classList.add('unread');
+                    syncUnreadCount();
                 }
-
-            }, 800); // 0.8 second interval
+            }
+            if (failedCount) {
+                setReadState('error', 'Не всё прочитано — повторить');
+                showNotification(`Прочитано: ${processedCount}. Не удалось: ${failedCount}. Можно повторить.`, true);
+            } else {
+                setReadState('success', 'Все сообщения прочитаны');
+                showNotification(`Завершено: ${processedCount} диалогов отмечены прочитанными.`, false);
+            }
         });
         
-        const filterCheckbox = document.getElementById('filter-marked-checkbox');
+        let isFilterActive = false;
+        let filterChanged = false;
 
         const applyMarkedFilter = () => {
-            const isFilterActive = filterCheckbox.checked;
+            filterMarkedBtn.setAttribute('aria-pressed', String(isFilterActive));
+            filterMarkedBtn.dataset.fpTooltip = isFilterActive ? 'Показать все диалоги' : 'Только помеченные';
             const contactItems = document.querySelectorAll('.contact-list .contact-item');
             
             contactItems.forEach(item => {
@@ -262,16 +298,18 @@ function initializeMarkAllAsRead() {
             });
         };
 
-        filterCheckbox.addEventListener('change', async () => {
-            if (!fptExtAlive()) return;
-            await fptSafe(() => chrome.storage.local.set({ fpToolsIsMarkedFilterActive: filterCheckbox.checked }));
+        filterMarkedBtn.addEventListener('click', async () => {
+            filterChanged = true;
+            isFilterActive = !isFilterActive;
             applyMarkedFilter();
+            if (!fptExtAlive()) return;
+            await fptSafe(() => chrome.storage.local.set({ fpToolsIsMarkedFilterActive: isFilterActive }));
         });
 
         if (fptExtAlive()) {
             fptSafe(() => chrome.storage.local.get('fpToolsIsMarkedFilterActive'), {}).then(data => {
-                if (data && data.fpToolsIsMarkedFilterActive) {
-                    filterCheckbox.checked = true;
+                if (!filterChanged && data?.fpToolsIsMarkedFilterActive) {
+                    isFilterActive = true;
                     applyMarkedFilter();
                 }
             });
@@ -290,10 +328,12 @@ function initializeMarkAllAsRead() {
 
         // 3.0: stop the outer observer once our controls exist - it observed the whole body
         // subtree forever, which was a constant performance drain on the chat page.
-        obs.disconnect();
-    });
+        observer.disconnect();
+    };
 
+    const observer = new MutationObserver(mount);
     observer.observe(document.body, { childList: true, subtree: true });
+    mount();
 }
 
 if (typeof window !== 'undefined' && window.fptPopupActions) {

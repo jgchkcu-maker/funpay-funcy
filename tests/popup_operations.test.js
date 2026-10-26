@@ -92,22 +92,6 @@ test('bulk lot updates stop before writing the next selected lot when cancelled'
     assert.deepEqual(h.messages.map(message => message.action), ['getLotForExport', 'saveSingleLot']);
 });
 
-test('gallery button IDs load data, cycle and apply without mounting a card', async () => {
-    const h = context(); const theme = { bgColor1: '#ffffff', font: 'Inter' };
-    h.ctx.fetch = async url => ({ ok: true, json: async () => url.endsWith('index.json')
-        ? [{ name: 'one', file: 'one.fptheme' }, { name: 'two', file: 'two.fptheme' }] : theme });
-    h.ctx.fptSanitizeThemeColors = value => value;
-    h.ctx.applyCustomTheme = h.ctx.applyHeaderPosition = async () => {};
-    h.load('content/features/theme_gallery.js');
-    const catalog = await h.api.run('theme', 'fptg-load'); assert.equal(catalog.length, 2);
-    assert.deepEqual(h.saved, {});
-    const selected = await h.api.run('theme', 'fptg-next'); assert.equal(selected.theme.name, 'two');
-    assert.equal((await h.api.run('theme', 'fptg-prev')).theme.name, 'one');
-    await h.api.run('theme', 'applyCurrent'); assert.deepEqual(h.saved.fpToolsTheme, theme);
-    assert.equal(h.saved.enableCustomTheme, undefined);
-    await h.api.run('theme', 'fp-wp-apply-cur'); assert.equal(h.saved.enableCustomTheme, true);
-});
-
 test('settings backup retains its format, exclusions and atomic auto-reply import', async () => {
     const h = context({ hideBalance: true, fpToolsAccounts: [{ key: 'private' }], fpToolsGCToken: 'private',
         fpToolsAutoReplies: { greetingText: 'saved' } });
@@ -141,15 +125,13 @@ test('settings backups cannot export or restore retired piggy-bank data', async 
 });
 
 test('concurrent feature mutations and partial settings writes retain both explicit changes', async () => {
-    const h = context({ fpToolsAccounts: [{ name: 'one', key: '1' }, { name: 'two', key: '2' }],
+    const h = context({
         fpToolsSlashCommands: { enabled: true, commands: [{ id: 'one', response: 'old1' }, { id: 'two', response: 'old2' }] },
         fpToolsTheme: { font: 'Inter', textColor: '#111111' } });
-    h.ctx.fpToolsAccounts = []; h.load('content/features/accounts.js'); h.load('content/features/blacklist.js');
+    h.load('content/features/blacklist.js');
     h.load('content/features/slash_commands_ui.js'); h.load('content/features/theme.js');
     h.ctx.applyCustomTheme = h.ctx.applyHeaderPosition = async () => {};
     await Promise.all([
-        h.api.run('accounts', 'renameAccount', { key: '1', name: 'new1' }),
-        h.api.run('accounts', 'renameAccount', { key: '2', name: 'new2' }),
         h.api.run('blacklist', 'fp-bl-add-btn', { username: 'one' }),
         h.api.run('blacklist', 'fp-bl-add-btn', { username: 'two' }),
         h.api.run('templates', 'saveSlashCommand', { id: 'one', settings: { response: 'new1' } }),
@@ -157,7 +139,6 @@ test('concurrent feature mutations and partial settings writes retain both expli
         h.api.run('theme', 'uploadBgImageBtn', { dataUrl: 'new-image' }),
         h.api.run('theme', 'saveSettings', { settings: { fpToolsTheme: { font: 'Arial' } } })
     ]);
-    assert.deepEqual(h.saved.fpToolsAccounts.map(a => a.name), ['new1', 'new2']);
     assert.deepEqual(h.saved.fpToolsBlacklist.map(a => a.username), ['one', 'two']);
     assert.deepEqual(h.saved.fpToolsSlashCommands.commands.map(a => a.response), ['new1', 'new2']);
     assert.equal(h.saved.fpToolsTheme.bgImage, 'new-image'); assert.equal(h.saved.fpToolsTheme.font, 'Arial');

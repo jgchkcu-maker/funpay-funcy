@@ -1,4 +1,4 @@
-// Shared UI primitives for category views in the FunPay Funcy popup.
+// Shared UI primitives for category views in the Funcy popup.
 (function (root) {
     'use strict';
 

@@ -109,7 +109,8 @@
     async function listLots(known = []) {
         const app = (() => { try { const data = JSON.parse(document.body?.dataset.appData || '{}'); return Array.isArray(data) ? data[0] : data; } catch (_) { return {}; } })();
         const lots = app?.userId ? await chrome.runtime.sendMessage({ action: 'getUserLotsList', userId: app.userId }) : [];
-        const list = Array.isArray(lots) ? lots.map(lot => ({ offerId: String(lot.id), nodeId: lot.nodeId ? String(lot.nodeId) : null, title: lot.title || `Лот #${lot.id}`, categoryName: lot.categoryName || '', visible: true })) : [];
+        // Валюта (chips) не читается через offerEdit — автоматизации лотов она недоступна.
+        const list = Array.isArray(lots) ? lots.filter(lot => lot?.kind !== 'chips').map(lot => ({ offerId: String(lot.id), nodeId: lot.nodeId ? String(lot.nodeId) : null, title: lot.title || `Лот #${lot.id}`, categoryName: lot.categoryName || '', visible: true })) : [];
         const seen = new Set(list.map(lot => lot.offerId));
         for (const lot of known) {
             if (!lot?.offerId || seen.has(String(lot.offerId))) continue;

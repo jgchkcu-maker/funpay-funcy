@@ -36,7 +36,7 @@ const FPT_NEEDS_CHAT_SUBGROUP_ORDER = [
 
 const FPT_NEEDS_LEGACY_PAGE_LABELS = ['Функции'];
 
-const FPT_FEATURE_REGISTRY = [
+const FPT_ALL_FEATURES = [
     // ───────────── Шапка сайта ─────────────
     {
         id: 'rmthub_seller_search',
@@ -98,7 +98,7 @@ const FPT_FEATURE_REGISTRY = [
     {
         id: 'chat_read_all_btn',
         label: 'Кнопка «Прочитать все»',
-        desc: 'Круглая кнопка-иконка (галочки) в шапке открытого диалога - помечает все непрочитанные чаты как прочитанные.',
+        desc: 'Кнопка с галочками рядом с заголовком «Сообщения» — помечает непрочитанные чаты как прочитанные и показывает ход выполнения.',
         group: 'Чат',
         subgroup: 'Шапка диалога',
         selector: '#fp-tools-read-all-btn',
@@ -107,11 +107,11 @@ const FPT_FEATURE_REGISTRY = [
     {
         id: 'chat_filter_marked_btn',
         label: 'Переключатель «Только помеченные»',
-        desc: 'Тумблер-ползунок в шапке открытого диалога (иконка-ярлык) - оставляет в списке только помеченные чаты. Зелёный во включённом состоянии.',
+        desc: 'Кнопка с ярлыком рядом с заголовком «Сообщения» — оставляет только помеченные чаты. Включённый фильтр выделен цветом.',
         group: 'Чат',
         subgroup: 'Шапка диалога',
         selector: '#fp-tools-filter-marked-btn',
-        preview: { kind: 'html', html: '<div class="fpt-pv-toggle"><span class="fpt-pv-toggle-track"><span class="material-icons">label</span></span></div>' }
+        preview: { kind: 'html', html: '<div class="fpt-pv-toggle"><span class="material-icons">sell</span></div>' }
     },
 
     // ───────────── Чат: выпадающее меню «⋮» ─────────────
@@ -190,7 +190,7 @@ const FPT_FEATURE_REGISTRY = [
     {
         id: 'lot_translate_btn',
         label: 'Кнопка «Перевод» в лоте',
-        desc: 'Кнопка «Перевод» рядом с вкладкой английского языка в мультиязычном редакторе лота - переводит текст лота через ИИ.',
+        desc: 'Кнопка «Перевод» рядом с вкладкой английского языка в мультиязычном редакторе лота - переводит текст лота через Google Translate.',
         group: 'Создание и оформление лота',
         selector: '#fp-tools-translate-btn',
         preview: { kind: 'html', html: '<div class="fpt-pv-translatebtn">Перевод</div>' }
@@ -341,7 +341,7 @@ const FPT_FEATURE_REGISTRY = [
     {
         id: 'sales_stats_expand',
         label: 'Кнопка «Показать ещё» в статистике',
-        desc: 'Строка «Показать ещё ▾» в блоке статистики FunPay Funcy на странице продаж - разворачивает дополнительную статистику.',
+        desc: 'Строка «Показать ещё ▾» в блоке статистики Funcy на странице продаж - разворачивает дополнительную статистику.',
         group: 'Цены и аналитика',
         selector: '#fpTools-stats-extra, #fpTools-stats-expand-btn',
         preview: { kind: 'html', html: '<div class="fpt-pv-expandrow"><span>Показать ещё</span><span>▾</span></div>' }
@@ -359,6 +359,8 @@ const FPT_FEATURE_REGISTRY = [
 ];
 
 // expose globally for non-module content scripts
+const FPT_FEATURE_REGISTRY = FPT_ALL_FEATURES.filter(entry =>
+    globalThis.FPTFeatureAvailability?.isElementAvailable(entry.id) === true);
 if (typeof window !== 'undefined') {
     window.FPT_FEATURE_REGISTRY = FPT_FEATURE_REGISTRY;
 }

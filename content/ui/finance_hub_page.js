@@ -1161,7 +1161,7 @@
             try {
                 pane.appendChild(renderers[mode](data));
             } catch (error) {
-                console.error('FunPay Funcy: ошибка отрисовки финансов', error);
+                console.error('Funcy: ошибка отрисовки финансов', error);
                 pane.appendChild(stateBlock('error', 'Не удалось показать раздел', error.message || 'Попробуйте обновить данные.', 'Повторить', () => load({ force: true })));
             }
             commit(pane);

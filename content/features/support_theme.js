@@ -1,5 +1,5 @@
 // content/features/support_theme.js
-// Кастомная тема FunPay Funcy для сайта поддержки (support.funpay.com).
+// Кастомная тема Funcy для сайта поддержки (support.funpay.com).
 // Сайт на Bootstrap 5 с переменными --bs-*. Вместо борьбы с классами
 // переопределяем переменные Bootstrap под цвета темы - это убирает
 // лишние обводки и делает всё консистентным.
@@ -70,7 +70,7 @@
 
     function buildCss(s) {
         s = FPTSafe.themeSettings(s);
-        const bgImageUrl = FPTSafe.cssImageUrl(s.bgImage) || 'url(https://i.ibb.co/ZpS0d56R/PH6-UEvp-Kn-KI.jpg)';
+        const bgImageUrl = FPTSafe.cssImageUrl(s.bgImage) || 'linear-gradient(135deg, #151726 0%, #25203b 55%, #111827 100%)';
         const op = s.containerBgOpacity;
 
         // Поверхности на основе цвета контейнера

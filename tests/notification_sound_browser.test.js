@@ -118,79 +118,21 @@ async function openPicker(page) {
     await settle(page);
 }
 
-test('sounds page: the preset list slides out, saves the choice and swaps the site sound', async () => {
+test('sounds page: standard sound remains usable and branded presets are absent', async () => {
     const browser = await launch();
     try {
-        const { page, errors } = await openSoundsPage(browser, { seed: { notificationVolume: 0.8 } });
-        const picker = page.locator('.fpt-ns-picker');
-        assert.equal(await picker.getAttribute('data-open'), 'false');
+        const { page, errors } = await openSoundsPage(browser, { seed: { notificationVolume: 0.8, notificationSound: 'tg' } });
         assert.equal((await page.locator('.fpt-ns-trigger-name').textContent()).trim(), 'Стандартный');
-        assert.equal(await page.locator('.fpt-ns-collapse').evaluate(node => node.hasAttribute('inert')), true);
-        assert.equal(await page.locator('.fpt-ns-collapse').evaluate(node => node.getBoundingClientRect().height), 0, 'the closed list takes no space');
-        assert.equal(await page.locator('#notificationVolume').inputValue(), '80');
-        if (shotDir) { await settle(page); await page.screenshot({ path: path.join(shotDir, 'sounds-closed.png') }); }
-
         await openPicker(page);
-        assert.equal(await picker.getAttribute('data-open'), 'true');
-        assert.equal(await page.locator('.fpt-ns-trigger').getAttribute('aria-expanded'), 'true');
-        assert.equal(await page.locator('.fpt-ns-option:visible').count(), 6);
-        assert.deepEqual(await visibleGroups(page), ['FunPay', 'Мессенджеры'], 'no Funcy presets, and "Своя" waits for a saved melody');
-        assert.equal(await option(page, 'custom').isHidden(), true);
-        assert.ok(await page.locator('.fpt-ns-collapse').evaluate(node => node.getBoundingClientRect().height) > 200);
-        assert.equal(await option(page, 'default').locator('[role="radio"]').getAttribute('aria-checked'), 'true');
-        if (shotDir) await page.screenshot({ path: path.join(shotDir, 'sounds-open.png') });
-
-        await option(page, 'whatsapp').locator('[role="radio"]').click();
-        await page.waitForFunction(() => window.qaState.notificationSound === 'whatsapp');
-        await page.waitForFunction(() => document.querySelector('.fpt-ns-picker').dataset.open === 'false');
-        assert.equal((await page.locator('.fpt-ns-trigger-name').textContent()).trim(), 'WhatsApp');
-        await page.waitForFunction(() => document.querySelector('audio.loud').src.endsWith('/sounds/whatsapp.mp3'));
-        assert.equal(await page.evaluate(() => document.querySelector('audio.loud').volume), 0.8);
-
-        // Back to the FunPay sound and on to another preset: the player must still be found.
-        await openPicker(page);
-        await option(page, 'default').locator('[role="radio"]').click();
-        await page.waitForFunction(() => document.querySelector('audio.loud').src === 'https://funpay.com/audio/chat_loud.mp3');
-        await openPicker(page);
-        await option(page, 'tg').locator('[role="radio"]').click();
-        await page.waitForFunction(() => document.querySelector('audio.loud').src.endsWith('/sounds/telegram.mp3'));
-
-        // Keyboard: arrows open the list and move between radios, Escape closes it.
-        await page.locator('.fpt-ns-trigger').focus();
-        await page.keyboard.press('ArrowDown');
-        await settle(page);
-        assert.equal(await page.evaluate(() => document.activeElement.closest('.fpt-ns-option')?.dataset.sound), 'tg');
-        await page.keyboard.press('ArrowDown');
-        assert.equal(await page.evaluate(() => document.activeElement.closest('.fpt-ns-option')?.dataset.sound), 'iphone');
+        assert.equal(await page.locator('.fpt-ns-option:visible').count(), 1);
+        assert.deepEqual(await visibleGroups(page), ['FunPay']);
+        assert.equal(await page.locator('.fpt-ns-option[data-sound="tg"]').count(), 0);
         await page.keyboard.press('Escape');
-        await page.waitForFunction(() => document.querySelector('.fpt-ns-picker').dataset.open === 'false');
-        assert.equal(await page.evaluate(() => document.activeElement.id), 'fptNsTrigger');
-
-        // Preview turns the play button into an equalizer until the sound ends.
-        await openPicker(page);
-        await option(page, 'discord').locator('.fpt-ns-play').click();
-        await page.waitForFunction(() => document.querySelector('.fpt-ns-option[data-sound="discord"] .fpt-ns-play').dataset.playing === 'true');
-        await page.waitForFunction(() => document.querySelector('.fpt-ns-option[data-sound="discord"] .fpt-ns-play').dataset.playing === 'false', null, { timeout: 4000 });
-        assert.equal(await page.evaluate(() => window.qaState.notificationSound), 'tg', 'previewing never changes the choice');
-
-        // The test button keeps its width while it shows the stop state.
-        const idleWidth = await page.locator('#previewNotificationBtn').evaluate(node => node.getBoundingClientRect().width);
-        await page.locator('#previewNotificationBtn').click();
-        await page.waitForFunction(() => document.querySelector('#previewNotificationBtn').dataset.playing === 'true');
-        assert.equal(await page.locator('#previewNotificationBtn').evaluate(node => node.getBoundingClientRect().width), idleWidth);
-        await page.waitForFunction(() => document.querySelector('#previewNotificationBtn').dataset.playing === 'false', null, { timeout: 4000 });
-
-        // Volume
-        await setInput(page, '#notificationVolume', 0);
-        await page.waitForFunction(() => window.qaState.notificationVolume === 0);
-        assert.equal(await page.locator('.fpt-ns-mute-note').isVisible(), true, 'zero volume is called out');
         await setInput(page, '#notificationVolume', 35);
         await page.waitForFunction(() => window.qaState.notificationVolume === 0.35);
         await page.waitForFunction(() => document.querySelector('audio.loud').volume === 0.35);
         assert.deepEqual(errors, []);
-    } finally {
-        await browser.close();
-    }
+    } finally { await browser.close(); }
 });
 
 test('sounds page: a custom melody is loaded, trimmed on the waveform, saved and removed', async () => {
@@ -240,7 +182,7 @@ test('sounds page: a custom melody is loaded, trimmed on the waveform, saved and
         assert.equal(await page.locator('#fptNsCustomCard').getAttribute('data-state'), 'on');
         await page.waitForFunction(() => document.querySelector('audio.loud').src.startsWith('blob:'));
         await openPicker(page);
-        assert.deepEqual(await visibleGroups(page), ['FunPay', 'Мессенджеры', 'Своя'], 'a saved melody adds the "Своя" group');
+        assert.deepEqual(await visibleGroups(page), ['FunPay', 'Своя'], 'a saved melody adds the "Своя" group');
         assert.equal(await option(page, 'custom').locator('[role="radio"]').getAttribute('aria-checked'), 'true');
         await page.keyboard.press('Escape');
 
@@ -249,7 +191,7 @@ test('sounds page: a custom melody is loaded, trimmed on the waveform, saved and
         assert.equal(await page.locator('.fpt-ns-saved').isHidden(), true);
         assert.equal((await page.locator('.fpt-ns-trigger-name').textContent()).trim(), 'Стандартный');
         assert.equal(await option(page, 'custom').isHidden(), true, 'removing the melody hides "Своя" again');
-        assert.deepEqual(await visibleGroups(page), ['FunPay', 'Мессенджеры']);
+        assert.deepEqual(await visibleGroups(page), ['FunPay']);
 
         await page.locator('.fpt-ns-file-input').setInputFiles({ name: 'notes.txt', mimeType: 'text/plain', buffer: Buffer.from('nope') });
         await page.locator('.fpt-popup-toast[data-kind="error"]').waitFor();

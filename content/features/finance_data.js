@@ -1,5 +1,5 @@
 /**
- * FunPay Funcy — Finance Data Adapter (Core + Parity Aggregations)
+ * Funcy — Finance Data Adapter (Core + Parity Aggregations)
  *
  * Единый read-only слой доступа к финансовым данным:
  * - getSalesRaw(): сырые заказы на продажу

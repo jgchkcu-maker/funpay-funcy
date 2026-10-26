@@ -22,6 +22,7 @@ function fptNeedsEntryMatches(entry, query) {
 if (typeof window !== 'undefined' && window.fptPopupActions) {
     window.fptPopupActions.register('needs', 'getFeatureRegistry', () => fptNeedsRegistry());
     window.fptPopupActions.register('needs', 'fptNeedsAskBtn', async p => {
+        if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) throw new Error('Функция временно недоступна.');
         const text = String(p.text || '').trim();
         if (!text) throw new Error('Опишите, что хотите скрыть.');
         const registry = fptNeedsRegistry().filter(entry => !entry.locked);
@@ -50,9 +51,12 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
         }).then(next => next.fpToolsDisabledFeatures);
     }
     // AI suggestions are elements the seller wants to hide (see the feature_match prompt).
-    window.fptPopupActions.register('needs', 'fptNeedsAiConfirm', p => fptNeedsWriteDisabled((disabled, known) => {
-        for (const id of p.ids || []) if (known.has(id)) disabled.add(id);
-    }));
+    window.fptPopupActions.register('needs', 'fptNeedsAiConfirm', p => {
+        if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) throw new Error('Функция временно недоступна.');
+        return fptNeedsWriteDisabled((disabled, known) => {
+            for (const id of p.ids || []) if (known.has(id)) disabled.add(id);
+        });
+    });
     window.fptPopupActions.register('needs', 'fptApplyNeedsSelection', p => fptNeedsWriteDisabled((disabled, known) => {
         for (const [id, enabled] of Object.entries(p.enabled || {})) {
             if (!known.has(id)) continue;

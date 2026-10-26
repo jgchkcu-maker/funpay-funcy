@@ -1,0 +1,506 @@
+✖ auto-delivery page loads stock states, saves per-lot changes, and fits the full popup (2561.8225ms)
+✖ finance hub renders every tab with seeded data and responds to filters (2557.8353ms)
+✔ finance controls preserve unrelated cards and contain scrolling inside the popup (5766.5195ms)
+✖ finance notifications preserve layout and the tab pill tracks responsive tabs (2322.2398ms)
+✔ finance hub refresh reports partial failures and exports CSV (3302.5643ms)
+✔ finance screenshot layouts align controls and separate coverage and table filters (3216.1957ms)
+✔ zero cost coverage keeps truthful totals and filters only its orders table (2598.4117ms)
+✔ finance hub shows onboarding when there is no data and fits a narrow popup (994.6856ms)
+✔ finance hub is readable at phone width (1074.2631ms)
+✔ finance_hub: static markup stays empty and search metadata remains (15.8877ms)
+✔ finance_hub: model, chart and page modules load in order before the content script that mounts them (1.1937ms)
+✔ finance_hub: the page uses the shared category frame, builds DOM nodes and talks only to popup actions (0.885ms)
+✔ finance_hub: every metadata mode has a tab button and a mode action registered by the popup shell (0.9317ms)
+✖ finance_hub: styles are scoped, responsive and themed through the popup tokens (3.1983ms)
+✔ finance_hub: the overview data action also returns profit and the previous period for KPI deltas (0.2989ms)
+✖ schedule dialog saves a draft rule with the saved zone and shows a preview (503.0183ms)
+✖ pricing dialog previews selected lots and applies only checked rows (505.6758ms)
+✔ lot management keeps its help button after the page mounts (2081.9878ms)
+✔ lot management uses a task-card skeleton while checking pending imports (625.5072ms)
+✔ lot management fits 1204, 680, and 420 pixel viewports in light and dark themes (2167.4258ms)
+✖ bulk editor guides lot selection, changes, and review with live validation (2510.307ms)
+✖ bulk editor selects by category, previews Cyrillic whole-word replacement and offers a retry for failed lots (32154.4272ms)
+✔ export shows category and lot totals, disables empty export, and uses a visible progress indicator (2332.2384ms)
+✔ import error reason stays visible and a completion report retains errors and skipped lots (1729.517ms)
+✔ lot import actions use a supported icon glyph (678.4221ms)
+✔ an active import is announced and prevents starting a second import (714.3162ms)
+✔ primary dialog buttons keep readable contrast while hovered (825.2854ms)
+✔ shared popup utilities format russian plurals and create accessible status pills (1057.8967ms)
+✔ shared dialog traps and restores focus and blocks close paths while busy (1580.9469ms)
+✔ shared toast queue pauses on hover and stays inside an open dialog (1731.6677ms)
+✖ page windows: the shell and its stylesheet load with the content scripts (2.4722ms)
+✔ page windows: every window is built with fptWindow.create and keeps its id (4.0794ms)
+✔ page windows: no window reads its colours from the page any more (2.9262ms)
+✔ page windows: the stylesheet uses the menu tokens and the violet accent (0.8809ms)
+✔ page windows: site theme rules and the popup outside-click leave windows alone (0.5868ms)
+✔ page windows: the shell closes on Escape, keeps Tab inside and restores focus (0.4838ms)
+✖ actions persist only explicit settings and never read deleted controls (3.6042ms)
+✔ auto-reply changes use the existing atomic store and propagate storage failures (1.7408ms)
+✔ partial nested settings updates retain saved theme fields (2.2209ms)
+✖ opening data actions never writes settings and invalid actions reject (1.5368ms)
+✔ account actions are proxied to the background service by record id and never carry keys (1.9683ms)
+✔ lot exports return data without constructing progress bars or modal controls (1.8333ms)
+✔ bonus and keyword additions preserve existing atomic-store arrays (1.6475ms)
+✔ retired financial pages reject popup action registrations (1.7198ms)
+✔ delivery updates preserve other lots and saved fields (1.9451ms)
+✔ manual lot loading asks the background to sync stock and returns counts without secret contents (1.809ms)
+✔ theme actions preserve other theme settings and never hydrate removed previews (2.2431ms)
+✖ real browser: lot management screen, navigation and shell geometry (26050.8642ms)
+✖ reminder block: variable chips, preview, lot picker, manual send and no overflow (32102.7782ms)
+✔ URLs and fonts cannot introduce executable schemes or CSS (4.7814ms)
+✔ image URLs remain quoted and declarations reject escapes and rule breaks (1.9607ms)
+✔ CSV neutralizes formulas, including arithmetic, while keeping signed amounts (2.3088ms)
+✔ previously bundled wallpapers migrate to public assets in CSS and exported settings (0.5442ms)
+✖ theme numbers and colors cannot introduce CSS rules through sibling fields (1.469ms)
+✔ live CSS supports HTTPS images and shorthands while rejecting URL parser escapes (0.3897ms)
+✖ tab-like controls use consistent hover and selected-state motion across popup sections (6.5272ms)
+✔ finance header separates title from tabs and segmented updates animate replacement content (2.9856ms)
+✖ general: settings_page_recomposition markup is removed and search metadata remains (5.5982ms)
+✖ sidebar expansion preserves scroll and pending route reveal yields to manual scrolling (4648.8253ms)
+FunPay Funcy Flash Fix Error: ReferenceError: window is not defined
+    at evalmachine.<anonymous>:375:9
+    at async TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\theme_reload_regression.test.js:17:9)
+    at async Test.run (node:internal/test_runner/test:1404:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+✖ early theme loading preserves original, empty and legacy custom themes (34.5198ms)
+✖ general: ui_foundation_contract markup is removed and search metadata remains (6.3393ms)
+ℹ tests 61
+ℹ suites 0
+ℹ pass 42
+ℹ fail 19
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 81225.8846
+
+✖ failing tests:
+
+test at tests\auto_delivery_browser.test.js:11:1
+✖ auto-delivery page loads stock states, saves per-lot changes, and fits the full popup (2561.8225ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'Показаны сохранённые настройки. Обновите список, чтобы проверить остатки.'
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\auto_delivery_browser.test.js:126:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'Показаны сохранённые настройки. Обновите список, чтобы проверить остатки.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\finance_hub_browser.test.js:173:1
+✖ finance hub renders every tab with seeded data and responds to filters (2557.8353ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  9 !== 6
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\finance_hub_browser.test.js:180:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 9,
+    expected: 6,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\finance_hub_browser.test.js:327:1
+✖ finance notifications preserve layout and the tab pill tracks responsive tabs (2322.2398ms)
+  locator.evaluate: Error: strict mode violation: locator('.fpt-finance') resolved to 3 elements:
+      1) <div class="fpt-finance" data-mode="overview">…</div> aka locator('div').filter({ hasText: 'dashboardОбзорtrending_up' }).nth(3)
+      2) <div class="fpt-finance fpt-ad-lots-heading">…</div> aka getByText('Все0Активные0Проблемы0Загружаем список лотов…refreshОбновить')
+      3) <div class="fpt-finance fpt-ad-lots-header">…</div> aka locator('div').filter({ hasText: 'searchПо порядкуПроблемные сверхуПо названиюПо порядкуexpand_more' }).nth(4)
+  
+  Call log:
+  [2m  - waiting for locator('.fpt-finance')[22m
+  
+      at geometry (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\finance_hub_browser.test.js:335:57)
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\finance_hub_browser.test.js:352:30) {
+    log: [ "  - waiting for locator('.fpt-finance')" ]
+  }
+
+test at tests\finance_hub_ui_contract.test.js:49:1
+✖ finance_hub: styles are scoped, responsive and themed through the popup tokens (3.1983ms)
+  AssertionError [ERR_ASSERTION]: toasts render on the active page, including finance
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\finance_hub_ui_contract.test.js:55:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\lot_automation_browser.test.js:53:1
+✖ schedule dialog saves a draft rule with the saved zone and shows a preview (503.0183ms)
+  page.evaluate: TypeError: window.FPTLotAutomationPage.openScheduleDialog is not a function
+      at eval (eval at evaluate (:311:30), <anonymous>:1:35)
+      at UtilityScript.evaluate (<anonymous>:313:16)
+      at UtilityScript.<anonymous> (<anonymous>:1:44)
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\lot_automation_browser.test.js:56:20) {
+    log: []
+  }
+
+test at tests\lot_automation_browser.test.js:79:1
+✖ pricing dialog previews selected lots and applies only checked rows (505.6758ms)
+  page.evaluate: TypeError: window.FPTLotAutomationPage.openPricingDialog is not a function
+      at eval (eval at evaluate (:311:30), <anonymous>:1:35)
+      at UtilityScript.evaluate (<anonymous>:313:16)
+      at UtilityScript.<anonymous> (<anonymous>:1:44)
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\lot_automation_browser.test.js:82:20) {
+    log: []
+  }
+
+test at tests\lot_io_browser.test.js:215:1
+✖ bulk editor guides lot selection, changes, and review with live validation (2510.307ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   '1. Выберите лоты',
+  -   '2. Что изменить',
+  -   '3. Проверьте изменения'
+  - ]
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\lot_io_browser.test.js:220:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ '1. Выберите лоты', '2. Что изменить', '3. Проверьте изменения' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lot_io_browser.test.js:253:1
+✖ bulk editor selects by category, previews Cyrillic whole-word replacement and offers a retry for failed lots (32154.4272ms)
+  locator.textContent: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for locator('.fpt-bulk-category-chip[data-category="Аккаунты"]')[22m
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\lot_io_browser.test.js:263:37) {
+    name: 'TimeoutError',
+    log: [ `  - waiting for locator('.fpt-bulk-category-chip[data-category="Аккаунты"]')` ]
+  }
+
+test at tests\page_windows_ui_contract.test.js:25:1
+✖ page windows: the shell and its stylesheet load with the content scripts (2.4722ms)
+  AssertionError [ERR_ASSERTION]: window styles load last and win over legacy rules
+  + actual - expected
+  
+  + 'css/scrollbars.css'
+  - 'css/page_windows.css'
+         ^
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\page_windows_ui_contract.test.js:33:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'css/scrollbars.css',
+    expected: 'css/page_windows.css',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\popup_actions.test.js:9:1
+✖ actions persist only explicit settings and never read deleted controls (3.6042ms)
+  Error: Unknown popup action: general:saveSettings
+      at Object.run (content/ui/popup_actions.js:85:33)
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\popup_actions.test.js:12:17)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at tests\popup_actions.test.js:36:1
+✖ opening data actions never writes settings and invalid actions reject (1.5368ms)
+  Error: Unknown popup action: general:getSettings
+      at Object.run (content/ui/popup_actions.js:85:33)
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\popup_actions.test.js:39:31)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7)
+
+test at tests\popup_browser.test.js:10:1
+✖ real browser: lot management screen, navigation and shell geometry (26050.8642ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '0px' !== '14px'
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\popup_browser.test.js:510:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '0px',
+    expected: '14px',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\review_reminder_browser.test.js:28:1
+✖ reminder block: variable chips, preview, lot picker, manual send and no overflow (32102.7782ms)
+  locator.textContent: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for locator('.fpt-rv-card--reminders').locator('.fpt-qr-bubble')[22m
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\review_reminder_browser.test.js:39:71) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for locator('.fpt-rv-card--reminders').locator('.fpt-qr-bubble')" ]
+  }
+
+test at tests\safe_values.test.js:43:1
+✖ theme numbers and colors cannot introduce CSS rules through sibling fields (1.469ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 8
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\safe_values.test.js:47:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 8,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\segmented_motion_contract.test.js:8:1
+✖ tab-like controls use consistent hover and selected-state motion across popup sections (6.5272ms)
+  AssertionError [ERR_ASSERTION]: .fpt-fin-tab transitions its visual state
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\segmented_motion_contract.test.js:24:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: ' min-height: 32px; height: 32px; font-size: 13px; ',
+    expected: /transition\s*:/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\settings_page_recomposition.test.js:4:1
+✖ general: settings_page_recomposition markup is removed and search metadata remains (5.5982ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/. Input:
+  
+  '\n' +
+    '        <div class="fp-tools-body">\n' +
+    '            <nav class="fp-tools-nav">\n' +
+    '                <div class="fpt-nav-brand">\n' +
+    '                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n' +
+    '                    <span class="fpt-nav-brand-title">FunPay Funcy</span>\n' +
+    '                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n' +
+    '                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n' +
+    '                    </button>\n' +
+    '                </div>\n' +
+    '                <div class="fpt-nav-search">\n' +
+    '                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n' +
+    '                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n' +
+    '                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n' +
+    '                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n' +
+    '                </div>\n' +
+    '                <ul>\n' +
+    '                    <li class="fp-nav-divider">Основное</li>\n' +
+    '                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n' +
+    '                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Интерфейс</li>\n' +
+    '                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n' +
+    '                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Чат и продажи</li>\n' +
+    '                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n' +
+    '                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n' +
+    '                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n' +
+    '                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n' +
+    '                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n' +
+    '                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Торговля</li>\n' +
+    '                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n' +
+    '                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n' +
+    '                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Финансы</li>\n' +
+    '                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Прочее</li>\n' +
+    '\n' +
+    '                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n' +
+    '                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n' +
+    '                </ul>\n' +
+    '                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n' +
+    '            </nav>\n' +
+    '            <main class="fp-tools-content">\n' +
+    '                <div class="fp-tools-page-content" data-page="accounts"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="needs"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="templates"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_review"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n' +
+    '                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="theme"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="autobump"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="effects"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="settings_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="blacklist"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="tickets"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="sounds"></div>\n' +
+    '            </main>\n' +
+    '        </div>\n' +
+    '    '
+  
+      at assertEmptyCategory (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\helpers\empty_category_contract.js:15:12)
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\settings_page_recomposition.test.js:4:98)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n        <div class="fp-tools-body">\n            <nav class="fp-tools-nav">\n                <div class="fpt-nav-brand">\n                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n                    <span class="fpt-nav-brand-title">FunPay Funcy</span>\n                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n                    </button>\n                </div>\n                <div class="fpt-nav-search">\n                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n                </div>\n                <ul>\n                    <li class="fp-nav-divider">Основное</li>\n                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n                    <li class="fp-nav-divider">Интерфейс</li>\n                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n                    <li class="fp-nav-divider">Чат и продажи</li>\n                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n                    <li class="fp-nav-divider">Торговля</li>\n                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n                    <li class="fp-nav-divider">Финансы</li>\n                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n                    <li class="fp-nav-divider">Прочее</li>\n\n                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n                </ul>\n                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n            </nav>\n            <main class="fp-tools-content">\n                <div class="fp-tools-page-content" data-page="accounts"></div>\n                <div class="fp-tools-page-content" data-page="needs"></div>\n                <div class="fp-tools-page-content" data-page="templates"></div>\n                <div class="fp-tools-page-content" data-page="auto_review"></div>\n                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n                <div class="fp-tools-page-content" data-page="theme"></div>\n                <div class="fp-tools-page-content" data-page="autobump"></div>\n                <div class="fp-tools-page-content" data-page="effects"></div>\n                <div class="fp-tools-page-content" data-page="settings_io"></div>\n                <div class="fp-tools-page-content" data-page="blacklist"></div>\n                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n                <div class="fp-tools-page-content" data-page="tickets"></div>\n                <div class="fp-tools-page-content" data-page="sounds"></div>\n            </main>\n        </div>\n    ',
+    expected: /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\sidebar_scroll_browser.test.js:5:1
+✖ sidebar expansion preserves scroll and pending route reveal yields to manual scrolling (4648.8253ms)
+  AssertionError [ERR_ASSERTION]: an explicit route still reveals its selected item when the user has not scrolled
+  
+  false !== true
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\sidebar_scroll_browser.test.js:49:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\theme_reload_regression.test.js:6:1
+✖ early theme loading preserves original, empty and legacy custom themes (34.5198ms)
+  AssertionError [ERR_ASSERTION]: {"bgColor1":"#123456"}
+  
+  false !== true
+  
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\theme_reload_regression.test.js:21:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\ui_foundation_contract.test.js:4:1
+✖ general: ui_foundation_contract markup is removed and search metadata remains (6.3393ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/. Input:
+  
+  '\n' +
+    '        <div class="fp-tools-body">\n' +
+    '            <nav class="fp-tools-nav">\n' +
+    '                <div class="fpt-nav-brand">\n' +
+    '                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n' +
+    '                    <span class="fpt-nav-brand-title">FunPay Funcy</span>\n' +
+    '                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n' +
+    '                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n' +
+    '                    </button>\n' +
+    '                </div>\n' +
+    '                <div class="fpt-nav-search">\n' +
+    '                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n' +
+    '                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n' +
+    '                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n' +
+    '                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n' +
+    '                </div>\n' +
+    '                <ul>\n' +
+    '                    <li class="fp-nav-divider">Основное</li>\n' +
+    '                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n' +
+    '                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Интерфейс</li>\n' +
+    '                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n' +
+    '                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Чат и продажи</li>\n' +
+    '                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n' +
+    '                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n' +
+    '                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n' +
+    '                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n' +
+    '                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n' +
+    '                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Торговля</li>\n' +
+    '                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n' +
+    '                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n' +
+    '                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Финансы</li>\n' +
+    '                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Прочее</li>\n' +
+    '\n' +
+    '                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n' +
+    '                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n' +
+    '                </ul>\n' +
+    '                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n' +
+    '            </nav>\n' +
+    '            <main class="fp-tools-content">\n' +
+    '                <div class="fp-tools-page-content" data-page="accounts"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="needs"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="templates"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_review"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n' +
+    '                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="theme"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="autobump"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="effects"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="settings_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="blacklist"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="tickets"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="sounds"></div>\n' +
+    '            </main>\n' +
+    '        </div>\n' +
+    '    '
+  
+      at assertEmptyCategory (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\helpers\empty_category_contract.js:15:12)
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\ui_foundation_contract.test.js:4:93)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n        <div class="fp-tools-body">\n            <nav class="fp-tools-nav">\n                <div class="fpt-nav-brand">\n                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n                    <span class="fpt-nav-brand-title">FunPay Funcy</span>\n                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n                    </button>\n                </div>\n                <div class="fpt-nav-search">\n                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n                </div>\n                <ul>\n                    <li class="fp-nav-divider">Основное</li>\n                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n                    <li class="fp-nav-divider">Интерфейс</li>\n                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n                    <li class="fp-nav-divider">Чат и продажи</li>\n                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n                    <li class="fp-nav-divider">Торговля</li>\n                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n                    <li class="fp-nav-divider">Финансы</li>\n                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n                    <li class="fp-nav-divider">Прочее</li>\n\n                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n                </ul>\n                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n            </nav>\n            <main class="fp-tools-content">\n                <div class="fp-tools-page-content" data-page="accounts"></div>\n                <div class="fp-tools-page-content" data-page="needs"></div>\n                <div class="fp-tools-page-content" data-page="templates"></div>\n                <div class="fp-tools-page-content" data-page="auto_review"></div>\n                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n                <div class="fp-tools-page-content" data-page="theme"></div>\n                <div class="fp-tools-page-content" data-page="autobump"></div>\n                <div class="fp-tools-page-content" data-page="effects"></div>\n                <div class="fp-tools-page-content" data-page="settings_io"></div>\n                <div class="fp-tools-page-content" data-page="blacklist"></div>\n                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n                <div class="fp-tools-page-content" data-page="tickets"></div>\n                <div class="fp-tools-page-content" data-page="sounds"></div>\n            </main>\n        </div>\n    ',
+    expected: /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/,
+    operator: 'match',
+    diff: 'simple'
+  }

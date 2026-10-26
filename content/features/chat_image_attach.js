@@ -81,7 +81,7 @@
 
     function notify(text, isError) {
         if (typeof showNotification === 'function') { showNotification(text, !!isError); return; }
-        console[isError ? 'error' : 'log']('FunPay Funcy: ' + text);
+        console[isError ? 'error' : 'log']('Funcy: ' + text);
     }
 
     // Мини-меню карточки живёт вне окна, поэтому палитру меню расширения ставим ему отдельно.
@@ -718,7 +718,7 @@
             }
             if (text) await sendImageReliable({ action: 'fptSendChatText', chatId, text });
         } catch (e) {
-            console.error('FunPay Funcy: ошибка отправки', e);
+            console.error('Funcy: ошибка отправки', e);
             notify('Ошибка при отправке: ' + e.message, true);
         } finally {
             // FIX 2.8.1: временный пузырь снимаем ВСЕГДА (даже при исключении),

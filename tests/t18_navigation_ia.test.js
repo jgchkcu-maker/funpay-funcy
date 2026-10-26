@@ -345,8 +345,8 @@ function testNavigationRegressionGuards() {
 
     assert.match(css, /\.fp-tools-popup button:not\(\.fpt-nav-group-toggle\)/, 'generic button transitions must not override the accordion motion');
     assert.match(css, /\.fp-tools-nav \.fpt-nav-group-toggle\s*\{[\s\S]*?transition:[^;]*\.24s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'section toggles must use the shared eased duration');
-    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-chevron\s*\{[\s\S]*?transition:[^;]*transform\s+\.32s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'chevrons must use the shared eased duration');
-    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-collapse\s*\{[\s\S]*?transition:\s*grid-template-rows\s+\.32s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'group collapse must use the shared eased duration');
+    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-chevron\s*\{[\s\S]*?transition:[^;]*transform\s+\.64s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'chevrons must use the shared eased duration');
+    assert.match(css, /\.fp-tools-nav \.fpt-nav-group-collapse\s*\{[\s\S]*?transition:\s*grid-template-rows\s+\.64s\s+cubic-bezier\(\.22,1,\.36,1\)/, 'group collapse must use the shared eased duration');
     const staticAnimatedItemsStart = css.indexOf('.fp-tools-nav .fpt-nav-group-items {');
     const staticAnimatedItemsEnd = css.indexOf('\n}', staticAnimatedItemsStart);
     const staticAnimatedItems = css.slice(staticAnimatedItemsStart, staticAnimatedItemsEnd + 2);

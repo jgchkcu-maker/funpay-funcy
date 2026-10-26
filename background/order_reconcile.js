@@ -1,120 +1,112 @@
-/*
- * FunPay Funcy — сверка заказов.
- *
- * Автоответчик видит только последнее сообщение чата: событие об оплате может
- * потеряться. Сверка:
- *   1) сначала проходит сохранённую очередь известных, но не выданных оплаченных
- *      заказов (они могут уйти далеко за первую страницу продаж);
- *   2) затем читает страницы продаж с продолжением (continue), пока не встретит
- *      заказы старше границы прошлого прохода, с ограничением числа страниц
- *      и защитой от зацикленного курсора.
- *
- * Первый проход для аккаунта только запоминает границу (baseline): заказы до неё
- * наблюдаются, но автоматически не исполняются (adopted = false).
- */
-
+/* Bounded, account-scoped sales scan. Checkpoints never advance the completed border. */
 const BASELINE_PREFIX = 'reconcileBaseline:';
 const OVERLAP_MS = 30 * 60 * 1000;
 
-function toTimestamp(value) {
-    const time = typeof value === 'number' ? value : Date.parse(value);
-    return Number.isFinite(time) ? time : null;
-}
-
 export function createOrderReconcile({
     journal, guard, fetchSalesPage, dispatcher, now = () => Date.now(),
-    maxPages = 4, maxObserves = 5, retryDelayMs = 10 * 60 * 1000, log = console
+    maxPages = 4, maxObserves = 10, maxRunMs = 20000,
+    retryDelayMs = 10 * 60 * 1000, log = console
 } = {}) {
     if (!journal || !guard || typeof fetchSalesPage !== 'function' || !dispatcher) throw new Error('Сверка заказов не настроена.');
     let running = null;
-
-    async function observe(orderId, budget, extra = {}) {
-        if (budget.left <= 0) return null;
-        budget.left -= 1;
-        return dispatcher.observe({ orderId, source: 'reconcile', ...extra });
-    }
-
     async function runOnce() {
         const account = await guard.current({ fresh: true });
         if (!account.accountId) return { skipped: 'account' };
-        const baselineKey = `${BASELINE_PREFIX}${account.accountId}`;
-        const baseline = await journal.getMeta(baselineKey);
-        const budget = { left: maxObserves };
-        const result = { seeded: 0, queued: 0, pages: 0, found: 0 };
-
+        const checkAccount = async () => {
+            const current = await guard.current({ fresh: true });
+            if (current.accountId !== account.accountId || current.epoch !== account.epoch) throw new Error('Аккаунт сменился во время сверки.');
+        };
+        const key = `${BASELINE_PREFIX}${account.accountId}`;
+        let baseline = await journal.getMeta(key);
+        const started = now();
+        const result = { seeded: 0, queued: 0, pages: 0, found: 0, incomplete: false };
         if (!baseline) {
-            const { orders = [] } = await fetchSalesPage(null);
+            const { orders = [], error } = await fetchSalesPage(null);
+            if (error) throw new Error(error);
+            await checkAccount();
             for (const row of orders) {
                 if (!row?.orderId) continue;
-                await journal.recordAccountOrder({
-                    accountId: account.accountId, orderId: row.orderId, source: 'seed', fpStatus: row.orderStatus,
-                    buyerName: row.buyerUsername, lotName: row.description, purchasedAt: toTimestamp(row.orderDate)
-                });
-                result.seeded += 1;
+                await journal.recordAccountOrder({ accountId: account.accountId, orderId: row.orderId, source: 'seed', fpStatus: row.orderStatus,
+                    buyerName: row.buyerUsername, lotName: row.description, purchasedAt: row.orderDateStrict ?? undefined });
+                result.seeded++;
             }
-            await journal.setMeta(baselineKey, { at: now(), scannedAt: now() });
+            await journal.setMeta(key, { at: started, scannedAt: started, accountId: account.accountId });
             return result;
         }
-
-        // 1. Очередь известных невыданных заказов — независимо от первой страницы.
+        let budget = maxObserves;
+        const observe = async orderId => {
+            await checkAccount();
+            budget--;
+            await dispatcher.observe({ orderId, source: 'reconcile', adopt: true });
+        };
+        const scan = baseline.scan || { accountId: account.accountId, startedAt: started,
+            border: (baseline.scannedAt || baseline.at) - OVERLAP_MS, nextOrderId: null, offset: 0, seen: [] };
+        if (scan.accountId !== account.accountId) throw new Error('Неверная область курсора сверки.');
+        const save = async () => {
+            await checkAccount();
+            await journal.setMeta(key, { ...baseline, scan });
+            result.incomplete = true;
+            return result;
+        };
+        // Reserve at least half the budget for new pages so the retry queue cannot starve scanning.
         const open = (await journal.listAccountOrders({ accountId: account.accountId }))
-            .filter(order => order.adopted === true && order.fpStatus === 'paid'
-                && ['none', 'blocked', 'pending', 'failed'].includes(order.deliveryState)
-                && (!order.nextCheckAt || order.nextCheckAt <= now()))
+            .filter(o => o.adopted === true && o.fpStatus === 'paid' && ['none', 'blocked', 'pending', 'failed'].includes(o.deliveryState)
+                && (!o.nextCheckAt || o.nextCheckAt <= now()))
             .sort((a, b) => (a.nextCheckAt || 0) - (b.nextCheckAt || 0));
-        for (const order of open) {
-            if (budget.left <= 0) break;
+        for (const order of open.slice(0, Math.floor(maxObserves / 2))) {
+            if (now() - started >= maxRunMs) return save();
             await journal.updateAccountOrder(order.key, () => ({ nextCheckAt: now() + retryDelayMs }));
-            await observe(order.orderId, budget);
-            result.queued += 1;
+            await observe(order.orderId); result.queued++;
         }
-
-        // 2. Страницы продаж до границы прошлого прохода.
-        const border = (baseline.scannedAt || baseline.at) - OVERLAP_MS;
-        const seenTokens = new Set();
-        let token = null;
-        for (let page = 0; page < maxPages; page += 1) {
-            const { orders = [], nextOrderId = null } = await fetchSalesPage(token);
-            result.pages += 1;
+        for (let page = 0; page < maxPages; page++) {
+            if (now() - started >= maxRunMs || budget <= 0) return save();
+            const { orders = [], nextOrderId = null, error } = await fetchSalesPage(scan.nextOrderId);
+            if (error) throw new Error(error);
+            await checkAccount(); result.pages++;
             let reachedBorder = !orders.length;
-            for (const row of orders) {
+            // Offset is safe only for a stable continuation page. The first page can gain rows;
+            // re-read it and let the journal deduplicate rather than skipping by numeric offset.
+            const offset = scan.nextOrderId ? scan.offset : 0;
+            for (let index = offset; index < orders.length; index++) {
+                if (budget <= 0 || now() - started >= maxRunMs) { scan.offset = index; return save(); }
+                const row = orders[index];
                 if (!row?.orderId) continue;
-                const at = toTimestamp(row.orderDate);
-                if (at !== null && at < border) reachedBorder = true;
+                const at = typeof row.orderDateStrict === 'number' && Number.isFinite(row.orderDateStrict) ? row.orderDateStrict : null;
+                const precision = Number(row.orderDatePrecisionMs) || 60000;
+                if (at !== null && at + precision <= scan.border) reachedBorder = true;
                 const known = await journal.getAccountOrder(account.accountId, row.orderId);
-                if (known) {
-                    if (row.orderStatus && known.fpStatus !== row.orderStatus && known.fpStatus !== 'refunded') {
-                        await journal.recordAccountOrder({ accountId: account.accountId, orderId: row.orderId, source: 'reconcile', fpStatus: row.orderStatus });
-                    }
-                    continue;
+                const fresh = at !== null && at > baseline.at && row.orderStatus === 'paid';
+                if (!known) {
+                    const ambiguous = row.orderStatus === 'paid' && (at === null || (at <= baseline.at && at + precision > baseline.at));
+                    await journal.recordAccountOrder({ accountId: account.accountId, orderId: row.orderId, source: 'reconcile', fpStatus: row.orderStatus,
+                        buyerName: row.buyerUsername, lotName: row.description, purchasedAt: at ?? undefined,
+                        adopted: fresh ? true : undefined, problemState: ambiguous ? 'attention' : undefined,
+                        blockReasons: ambiguous ? [at === null ? 'order-date-unknown' : 'order-date-boundary'] : [] });
+                    if (fresh) { await observe(row.orderId); result.found++; }
+                } else if (row.orderStatus && known.fpStatus !== 'refunded' && known.fpStatus !== row.orderStatus) {
+                    await journal.recordAccountOrder({ accountId: account.accountId, orderId: row.orderId, source: 'reconcile', fpStatus: row.orderStatus });
                 }
-                // Новый для журнала заказ после границы baseline — пропущенное событие.
-                const fresh = at !== null && at >= baseline.at && row.orderStatus === 'paid';
-                await journal.recordAccountOrder({
-                    accountId: account.accountId, orderId: row.orderId, source: 'reconcile', fpStatus: row.orderStatus,
-                    buyerName: row.buyerUsername, lotName: row.description, purchasedAt: at, adopted: fresh ? true : undefined
-                });
-                if (fresh) {
-                    result.found += 1;
-                    await observe(row.orderId, budget, { adopt: true });
-                }
+                scan.offset = index + 1;
             }
-            if (reachedBorder || !nextOrderId || seenTokens.has(nextOrderId) || nextOrderId === token) break;
-            seenTokens.add(nextOrderId);
-            token = nextOrderId;
+            if (reachedBorder || !nextOrderId) {
+                await checkAccount();
+                await journal.setMeta(key, { ...baseline, scannedAt: scan.startedAt, scan: null, lastError: null });
+                result.incomplete = false;
+                return result;
+            }
+            if (String(nextOrderId) === String(scan.nextOrderId) || scan.seen.includes(String(nextOrderId))) {
+                // Retain the completed border; restart from the front on a later pass.
+                await journal.setMeta(key, { ...baseline, scan: null, lastError: 'Повтор курсора продаж', failedAt: now() });
+                throw new Error('Повтор курсора продаж: обход не завершён.');
+            }
+            scan.seen.push(String(nextOrderId)); scan.nextOrderId = nextOrderId; scan.offset = 0;
+            await save();
         }
-        await journal.setMeta(baselineKey, { ...baseline, scannedAt: now() });
-        return result;
+        return save();
     }
-
     function run() {
-        if (!running) {
-            running = runOnce()
-                .catch(error => { log.warn?.('FunPay Funcy: сверка заказов не удалась:', error?.message || error); throw error; })
-                .finally(() => { running = null; });
-        }
+        if (!running) running = runOnce().catch(error => { log.warn?.('Funcy: сверка заказов:', error?.message || error); throw error; }).finally(() => { running = null; });
         return running;
     }
-
     return Object.freeze({ run });
 }

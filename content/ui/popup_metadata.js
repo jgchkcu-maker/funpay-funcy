@@ -25,9 +25,7 @@ window.FPTPopupMetadata = Object.freeze({
         {
           "text": "Элементы, которые можно отключить"
         },
-        {
-          "text": "Скрыть элементы с помощью ИИ"
-        },
+        ...(globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? [{ "text": "Скрыть элементы с помощью ИИ" }] : []),
         {
           "text": "Предпросмотр элемента на FunPay"
         },
@@ -38,7 +36,7 @@ window.FPTPopupMetadata = Object.freeze({
       "modes": [],
       "defaultMode": null,
       "buttons": [
-        "fptNeedsAskBtn"
+        ...(globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? ["fptNeedsAskBtn"] : [])
       ]
     },
     "templates": {
@@ -487,6 +485,21 @@ window.FPTPopupMetadata = Object.freeze({
           "text": "Размытие стекла"
         },
         {
+          "text": "Модульный чат Раздельные блоки чата"
+        },
+        {
+          "text": "Отступ между блоками"
+        },
+        {
+          "text": "Ширина списка диалогов"
+        },
+        {
+          "text": "Ширина инфо-панели"
+        },
+        {
+          "text": "Скрыть инфо-панель"
+        },
+        {
           "text": "Детали"
         },
         {
@@ -532,15 +545,10 @@ window.FPTPopupMetadata = Object.freeze({
       "modes": [],
       "defaultMode": null,
       "buttons": [
-        "fp-apply-dark-preset",
-        "fp-wp-prev",
-        "fp-wp-next",
-        "fp-wp-apply-cur",
         "uploadBgImageBtn",
         "removeBgImageBtn",
         "enableMagicStickBtn",
         "generatePaletteBtn",
-        "randomizeThemeBtn",
         "shareThemeBtn",
         "exportThemeBtn",
         "importThemeBtn",

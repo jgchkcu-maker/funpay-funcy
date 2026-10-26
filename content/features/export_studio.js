@@ -1,6 +1,6 @@
 // content/features/export_studio.js
 // =============================================================================
-// FunPay Funcy — СТУДИЯ ЭКСПОРТА (Export Studio)
+// Funcy — СТУДИЯ ЭКСПОРТА (Export Studio)
 //
 // Расширенный экспорт ПРОДАЖ, ПОКУПОК и ФИНАНСОВ в форматах XLSX, DOCX, PDF,
 // CSV, JSON. Пользователь сам выбирает: формат, визуальный стиль (тему),
@@ -224,7 +224,7 @@
 })();
 
 // =============================================================================
-//  FunPay Funcy — Export Studio :: ГЕНЕРАТОРЫ ФОРМАТОВ + ДАТАСЕТЫ
+//  Funcy — Export Studio :: ГЕНЕРАТОРЫ ФОРМАТОВ + ДАТАСЕТЫ
 // =============================================================================
 (function () {
     'use strict';
@@ -341,7 +341,7 @@
             meta: {
                 title: opt.title, subtitle: opt.subtitle, kind: opt.kind,
                 generated: new Date().toISOString(), period: opt.periodLabel, count: rows.length,
-                source: 'FunPay Funcy — Export Studio'
+                source: 'Funcy — Export Studio'
             },
             columns: cols.map(c => ({ key: c.key, label: c.label })),
             rows: rows.map(r => {
@@ -553,7 +553,7 @@
             });
         }
         if (opt.watermark) {
-            body.push(wpPara(wpText('Сгенерировано в FunPay Funcy · Export Studio · ' + fmtDateTime(Date.now()), { sz: 16, color: 'A0A0A0' }), { spacing: 0, align: 'c' }));
+            body.push(wpPara(wpText('Сгенерировано в Funcy · Export Studio · ' + fmtDateTime(Date.now()), { sz: 16, color: 'A0A0A0' }), { spacing: 0, align: 'c' }));
         }
 
         const sect = land
@@ -700,7 +700,7 @@
             if (!opt.watermark && !opt.pageNumbers) return;
             ctx.fillStyle = '#b8b8c0';
             ctx.font = `${9 * scale}px Inter, Arial, sans-serif`;
-            if (opt.watermark) { ctx.textAlign = 'left'; ctx.fillText('FunPay Funcy · Export Studio', M, H - 18 * scale); }
+            if (opt.watermark) { ctx.textAlign = 'left'; ctx.fillText('Funcy · Export Studio', M, H - 18 * scale); }
             if (opt.pageNumbers) { ctx.textAlign = 'right'; ctx.fillText('стр. ' + (pages.length + 1), W - M, H - 18 * scale); }
         }
 
@@ -829,7 +829,7 @@
 })();
 
 // =============================================================================
-//  FunPay Funcy — Export Studio :: UI (модалка, кнопки, сбор данных)
+//  Funcy — Export Studio :: UI (модалка, кнопки, сбор данных)
 // =============================================================================
 (function () {
     'use strict';
@@ -1303,7 +1303,7 @@
                 ${card('tune', 'Дополнительно', `<div class="toggles">
                     ${toggle('zebra', 'table_rows', 'Чередование строк')}
                     ${toggle('totals', 'functions', 'Блок итогов')}
-                    ${toggle('watermark', 'verified', 'Подпись FunPay Funcy')}
+                    ${toggle('watermark', 'verified', 'Подпись Funcy')}
                     ${toggle('pageNumbers', 'tag', 'Номера страниц · PDF', 'es-opt-pagenum')}
                   </div>`)}
               </div>
@@ -1315,7 +1315,7 @@
                       <div class="band" id="es-pv-band"><b id="es-pv-title"></b><span id="es-pv-sub"></span></div>
                       <div class="sheet"><table><thead id="es-pv-head"></thead><tbody id="es-pv-body"></tbody></table></div>
                       <div class="totals" id="es-pv-totals"></div>
-                      <div class="paper-foot"><span id="es-pv-wm">FunPay Funcy</span><span id="es-pv-page">стр. 1 из 1</span></div>
+                      <div class="paper-foot"><span id="es-pv-wm">Funcy</span><span id="es-pv-page">стр. 1 из 1</span></div>
                     </div>
                   </div>
                   <div class="stats">
@@ -1677,7 +1677,7 @@
         if (!nativeBtn) return false;
         if (nativeBtn.dataset.fptEsHooked) return true;
         nativeBtn.dataset.fptEsHooked = '1';
-        nativeBtn.title = 'Студия экспорта FunPay Funcy (XLSX, CSV, PDF, DOCX) — чистая выгрузка';
+        nativeBtn.title = 'Студия экспорта Funcy (XLSX, CSV, PDF, DOCX) — чистая выгрузка';
         nativeBtn.classList.add('fpt-es-trigger');
 
         nativeBtn.addEventListener('click', (e) => {
@@ -2051,7 +2051,7 @@
             meta: Object.assign({
                 dataset,
                 exportedAt: new Date().toISOString(),
-                source: 'FunPay Funcy Finance Hub'
+                source: 'Funcy Finance Hub'
             }, meta || {}),
             totals: totals || null,
             items: items

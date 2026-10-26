@@ -71,7 +71,7 @@ class ImageGenerator {
                     <div class="fp-tools-ig-preview">
                         <canvas id="fpToolsImageCanvas" width="320" height="320"></canvas>
                     </div>
-                    <section class="fpt-win-card fp-tools-ig-ai-generator">
+                    ${globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? `<section class="fpt-win-card fp-tools-ig-ai-generator">
                         <div class="fpt-win-card-head">
                             <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span></span>
                             <h3 class="fpt-win-card-title">Создать с помощью ИИ</h3>
@@ -80,7 +80,7 @@ class ImageGenerator {
                         <button type="button" id="igAiGenerateBtn" class="fpt-win-btn fpt-win-btn--block" style="margin-top:10px;">
                             <span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>Сгенерировать
                         </button>
-                    </section>
+                    </section>` : ''}
                 </div>
                 <div class="fp-tools-ig-controls">
                     <div class="fpt-win-seg fpt-win-seg--fill fp-tools-ig-tabs" role="tablist" aria-label="Настройки картинки">
@@ -226,7 +226,7 @@ class ImageGenerator {
             }
         });
         
-        modal.querySelector('#igAiGenerateBtn').addEventListener('click', async () => {
+        modal.querySelector('#igAiGenerateBtn')?.addEventListener('click', async () => {
             const btn = modal.querySelector('#igAiGenerateBtn');
             const promptInput = modal.querySelector('#igAiPrompt');
             const prompt = promptInput.value.trim();
@@ -368,4 +368,4 @@ function initializeImageGenerator() {
         }
         imageGeneratorInstance.show();
     });
-}
+}

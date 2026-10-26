@@ -26,7 +26,7 @@
             keys: ['fpToolsCostBasis', 'fpToolsSalesChartPeriod', 'fpToolsPurchasesFilters', 'fpToolsShowUnconfirmed', 'showFinanceStats'],
             prefixes: ['fpToolsStats', 'fptFinance', 'fptLegacyFinance'] },
         { id: 'interface', label: 'Интерфейс и навигация', icon: 'apps',
-            keys: ['fpToolsDisabledFeatures', 'showSalesStats', 'hideBalance', 'viewSellersPromo', 'fpToolsPageModes', 'fpToolsPinnedChats', 'fpToolsPinnedLots', 'fpToolsCtxPinnedLots', 'fpToolsQuickGames', 'fpToolsIdentifierEnabled'],
+            keys: ['fpToolsDisabledFeatures', 'showSalesStats', 'hideBalance', 'viewSellersPromo', 'fpToolsPageModes', 'fpToolsPinnedChats', 'fpToolsPinnedLots', 'fpToolsCtxPinnedLots', 'fpToolsQuickGames'],
             prefixes: ['fpToolsNav'] },
         { id: 'support', label: 'Поддержка', icon: 'confirmation_number', keys: ['fpToolsSupportAutoTicket'] },
         { id: 'other', label: 'Прочее', icon: 'more_horiz' }
@@ -103,7 +103,7 @@
         } catch (_) {
             throw new Error('Файл повреждён или это не файл .fpconfig.');
         }
-        if (!data || typeof data !== 'object' || data._magic !== CONFIG_MAGIC) throw new Error('Это не файл настроек FunPay Funcy (.fpconfig).');
+        if (!data || typeof data !== 'object' || data._magic !== CONFIG_MAGIC) throw new Error('Это не файл настроек Funcy (.fpconfig).');
         if (!data.settings || typeof data.settings !== 'object' || Array.isArray(data.settings)) throw new Error('В файле нет настроек.');
         return data;
     }

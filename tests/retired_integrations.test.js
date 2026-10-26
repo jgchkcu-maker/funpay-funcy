@@ -115,7 +115,7 @@ test('manifest resources exist, notification permissions are removed and bundled
     assert.ok(!fs.existsSync(path.join(root, 'content/features/global_chat.js')));
     assert.ok(!fs.existsSync(path.join(root, 'public-chat.json')));
     const resources = manifest.web_accessible_resources.flatMap(group => group.resources);
-    assert.ok(resources.includes('sounds/*.mp3'), 'preset sounds can be played on FunPay');
+    assert.ok(!resources.includes('sounds/*.mp3'), 'unlicensed branded sounds are excluded');
     const config = JSON.parse(read('config.v1.json'));
     assert.equal(config.features.integrations, undefined);
     assert.equal(config.notifySound, undefined);

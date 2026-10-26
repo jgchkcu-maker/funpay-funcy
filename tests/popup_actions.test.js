@@ -42,34 +42,25 @@ test('opening data actions never writes settings and invalid actions reject', as
     await assert.rejects(h.api.run('general', 'saveSettings', { settings: { fpToolsAutoReplies: {} } }), /fptPatchAutoReplies/);
 });
 
-test('account mutations retain session keys and target stable keys without popup elements', async () => {
-    const h = context({ fpToolsAccounts: [{ name: 'one', key: 'key-one' }, { name: 'two', key: 'key-two' }] });
-    assert.ok(h.api);
-    h.ctx.fpToolsAccounts = [];
+test('account actions are proxied to the background service by record id and never carry keys', async () => {
+    const h = context({ fpToolsAccounts: [{ id: 'acc_1', name: 'one' }] });
     h.load('content/features/accounts.js');
-    await h.api.run('accounts', 'renameAccount', { key: 'key-two', name: 'renamed' });
-    assert.deepEqual(h.saved.fpToolsAccounts, [{ name: 'one', key: 'key-one' }, { name: 'renamed', key: 'key-two' }]);
-    await h.api.run('accounts', 'deleteAccount', { key: 'key-one' });
-    assert.deepEqual(h.saved.fpToolsAccounts, [{ name: 'renamed', key: 'key-two' }]);
-});
-
-test('account actions detect the session, refuse duplicates by key and merge snapshots', async () => {
-    const h = context({ fpToolsAccounts: [{ name: 'Main', key: 'session' }, { name: 'Alt', key: 'key-alt' }] });
-    h.load('content/features/accounts.js');
-    assert.deepEqual({ ...await h.api.run('accounts', 'getCurrentAccount') }, { name: '', key: 'session' });
-    await assert.rejects(h.api.run('accounts', 'addCurrentAccountBtn', { name: 'Other' }), /уже сохранён как «Main»/);
     h.ctx.chrome.runtime.sendMessage = async message => {
         h.messages.push(message);
-        return message.key === 'key-alt'
-            ? { ok: true, snapshot: { username: 'AltSeller', avatar: 'a.png', balance: '50 ₽', unread: 2, loggedIn: false } }
-            : { ok: false };
+        if (message.action === 'accountsRefresh') return { ok: false, error: 'FunPay не ответил' };
+        return { ok: true, result: { action: message.action } };
     };
-    const accounts = await h.api.run('accounts', 'fptRefreshAccountsBtn', { key: 'key-alt' });
-    assert.equal(accounts[1].balance, '50 ₽');
-    assert.equal(h.saved.fpToolsAccounts[1].loggedIn, false);
-    assert.equal(h.saved.fpToolsAccounts[1].username, 'AltSeller');
-    assert.equal(h.saved.fpToolsAccounts[0].balance, undefined);
-    await assert.rejects(h.api.run('accounts', 'fptRefreshAccountsBtn', { key: 'session' }), /Не удалось получить данные/);
+    assert.deepEqual({ ...await h.api.run('accounts', 'rename', { id: 'acc_1', name: 'renamed' }) }, { action: 'accountsRename' });
+    await h.api.run('accounts', 'note', { id: 'acc_1', note: 'основной' });
+    await h.api.run('accounts', 'sync', { fromId: 'acc_1', toId: 'acc_2' });
+    await h.api.run('accounts', 'addCurrentAccountBtn');
+    await assert.rejects(h.api.run('accounts', 'fptRefreshAccountsBtn', { id: 'acc_1' }), /FunPay не ответил/);
+    assert.deepEqual(h.messages.map(message => message.action),
+        ['accountsRename', 'accountsSetNote', 'accountsSync', 'accountsAddCurrent', 'accountsRefresh']);
+    assert.deepEqual({ ...h.messages[0] }, { id: 'acc_1', name: 'renamed', action: 'accountsRename' });
+    assert.deepEqual(h.saved, { fpToolsAccounts: [{ id: 'acc_1', name: 'one' }] }, 'the page never writes the registry itself');
+    h.ctx.chrome.runtime.sendMessage = async () => { throw new Error('Extension context invalidated.'); };
+    await assert.rejects(h.api.run('accounts', 'list'), /Фон расширения не отвечает/);
 });
 
 test('lot exports return data without constructing progress bars or modal controls', async () => {

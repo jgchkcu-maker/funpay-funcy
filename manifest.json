@@ -1,28 +1,21 @@
 {
   "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
-  "name": "FunPay Funcy",
-  "version": "0.9.9",
-  "description": "FunPay Funcy — всё для продавца FunPay: автоответчик, автовыдача, ИИ-помощник, аналитика продаж и управление лотами",
+  "name": "Funcy",
+  "version": "0.9.11",
+  "description": "Неофициальное расширение для FunPay: автоответы, выдача, заказы, аналитика и управление лотами.",
   "permissions": [
     "storage",
-    "tabs",
     "cookies",
     "alarms",
-    "offscreen",
-    "background"
+    "offscreen"
   ],
   "host_permissions": [
-    "https://fptools-ai-server.vercel.app/*",
-    "https://fptools.onrender.com/*",
     "https://funpay.com/*",
     "https://*.funpay.com/*",
     "https://sfunpay.com/*",
     "https://*.sfunpay.com/*",
-    "https://funpay.tools/*",
-    "https://cdn.jsdelivr.net/*",
     "https://raw.githubusercontent.com/*",
-    "https://fpt-descs.starobinskiy01.workers.dev/*",
     "https://fonts.googleapis.com/*",
     "https://translate.googleapis.com/*",
     "https://fonts.gstatic.com/*",
@@ -30,7 +23,7 @@
   ],
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "FunPay Funcy",
+    "default_title": "Funcy",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png",
@@ -57,6 +50,9 @@
         "content/safe_values.js",
         "content/features/support_theme.js"
       ],
+      "css": [
+        "css/scrollbars.css"
+      ],
       "run_at": "document_start",
       "all_frames": false
     },
@@ -67,6 +63,9 @@
       "js": [
         "content/safe_values.js",
         "content/theme_buttons.js",
+        "content/theme_circles.js",
+        "content/theme_chat_layout.js",
+        "content/theme_video.js",
         "content/theme_flash_fix.js",
         "content/early_custom_styles.js"
       ],
@@ -78,6 +77,17 @@
         "https://funpay.com/*"
       ],
       "js": [
+        "content/header_button_early.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": false
+    },
+    {
+      "matches": [
+        "https://funpay.com/*"
+      ],
+      "js": [
+        "background/feature_availability.js",
         "content/sales_db.js",
         "content/purchases_db.js",
         "content/finance_db.js",
@@ -107,6 +117,7 @@
         "content/features/inline_price_editor.js",
         "content/features/quick_lot_search.js",
         "content/features/templates.js",
+        "content/features/theme_assets.js",
         "content/features/theme.js",
         "content/features/exact_price.js",
         "content/features/buyer_price_field.js",
@@ -126,7 +137,6 @@
         "content/features/magicstick.js",
         "content/features/lot_io.js",
         "content/features/auto_review.js",
-        "content/features/fpt_identifier.js",
         "content/features/needs_tab.js",
         "content/features/slash_commands_ui.js",
         "content/features/finance_hub.js",
@@ -149,7 +159,6 @@
         "content/ui/finance_hub_model.js",
         "content/ui/finance_charts.js",
         "content/ui/finance_hub_page.js",
-        "content/features/theme_gallery.js",
         "content/ui/theme_page.js",
         "content/ui/effects_page.js",
         "content/ui/notification_sound_page.js",
@@ -162,6 +171,7 @@
         "content/features/bulk_lot_editor.js",
         "content/features/buyer_history.js",
         "content/features/chat_enhancements.js",
+        "content/features/chat_column_resize.js",
         "content/features/chat_image_attach.js",
         "content/features/chat_image_album.js",
         "content/features/chat_search.js",
@@ -187,7 +197,8 @@
         "content/features/chat_reply.js",
         "content/features/lot_offer_actions.js",
         "content/features/page_selects.js",
-        "content/features/scroll_guard.js"
+        "content/features/scroll_guard.js",
+        "content/engine_wake.js"
       ],
       "css": [
         "css/content_styles.css",
@@ -197,7 +208,8 @@
         "css/live_styler.css",
         "css/fpt_icons_theme.css",
         "css/automation.css",
-        "css/page_windows.css"
+        "css/page_windows.css",
+        "css/scrollbars.css"
       ],
       "run_at": "document_idle"
     }
@@ -208,13 +220,13 @@
         "background/remake.html",
         "background/remake.js",
         "icons/*.png",
-        "fonts/*.woff2",
-        "sounds/*.mp3"
+        "fonts/*.woff2"
       ],
       "matches": [
         "https://funpay.com/*",
         "https://support.funpay.com/*"
       ]
     }
-  ]
+  ],
+  "minimum_chrome_version": "120"
 }

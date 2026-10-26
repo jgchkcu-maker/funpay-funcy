@@ -1,4 +1,4 @@
-// C:\Users\AlliSighs\Desktop\◘FUNPAY ◘\FunPay Funcy 2.6\content\content_script.js
+// C:\Users\AlliSighs\Desktop\◘FUNPAY ◘\Funcy 2.6\content\content_script.js
 
 (function() {
     'use strict';
@@ -14,17 +14,36 @@
         document.head.appendChild(link);
     }
 
-    function addFpToolsButton() {
-        const anchor = document.querySelector('.nav.navbar-nav.navbar-right.logged .user-link[data-toggle="dropdown"]')?.parentElement;
-        if (!anchor || document.getElementById('fpToolsButton')) {
+    // true, если страницу перезагрузили (F5), а не открыли переходом по ссылке.
+    function fptPageWasReloaded() {
+        try {
+            const entry = performance.getEntriesByType?.('navigation')?.[0];
+            if (entry) return entry.type === 'reload';
+            return performance.navigation?.type === 1;
+        } catch (_) {
             return false;
         }
+    }
 
-        const toolsMenu = createElement('li');
-        toolsMenu.innerHTML = `<a style="font-weight: bold; cursor: pointer; user-select: none;" id="fpToolsButton">FunPay Funcy<span></span></a>`;
-        anchor.insertAdjacentElement('afterend', toolsMenu);
-
-        const button = toolsMenu.querySelector('#fpToolsButton');
+    function addFpToolsButton() {
+        // Разметку обычно уже вставил header_button_early.js на document_start - тогда только навешиваем обработчики.
+        let button = document.getElementById('fpToolsButton');
+        if (!button) {
+            const anchor = document.querySelector('.nav.navbar-nav.navbar-right.logged .user-link[data-toggle="dropdown"]')?.parentElement;
+            if (!anchor) return false;
+            const toolsMenu = createElement('li');
+            toolsMenu.innerHTML = `<a id="fpToolsButton" role="button" tabindex="0" aria-label="Открыть Funcy" aria-expanded="false" title="Funcy"><span class="fpt-logo-btn"><img src="${chrome.runtime.getURL('icons/icon128.png')}" alt="" width="34" height="34" draggable="false"></span></a>`;
+            anchor.insertAdjacentElement('afterend', toolsMenu);
+            button = toolsMenu.querySelector('#fpToolsButton');
+        }
+        if (!button || button.dataset.fptBound === 'true') return !!button;
+        button.dataset.fptBound = 'true';
+        button.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                button.click();
+            }
+        });
 
         let opening = false;
         button?.addEventListener('click', async () => {
@@ -36,20 +55,34 @@
                     await window.__fpEnsurePopup();
                 }
                 const popup = document.querySelector('.fp-tools-popup');
+                if (popup && !popup._fptButtonSync) {
+                    // aria-expanded кнопки следует за попапом при любом способе закрытия (крестик, Esc, клик мимо).
+                    const sync = () => button.setAttribute('aria-expanded',
+                        String(popup.classList.contains('active') && !popup.classList.contains('is-closing')));
+                    popup._fptButtonSync = new MutationObserver(sync);
+                    popup._fptButtonSync.observe(popup, { attributes: true, attributeFilter: ['class'] });
+                }
                 if (popup) {
                     if (popup.classList.contains('active') && !popup.classList.contains('is-closing')) {
                         popup._fptClose?.();
                         return;
                     }
+                    // Стартовый экран остаётся, если popup закрыли на нём, и показывается при
+                    // первом открытии после перезагрузки страницы (F5), но не после перехода по ссылке.
+                    const firstOpen = !window.__fptPopupOpenedOnce;
+                    const keepStartScreen = firstOpen
+                        ? fptPageWasReloaded()
+                        : !!popup.querySelector('.fp-tools-content')?.classList.contains('fpt-start-state-active');
+                    window.__fptPopupOpenedOnce = true;
                     await resetPopupStartState();
-                    await loadLastActivePage();
+                    if (!keepStartScreen) await loadLastActivePage();
                     if (typeof popup._fptOpen === 'function') popup._fptOpen();
                     else popup.classList.add('active');
                     if (typeof applyFptMenuTransparency === 'function') applyFptMenuTransparency();
                     if (typeof syncFptMenuControls === 'function') syncFptMenuControls();
                 }
             } catch (error) {
-                console.error('FunPay Funcy: popup opening failed:', error);
+                console.error('Funcy: popup opening failed:', error);
             } finally {
                 opening = false;
             }
@@ -78,11 +111,12 @@
             }
         });
 
-        console.log("FunPay Funcy: Кнопка в хедере успешно добавлена.");
+        console.log("Funcy: Кнопка в хедере успешно добавлена.");
         return true;
     }
 
     async function handleAIReviewReply(event) {
+        if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) return;
         const button = event.currentTarget;
     
         if (!document.querySelector('style[data-fp-tools-btn-loader]')) {
@@ -149,7 +183,7 @@
     
         } catch (error) {
             showNotification(`Ошибка ИИ: ${error.message}`, true);
-            console.error('FunPay Funcy AI Review Reply Error:', error);
+            console.error('Funcy AI Review Reply Error:', error);
         } finally {
             button.disabled = false;
             button.innerHTML = originalText;
@@ -189,7 +223,7 @@
             }
             // --- ИИ-ОТВЕТ НА ОТЗЫВ: кнопка-клон «Опубликовать» со звёздочкой ---
             const reviewPublishBtn = document.querySelector('.review-item-answer-form .btn[data-action="save"], .review-editor-reply .btn[data-action="save"]');
-            if (reviewPublishBtn && !document.getElementById('fp-tools-ai-review-reply-btn')) {
+            if (globalThis.FPTFeatureAvailability?.isAvailable('ai') === true && reviewPublishBtn && !document.getElementById('fp-tools-ai-review-reply-btn')) {
                 const aiBtn = createElement('button', {
                     type: 'button',
                     class: reviewPublishBtn.className.trim(),
@@ -293,112 +327,112 @@
                     try {
                         await window.FPTLotIOPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел управления лотами:', error);
+                        console.error('Funcy: не удалось открыть раздел управления лотами:', error);
                     }
                 }
                 if (window.FPTAutoDeliveryPage && typeof window.FPTAutoDeliveryPage.mount === 'function') {
                     try {
                         await window.FPTAutoDeliveryPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел автовыдачи:', error);
+                        console.error('Funcy: не удалось открыть раздел автовыдачи:', error);
                     }
                 }
                 if (window.FPTAutoOrdersPage && typeof window.FPTAutoOrdersPage.mount === 'function') {
                     try {
                         await window.FPTAutoOrdersPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел заказов и выдач:', error);
+                        console.error('Funcy: не удалось открыть раздел заказов и выдач:', error);
                     }
                 }
                 if (window.FPTAutoBumpPage && typeof window.FPTAutoBumpPage.mount === 'function') {
                     try {
                         await window.FPTAutoBumpPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел автоподнятия:', error);
+                        console.error('Funcy: не удалось открыть раздел автоподнятия:', error);
                     }
                 }
                 if (window.FPTAutoReplyPage && typeof window.FPTAutoReplyPage.mount === 'function') {
                     try {
                         await window.FPTAutoReplyPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел автоответчика:', error);
+                        console.error('Funcy: не удалось открыть раздел автоответчика:', error);
                     }
                 }
                 if (window.FPTAutoReviewPage && typeof window.FPTAutoReviewPage.mount === 'function') {
                     try {
                         await window.FPTAutoReviewPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел отзывов и бонусов:', error);
+                        console.error('Funcy: не удалось открыть раздел отзывов и бонусов:', error);
                     }
                 }
                 if (window.FPTQuickRepliesPage && typeof window.FPTQuickRepliesPage.mount === 'function') {
                     try {
                         await window.FPTQuickRepliesPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел быстрых ответов:', error);
+                        console.error('Funcy: не удалось открыть раздел быстрых ответов:', error);
                     }
                 }
                 if (window.FPTInterfaceElementsPage && typeof window.FPTInterfaceElementsPage.mount === 'function') {
                     try {
                         await window.FPTInterfaceElementsPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел элементов интерфейса:', error);
+                        console.error('Funcy: не удалось открыть раздел элементов интерфейса:', error);
                     }
                 }
                 if (window.FPTAccountsPage && typeof window.FPTAccountsPage.mount === 'function') {
                     try {
                         await window.FPTAccountsPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел аккаунтов:', error);
+                        console.error('Funcy: не удалось открыть раздел аккаунтов:', error);
                     }
                 }
                 if (window.FPTFinanceHubPage && typeof window.FPTFinanceHubPage.mount === 'function') {
                     try {
                         await window.FPTFinanceHubPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел финансов:', error);
+                        console.error('Funcy: не удалось открыть раздел финансов:', error);
                     }
                 }
                 if (window.FPTThemePage && typeof window.FPTThemePage.mount === 'function') {
                     try {
                         await window.FPTThemePage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел тем:', error);
+                        console.error('Funcy: не удалось открыть раздел тем:', error);
                     }
                 }
                 if (window.FPTEffectsPage && typeof window.FPTEffectsPage.mount === 'function') {
                     try {
                         await window.FPTEffectsPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел эффектов:', error);
+                        console.error('Funcy: не удалось открыть раздел эффектов:', error);
                     }
                 }
                 if (window.FPTNotificationSoundPage && typeof window.FPTNotificationSoundPage.mount === 'function') {
                     try {
                         await window.FPTNotificationSoundPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел звука уведомлений:', error);
+                        console.error('Funcy: не удалось открыть раздел звука уведомлений:', error);
                     }
                 }
                 if (window.FPTBlacklistPage && typeof window.FPTBlacklistPage.mount === 'function') {
                     try {
                         await window.FPTBlacklistPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел чёрного списка:', error);
+                        console.error('Funcy: не удалось открыть раздел чёрного списка:', error);
                     }
                 }
                 if (window.FPTSupportPage && typeof window.FPTSupportPage.mount === 'function') {
                     try {
                         await window.FPTSupportPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел поддержки:', error);
+                        console.error('Funcy: не удалось открыть раздел поддержки:', error);
                     }
                 }
                 if (window.FPTSettingsIOPage && typeof window.FPTSettingsIOPage.mount === 'function') {
                     try {
                         await window.FPTSettingsIOPage.mount(toolsPopup);
                     } catch (error) {
-                        console.error('FunPay Funcy: не удалось открыть раздел переноса настроек:', error);
+                        console.error('Funcy: не удалось открыть раздел переноса настроек:', error);
                     }
                 }
 
@@ -431,7 +465,7 @@
         addChatTemplateButtons();
         initializeExactPrice();
         // FIX 2.8.4 (№9): применяем кастомные стили редактора сразу, не дожидаясь
-        // открытия меню FunPay Funcy.
+        // открытия меню Funcy.
         if (typeof injectMagicStickStylesEarly === 'function') injectMagicStickStylesEarly();
         setupAIChatFeature();
         initializeFontTools();
@@ -444,11 +478,11 @@
         initializeReviewSorter();
         initializeMarketAnalytics();
         initializeMarkAllAsRead();
-        initializeFPTIdentifier();
+
         initializeBlacklist();
         initializeUnconfirmedBalanceDisplay();
         initializeSalesFilters();
-        // Apply saved FunPay Funcy button size/opacity at load (panel itself builds with popup).
+        // Apply saved Funcy button size/opacity at load (panel itself builds with popup).
         if (typeof applyHeaderButtonStylesEarly === 'function') applyHeaderButtonStylesEarly();
         // order_page_enhancements.js, lot_context_menu.js self-initialize
         // New 3.0 features (self-initializing modules loaded separately)

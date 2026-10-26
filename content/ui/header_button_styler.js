@@ -26,15 +26,11 @@ function applyButtonStyles(settings) {
         document.head.appendChild(styleTag);
     }
 
-    // The button colour is fixed to match the lavender menu accent.
+    // Keep appearance in the shared stylesheet; only size and opacity are configurable.
     styleTag.textContent = `
         #fpToolsButton {
-            color: #7663f6 !important;
             font-size: ${settings.size}px !important;
             opacity: ${settings.opacity / 100} !important;
-        }
-        #fpToolsButton::before {
-            background: #7663f6 !important;
         }
     `;
 
@@ -73,7 +69,7 @@ function createButtonStyler() {
     });
     
     document.addEventListener('click', (e) => {
-        if (styler.style.display === 'block' && !styler.contains(e.target) && e.target.id !== 'fpToolsButton') {
+        if (styler.style.display === 'block' && !styler.contains(e.target) && !e.target.closest('#fpToolsButton')) {
              styler.style.display = 'none';
         }
     });

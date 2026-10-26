@@ -39,18 +39,19 @@ test('sounds: the page sits in the customers group and is mounted by the popup',
 test('sounds: every preset file ships with the extension and is web accessible', () => {
     const catalog = loadCatalog();
     const ids = catalog.presets.map(preset => preset.id);
-    assert.deepEqual(ids, ['default', 'vk', 'tg', 'iphone', 'discord', 'whatsapp', 'custom']);
-    assert.deepEqual(catalog.groups.map(group => group.id), ['funpay', 'messengers', 'custom']);
+    assert.deepEqual(ids, ['default', 'custom']);
+    assert.deepEqual(catalog.groups.map(group => group.id), ['funpay', 'custom']);
     for (const preset of catalog.presets.filter(item => item.file)) {
         assert.ok(fs.existsSync(path.join(root, 'sounds', preset.file)), preset.file);
     }
     assert.ok(catalog.presets.every(preset => catalog.groups.some(group => group.id === preset.group)));
     assert.ok(!fs.existsSync(path.join(root, 'sounds/kenney')), 'the Funcy presets are gone');
     const resources = JSON.parse(read('manifest.json')).web_accessible_resources.flatMap(group => group.resources);
-    assert.ok(resources.includes('sounds/*.mp3') && !resources.some(item => item.includes('kenney')));
+    assert.ok(!resources.includes('sounds/*.mp3') && !resources.some(item => item.includes('kenney')));
 
     assert.equal(catalog.urlFor('default'), 'https://funpay.com/audio/chat_loud.mp3');
-    assert.equal(catalog.urlFor('tg'), 'chrome-extension://qa/sounds/telegram.mp3');
+    assert.equal(catalog.urlFor('tg'), null);
+    assert.equal(catalog.normalizeId('tg'), 'default');
     assert.equal(catalog.normalizeId('glass'), 'default', 'a stored Funcy preset falls back to the FunPay sound');
     assert.equal(catalog.urlFor('custom'), null, 'the custom clip lives in storage');
     assert.equal(catalog.normalizeId('lasers'), 'default');

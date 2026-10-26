@@ -4,7 +4,7 @@
     'use strict';
 
     const PAGE_ID = 'theme';
-    const DEFAULT_BG = 'https://i.ibb.co/ZpS0d56R/PH6-UEvp-Kn-KI.jpg';
+    const DEFAULT_BG = ''; // The release default is a CSS gradient.
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     const SHARE_BOT_URL = 'https://t.me/FunPayThemesBot';
     const PREVIEW_FONTS_ID = 'fpt-th-preview-fonts';
@@ -368,6 +368,9 @@
         stage.setAttribute('role', 'img');
         stage.setAttribute('aria-label', 'Макет страницы FunPay с выбранными цветами и оформлением');
         const bg = node('div', 'fpt-th-stage-bg');
+        const video = node('video', 'fpt-th-stage-video');
+        bg.appendChild(video);
+        const videoPlayer = root.FPTThemeVideo ? root.FPTThemeVideo.createPlayer(video) : null;
         const scrim = node('div', 'fpt-th-stage-scrim');
         const circles = node('div', 'fpt-th-stage-circles');
         circles.setAttribute('aria-hidden', 'true');
@@ -425,7 +428,8 @@
             const original = draft.baseStyle === 'original';
             stage.dataset.base = original ? 'original' : 'custom';
             const image = original ? '' : (draft.bgImage || (active ? DEFAULT_BG : ''));
-            style.setProperty('--fpt-th-bg-image', image ? `url("${String(image).replace(/["\\]/g, '\\$&')}")` : 'none');
+            if (videoPlayer) videoPlayer.update(original ? '' : draft.bgVideo, active);
+            style.setProperty('--fpt-th-bg-image', image ? `url("${String(image).replace(/["\\]/g, '\\$&')}")` : (original || !active ? 'none' : 'linear-gradient(135deg, #151726 0%, #25203b 55%, #111827 100%)'));
             style.setProperty('--fpt-th-bg-blur', `${Number(draft.bgBlur) || 0}px`);
             style.setProperty('--fpt-th-bg-brightness', `${Number(draft.bgBrightness) || 100}%`);
             if (original) {
@@ -467,7 +471,7 @@
             stage.dataset.scrollbar = draft.enableCustomScrollbar ? 'on' : 'off';
             stage.dataset.separators = draft.enableImprovedSeparators ? 'improved' : 'plain';
             stage.dataset.header = draft.headerPosition === 'bottom' ? 'bottom' : 'top';
-            stage.dataset.circles = custom && draft.showCircles === false ? 'hidden' : 'shown';
+            stage.dataset.circles = draft.showCircles === true ? 'shown' : 'hidden';
             ensurePreviewFont(draft.font);
         }
 
@@ -475,7 +479,7 @@
             badge.textContent = dirty ? 'Черновик' : 'Как на сайте';
             badge.dataset.kind = dirty ? 'warning' : 'neutral';
         }
-        return { element, update, setBadge };
+        return { element, update, setBadge, dispose() { if (videoPlayer) videoPlayer.dispose(); } };
     }
 
     function makeHelpPanel() {
@@ -531,9 +535,9 @@
             draft: null,
             presetId: null,
             active: false,
-            busy: false,
-            catalog: { status: 'idle', items: [] }
+            busy: false
         };
+        let draftVersion = 0;
         try {
             const [defaults, theme, stored] = await Promise.all([
                 run('getThemeDefaults'),
@@ -542,6 +546,7 @@
             ]);
             state.defaults = clone(defaults);
             state.committed = { ...clone(defaults), ...clone(theme) };
+            state.committed.bgImage = root.FPTSafe.resolveWallpaper(state.committed.bgImage);
             state.draft = clone(state.committed);
             state.enabled = stored.enableCustomTheme === true;
         } catch (error) {
@@ -558,12 +563,23 @@
             draft: () => state.draft,
             defaults: () => state.defaults,
             edit(patch) {
+                draftVersion++;
                 Object.assign(state.draft, patch);
                 state.presetId = null;
                 scheduleRender();
             }
         };
         const track = control => { controls.push(control); return control; };
+
+        // Chat column widths are also dragged on the page itself; chat_column_resize.js announces each
+        // saved width. Pick it up so "Apply" does not bring back the old value; an untouched draft follows.
+        document.addEventListener('fpt:chat-column-width', event => {
+            const { key, value } = event.detail || {};
+            if (!['chatContactsWidth', 'chatDetailWidth'].includes(key) || value === state.committed[key]) return;
+            if (state.draft[key] === state.committed[key]) state.draft[key] = value;
+            state.committed[key] = value;
+            scheduleRender();
+        });
 
         // --- Hero ----------------------------------------------------------------------------
         const hero = node('section', 'fpt-th-hero');
@@ -623,9 +639,54 @@
         strip.setAttribute('role', 'group');
         strip.setAttribute('aria-label', 'Готовые темы');
         gallery.body.appendChild(strip);
-        const scrollStrip = direction => strip.scrollBy({ left: direction * Math.max(240, strip.clientWidth * 0.8), behavior: 'smooth' });
+        // Стрелки листают ровно на одну плитку. Позиции считаются от начала плиток, а не от текущего
+        // scrollLeft, поэтому полоса всегда встаёт на границу темы; быстрые клики копятся в pendingIndex.
+        let pendingIndex = null;
+        const stripItems = () => [...strip.children];
+        // Доли пикселя от calc() не считаются прокруткой: три плитки, которые влезают, листать некуда.
+        const stripMax = () => { const max = strip.scrollWidth - strip.clientWidth; return max <= 1 ? 0 : max; };
+        const itemOffset = item => {
+            const pad = parseFloat(getComputedStyle(strip).paddingLeft) || 0;
+            return item.getBoundingClientRect().left - strip.getBoundingClientRect().left + strip.scrollLeft - pad;
+        };
+        function stripIndex() {
+            const items = stripItems();
+            let best = 0;
+            items.forEach((item, index) => {
+                if (Math.abs(itemOffset(item) - strip.scrollLeft) < Math.abs(itemOffset(items[best]) - strip.scrollLeft)) best = index;
+            });
+            return best;
+        }
+        // Последняя плитка, на которую ещё можно встать, не упираясь в конец прокрутки.
+        function lastStripIndex() {
+            const items = stripItems();
+            const max = stripMax();
+            const index = items.findIndex(item => itemOffset(item) >= max - 1);
+            return index === -1 ? Math.max(0, items.length - 1) : index;
+        }
+        function updateStripNav() {
+            const index = pendingIndex ?? stripIndex();
+            stripPrev.disabled = index <= 0 || strip.scrollLeft <= 1 && pendingIndex == null;
+            stripNext.disabled = index >= lastStripIndex() || strip.scrollLeft >= stripMax() - 1 && pendingIndex == null;
+        }
+        function scrollStrip(direction) {
+            const items = stripItems();
+            if (!items.length) return;
+            const from = pendingIndex ?? stripIndex();
+            const target = Math.min(lastStripIndex(), Math.max(0, from + direction));
+            pendingIndex = target;
+            strip.scrollTo({ left: Math.min(stripMax(), Math.max(0, itemOffset(items[target]))), behavior: 'smooth' });
+            updateStripNav();
+        }
         stripPrev.addEventListener('click', () => scrollStrip(-1));
         stripNext.addEventListener('click', () => scrollStrip(1));
+        let stripSettle = 0;
+        strip.addEventListener('scroll', () => {
+            clearTimeout(stripSettle);
+            stripSettle = setTimeout(() => { pendingIndex = null; updateStripNav(); }, 120);
+            if (pendingIndex == null) updateStripNav();
+        }, { passive: true });
+        if (typeof ResizeObserver === 'function') new ResizeObserver(() => updateStripNav()).observe(strip);
 
         function presetTile({ id, name, meta, art, onPick }) {
             const item = node('div', 'fpt-th-preset-item');
@@ -653,123 +714,113 @@
             return art;
         }
 
-        function imageArt(url) {
-            const art = node('span', 'fpt-th-preset-art fpt-th-preset-art--image');
-            const fallback = icon('image');
-            art.appendChild(fallback);
-            if (url) {
-                const image = node('img');
-                image.alt = '';
-                image.loading = 'lazy';
-                image.decoding = 'async';
-                image.referrerPolicy = 'no-referrer';
-                image.addEventListener('load', () => { art.dataset.loaded = 'true'; });
-                image.addEventListener('error', () => image.remove());
-                image.src = url;
-                art.appendChild(image);
-            }
-            return art;
-        }
-
         function loadIntoDraft(theme, presetId) {
+            draftVersion++;
             const known = {};
             Object.keys(state.defaults).forEach(key => { if (theme && theme[key] !== undefined) known[key] = theme[key]; });
+            if (Object.hasOwn(known, 'bgImage')) known.bgImage = root.FPTSafe.resolveWallpaper(known.bgImage);
             state.draft = { ...clone(state.defaults), ...clone(known) };
             state.presetId = presetId;
             syncAll();
         }
 
+        let themePresets = [];
+        const catalogStatus = node('p', 'fpt-th-catalog-status');
+        catalogStatus.setAttribute('role', 'status');
+        gallery.body.appendChild(catalogStatus);
+        const catalogRefresh = createButton('fpt-th-icon-button', 'refresh', '');
+        catalogRefresh.setAttribute('aria-label', 'Обновить каталог тем');
+        gallery.head.appendChild(catalogRefresh);
+        catalogRefresh.addEventListener('click', () => loadGallery(true));
+
+        async function loadGallery(refresh = false) {
+            if (catalogRefresh.disabled) return;
+            catalogRefresh.disabled = true;
+            catalogRefresh.setAttribute('aria-busy', 'true');
+            view.dataset.catalogState = 'loading';
+            catalogStatus.textContent = 'Загружаем темы…';
+            catalogStatus.hidden = false;
+            try {
+                const catalog = await run('getThemeCatalog', { refresh });
+                themePresets = catalog.themes;
+                renderStrip();
+                catalogStatus.textContent = !themePresets.length ? 'Темы каталога временно скрыты до проверки прав на изображения. Можно настроить цвета и загрузить свой фон.' : catalog.stale ? 'Показаны сохранённые темы. Каталог временно недоступен.' : '';
+                catalogStatus.hidden = !catalog.stale;
+                view.dataset.catalogState = 'ready';
+            } catch (error) {
+                catalogStatus.textContent = error.message;
+                view.dataset.catalogState = 'error';
+            } finally {
+                catalogRefresh.disabled = false;
+                catalogRefresh.removeAttribute('aria-busy');
+            }
+        }
+
         function renderStrip() {
             strip.replaceChildren();
+            pendingIndex = null;
+            strip.scrollLeft = 0;
             strip.appendChild(presetTile({
                 id: 'builtin:original', name: 'Оригинальная', meta: 'Как на FunPay',
                 art: iconArt('light_mode', 'original'),
                 onPick: async () => {
-                    state.draft = { ...state.draft, baseStyle: 'original', bgImage: null };
+                    draftVersion++;
+                    state.draft = { ...state.draft, baseStyle: 'original', bgImage: null, bgVideo: null };
                     state.presetId = 'builtin:original';
                     syncAll();
                 }
             }));
+            // Переключает в режим своей темы, сохраняя текущие настройки черновика.
             strip.appendChild(presetTile({
-                id: 'builtin:dark', name: 'Чёрная', meta: 'Тёмная и спокойная',
-                art: iconArt('dark_mode', 'dark'),
+                id: 'builtin:custom', name: 'Своя', meta: 'Свои цвета и фон',
+                art: iconArt('tune', 'custom'),
                 onPick: async () => {
-                    const preset = await run('fp-apply-dark-preset', { draftOnly: true });
-                    state.draft = { ...state.draft, ...preset };
-                    state.presetId = 'builtin:dark';
-                    syncAll();
-                }
-            }));
-            strip.appendChild(presetTile({
-                id: 'builtin:random', name: 'Случайная', meta: 'Сюрприз из палитры',
-                art: iconArt('casino', 'random'),
-                onPick: async () => {
-                    const random = await run('randomizeThemeBtn', { draftOnly: true });
-                    state.draft = { ...state.draft, ...random };
+                    draftVersion++;
+                    state.draft = { ...state.draft, baseStyle: 'custom' };
                     state.presetId = null;
                     syncAll();
                 }
             }));
-            const { status, items } = state.catalog;
-            if (status === 'loading' || status === 'idle') {
-                for (let index = 0; index < 4; index += 1) {
-                    const skeleton = node('div', 'fpt-th-preset-item fpt-th-preset-item--skeleton');
-                    skeleton.setAttribute('aria-hidden', 'true');
-                    skeleton.append(node('span', 'fpt-th-preset-art'), node('span', 'fpt-th-skeleton-line'), node('span', 'fpt-th-skeleton-line fpt-th-skeleton-line--short'));
-                    strip.appendChild(skeleton);
-                }
-            } else if (status === 'error') {
-                const failure = node('div', 'fpt-th-strip-state');
-                failure.setAttribute('role', 'alert');
-                const retry = createButton('fpt-th-ghost-button', 'refresh', 'Повторить');
-                retry.addEventListener('click', loadCatalog);
-                failure.append(icon('cloud_off'), node('span', '', 'Каталог тем недоступен. Проверьте подключение.'), retry);
-                strip.appendChild(failure);
-            } else if (!items.length) {
-                const empty = node('div', 'fpt-th-strip-state');
-                empty.append(icon('inbox'), node('span', '', 'В каталоге пока нет тем.'));
-                strip.appendChild(empty);
-            } else {
-                items.forEach((theme, index) => {
-                    const id = `catalog:${theme.id ?? index}`;
-                    strip.appendChild(presetTile({
-                        id, name: theme.name || 'Без названия', meta: theme.author ? `Автор: ${theme.author}` : (theme.desc || 'Тема сообщества'),
-                        art: imageArt(theme.previewUrl),
-                        onPick: async () => {
-                            const loaded = await run('applyCurrent', { theme, draftOnly: true });
-                            loadIntoDraft({ ...loaded, baseStyle: 'custom' }, id);
-                        }
-                    }));
-                });
-            }
+            themePresets.forEach(preset => {
+                const id = `preset:${preset.id}`;
+                const art = iconArt('palette', 'preset');
+                art.replaceChildren();
+                const thumbnail = node('img');
+                thumbnail.src = root.FPTThemeAssets.assetUrl(preset.wallpaper);
+                thumbnail.alt = '';
+                thumbnail.loading = 'lazy';
+                thumbnail.decoding = 'async';
+                art.appendChild(thumbnail);
+                strip.appendChild(presetTile({
+                    id, name: preset.name, meta: preset.meta || '', art,
+                    onPick: async () => {
+                        const version = ++draftVersion;
+                        const bgImage = await run('getThemeWallpaper', { path: preset.wallpaper });
+                        if (version !== draftVersion) return;
+                        const bgVideo = root.FPTThemeAssets.videoUrl(preset.video) || null;
+                        loadIntoDraft({ ...preset.theme, bgImage, bgVideo, baseStyle: 'custom' }, id);
+                    }
+                }));
+            });
             renderPresetSelection();
+            updateStripNav();
         }
 
         function renderPresetSelection() {
             strip.querySelectorAll('.fpt-th-preset').forEach(button => {
                 const id = button.dataset.presetId;
-                const pressed = id === 'builtin:original' ? state.draft.baseStyle === 'original' : (state.draft.baseStyle !== 'original' && id === state.presetId);
+                const custom = state.draft.baseStyle !== 'original';
+                const pressed = id === 'builtin:original' ? !custom
+                    : id === 'builtin:custom' ? custom && !state.presetId
+                        : custom && id === state.presetId;
                 button.setAttribute('aria-pressed', pressed ? 'true' : 'false');
             });
-        }
-
-        async function loadCatalog() {
-            if (state.catalog.status === 'loading') return;
-            state.catalog.status = 'loading';
-            renderStrip();
-            try {
-                const items = await run('getThemeCatalog');
-                state.catalog = { status: 'ready', items: Array.isArray(items) ? items : [] };
-            } catch (_) {
-                state.catalog = { status: 'error', items: [] };
-            }
-            renderStrip();
         }
 
         // --- Background ----------------------------------------------------------------------
         const background = createCard({
             iconName: 'wallpaper', title: 'Фон',
-            description: 'Картинка за страницей FunPay: PNG, JPG, WebP или GIF до 5 МБ.'
+            description: 'Готовые темы поддерживают видеофон. Своя картинка: PNG, JPG, WebP или GIF до 5 МБ.'
         });
         const bgFile = node('input');
         bgFile.type = 'file';
@@ -786,10 +837,10 @@
         bgOverlay.append(icon('add_photo_alternate'), node('span', '', 'Перетащите картинку или нажмите'));
         bgDrop.append(bgThumb, bgOverlay);
         const bgStatus = node('p', 'fpt-th-bg-status');
-        const bgActions = node('div', 'fpt-th-actions');
+        const bgActions = node('div', 'fpt-th-actions fpt-th-actions--fill');
         const bgUpload = createButton('fpt-th-button fpt-th-button--primary', 'upload', 'Загрузить');
-        const bgRemove = createButton('fpt-th-button', 'delete', 'Убрать');
-        const bgPalette = createButton('fpt-th-button', 'auto_fix_high', 'Подобрать цвета по картинке');
+        const bgRemove = createButton('fpt-th-button fpt-th-button--danger', 'delete', 'Убрать');
+        const bgPalette = createButton('fpt-th-button fpt-th-button--soft', 'auto_fix_high', 'Подобрать цвета по картинке');
         bgActions.append(bgUpload, bgRemove);
         const bgSliders = node('div', 'fpt-th-grid fpt-th-grid--two');
         bgSliders.append(
@@ -808,7 +859,7 @@
             if (file.size > MAX_IMAGE_BYTES) { toast('Файл слишком большой. Максимум 5 МБ.', 'error'); return; }
             try {
                 const dataUrl = await readFileAsDataUrl(file);
-                ctx.edit({ bgImage: dataUrl });
+                ctx.edit({ bgImage: dataUrl, bgVideo: null });
             } catch (error) {
                 toast(error.message, 'error');
             }
@@ -831,7 +882,7 @@
             delete bgDrop.dataset.drag;
         }));
         bgDrop.addEventListener('drop', event => setBackground(event.dataTransfer && event.dataTransfer.files[0]));
-        bgRemove.addEventListener('click', () => ctx.edit({ bgImage: null }));
+        bgRemove.addEventListener('click', () => ctx.edit({ bgImage: null, bgVideo: null }));
         bgPalette.addEventListener('click', async () => {
             if (!state.draft.bgImage || bgPalette.getAttribute('aria-busy') === 'true') return;
             bgPalette.setAttribute('aria-busy', 'true');
@@ -849,14 +900,15 @@
         });
 
         function renderBackgroundControls() {
-            const custom = !!state.draft.bgImage;
+            const custom = !!(state.draft.bgImage || state.draft.bgVideo);
             const image = custom ? state.draft.bgImage : (state.active ? DEFAULT_BG : '');
-            bgThumb.style.backgroundImage = image ? `url("${String(image).replace(/["\\]/g, '\\$&')}")` : 'none';
+            bgThumb.style.backgroundImage = image ? `url("${String(image).replace(/["\\]/g, '\\$&')}")` : (state.active ? 'linear-gradient(135deg, #151726 0%, #25203b 55%, #111827 100%)' : 'none');
             bgThumb.style.filter = `blur(${Math.min(6, (Number(state.draft.bgBlur) || 0) / 3)}px) brightness(${Number(state.draft.bgBrightness) || 100}%)`;
             bgDrop.dataset.custom = custom ? 'true' : 'false';
-            bgStatus.textContent = custom ? 'Используется своя картинка.' : 'Сейчас стоит стандартный фон FunPay Funcy.';
+            bgStatus.textContent = state.draft.bgVideo ? 'Видеофон без звука. При недоступности видео показывается статичный кадр.'
+                : custom ? 'Используется своя картинка.' : 'Сейчас стоит стандартный фон Funcy.';
             bgRemove.disabled = !custom;
-            bgPalette.disabled = !custom;
+            bgPalette.disabled = !state.draft.bgImage;
             bgPalette.title = custom ? 'Взять цвета темы из загруженной картинки' : 'Сначала загрузите свою картинку';
         }
 
@@ -946,6 +998,42 @@
             }, ctx)).element
         );
 
+        // --- Chat ----------------------------------------------------------------------------
+        // Works in both looks (content/theme_chat_layout.js), so the card is not lockable.
+        const chat = createCard({
+            iconName: 'view_column', title: 'Чат',
+            description: 'Раскладка страницы сообщений.'
+        });
+        const chatDetailWidth = track(createSlider({ key: 'chatDetailWidth', label: 'Ширина инфо-панели', min: 200, max: 420, unit: 'px' }, ctx));
+        const chatHideDetail = makeSwitch('Скрыть инфо-панель', false, checked => ctx.edit({ chatHideDetail: checked }));
+        const chatHideDetailRow = node('div', 'fpt-th-inline-switch');
+        chatHideDetailRow.append(node('span', '', 'Скрыть инфо-панель'), chatHideDetail.element);
+        track({
+            sync() {
+                const hidden = state.draft.chatHideDetail === true;
+                chatHideDetail.setChecked(hidden);
+                chatDetailWidth.input.disabled = hidden;
+                chatDetailWidth.element.dataset.disabled = hidden ? 'true' : 'false';
+            }
+        });
+        const chatWidths = node('div', 'fpt-th-grid fpt-th-grid--two');
+        chatWidths.append(
+            track(createSlider({ key: 'chatContactsWidth', label: 'Ширина списка диалогов', min: 220, max: 480, unit: 'px' }, ctx)).element,
+            chatDetailWidth.element
+        );
+        chat.body.append(
+            track(createDisclosure({
+                iconName: 'dashboard', title: 'Модульный чат', key: 'chatModular',
+                description: 'Список диалогов, переписка и инфо-панель - отдельными блоками со своими углами.',
+                children: [
+                    track(createSlider({ key: 'chatModuleGap', label: 'Отступ между блоками', min: 0, max: 40, unit: 'px' }, ctx)).element,
+                    chatWidths,
+                    chatHideDetailRow,
+                    node('p', 'fpt-th-hint', 'Ширину можно тянуть мышкой прямо в чате, двойной клик по ручке - сброс.')
+                ]
+            }, ctx)).element
+        );
+
         // --- Details -------------------------------------------------------------------------
         const details = createCard({
             iconName: 'tune', title: 'Детали',
@@ -957,10 +1045,10 @@
             { key: 'scrollbarTrackColor', label: 'Дорожка', hint: 'Фон полосы' }
         ];
         scrollSwatches.forEach(spec => scrollColors.appendChild(track(createSwatch(spec, ctx)).element));
-        const circleVisible = makeSwitch('Показывать круги', true, checked => ctx.edit({ showCircles: checked }));
+        const circleVisible = makeSwitch('Показывать круги', false, checked => ctx.edit({ showCircles: checked }));
         const circleVisibleRow = node('div', 'fpt-th-inline-switch');
         circleVisibleRow.append(node('span', '', 'Показывать круги'), circleVisible.element);
-        track({ sync() { circleVisible.setChecked(state.draft.showCircles !== false); } });
+        track({ sync() { circleVisible.setChecked(state.draft.showCircles === true); } });
         const circleGrid = node('div', 'fpt-th-grid fpt-th-grid--three');
         circleGrid.append(
             track(createSlider({ key: 'circleSize', label: 'Размер', min: 50, max: 150, unit: '%' }, ctx)).element,
@@ -1083,6 +1171,7 @@
             confirmButton.addEventListener('click', async () => {
                 dialog.setBusy(true);
                 try {
+                    draftVersion++;
                     const defaults = await run('resetThemeBtn');
                     state.committed = { ...clone(state.defaults), ...clone(defaults) };
                     state.draft = clone(state.committed);
@@ -1116,6 +1205,7 @@
 
         cancelButton.addEventListener('click', () => {
             if (state.busy) return;
+            draftVersion++;
             state.draft = clone(state.committed);
             state.presetId = null;
             syncAll();
@@ -1129,7 +1219,7 @@
             if (turningOn) payload.enableCustomTheme = true;
             try {
                 await run('saveSettings', { settings: payload });
-                state.committed = clone(state.draft);
+                state.committed = clone(payload.fpToolsTheme);
                 if (turningOn) {
                     state.enabled = true;
                     masterSwitch.setChecked(true);
@@ -1144,7 +1234,7 @@
         });
 
         // --- Render --------------------------------------------------------------------------
-        settings.append(gallery.card, background.card, colors.card, buttonsCard.card, shape.card, blocks.card, details.card, tools.card);
+        settings.append(gallery.card, background.card, colors.card, buttonsCard.card, shape.card, blocks.card, chat.card, details.card, tools.card);
         view.append(hero, layout, dockSlot);
         view.setAttribute('data-ready', 'true');
 
@@ -1179,7 +1269,7 @@
         // In the original FunPay look there is no wallpaper or recolouring, so those cards are locked.
         const lockable = [background, colors, blocks].map(card => {
             const note = node('p', 'fpt-th-lock-note');
-            note.append(icon('lock'), node('span', '', 'Недоступно в оригинальном виде. Выберите готовую тему, чтобы менять фон и цвета.'));
+            note.append(icon('lock'), node('span', '', 'Недоступно в оригинальном виде. Выберите «Своя» или готовую тему, чтобы менять фон и цвета.'));
             card.card.insertBefore(note, card.body);
             return card;
         });
@@ -1198,30 +1288,38 @@
         function syncAll() {
             controls.forEach(control => control.sync && control.sync());
             renderBase();
-            preview.update(state.draft, { active: state.active });
+            preview.update(state.draft, { active: state.active && page.classList.contains('active') && popup.classList.contains('active') });
             renderBackgroundControls();
             renderPresetSelection();
             renderHero();
             renderDock();
         }
 
-        // Network requests (default wallpaper, theme catalogue) wait until the page is actually opened.
+        // Network requests (default wallpaper) wait until the page is actually opened.
         const activate = () => {
             if (state.active) return;
             state.active = true;
             syncAll();
-            loadCatalog();
+            loadGallery();
         };
+        renderStrip();
         if (page.classList.contains('active')) {
             activate();
         } else {
-            renderStrip();
             const observer = new MutationObserver(() => {
                 if (!page.isConnected) { observer.disconnect(); return; }
                 if (page.classList.contains('active')) { observer.disconnect(); activate(); }
             });
             observer.observe(page, { attributes: true, attributeFilter: ['class'] });
         }
+        // Keep draft video playback tied to the visible editor, including closing the popup.
+        const playbackObserver = new MutationObserver(() => {
+            if (!view.isConnected) { preview.dispose(); playbackObserver.disconnect(); return; }
+            preview.update(state.draft, { active: page.classList.contains('active') && popup.classList.contains('active') });
+        });
+        playbackObserver.observe(page, { attributes: true, attributeFilter: ['class'] });
+        playbackObserver.observe(popup, { attributes: true, attributeFilter: ['class'] });
+        playbackObserver.observe(popup, { childList: true, subtree: true });
         syncAll();
     }
 

@@ -7,17 +7,8 @@ let chromium;
 try { ({ chromium } = require(process.env.FPT_PLAYWRIGHT || 'playwright')); }
 catch { ({ chromium } = require('C:/Users/Usser/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')); }
 const root = path.join(__dirname, '..');
+const assetCatalog = require('./fixtures/funcy-assets-index.json');
 const shots = process.env.FPT_SHOT_DIR || os.tmpdir();
-
-const CATALOG = [
-    { id: 'aurora', name: 'Аврора', author: 'Мира', file: 'aurora.fptheme', preview: 'aurora.jpg' },
-    { id: 'graphite', name: 'Графит', desc: 'Тёмная и строгая', file: 'graphite.fptheme', preview: 'graphite.jpg' }
-];
-const GRAPHITE = {
-    bgColor1: '#3b82f6', bgColor2: '#9bd0ff', containerBgColor: '#14161c', containerBgOpacity: 0.82,
-    textColor: '#e8edf5', linkColor: '#7db4ff', font: 'Montserrat', bgBlur: 4, bgBrightness: 80, borderRadius: 14,
-    enableGlassmorphism: true, glassmorphismBlur: 14, headerPosition: 'bottom', unknownKey: 'must be dropped'
-};
 
 async function openThemePage(browser, { dark = false, viewport = { width: 1440, height: 1000 }, initial = {}, scale = 1 } = {}) {
     const page = await browser.newPage({ viewport, deviceScaleFactor: scale });
@@ -25,7 +16,10 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
     page.on('pageerror', error => errors.push(error.message));
     await page.route('**/*', route => {
         const pathname = new URL(route.request().url()).pathname;
-        if (/^\/(icons\/[\w-]+\.png|fonts\/[\w-]+\.woff2)$/.test(pathname)) {
+        if (pathname.includes('/funcy-assets/main/wallpapers/')) {
+            return route.fulfill({ contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII=', 'base64') });
+        }
+        if (/^\/(icons\/[\w-]+\.png|fonts\/[\w-]+\.woff2|themes\/wallpapers\/[\w-]+\.webp)$/.test(pathname)) {
             const file = path.join(root, pathname);
             if (fs.existsSync(file)) return route.fulfill({ path: file });
         }
@@ -33,7 +27,7 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
     });
     await page.goto('https://funpay.com/');
     await page.setContent(`<html><head></head><body style="background:${dark ? '#101014' : '#f2f2f6'}"><ul class="nav navbar-nav navbar-right logged"><li><a class="user-link" data-toggle="dropdown"></a></li></ul><main id="content"></main></body></html>`);
-    await page.evaluate(({ catalog, graphite, seed }) => {
+    await page.evaluate(({ seed, catalog }) => {
         document.body.dataset.appData = JSON.stringify([{ userId: 'qa-user' }]);
         const store = { fpToolsNavCollapsed: false, ...seed };
         window.qaStore = store; window.qaWrites = [];
@@ -47,13 +41,19 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
             sendMessage(message, cb) { const result = { success: true, data: [], ok: true }; cb?.(result); return Promise.resolve(result); },
             onMessage: { addListener() {} }
         } };
+        window.qaCatalog = catalog;
+        window.qaFetchCalls = [];
         window.fetch = async url => {
             const href = String(url);
-            if (href.endsWith('/index.json')) return { ok: true, json: async () => catalog };
-            if (href.endsWith('.fptheme')) return { ok: true, json: async () => graphite };
+            window.qaFetchCalls.push(href);
+            if (href.endsWith('/funcy-assets/main/index.json')) return { ok: true, blob: async () => new Blob([JSON.stringify(window.qaCatalog)], { type: 'application/json' }) };
+            if (href.includes('/funcy-assets/main/wallpapers/')) {
+                const data = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII='), char => char.charCodeAt(0));
+                return { ok: true, blob: async () => new Blob([data], { type: 'image/png' }) };
+            }
             return { ok: true, json: async () => ({}), text: async () => '' };
         };
-    }, { catalog: CATALOG, graphite: GRAPHITE, seed: initial });
+    }, { seed: initial, catalog: assetCatalog });
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
     const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
@@ -72,7 +72,8 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
     }
     await page.evaluate(() => window.fptOpenPopupPage('theme'));
     await page.waitForSelector('.fp-tools-page-content[data-page="theme"].active .fpt-th[data-ready="true"]');
-    await page.waitForFunction(() => document.querySelectorAll('.fpt-th-preset[data-preset-id^="catalog:"]').length > 0);
+    await page.waitForFunction(() => document.querySelectorAll('.fpt-th-preset').length > 0);
+    await page.waitForSelector('.fpt-th[data-catalog-state="ready"]');
     await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.getAnimations().every(a => a.playState === 'finished'));
     return { page, errors };
 }
@@ -90,6 +91,24 @@ const setColor = (page, index, value) => page.evaluate(([i, next]) => {
 const nextFrames = page => page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 // Headless Chrome hides scrollbars by default, which would also hide the preview's custom scrollbar.
 const launch = () => chromium.launch({ executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
+
+test('real browser: unreviewed catalogue entries remain hidden on refresh and offline', async () => {
+    const browser = await launch();
+    try {
+        const { page, errors } = await openThemePage(browser);
+        assert.equal(await page.locator('.fpt-th-preset[data-preset-id^="preset:"]').count(), 0);
+        assert.match(await page.locator('.fpt-th-catalog-status').textContent(), /проверки прав/);
+        await page.getByRole('button', { name: 'Обновить каталог тем', exact: true }).click();
+        await page.waitForSelector('.fpt-th[data-catalog-state="ready"]');
+        assert.equal(await page.locator('.fpt-th-preset').count(), 2);
+        assert.equal(await page.evaluate(() => window.qaFetchCalls.filter(url => url.includes('/wallpapers/')).length), 0);
+        await page.evaluate(() => { window.fetch = async () => { throw Error('offline'); }; });
+        await page.getByRole('button', { name: 'Обновить каталог тем', exact: true }).click();
+        await page.waitForSelector('.fpt-th[data-catalog-state="ready"]');
+        assert.equal(await page.locator('.fpt-th-preset').count(), 2);
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
 
 test('real browser: theme page builds every section from stored settings and keeps the dock closed', async () => {
     const browser = await launch();
@@ -109,10 +128,10 @@ test('real browser: theme page builds every section from stored settings and kee
             stageRadius: document.querySelector('.fpt-th-stage').style.getPropertyValue('--fpt-th-radius'),
             emptyContainers: [...document.querySelectorAll('.fp-tools-page-content')].filter(el => !el.children.length).length
         }));
-        assert.deepEqual(summary.cards, ['Готовые темы', 'Фон', 'Цвета', 'Кнопки', 'Шрифт и форма', 'Блоки', 'Детали', 'Инструменты']);
+        assert.deepEqual(summary.cards, ['Готовые темы', 'Фон', 'Цвета', 'Кнопки', 'Шрифт и форма', 'Блоки', 'Чат', 'Детали', 'Инструменты']);
         assert.equal(summary.swatches, 5);
-        assert.equal(summary.sliders, 9);
-        assert.deepEqual(summary.presets, ['Оригинальная', 'Чёрная', 'Случайная', 'Аврора', 'Графит']);
+        assert.equal(summary.sliders, 12);
+        assert.deepEqual(summary.presets, ['Оригинальная', 'Своя']);
         assert.equal(summary.masterOn, true);
         assert.equal(summary.heroState, 'on');
         assert.deepEqual(summary.dock, { open: 'false', inert: true });
@@ -202,7 +221,7 @@ test('real browser: edits stay in the draft until Apply, Cancel restores, Apply 
         await page.locator('.fpt-th-dock .fpt-th-button', { hasText: 'Отменить' }).click();
         await nextFrames(page);
         state = await page.evaluate(() => ({ dock: document.querySelector('.fpt-th-dock').dataset.open, radius: document.getElementById('fpt-th-borderRadius').value, writes: window.qaWrites.filter(w => 'fpToolsTheme' in w || 'enableCustomTheme' in w).length }));
-        assert.deepEqual(state, { dock: 'false', radius: '8', writes: 0 });
+        assert.deepEqual(state, { dock: 'false', radius: '16', writes: 0 });
 
         await setRange(page, 'fpt-th-borderRadius', 18);
         await page.locator('.fpt-th-apply').click();
@@ -216,30 +235,93 @@ test('real browser: edits stay in the draft until Apply, Cancel restores, Apply 
     } finally { await browser.close(); }
 });
 
-test('real browser: gallery theme, random and dark presets load into the draft only', async () => {
+test('real browser: original and custom tiles switch the base style in the draft only', async () => {
     const browser = await launch();
     try {
-        const { page, errors } = await openThemePage(browser, { initial: { enableCustomTheme: true, fpToolsTheme: { baseStyle: 'custom' } } });
-        await page.locator('.fpt-th-preset', { hasText: 'Графит' }).click();
-        await page.waitForFunction(() => document.querySelector('.fpt-th-preset[data-preset-id="catalog:graphite"]').getAttribute('aria-pressed') === 'true');
-        let state = await page.evaluate(() => ({
-            font: document.getElementById('fpt-th-font').value, radius: document.getElementById('fpt-th-borderRadius').value,
-            position: document.querySelector('.fpt-th-seg').dataset.index, glass: document.querySelector('.fpt-th-stage').dataset.glass,
-            header: document.querySelector('.fpt-th-stage').dataset.header, dock: document.querySelector('.fpt-th-dock').dataset.open,
-            fontLabel: document.querySelector('.fpt-th-select-host .fpt-select-value').textContent, writes: window.qaWrites.filter(w => 'fpToolsTheme' in w || 'enableCustomTheme' in w).length,
-            glassRow: document.querySelector('.fpt-th-detail[data-open="true"] h3')?.textContent
+        const { page, errors } = await openThemePage(browser, { initial: { enableCustomTheme: true, fpToolsTheme: { baseStyle: 'custom', borderRadius: 14 } } });
+        const read = () => page.evaluate(() => ({
+            pressed: document.querySelector('.fpt-th-preset[aria-pressed="true"]')?.dataset.presetId ?? null,
+            locked: document.querySelectorAll('.fpt-th-card[data-locked="true"]').length,
+            base: document.querySelector('.fpt-th-stage').dataset.base,
+            radius: document.getElementById('fpt-th-borderRadius').value,
+            writes: window.qaWrites.filter(w => 'fpToolsTheme' in w || 'enableCustomTheme' in w).length
         }));
-        assert.deepEqual(state, { font: 'Montserrat', radius: '14', position: '1', glass: 'on', header: 'bottom', dock: 'true', fontLabel: 'Montserrat', writes: 0, glassRow: 'Эффект матового стекла' });
-        await page.screenshot({ path: path.join(shots, 'fpt-theme-graphite.png') });
+        assert.deepEqual(await read(), { pressed: 'builtin:custom', locked: 0, base: 'custom', radius: '14', writes: 0 });
 
-        await page.locator('.fpt-th-preset', { hasText: 'Случайная' }).click();
+        await page.locator('.fpt-th-preset', { hasText: 'Оригинальная' }).click();
         await nextFrames(page);
-        assert.equal(await page.evaluate(() => document.querySelector('.fpt-th-preset[aria-pressed="true"]')?.dataset.presetId ?? null), null);
-        await page.locator('.fpt-th-preset', { hasText: 'Чёрная' }).click();
-        await page.waitForFunction(() => document.querySelector('.fpt-th-preset[data-preset-id="builtin:dark"]').getAttribute('aria-pressed') === 'true');
-        state = await page.evaluate(() => ({ primary: document.querySelectorAll('.fpt-th-swatch-input')[0].value, writes: window.qaWrites.filter(w => 'fpToolsTheme' in w || 'enableCustomTheme' in w).length, custom: document.querySelector('.fpt-th-bg-drop').dataset.custom }));
-        assert.equal(state.writes, 0);
-        assert.equal(state.custom, 'true');
+        assert.deepEqual(await read(), { pressed: 'builtin:original', locked: 3, base: 'original', radius: '14', writes: 0 });
+
+        await page.locator('.fpt-th-preset', { hasText: 'Своя' }).click();
+        await nextFrames(page);
+        assert.deepEqual(await read(), { pressed: 'builtin:custom', locked: 0, base: 'custom', radius: '14', writes: 0 }, 'custom keeps the draft settings');
+        assert.equal(await page.evaluate(() => document.querySelector('.fpt-th-dock').dataset.open), 'false', 'returning to the saved look leaves nothing to apply');
+
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
+
+test('real browser: preset strip has no scrollbar, starts at the first tile and pages exactly one theme', async () => {
+    const browser = await launch();
+    try {
+        const wide = await openThemePage(browser);
+        const fit = await wide.page.evaluate(() => {
+            const strip = document.querySelector('.fpt-th-strip');
+            const [prev, next] = document.querySelectorAll('.fpt-th-strip-nav button');
+            const tiles = [...strip.children].map(item => item.getBoundingClientRect());
+            const box = strip.getBoundingClientRect();
+            const visible = tiles.filter(r => r.left >= box.left - 1 && r.right <= box.right + 1).length;
+            return { tiles: tiles.length, visible, prev: prev.disabled, next: next.disabled };
+        });
+        assert.equal(fit.tiles, 2);
+        assert.equal(fit.visible, 2);
+        assert.deepEqual([fit.prev, fit.next], [true, true]);
+        await wide.page.close();
+
+        const { page, errors } = await openThemePage(browser, { viewport: { width: 480, height: 900 } });
+        const probe = () => page.evaluate(() => {
+            const strip = document.querySelector('.fpt-th-strip');
+            const pad = parseFloat(getComputedStyle(strip).paddingLeft);
+            const offsets = [...strip.children].map(item => Math.round(item.getBoundingClientRect().left - strip.getBoundingClientRect().left + strip.scrollLeft - pad));
+            const [prev, next] = document.querySelectorAll('.fpt-th-strip-nav button');
+            return { left: Math.round(strip.scrollLeft), offsets, max: strip.scrollWidth - strip.clientWidth,
+                scrollbar: strip.offsetHeight - strip.clientHeight, prev: prev.disabled, next: next.disabled };
+        });
+        // scrollLeft бывает дробным: позиции сравниваются с точностью до пары пикселей.
+        const near = (a, b) => Math.abs(a - b) <= 2;
+        const settle = () => page.waitForFunction(() => new Promise(resolve => {
+            const strip = document.querySelector('.fpt-th-strip'); const start = strip.scrollLeft;
+            setTimeout(() => resolve(strip.scrollLeft === start), 500);
+        }));
+        let state = await probe();
+        assert.ok(state.max > 0, 'the narrow card cannot show every tile');
+        assert.equal(state.scrollbar, 0, 'no scrollbar under the tiles');
+        assert.equal(state.left, 0, 'the strip starts at the very first tile');
+        assert.deepEqual([state.prev, state.next], [true, false]);
+
+        await page.locator('.fpt-th-strip-nav button').nth(1).click();
+        await settle();
+        state = await probe();
+        assert.ok(Math.abs(state.left - Math.min(state.max, state.offsets[1])) <= 2, `one click moves exactly one tile (${state.left} vs ${state.offsets[1]}, max ${state.max})`);
+        assert.equal(state.prev, false);
+
+        await page.locator('.fpt-th-strip-nav button').nth(1).click({ force: true });
+        await page.locator('.fpt-th-strip-nav button').nth(1).click({ force: true });
+        await settle();
+        state = await probe();
+        assert.ok(near(state.left, state.max), `rapid clicks stop at the end (${state.left} vs ${state.max}; ${state.offsets})`);
+        assert.equal(state.next, true);
+
+        await page.evaluate(() => document.querySelector('.fpt-th-strip').scrollBy({ left: -37 }));
+        await settle();
+        state = await probe();
+        assert.ok(state.offsets.some(offset => near(offset, state.left)) || near(state.left, state.max), `free scrolling snaps to a tile edge (${state.left})`);
+
+        for (let i = 0; i < 4; i += 1) await page.locator('.fpt-th-strip-nav button').nth(0).click({ force: true });
+        await settle();
+        state = await probe();
+        assert.equal(state.left, 0, 'paging back returns to the first tile');
+        assert.deepEqual([state.prev, state.next], [true, false]);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });
@@ -259,7 +341,7 @@ test('real browser: reset, export and share use page dialogs instead of native p
         await page.locator('.fpt-lot-dialog-button--danger', { hasText: 'Сбросить' }).click();
         await page.waitForFunction(() => !document.querySelector('.fpt-lot-dialog'));
         const afterReset = await page.evaluate(() => ({ radius: document.getElementById('fpt-th-borderRadius').value, stored: window.qaStore.fpToolsTheme ?? null, enabled: window.qaStore.enableCustomTheme }));
-        assert.deepEqual(afterReset, { radius: '8', stored: null, enabled: true });
+        assert.deepEqual(afterReset, { radius: '16', stored: null, enabled: true });
         const original = await page.evaluate(() => ({
             pressed: document.querySelector('.fpt-th-preset[aria-pressed="true"]')?.dataset.presetId,
             locked: [...document.querySelectorAll('.fpt-th-card[data-locked="true"]')].length,
@@ -417,7 +499,7 @@ test('real browser: tools card has no stray backdrop or native file input, origi
         assert.equal(stored.bgImage ?? null, null, 'no wallpaper in the original look');
         await page.screenshot({ path: path.join(shots, 'fpt-theme-original.png') });
 
-        await page.locator('.fpt-th-preset', { hasText: 'Чёрная' }).click();
+        await page.locator('.fpt-th-preset', { hasText: 'Своя' }).click();
         await nextFrames(page);
         assert.equal(await page.evaluate(() => document.querySelectorAll('.fpt-th-card[data-locked="true"]').length), 0);
         assert.deepEqual(errors, []);
@@ -438,7 +520,7 @@ test('real browser: the site theme does not leak into the popup and turns it dar
                 scheme: popup.style.getPropertyValue('--fptm-color-scheme'),
                 headerBg: style('.fpt-category-header').backgroundColor,
                 navShadow: style('.fp-tools-nav a').textShadow,
-                guarded: /header:not\(:where\(\.fp-tools-popup, \.fp-tools-popup \*\)\)/.test(css),
+                guarded: /header:not\(:where\(\.fp-tools-popup, \.fp-tools-popup \*(?:, [^)]*)?\)\)/.test(css),
                 siteHeaderStillThemed: /header:not\(/.test(css) && /background: rgba\(0,0,0,0\.08\)/.test(css)
             };
         });

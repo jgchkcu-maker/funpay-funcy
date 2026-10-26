@@ -28,6 +28,13 @@
     }
 
     function formatLotStock(draft) {
+        if (draft.chips) {
+            return {
+                text: 'Валюта: склада FunPay нет',
+                kind: 'unsupported',
+                title: 'У предложений валюты на FunPay нет склада товаров, а заказы на валюту автовыдача пока не распознаёт.'
+            };
+        }
         if (draft.stockError) {
             return { text: 'Не удалось проверить остаток', kind: 'error', title: draft.stockError };
         }
@@ -57,6 +64,7 @@
             buyername: PREVIEW_DEMO.buyername,
             lotname: lotName,
             orderid: PREVIEW_DEMO.orderid,
+            quantity: 2,
             orderlink: `https://funpay.com/orders/${PREVIEW_DEMO.orderid}/`,
             welcome: greeting(now),
             date: formatDateTime(now)
@@ -67,7 +75,7 @@
                 parts.push({ type: 'pause', seconds: Number.parseFloat(part) });
                 return;
             }
-            const message = part.replace(/\{(buyername|lotname|orderid|orderlink|welcome|date)\}/gi, (_, key) => values[key.toLowerCase()]).trim();
+            const message = part.replace(/\{(buyername|lotname|orderid|orderlink|welcome|date|quantity)\}/gi, (_, key) => values[key.toLowerCase()]).trim();
             if (message) parts.push({ type: 'message', text: message });
         });
         while (parts.length && parts[parts.length - 1].type === 'pause') parts.pop();
@@ -142,7 +150,7 @@
         const list = node('ul');
         [
             'После оплаты расширение отправляет покупателю в чат товар со склада FunPay или ваш шаблон.',
-            'В шаблоне работают переменные {buyername}, {lotname}, {orderid}, {orderlink}, {welcome}, {date}; $sleep=5 делит текст на сообщения с паузой.',
+            'В шаблоне работают переменные {buyername}, {lotname}, {orderid}, {quantity}, {orderlink}, {welcome}, {date}; $sleep=5 делит текст на сообщения с паузой.',
             'Остатки обновляются кнопкой «Обновить лоты» и после каждой успешной выдачи.'
         ].forEach(text => list.appendChild(node('li', '', text)));
         panel.appendChild(list);
@@ -186,9 +194,10 @@
         return list;
     }
 
-    function createLotDraft(config = {}) {
+    // chips: валютное предложение — без склада и без автовыдачи, строка только для обзора.
+    function createLotDraft(config = {}, { chips = false } = {}) {
         const settings = {
-            enabled: config.enabled !== false,
+            enabled: !chips && config.enabled !== false,
             mode: config.mode === 'template' ? 'template' : 'secrets',
             text: typeof config.text === 'string' ? config.text : '',
             productCount: Number.isInteger(config.productCount) && config.productCount >= 0
@@ -199,7 +208,7 @@
             ? settings.productCount
             : Number.isInteger(config.stockSnapshot) && config.stockSnapshot >= 0 ? config.stockSnapshot : null;
         const stockCheckedAt = Number.isFinite(config.stockCheckedAt) ? config.stockCheckedAt : null;
-        return { ...settings, stockSnapshot, stockCheckedAt, saved: { ...settings }, dirty: false };
+        return { ...settings, stockSnapshot, stockCheckedAt, saved: { ...settings }, dirty: false, ...(chips ? { chips: true } : {}) };
     }
 
     function settingsChanged(draft) {
@@ -230,7 +239,7 @@
         const copy = node('div', 'fpt-ad-lot-copy');
         const titleText = typeof lot.title === 'string' && lot.title.trim() ? lot.title.trim() : `Лот #${id}`;
         const title = node('a', 'fpt-ad-lot-title', titleText);
-        title.href = `https://funpay.com/lots/offer?id=${encodeURIComponent(id)}`;
+        title.href = `https://funpay.com/${draft.chips ? 'chips' : 'lots'}/offer?id=${encodeURIComponent(id)}`;
         title.target = '_blank';
         title.rel = 'noopener noreferrer';
         const categoryName = typeof lot.categoryName === 'string' && lot.categoryName.trim()
@@ -252,6 +261,7 @@
         const enabled = makeSwitch(`fpt-ad-enabled-${id}`, `Автовыдача для лота ${lot.title || id}`, draft.enabled);
         enabled.input.dataset.lotControl = 'enabled';
         enabled.input.dataset.lotId = id;
+        enabled.input.disabled = Boolean(draft.chips);
         delivery.appendChild(makeSwitchLine(enabled).element);
 
         const source = node('div', 'fpt-ad-lot-source');
@@ -269,6 +279,10 @@
             select.appendChild(option);
         }
         select.title = 'Секреты берутся из склада этого лота; добавляйте и удаляйте их в разделе «Управление лотами».';
+        if (draft.chips) {
+            select.disabled = true;
+            select.title = delivery.title = 'Для валюты автовыдача недоступна.';
+        }
         source.append(sourceLabel, select);
 
         const template = node('div', 'fpt-ad-template');
@@ -293,7 +307,7 @@
         variableChips.setAttribute('aria-label', 'Переменные шаблона');
         for (const [token, label] of [
             ['{buyername}', 'Имя покупателя'], ['{lotname}', 'Название лота'],
-            ['{orderid}', 'Номер заказа'], ['{orderlink}', 'Ссылка на заказ'],
+            ['{orderid}', 'Номер заказа'], ['{quantity}', 'Количество'], ['{orderlink}', 'Ссылка на заказ'],
             ['{welcome}', 'Приветствие'], ['{date}', 'Дата и время'], ['$sleep=5', 'Пауза 5 сек']
         ]) {
             const chip = node('button', 'fpt-ad-variable-chip');
@@ -819,13 +833,14 @@
             ]));
             for (const lot of currentLots) {
                 const id = String(lot.id);
+                const chips = lot.kind === 'chips';
                 let draft = drafts.get(id);
                 if (!draft) {
-                    draft = createLotDraft(config[id] || {});
+                    draft = createLotDraft(config[id] || {}, { chips });
                     drafts.set(id, draft);
                 } else if (!draft.dirty && config[id]) {
                     const previousDraft = draft;
-                    draft = createLotDraft(config[id]);
+                    draft = createLotDraft(config[id], { chips });
                     if (draft.mode === 'template') draft.stockSnapshot = previousDraft.stockSnapshot;
                     drafts.set(id, draft);
                 }

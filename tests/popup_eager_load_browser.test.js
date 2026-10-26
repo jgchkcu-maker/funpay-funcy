@@ -7,7 +7,7 @@ const { launch, openSite, root } = require('./helpers/perf_browser_harness');
 test('manifest eagerly loads each menu dependency once and every resource exists', () => {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
     assert.ok(!manifest.permissions.includes('scripting'));
-    assert.equal(manifest.minimum_chrome_version, undefined);
+    assert.equal(manifest.minimum_chrome_version, '120');
     for (const group of manifest.content_scripts) {
         for (const type of ['js', 'css']) {
             const files = group[type] || [];
@@ -16,7 +16,7 @@ test('manifest eagerly loads each menu dependency once and every resource exists
         }
     }
     const content = manifest.content_scripts.find(group => group.js?.includes('content/content_script.js'));
-    for (const file of ['content/ui/main_popup.js', 'content/ui/settings_io_page.js', 'content/ui/popup_metadata.js', 'content/features/theme_gallery.js']) {
+    for (const file of ['content/ui/main_popup.js', 'content/ui/settings_io_page.js', 'content/ui/popup_metadata.js']) {
         assert.ok(content.js.indexOf(file) < content.js.indexOf('content/content_script.js'), file);
         assert.ok(content.js.includes(file), file);
     }
@@ -37,7 +37,7 @@ test('one, two and five rapid clicks build once; closing, reopening and template
             }, clicks);
             await page.waitForSelector('.fp-tools-popup.active');
             assert.equal(await page.evaluate(() => qaBuilds), 1);
-            assert.equal(await page.locator('.fp-tools-page-content').count(), 15);
+            assert.equal(await page.locator('.fp-tools-page-content').count(), 16);
             await page.evaluate(() => document.querySelector('#fpToolsButton').click());
             await page.waitForFunction(() => !document.querySelector('.fp-tools-popup').classList.contains('is-closing'));
             assert.equal(await page.locator('.fp-tools-popup.active').count(), 0);

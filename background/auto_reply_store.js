@@ -1,6 +1,7 @@
 const AUTO_REPLY_STORAGE_KEY = 'fpToolsAutoReplies';
 const AUTO_REPLY_MAP_FIELDS = new Set(['reviewTemplates', 'reviewTemplateImages']);
-const AUTO_REPLY_RUNTIME_FIELDS = new Set([
+export const AUTO_REPLY_RUNTIME_FIELDS = new Set([
+    'chatStreams',
     'processedMessageIds',
     'lastSeenMsgIds',
     'lastHandledText',
@@ -13,6 +14,11 @@ const AUTO_REPLY_RUNTIME_FIELDS = new Set([
     'deliveredOrderIds',
     'bonusSentOrderIds'
 ]);
+
+export function hasAutoReplyConfigurationChanges(before = {}, after = {}) {
+    return Object.keys({ ...before, ...after }).some(key =>
+        !AUTO_REPLY_RUNTIME_FIELDS.has(key) && JSON.stringify(before[key]) !== JSON.stringify(after[key]));
+}
 
 function isRecord(value) {
     return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -172,6 +178,15 @@ export function createAutoReplyStore(storage) {
         patchAutoReplies(patch) {
             return serialize(() => patchInsideQueue(patch));
         },
+        // Whole-value replacement for account profile switches. `extra` keys are written in the
+        // same storage.set call, so listeners see the replacement and its marker together.
+        replaceAutoReplies(value, extra = {}) {
+            return serialize(async () => {
+                const next = isRecord(value) ? clone(value) : {};
+                await storage.set({ ...extra, [AUTO_REPLY_STORAGE_KEY]: next });
+                return clone(next);
+            });
+        },
         importAutoReplies(imported) {
             return serialize(async () => {
                 if (!isRecord(imported)) throw new TypeError('Imported auto-reply settings must be an object.');
@@ -210,4 +225,8 @@ export function patchAutoReplies(patch) {
 
 export function importAutoReplies(imported) {
     return getDefaultAutoReplyStore().importAutoReplies(imported);
+}
+
+export function replaceAutoReplies(value, extra) {
+    return getDefaultAutoReplyStore().replaceAutoReplies(value, extra);
 }

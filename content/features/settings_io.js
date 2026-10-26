@@ -1,5 +1,5 @@
-// content/features/settings_io.js - FunPay Funcy 2.9
-// Экспорт и импорт ВСЕХ настроек FunPay Funcy в файл .fpconfig
+// content/features/settings_io.js - Funcy 2.9
+// Экспорт и импорт ВСЕХ настроек Funcy в файл .fpconfig
 // Принцип: выгружаем всё из chrome.storage.local, КРОМЕ списка исключений
 // (аккаунты, токены, кэши и временное рантайм-состояние). Так новые фичи
 // попадают в бэкап автоматически, без правки списка.
@@ -16,9 +16,15 @@ const EXCLUDE_KEYS = new Set([
     // --- Аккаунты (НИКОГДА не экспортируем) ---
     'fpToolsAccounts',
     'fpToolsAccountsList',
+    // Чей конфиг сейчас в живых ключах и пометка о новом аккаунте — состояние этого браузера.
+    'fpToolsProfileOwner',
+    'fpToolsProfileNotice',
     // --- Токены/секреты ---
     // --- Рантайм/служебное состояние движков (per-device) ---
     'fpToolsEngineHeartbeat',
+    'fpToolsEngineContinue',
+    'fpToolsDeliveryContinue',
+    'fptEngineWake',
     'fpToolsSalesCollecting',
     'fpToolsPurchasesCollecting',
     'fpToolsFinanceCollecting',
@@ -46,6 +52,7 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsUnreadCount',
     // --- Кэши (большие, легко перезапросятся) ---
     'fpToolsWallpaperCache',
+    'fpToolsThemeCatalogCache',
     'fpToolsImageStore',
     'fpToolsImageCanvas',
     // Своя мелодия весит до ~1 МБ; без самого звука мета не нужна.
@@ -105,7 +112,7 @@ function normalizeImportedSettings(settings) {
         else {
             settings.fpToolsTheme = safe.themeSettings(value);
             if (Object.hasOwn(value, 'font')) settings.fpToolsTheme.font = safe.fontName(value.font) || 'Helvetica Neue';
-            if (Object.hasOwn(value, 'bgImage')) settings.fpToolsTheme.bgImage = safe.cssImageUrl(value.bgImage) ? value.bgImage : '';
+            if (Object.hasOwn(value, 'bgImage')) settings.fpToolsTheme.bgImage = safe.cssImageUrl(value.bgImage) ? safe.resolveWallpaper(value.bgImage) : '';
         }
     }
     if (Object.hasOwn(settings, 'fpToolsLiveStyles')) {
@@ -128,6 +135,10 @@ function normalizeImportedSettings(settings) {
 
 async function getPopupSettingsExport() {
     const all = globalThis.FPTRetiredIntegrations.sanitizeSettings(await chrome.storage.local.get(null));
+    if (all.fpToolsAutoReplies) {
+        all.fpToolsAutoReplies = { ...all.fpToolsAutoReplies };
+        delete all.fpToolsAutoReplies.chatStreams;
+    }
     return { _magic: FP_CONFIG_MAGIC, _version: FP_CONFIG_VERSION, _date: new Date().toISOString(),
         _extVer: chrome.runtime.getManifest().version,
         settings: Object.fromEntries(Object.entries(all).filter(([key]) => isExportable(key))) };
@@ -195,7 +206,7 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
     register('settings-io-mark', markSettingsIO);
     register('fp-reset-autoresponder-btn', async () => {
         await chrome.storage.local.remove('fpToolsAutoResponderTag');
-        return window.fptPatchAutoReplies({ set: { processedMessageIds: [] } });
+        return window.fptPatchAutoReplies({ set: { processedMessageIds: [] }, unset: ['chatStreams'] });
     });
     register('fp-reset-pinned-btn', () => chrome.storage.local.remove(['fpToolsPinnedLots', 'fpToolsCtxPinnedLots']));
     register('fp-reset-greeted-btn', () => window.fptPatchAutoReplies({ set: { greetedUsers: [] } }));

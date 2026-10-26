@@ -1,0 +1,11 @@
+✔ manifest eagerly loads each menu dependency once and every resource exists (5.5183ms)
+✔ one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu (4267.1692ms)
+✔ saved custom theme, page windows and enhanced selects work before opening and preserve their palette (1169.5789ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5723.4901

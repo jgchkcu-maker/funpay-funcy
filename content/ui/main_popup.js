@@ -2,7 +2,10 @@
 
 const FPT_MENU_ASSET_PATHS = Object.freeze({
     'funcy-logo': 'icons/funcy-logo.png',
-    cloud: 'icons/cloud.png'
+    cloud: 'icons/cloud.png',
+    'start-mascot': 'icons/start-mascot.png',
+    'start-channel': 'icons/start-channel.png',
+    'start-chat': 'icons/start-chat.png'
 });
 
 const FPT_NAV_ICON_ASSETS = Object.freeze({
@@ -23,10 +26,35 @@ function fptGetMenuAssetUrl(assetPath) {
     return assetPath;
 }
 
-const FPT_POPUP_CLOSE_DURATION_MS = 250;
+const FPT_POPUP_CLOSE_DURATION_MS = 320;
+
+// Центр кнопки-лого в координатах окна + радиус до самого дальнего угла: из этой точки
+// окно раскрывается кругом (fptMenuRevealIn/Out в content_styles.css) и в неё же сворачивается.
+function setPopupRevealOrigin(popup) {
+    const button = document.querySelector('#fpToolsButton .fpt-logo-btn') || document.getElementById('fpToolsButton');
+    const rect = popup.getBoundingClientRect();
+    if (!button || !rect.width || !rect.height) {
+        ['--fpt-reveal-x', '--fpt-reveal-y', '--fpt-reveal-r'].forEach(name => popup.style.removeProperty(name));
+        return;
+    }
+    const target = button.getBoundingClientRect();
+    const x = target.left + target.width / 2 - rect.left;
+    const y = target.top + target.height / 2 - rect.top;
+    // The reveal includes the outer shadow (up to 70px blur + 24px offset),
+    // otherwise its far corner is cut along a visible diagonal arc.
+    const shadowOutset = 160;
+    const r = Math.ceil(Math.max(Math.hypot(x + shadowOutset, y + shadowOutset),
+        Math.hypot(rect.width + shadowOutset - x, y + shadowOutset),
+        Math.hypot(x + shadowOutset, rect.height + shadowOutset - y),
+        Math.hypot(rect.width + shadowOutset - x, rect.height + shadowOutset - y)));
+    popup.style.setProperty('--fpt-reveal-x', `${Math.round(x)}px`);
+    popup.style.setProperty('--fpt-reveal-y', `${Math.round(y)}px`);
+    popup.style.setProperty('--fpt-reveal-r', `${r}px`);
+}
 
 function openFptToolsPopup(popup) {
     if (!popup) return;
+    setPopupRevealOrigin(popup);
     if (popup._fptCloseTimer) clearTimeout(popup._fptCloseTimer);
     popup._fptCloseTimer = null;
     popup.classList.remove('is-closing');
@@ -35,6 +63,7 @@ function openFptToolsPopup(popup) {
 
 function closeFptToolsPopup(popup) {
     if (!popup || !popup.classList.contains('active') || popup.classList.contains('is-closing')) return;
+    setPopupRevealOrigin(popup);
     popup.classList.add('is-closing');
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
     popup._fptCloseTimer = setTimeout(() => {
@@ -52,6 +81,80 @@ function mountPopupCategoryHeaders(toolsPopup) {
         const title = navItem.querySelector('a span:last-child')?.textContent?.trim();
         if (page && title) ensureHeader(page, title);
     });
+}
+
+// Ссылки сообщества для стартового экрана правой колонки.
+const FPT_COMMUNITY_LINKS = Object.freeze({
+    channel: 'https://t.me/funpay_funcy',
+    chat: 'https://t.me/funpay_funcy_chat'
+});
+
+const FPT_START_STATE_ICONS = Object.freeze({
+    arrow: '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M8 16 16 8M9.5 8H16v6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+});
+
+// Стартовый экран правой колонки: виден, пока в меню не развёрнута ни одна категория
+// (или ещё не открыт ни один раздел). Создаётся скриптом, чтобы шаблон <main>
+// содержал только контейнеры страниц.
+function mountPopupStartState(toolsPopup) {
+    const content = toolsPopup?.querySelector('.fp-tools-content');
+    if (!content || content.querySelector('.fpt-start-state')) return;
+    const panel = document.createElement('section');
+    panel.className = 'fpt-start-state';
+    panel.hidden = true;
+    panel.setAttribute('aria-labelledby', 'fptStartStateTitle');
+    const link = (kind, title, text) => `
+        <a class="fpt-start-link" data-kind="${kind}" href="${FPT_COMMUNITY_LINKS[kind]}" target="_blank" rel="noopener noreferrer">
+            <img class="fpt-start-link-icon" src="${fptGetMenuAssetUrl(FPT_MENU_ASSET_PATHS['start-' + kind])}" width="44" height="44" alt="" draggable="false">
+            <span class="fpt-start-link-text"><strong>${title}</strong><span>${text}</span></span>
+            <span class="fpt-start-link-arrow">${FPT_START_STATE_ICONS.arrow}</span>
+        </a>`;
+    panel.innerHTML = `
+        <div class="fpt-start-state-inner">
+            <img class="fpt-start-state-logo" src="${fptGetMenuAssetUrl(FPT_MENU_ASSET_PATHS['start-mascot'])}" width="210" height="210" alt="" draggable="false">
+            <h2 id="fptStartStateTitle" class="fpt-start-state-title"></h2>
+            <p class="fpt-start-state-text"></p>
+            <div class="fpt-start-state-community">
+                <span class="fpt-start-state-label">Сообщество Funcy</span>
+                <div class="fpt-start-links">
+                    ${link('channel', 'Telegram-канал', 'Новости и обновления')}
+                    ${link('chat', 'Чат сообщества', 'Вопросы и общение')}
+                </div>
+            </div>
+        </div>`;
+    content.appendChild(panel);
+}
+
+function syncPopupStartState(toolsPopup) {
+    const content = toolsPopup?.querySelector?.('.fp-tools-content');
+    const panel = content?.querySelector('.fpt-start-state');
+    const navSections = toolsPopup._fptNavSections;
+    if (!panel || !navSections) return;
+    const nav = toolsPopup.querySelector('.fp-tools-nav');
+    const searching = !!nav?.classList.contains('fpt-search-active');
+    const hasPage = !!toolsPopup._fptCurrentPageId;
+    const noExpandedSection = !navSections.isNavCollapsed() && navSections.getExpandedSections().length === 0;
+    // Страница из свёрнутой категории не показывается под чужой развёрнутой — ждём выбора раздела.
+    const pageSectionHidden = hasPage && !navSections.isNavCollapsed()
+        && !navSections.isPageSectionExpanded(toolsPopup._fptCurrentPageId);
+    const show = !searching && (!hasPage || noExpandedSection || pageSectionHidden);
+    const wasShown = content.classList.contains('fpt-start-state-active');
+
+    // Категория уже развёрнута, но раздел не выбран — подсказываем следующий шаг.
+    const pickCategory = noExpandedSection || navSections.isNavCollapsed();
+    panel.querySelector('.fpt-start-state-title').textContent = pickCategory ? 'Разверните категорию слева' : 'Выберите раздел';
+    panel.querySelector('.fpt-start-state-text').textContent = pickCategory
+        ? 'Все функции расширения разложены по категориям меню. Откройте нужную — и её настройки появятся здесь.'
+        : 'Откройте любой раздел в развёрнутой категории — его настройки появятся здесь.';
+    if (show === wasShown) return;
+
+    // Страница прячется на время стартового экрана, поэтому запоминаем её прокрутку.
+    if (show) content._fptStartStateScroll = { pageId: toolsPopup._fptCurrentPageId, top: content.scrollTop };
+    content.classList.toggle('fpt-start-state-active', show);
+    panel.hidden = !show;
+    const saved = content._fptStartStateScroll;
+    if (show) content.scrollTop = 0;
+    else if (saved && saved.pageId === toolsPopup._fptCurrentPageId) content.scrollTop = saved.top;
 }
 
 function createMainPopup() {
@@ -80,7 +183,7 @@ function createMainPopup() {
             <nav class="fp-tools-nav">
                 <div class="fpt-nav-brand">
                     <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">
-                    <span class="fpt-nav-brand-title">FunPay Funcy</span>
+                    <span class="fpt-nav-brand-title">Funcy</span>
                     <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">
                         <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
@@ -181,7 +284,7 @@ function createMainPopup() {
     return toolsPopup;
 }
 
-// ── Тема меню FunPay Funcy «под сайт» (парсинговые цвета) ─────────────────────
+// ── Тема меню Funcy «под сайт» (парсинговые цвета) ─────────────────────
 // Логика та же, что в окнах копирования/импорта лота: читаем живые цвета сайта
 // (фон, текст, акцент) и раскрашиваем меню под них. Акцент — фирменный голубой
 // FunPay (#1b75bb, тот же, что fallback в cloneSurfaceColors/ui_enhancements),
@@ -238,8 +341,8 @@ const FPT_MENU_THEME_CSS = `
     border-color:var(--fptm-accent-border) !important; background:var(--fptm-nav-field-focus) !important;
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav ul{ list-style:none; margin:0; padding:0; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; margin:-10px -12px 0; padding:12px 12px 20px; scrollbar-width:none; }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll::-webkit-scrollbar{ display:none; width:0; height:0; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll{ flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; margin:-10px -12px 0; padding:12px 12px 20px; scrollbar-width:thin; }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-scroll::-webkit-scrollbar{ width:6px; height:6px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-groups{ display:flex; flex-direction:column; gap:6px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group{ min-width:0; border-radius:22px; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-toggle{
@@ -268,11 +371,11 @@ const FPT_MENU_THEME_CSS = `
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron svg{ width:20px; height:20px; display:block; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-title{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
-    flex:0 0 auto; margin-left:auto; transition:transform .32s cubic-bezier(.22,1,.36,1);
+    flex:0 0 auto; margin-left:auto; transition:transform .64s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-chevron{ transform:rotate(90deg); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse{
-    display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .32s cubic-bezier(.22,1,.36,1);
+    display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .64s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; border-radius:16px; }
@@ -382,9 +485,9 @@ const FPT_MENU_THEME_CSS = `
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-chevron{
     flex:0 0 20px; margin-left:auto; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; opacity:1;
-    transition:width .38s cubic-bezier(.4,0,.2,1), flex-basis .38s cubic-bezier(.4,0,.2,1), opacity .26s ease .06s, transform .32s cubic-bezier(.22,1,.36,1);
+    transition:width .38s cubic-bezier(.4,0,.2,1), flex-basis .38s cubic-bezier(.4,0,.2,1), opacity .26s ease .06s, transform .64s cubic-bezier(.22,1,.36,1);
 }
-.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse{ display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .32s cubic-bezier(.22,1,.36,1); }
+.fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-collapse{ display:grid; grid-template-rows:0fr; min-height:0; transition:grid-template-rows .64s cubic-bezier(.22,1,.36,1); }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-collapse{ grid-template-rows:1fr; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group-items{ min-height:0; overflow:hidden; padding:0; border-radius:0; }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-group-items{ background:transparent; }
@@ -412,7 +515,7 @@ const FPT_MENU_THEME_CSS = `
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-child{
     max-height:80px; opacity:0; transform:translateY(4px);
-    transition:max-height .18s ease, opacity .32s cubic-bezier(.22,1,.36,1), transform .32s cubic-bezier(.22,1,.36,1);
+    transition:max-height .36s ease, opacity .64s cubic-bezier(.22,1,.36,1), transform .64s cubic-bezier(.22,1,.36,1);
 }
 .fp-tools-popup.fptm-themed .fp-tools-nav .fpt-nav-group.is-expanded .fpt-nav-child:not(.fpt-nav-hidden):not(.fpt-nav-section-hidden){
     opacity:1; transform:translateY(0);
@@ -596,20 +699,7 @@ function fptApplyMenuTheme(root) {
     } catch (_) {}
 }
 
-const FP_WALLPAPER_PRESETS = [
-    { name: 'Горы и озеро', emoji: '🏔️', url: 'https://isorepublic.com/wp-content/uploads/2023/03/iso-republic-mountain-winter-lake.jpg', palette: { bgColor1: '#1a3050', bgColor2: '#4a7aaa', containerBgColor: '#0d1828', textColor: '#dde8f4', linkColor: '#7aaad8' } },
-    { name: 'Туманные горы', emoji: '🌫️', url: 'https://isorepublic.com/wp-content/uploads/2023/02/iso-republic-napa-hill-fog.jpg', palette: { bgColor1: '#1e2830', bgColor2: '#5a7888', containerBgColor: '#101820', textColor: '#d8e4ec', linkColor: '#7aaac0' } },
-    { name: 'Каньон', emoji: '🪨', url: 'https://isorepublic.com/wp-content/uploads/2023/03/iso-republic-rough-rocky-landscape.jpg', palette: { bgColor1: '#2a1808', bgColor2: '#a85030', containerBgColor: '#180e04', textColor: '#f0ddd0', linkColor: '#e08060' } },
-    { name: 'Горный туман', emoji: '☁️', url: 'https://isorepublic.com/wp-content/uploads/2022/10/iso-republic-mist-mountains-clouds.jpg', palette: { bgColor1: '#151e2a', bgColor2: '#3a6090', containerBgColor: '#0a1018', textColor: '#dce8f8', linkColor: '#6090c8' } },
-    { name: 'Закат', emoji: '🌅', url: 'https://isorepublic.com/wp-content/uploads/2022/11/iso-republic-clouds-sky-trees.jpg', palette: { bgColor1: '#280a18', bgColor2: '#c84810', containerBgColor: '#180508', textColor: '#f8ddd0', linkColor: '#f08060' } },
-    { name: 'Пустыня', emoji: '🏜️', url: 'https://isorepublic.com/wp-content/uploads/2023/06/iso-republic-desert-barren-sky.jpg', palette: { bgColor1: '#201808', bgColor2: '#c89840', containerBgColor: '#100c04', textColor: '#f8ead8', linkColor: '#e0b860' } },
-    { name: 'Побережье', emoji: '🌊', url: 'https://isorepublic.com/wp-content/uploads/2023/05/iso-republic-scenic-coast-beach-03.jpg', palette: { bgColor1: '#082028', bgColor2: '#2888a0', containerBgColor: '#041018', textColor: '#d8eef8', linkColor: '#50a8c8' } },
-    { name: 'Млечный путь', emoji: '🌌', url: 'https://isorepublic.com/wp-content/uploads/2025/02/isorepublic-milky-way.jpg', palette: { bgColor1: '#080618', bgColor2: '#4030a0', containerBgColor: '#04030e', textColor: '#e0d8f8', linkColor: '#8070e0' } },
-    { name: 'Звёзды', emoji: '⭐', url: 'https://isorepublic.com/wp-content/uploads/2022/12/iso-republic-mikly-way-trees-sky.jpg', palette: { bgColor1: '#040a18', bgColor2: '#103868', containerBgColor: '#020508', textColor: '#d8e8f8', linkColor: '#4080b8' } },
-    { name: 'Синий дуотон', emoji: '🔵', url: 'https://isorepublic.com/wp-content/uploads/2022/10/iso-republic-abstract-wallpaper-duotone.jpg', palette: { bgColor1: '#080e28', bgColor2: '#1840c0', containerBgColor: '#040818', textColor: '#d8e0f8', linkColor: '#4868e8' } },
-    { name: 'Тёмно-синий', emoji: '💙', url: 'https://isorepublic.com/wp-content/uploads/2024/05/iso-republic-abstract-wallpaper-dark-blues.jpg', palette: { bgColor1: '#030610', bgColor2: '#0c2890', containerBgColor: '#020408', textColor: '#d0d8f0', linkColor: '#3060c8' } },
-    { name: 'Мягкий боке', emoji: '🎨', url: 'https://isorepublic.com/wp-content/uploads/2022/10/iso-republic-abstract-wallpaper-soft-blur.jpg', palette: { bgColor1: '#0e0618', bgColor2: '#6030b0', containerBgColor: '#06030c', textColor: '#e8d8f8', linkColor: '#9060e0' } }
-];
+const FP_WALLPAPER_PRESETS = []; // Unverified external assets excluded from this release.
 
 const FP_WP_CACHE_KEY = 'fpToolsWallpaperCache';
 const FP_WP_CACHE_TTL = 7 * 24 * 60 * 60 * 1000;
@@ -704,7 +794,7 @@ function setupNavigationSections(toolsPopup) {
 
     const scroll = document.createElement('div');
     scroll.className = 'fpt-nav-scroll';
-    scroll.setAttribute('aria-label', 'Разделы FunPay Funcy');
+    scroll.setAttribute('aria-label', 'Разделы Funcy');
     const groups = document.createElement('div');
     groups.className = 'fpt-nav-groups';
     scroll.appendChild(groups);
@@ -760,7 +850,7 @@ function setupNavigationSections(toolsPopup) {
         section.pages.forEach(pageId => {
             const item = pageItems.find(entry => entry.dataset.page === pageId);
             if (item) {
-                item.style.setProperty('--fpt-nav-child-delay', `${Math.min(childIndex++, 9) * 14}ms`);
+                item.style.setProperty('--fpt-nav-child-delay', `${Math.min(childIndex++, 9) * 28}ms`);
                 items.appendChild(item);
             }
         });
@@ -823,6 +913,7 @@ function setupNavigationSections(toolsPopup) {
                 }
             } catch (_) {}
         }
+        syncPopupStartState(toolsPopup);
     }
 
     function syncResponsiveNavCollapse() {
@@ -844,6 +935,7 @@ function setupNavigationSections(toolsPopup) {
             collapse.toggleAttribute('inert', !expanded);
             if (icon) icon.dataset.state = expanded ? 'expanded' : 'collapsed';
         });
+        syncPopupStartState(toolsPopup);
     }
 
     function cancelNavReveal() {
@@ -860,7 +952,7 @@ function setupNavigationSections(toolsPopup) {
     function revealNavElement(element) {
         if (!element || !scroll) return;
         cancelNavReveal();
-        const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 350;
+        const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 700;
         navRevealTimer = window.setTimeout(() => {
             navRevealTimer = null;
             if (!element.isConnected || !toolsPopup.classList.contains('active')) return;
@@ -951,6 +1043,11 @@ function setupNavigationSections(toolsPopup) {
         expandSection,
         toggleSection,
         getExpandedSections: () => Array.from(expandedSections),
+        isPageSectionExpanded(pageId) {
+            const item = pageItems.find(entry => entry.dataset.page === pageId);
+            const sectionId = item?.dataset.navSection || pageToSection.get(pageId);
+            return !!sectionId && expandedSections.has(sectionId);
+        },
         setExpandedSections,
         refresh: renderExpandedSections,
         revealAllForSearch,
@@ -1201,9 +1298,8 @@ async function openPopupPage(pageId, options = {}) {
     toolsPopup.querySelectorAll('.fp-tools-page-content').forEach(page => {
         page.classList.toggle('active', page === pageNode);
     });
-    const content = toolsPopup.querySelector('.fp-tools-content');
-    content?.classList.remove('fpt-start-state-active');
     toolsPopup._fptCurrentPageId = targetPageId;
+    syncPopupStartState(toolsPopup);
 
     let stored = {};
     try {
@@ -1283,6 +1379,7 @@ if (typeof window !== 'undefined') {
 function setupPopupNavigation() {
     const toolsPopup = document.querySelector('.fp-tools-popup');
     if (!toolsPopup) return;
+    mountPopupStartState(toolsPopup);
     const navSections = setupNavigationSections(toolsPopup);
     const navItems = getPopupNavigationActions(toolsPopup);
 

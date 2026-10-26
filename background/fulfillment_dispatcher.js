@@ -18,9 +18,10 @@ import { orderFactsFingerprint } from './order_facts.js';
 import { sha256Short } from './account_guard.js';
 
 export const DELIVERY_RETRY_LIMIT = 3;
+export const DELIVERY_MESSAGE_LIMIT = 1000; // Working value, not a proven FunPay maximum.
 const OPEN_DELIVERY_STATES = new Set(['none', 'blocked', 'pending', 'failed']);
 
-export function splitDeliveryText(text) {
+export function splitDeliveryText(text, limit = DELIVERY_MESSAGE_LIMIT) {
     const parts = [];
     let delayMs = 0;
     String(text || '').split(/\$sleep=(\d+\.?\d*)/i).forEach((piece, index) => {
@@ -30,7 +31,15 @@ export function splitDeliveryText(text) {
         }
         const body = piece.trim();
         if (!body) return;
-        parts.push({ text: body, delayMs: parts.length ? Math.max(delayMs, 500) : delayMs });
+        let chunk = '';
+        for (const line of body.split('\n')) {
+            if (line.length > limit) throw Object.assign(new Error(`Строка товара длиннее рабочего лимита ${limit} символов.`), { code: 'delivery-line-too-long' });
+            if (chunk && chunk.length + 1 + line.length > limit) {
+                parts.push({ text: chunk, delayMs: parts.length ? Math.max(delayMs, 500) : delayMs }); delayMs = 0; chunk = '';
+            }
+            chunk += (chunk ? '\n' : '') + line;
+        }
+        if (chunk) parts.push({ text: chunk, delayMs: parts.length ? Math.max(delayMs, 500) : delayMs });
         delayMs = 0;
     });
     return parts;
@@ -55,6 +64,7 @@ export function createFulfillmentDispatcher({
     journal, guard, loadFacts, sender, getAuth, getAutoReplies, getDeliveryConfigs,
     isBlacklisted = async () => false, render = text => text, sleep = ms => new Promise(r => setTimeout(r, ms)),
     onDelivered = async () => {}, onObserved = async () => {}, isLotEnabled = config => Boolean(config && config.enabled !== false),
+    scheduleContinuation = async () => {}, onChanged = async () => {},
     now = () => Date.now(), log = console, hash = sha256Short
 } = {}) {
     if (!journal || !guard || typeof loadFacts !== 'function' || !sender) throw new Error('Исполнитель заказов не настроен.');
@@ -168,39 +178,57 @@ export function createFulfillmentDispatcher({
         // Заказы, закреплённые за удалённым источником, автоматически не выдаются.
         if (pinned !== 'template' && pinned !== 'funpay_secrets') return block(order, ['source-unavailable']);
 
+        const savedAttempt = await journal.getOp(deliveryOpKey(order.key, order.fulfillmentGeneration || 1));
+        if (savedAttempt && ['pending', 'failed'].includes(savedAttempt.state)) {
+            const savedParts = await journal.listParts(savedAttempt.key);
+            if (!savedParts.length) return block(order, ['delivery-state-incomplete']);
+            return deliver({ account, order, verdict, texts: savedParts, coverage: order.resultCoverage || 'full', source: pinned, facts });
+        }
+
         let text = '';
         let coverage = 'full';
         if (pinned === 'template') {
             if (!config.text?.trim()) return block(order, ['template-empty']);
-            text = render(config.text, { buyerName: facts.buyerUsername || buyerName, orderId: facts.orderId, lotName: facts.lotName });
+            text = render(config.text, { buyerName: facts.buyerUsername || buyerName, orderId: facts.orderId, lotName: facts.lotName, quantity: verdict.quantity.value });
         } else {
             if (!facts.secrets.length) return block(order, ['secrets-missing']);
             text = facts.secrets.join('\n');
             if (facts.secrets.length < verdict.quantity.value) coverage = 'partial';
         }
-        return deliver({ account, order, verdict, texts: splitDeliveryText(text), coverage, source: pinned, facts });
+        let texts;
+        try { texts = splitDeliveryText(text); }
+        catch (error) { if (error.code === 'delivery-line-too-long') return block(order, ['delivery-line-too-long']); throw error; }
+        return deliver({ account, order, verdict, texts, coverage, source: pinned, facts });
     }
 
     async function deliver({ account, order, verdict, texts, coverage, source, facts }) {
         if (!texts.length) return block(order, ['nothing-to-send']);
         const generation = order.fulfillmentGeneration || 1;
         const opKey = deliveryOpKey(order.key, generation);
+        const preparedParts = [];
+        for (const [index, part] of texts.entries()) {
+            preparedParts.push({ partId: `${opKey}#${index}`, opKey, orderKey: order.key, index, text: part.text, delayMs: part.delayMs,
+                bodyHash: await hash(`${verdict.chatId}\n${part.text}`), state: 'pending' });
+        }
         let { op, created } = await journal.beginAttempt({
             opKey, kind: 'delivery', orderKey: order.key,
-            payload: { offerId: verdict.offerId, chatId: verdict.chatId, source, generation, accountId: account.accountId, epoch: account.epoch }
+            payload: { offerId: verdict.offerId, chatId: verdict.chatId, buyerId: verdict.buyerId, quantity: verdict.quantity.value,
+                source, generation, accountId: account.accountId, epoch: account.epoch, partCount: preparedParts.length },
+            parts: preparedParts
         });
-        if (created) {
-            const parts = [];
-            for (const [index, part] of texts.entries()) {
-                parts.push({ partId: `${opKey}#${index}`, opKey, orderKey: order.key, index, text: part.text, delayMs: part.delayMs, bodyHash: await hash(`${verdict.chatId}\n${part.text}`), state: 'pending' });
-            }
-            await journal.putParts(parts);
-        } else if (op.state === 'failed') {
-            if ((op.attempts || 0) >= DELIVERY_RETRY_LIMIT) return { status: 'failed', order };
+        if (!created && op.state === 'failed') {
+            if ((op.rejectionCount ?? op.attempts ?? 0) >= DELIVERY_RETRY_LIMIT) return { status: 'failed', order };
         } else if (op.state !== 'pending') {
             return { status: 'already', order, op };
         }
 
+        const storedParts = await journal.listParts(opKey);
+        if (!storedParts.length || (op.payload.partCount && storedParts.length !== op.payload.partCount)) return block(order, ['delivery-state-incomplete']);
+
+        if (!created && (op.payload.accountId !== account.accountId || op.payload.epoch !== account.epoch)) return block(order, ['account-epoch-changed']);
+        if (!created && (String(op.payload.chatId) !== String(verdict.chatId) || String(op.payload.offerId) !== String(verdict.offerId)
+            || (op.payload.buyerId != null && String(op.payload.buyerId) !== String(verdict.buyerId))
+            || (op.payload.quantity != null && op.payload.quantity !== verdict.quantity.value))) return block(order, ['delivery-facts-changed']);
         await journal.updateAccountOrder(order.key, () => ({
             deliveryState: 'sending', resultCoverage: coverage, blockReasons: [],
             problemState: coverage === 'partial' ? 'attention' : undefined
@@ -208,16 +236,24 @@ export function createFulfillmentDispatcher({
         op = await journal.transitionOp(opKey, 'sending', { lastError: null });
         const outcome = await sendParts({ account, opKey, chatId: verdict.chatId, orderKey: order.key });
 
+        if (outcome.waiting) {
+            await journal.transitionOp(opKey, 'pending', { dueAt: outcome.dueAt, lastError: null });
+            const updated = await journal.updateAccountOrder(order.key, () => ({ deliveryState: 'pending', nextDeliveryAt: outcome.dueAt }));
+            await scheduleContinuation(outcome.dueAt);
+            return { status: 'pending', dueAt: outcome.dueAt, order: updated };
+        }
         const parts = await journal.listParts(opKey);
         const summary = summarizeParts(parts);
         const opState = summary === 'done' || summary === 'sent-unconfirmed' ? 'done'
             : summary === 'uncertain' ? 'uncertain'
                 : 'failed';
-        await journal.transitionOp(opKey, opState, { lastError: outcome.error || null });
+        await journal.transitionOp(opKey, opState, { lastError: outcome.error || null,
+            rejectionCount: (op.rejectionCount || 0) + (parts.some(part => part.state === 'rejected') ? 1 : 0) });
         const verified = summary === 'done' && coverage === 'full';
         const updated = await journal.updateAccountOrder(order.key, current => ({
-            deliveryState: summary,
-            problemState: summary === 'uncertain' || summary === 'partial' || coverage === 'partial' ? 'attention' : current.problemState,
+            deliveryState: summary, nextDeliveryAt: null,
+            problemState: summary === 'uncertain' || summary === 'partial' || coverage === 'partial' ? 'attention'
+                : ['done', 'sent-unconfirmed'].includes(summary) && !current.holds?.length ? 'none' : current.problemState,
             verifiedFulfillmentCompletedAt: verified ? now() : undefined,
             deliveredAt: ['done', 'sent-unconfirmed'].includes(summary) ? now() : undefined
         }));
@@ -237,11 +273,30 @@ export function createFulfillmentDispatcher({
         for (const part of parts) {
             if (part.state === 'confirmed' || part.state === 'accepted' || part.state === 'manual') { anySent = true; continue; }
             if (part.state === 'uncertain' && !includeUncertain.includes(part.partId)) { error = error || 'Есть часть с неясным исходом.'; break; }
-            if (part.delayMs && anySent) await sleep(part.delayMs);
+            if (part.state === 'sending') { error = 'Прерванная отправка требует сверки.'; break; }
+            if (part.state === 'pending' && part.delayMs) {
+                const previous = parts[part.index - 1];
+                const base = previous?.receipt?.at || part.createdAt || now();
+                const dueAt = part.dueAt ?? (base + part.delayMs);
+                if (part.dueAt == null) await journal.updatePart(part.partId, { dueAt });
+                if (dueAt > now()) {
+                    // Persist first. Long waits release the automation pass entirely.
+                    if (dueAt - now() > 1000) return { anySent, waiting: true, dueAt };
+                    await sleep(dueAt - now());
+                }
+            }
             try {
                 await guard.assertCurrent(account);
                 const order = await journal.getRecord('accountOrders', orderKey);
                 if (order?.holds?.length) { error = 'Заказ поставлен на удержание.'; break; }
+                const settings = await getAutoReplies();
+                if (!settings?.autoDeliveryEnabled) { error = 'Автовыдача выключена.'; break; }
+                const facts = await loadFacts(order.orderId, { accountId: account.accountId, epoch: account.epoch, fresh: true });
+                const verdict = verifyOrderForEffect(facts, { accountId: account.accountId, effect: 'delivery', expectedOrderId: order.orderId, binding: order.confirmedBinding || null });
+                if (!verdict.ok || String(verdict.chatId) !== String(chatId)) { error = 'Статус или реквизиты заказа изменились.'; break; }
+                const configs = await getDeliveryConfigs();
+                if (!isLotEnabled(configs?.[String(verdict.offerId)])) { error = 'Автовыдача лота выключена.'; break; }
+                await guard.assertCurrent(account);
             } catch (stop) {
                 error = stop.message;
                 break;
@@ -249,7 +304,7 @@ export function createFulfillmentDispatcher({
             await journal.updatePart(part.partId, { state: 'sending', attemptAt: now() });
             const result = await sender.send({ chatId, text: part.text, auth, accountId: account.accountId });
             await journal.updatePart(part.partId, {
-                state: result.status, receipt: { messageId: result.messageId || null, httpStatus: result.httpStatus || null, at: now() }, error: result.error || null
+                state: result.status, receipt: part.receipt = { messageId: result.messageId || null, httpStatus: result.httpStatus || null, at: now() }, error: result.error || null
             });
             if (result.status === 'confirmed' || result.status === 'accepted') { anySent = true; continue; }
             error = result.error || `Исход отправки: ${result.status}`;
@@ -259,7 +314,7 @@ export function createFulfillmentDispatcher({
     }
 
     // Явное решение продавца: повторить отправку части с неясным исходом прежним текстом.
-    async function resendUncertainPart({ orderKey, partId, expectedRevision }) {
+    async function resendUncertainPartOnce({ orderKey, partId, expectedRevision }) {
         const account = await guard.current({ fresh: true });
         const order = await journal.getRecord('accountOrders', orderKey);
         if (!order || order.accountId !== account.accountId) throw new Error('Заказ относится к другому аккаунту.');
@@ -273,14 +328,24 @@ export function createFulfillmentDispatcher({
         if (op.state !== 'sending') await journal.transitionOp(opKey, 'sending', { lastError: null });
         await journal.appendEvent(orderKey, 'delivery.manual_resend', { partId });
         const outcome = await sendParts({ account, opKey, chatId: op.payload.chatId, orderKey, includeUncertain: [partId] });
+        if (outcome.waiting) {
+            await journal.transitionOp(opKey, 'pending', { dueAt: outcome.dueAt });
+            const updated = await journal.updateAccountOrder(orderKey, () => ({ deliveryState: 'pending', nextDeliveryAt: outcome.dueAt }));
+            await scheduleContinuation(outcome.dueAt);
+            await onChanged();
+            return updated;
+        }
         const summary = summarizeParts(await journal.listParts(opKey));
         await journal.transitionOp(opKey, summary === 'done' || summary === 'sent-unconfirmed' ? 'done' : summary === 'uncertain' ? 'uncertain' : 'failed', { lastError: outcome.error || null });
-        return journal.updateAccountOrder(orderKey, () => ({ deliveryState: summary }));
+        await journal.updateAccountOrder(orderKey, current => ({ deliveryState: summary,
+            problemState: ['done', 'sent-unconfirmed'].includes(summary) && current.resultCoverage !== 'partial' && !current.holds?.length ? 'none' : current.problemState }));
+        await onChanged();
+        return journal.getRecord('accountOrders', orderKey);
     }
 
     // Явное решение продавца после частичной выдачи: отправить только части,
     // которые точно не отправлены (pending/rejected). Части с неясным исходом не трогаются.
-    async function deliverRemaining({ orderKey }) {
+    async function deliverRemainingOnce({ orderKey }) {
         const account = await guard.current({ fresh: true });
         const order = await journal.getRecord('accountOrders', orderKey);
         if (!order || order.accountId !== account.accountId) throw new Error('Заказ относится к другому аккаунту.');
@@ -293,9 +358,19 @@ export function createFulfillmentDispatcher({
         if (!verdict.ok) return block(order, verdict.reasons, { force: true });
         await journal.transitionOp(opKey, 'sending', { lastError: null });
         const outcome = await sendParts({ account, opKey, chatId: op.payload.chatId, orderKey });
+        if (outcome.waiting) {
+            await journal.transitionOp(opKey, 'pending', { dueAt: outcome.dueAt });
+            const updated = await journal.updateAccountOrder(orderKey, () => ({ deliveryState: 'pending', nextDeliveryAt: outcome.dueAt }));
+            await scheduleContinuation(outcome.dueAt);
+            await onChanged();
+            return updated;
+        }
         const summary = summarizeParts(await journal.listParts(opKey));
         await journal.transitionOp(opKey, summary === 'done' || summary === 'sent-unconfirmed' ? 'done' : summary === 'uncertain' ? 'uncertain' : 'failed', { lastError: outcome.error || null });
-        return journal.updateAccountOrder(orderKey, () => ({ deliveryState: summary }));
+        await journal.updateAccountOrder(orderKey, current => ({ deliveryState: summary,
+            problemState: ['done', 'sent-unconfirmed'].includes(summary) && current.resultCoverage !== 'partial' && !current.holds?.length ? 'none' : current.problemState }));
+        await onChanged();
+        return journal.getRecord('accountOrders', orderKey);
     }
 
     // Один заказ обрабатывается одним вызовом одновременно: чат, сверка и UI ждут общий итог.
@@ -308,10 +383,41 @@ export function createFulfillmentDispatcher({
                 log.error?.(`FunPay Funcy: заказ #${id} не обработан:`, error?.message || error);
                 return { status: 'error', error: error?.message || String(error) };
             })
-            .finally(() => inFlight.delete(id));
+            .finally(async () => { inFlight.delete(id); await onChanged().catch(() => {}); });
         inFlight.set(id, run);
         return run;
     }
 
-    return Object.freeze({ observe, resendUncertainPart, deliverRemaining, orderKeyOf });
+    function manualLocked(input, action) {
+        const id = String(input.orderKey || '').split(':')[1];
+        if (!id || inFlight.has(id)) return Promise.reject(new Error('Заказ уже обрабатывается или не найден.'));
+        const run = action(input).finally(() => inFlight.delete(id));
+        inFlight.set(id, run);
+        return run;
+    }
+    const resendUncertainPart = input => manualLocked(input, resendUncertainPartOnce);
+    const deliverRemaining = input => manualLocked(input, deliverRemainingOnce);
+
+    async function resumeDue() {
+        const account = await guard.current({ fresh: true });
+        if (!(await getAutoReplies())?.autoDeliveryEnabled || !account.accountId) return;
+        const ops = await journal.listOps({ kind: 'delivery', states: ['pending'] });
+        let next = Infinity;
+        for (const op of ops) {
+            if (op.payload?.accountId !== account.accountId) continue;
+            if (op.payload?.epoch !== account.epoch) {
+                const order = await journal.getRecord('accountOrders', op.orderKey);
+                if (order) await block(order, ['account-epoch-changed']);
+                continue;
+            }
+            if (op.dueAt && op.dueAt > now()) { next = Math.min(next, op.dueAt); continue; }
+            const order = await journal.getRecord('accountOrders', op.orderKey);
+            if (!order || order.holds?.length) continue;
+            const result = await observe({ orderId: order.orderId, source: 'continuation', adopt: false });
+            if (result.dueAt) next = Math.min(next, result.dueAt);
+        }
+        if (Number.isFinite(next)) await scheduleContinuation(next);
+        await onChanged();
+    }
+    return Object.freeze({ observe, resumeDue, resendUncertainPart, deliverRemaining, orderKeyOf });
 }

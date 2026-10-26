@@ -1,3 +1,4 @@
+import { parseHtmlViaOffscreen } from './offscreen_parser.js';
 // background/smart_bump.js - FunPay Funcy 2.8
 // "Smart" auto-raise mode, ported from FunPay Funcy's FunPay Funcy.raise_lots().
 //
@@ -28,16 +29,7 @@ function parseWaitTime(msg) {
     return 10;
 }
 
-async function parseHtmlViaOffscreen(html, action) {
-    const existing = await chrome.runtime.getContexts({
-        contextTypes: ['OFFSCREEN_DOCUMENT'],
-        documentUrls: [chrome.runtime.getURL(OFFSCREEN_PATH)]
-    });
-    if (!existing.length) {
-        await chrome.offscreen.createDocument({ url: OFFSCREEN_PATH, reasons: ['DOM_PARSER'], justification: 'parse' });
-    }
-    return chrome.runtime.sendMessage({ target: 'offscreen', action, html });
-}
+
 
 async function getAuth() {
     const gk = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
@@ -164,6 +156,8 @@ export async function runSmartBumpCycle() {
     let soonest = Infinity;
 
     for (const cat of categories) {
+        // У валюты (chips) на FunPay нет кнопки поднятия.
+        if (cat.raisable === false) continue;
         const url = new URL(cat.id, 'https://funpay.com/').href;
         const entry = state[url];
         if (entry && entry.nextRaiseAt > now) {

@@ -1,0 +1,1038 @@
+✔ key lists are disjoint, classified and leave per-account lot services alone (2.8852ms)
+✔ first run marks the current account as owner without touching live settings (3.9617ms)
+✔ switching stores the old config, gives a new account defaults and restores the old one on return (3.1409ms)
+✔ sync copies config only, keeps the target history and can be undone (2.6438ms)
+✔ sync into the active account writes live keys and clears its fresh-account notice (0.9509ms)
+✔ automationEnabledIn reads auto-reply switches and auto bump (0.3367ms)
+✔ accounts screen fits both themes and widths and never renders or stores session keys (9891.5047ms)
+✔ hero, active row, unread badge and expired session reflect stored data (1758.6313ms)
+✔ empty list offers the current account and adding it saves the session without the key (1818.8119ms)
+✔ signed-out visitors see a hint instead of the add button (1751.3219ms)
+✔ a signed-in account with an expired saved session can refresh it in place (1826.3936ms)
+✔ switching asks first, moves each account to its own config and rolls back an expired session (11187.172ms)
+✔ a plain switch between configured accounts without automation stays one click (1842.8927ms)
+✔ rename inline with Enter, cancel with Escape and delete through the dialog (2068.3349ms)
+✔ notes are written inline, shown under the name and found by search (2260.3999ms)
+✔ refresh updates every account in turn, failures keep their old time and stale data refreshes on open (2003.9836ms)
+✔ while automation runs other accounts are not refreshed and say so instead of failing (1881.9416ms)
+✔ sync copies the config after two steps and can be undone (2621.535ms)
+✔ external storage changes re-render and a failed read can be retried (1813.2192ms)
+✔ returning to the page refreshes data that went stale while it was closed (1662.2555ms)
+✔ balances parse FunPay formats with spaces, commas and currency signs (5.8209ms)
+✔ summary adds balances of one currency and counts unread and expired sessions (19.1187ms)
+✔ initials, relative time and avatar urls (2.9963ms)
+✔ pending money is summed per currency across accounts (2.1088ms)
+✔ legacy records move their keys out of storage and keep working by id (9.7124ms)
+✔ adding the current account dedupes by FunPay id and refreshes an expired session (3.0148ms)
+✔ refresh keeps the last good snapshot time when FunPay fails or automation blocks it (2.099ms)
+✔ a snapshot of a key that now belongs to another user is rejected (0.6778ms)
+✔ a wrong saved FunPay id is corrected when the key still opens the same nickname (0.8728ms)
+✔ switching suspends the current config, loads the target one and rolls back an expired key (4.7905ms)
+✔ a manual login elsewhere is reconciled and sync works by record id (2.4781ms)
+✔ notes are trimmed and limited, deleting drops the key but keeps the config (2.073ms)
+✔ switching before the owner was marked saves the live config first and refuses when the account is unknown (2.5286ms)
+✔ daily keepalive refreshes only the current account and never swaps keys (1.1376ms)
+✔ daily keepalive marks a dead key as expired instead of failing silently (0.993ms)
+✖ auto-delivery page loads stock states, saves per-lot changes, and fits the full popup (2113.4069ms)
+✔ auto-delivery shows layout-matched skeleton rows while the first lot list is loading (1173.2022ms)
+Auto-delivery previews: C:\Users\Usser\AppData\Local\Temp\funpay-auto-delivery-minimal
+✔ compact auto-delivery supports editing, retry, filters and narrow layouts (2169.1126ms)
+✔ auto-delivery preview splits messages on $sleep and fills template variables like the runtime (7.5077ms)
+✔ auto-delivery screen keeps the hero, lot cards and sticky save bar contracts, with no stock rules card (3.4358ms)
+✔ lot parser falls back from description text to category and lot ID (2.5047ms)
+✔ lot parser keeps the whole composite id of currency (chips) offers and marks them (0.8522ms)
+✔ category parser counts currency (chips) offers and marks the category as not raisable (1.7283ms)
+✔ profile stock badges use the same default-enabled rule as the settings page (3.5397ms)
+✔ auto-delivery stock utilities count non-empty secret rows and preserve concurrent lot updates (17.0512ms)
+✔ auto-delivery lot switch gates new delivery while legacy settings remain allowed (0.276ms)
+✔ there is no stock sweep any more: no alarm, no toggles, no notice script, retired keys are cleaned (2.3199ms)
+✔ auto-delivery templates receive the parsed lot name (16.9548ms)
+✔ secret stock refresh follows a successful delivery and respects explicit lot disablement (8.0749ms)
+✔ auto_delivery: auto_delivery_ui_contract markup is removed and search metadata remains (7.097ms)
+✔ auto_delivery: the category view is mounted into the existing popup shell (0.6003ms)
+✔ orders and deliveries mount as a separate popup category (0.6582ms)
+✔ autoresponder: empty settings show collapsed scenarios, an empty rule list and write nothing on open (1467.4443ms)
+✔ autoresponder: scenarios save through the store patch with explicit unsaved state and validation (3155.5267ms)
+✔ autoresponder: images attach, order is chosen and the saved reply keeps them (2798.7829ms)
+✔ autoresponder: keyword rules are added, edited and removed with indexed store operations (3095.962ms)
+✔ autoresponder: disabled keyword rules stay visible with an explanation and fit narrow popups (2225.3202ms)
+✔ auto_reply: auto_reply_pages markup is removed and search metadata remains (3.8336ms)
+✔ checked patches reject concurrent scalar and rating changes inside the storage queue (2.2059ms)
+✔ serializes UI patches and background updates against the latest saved object (22.468ms)
+✔ patch replaces fields, merges rating maps, and can unset map entries (15.2916ms)
+✔ parallel list additions, edits, and removals preserve every current item (45.8656ms)
+✔ rejects a stale index edit instead of deleting the item that shifted into its place (30.9011ms)
+✔ imports user preferences while preserving local runtime markers and fields omitted by old backups (15.1962ms)
+✔ a failed storage write rejects its caller and does not poison later queue operations (30.5677ms)
+✔ repository code outside the store does not write fpToolsAutoReplies directly (18.8338ms)
+✔ content helper waits for the service-worker write and reports storage errors (0.9317ms)
+✔ rating patches work without any old controls and retain atomic-store semantics (2.8755ms)
+✔ auto_reply: static markup stays empty and search metadata remains (4.163ms)
+✔ auto_reply: the category view is mounted into the existing popup shell (0.6583ms)
+✔ auto_reply: the page uses the shared frame, the store patch API and never writes the settings key itself (0.7563ms)
+✔ auto_reply: page-owned widgets do not reuse class names other pages are tested by (1.0694ms)
+✔ auto_reply: styles are responsive, motion-safe and scoped to the themed popup (3.1442ms)
+✔ auto_reply: popup metadata keeps the searchable titles of every scenario (0.3159ms)
+✔ auto_reply: settings are normalized with the engine defaults and malformed data is tolerated (2.3415ms)
+✔ auto_reply: keyword rules are built the way the engine reads them (1.1469ms)
+✔ auto_reply: duplicates, filtering and the summary text are computed from the stored rules (0.9111ms)
+✔ auto_reply: each scenario offers only variables the engine fills for it (0.8352ms)
+✔ review help follows shared page typography, fits both themes and closes by click or Escape (6165.7663ms)
+✔ rating rail sits beside the editor and stars reflect saved answers (2000.9283ms)
+✔ reviews: drafts survive ratings, independent saves preserve runtime and unrelated settings (1958.4728ms)
+✔ reviews: validation, variables, image routing, save error and retry (2414.7225ms)
+✔ first single bonus save persists the mode required by the background sender (2062.7004ms)
+✔ bonuses: local list edits use a single checked patch; mode changes and cancel keep data (2172.806ms)
+✔ reviews: external updates refresh clean blocks, preserve dirty drafts and expose conflict recovery (1836.3724ms)
+✔ bonus dialog survives external list shifts and cannot overwrite a different item (1906.5966ms)
+✔ reviews: both themes, responsive stacking, transparent header and keyboard selection (3222.2209ms)
+✔ review save rejects a change made after preflight without losing the draft (1810.4531ms)
+✔ upload completion replays external changes and enables the other save button (1669.6465ms)
+✔ bonus text opens its editor; removing popup disposes the storage listener (1723.3366ms)
+✔ failed image upload keeps an actionable error on a clean block (1781.5059ms)
+✔ newer storage events win over a delayed successful save response (1726.9022ms)
+✔ a stale preflight result cannot roll clean bonus settings back (1976.0137ms)
+✔ removing popup with an open bonus dialog releases keyboard interception (1690.1503ms)
+✔ loading failure offers retry without enabling defaults or overwriting saved settings (1757.3251ms)
+✔ defaults do not enable automation or invent user content (1.4724ms)
+✔ review patch merges only edited ratings and never writes runtime or bonus settings (0.3661ms)
+✔ bonus operations keep indexes and expected values correct after multiple removals (0.2504ms)
+✔ validation allows skipped ratings but not image-only enabled replies (0.262ms)
+✔ preview substitutes supported tokens and leaves arbitrary markup as plain text (0.2156ms)
+✔ auto_review: auto_review_ui_contract markup is removed and search metadata remains (3.3853ms)
+✔ autobump page renders status, saves rules with rollback, picks categories and shows the log (15754.7448ms)
+✔ autobump: static markup stays empty and search metadata remains (6.2761ms)
+✔ autobump: the category view is mounted into the existing popup shell (0.762ms)
+✔ autobump: the page uses the shared category frame and preserves existing storage keys (0.4377ms)
+✔ autobump: styles are responsive and the toast region covers the page (2.1771ms)
+✔ autobump: popup actions and background expose the status and raise-now routes (1.4098ms)
+✔ autobump: log entries are classified for display (1.5031ms)
+✔ blacklist page: empty state, adding with flags, duplicates and validation (3382.7179ms)
+✔ blacklist page: rows toggle flags, edit notes, search, remove and follow outside changes (5265.2067ms)
+✔ blacklist page: search appears for long lists; dark theme and narrow popup keep the layout (3733.8747ms)
+✔ blacklist: static markup stays empty and search metadata remains (5.8172ms)
+✔ blacklist: the page is loaded by the manifest and mounted by the popup (0.8936ms)
+✔ blacklist: the page uses the shared frame and blacklist popup actions only (0.5642ms)
+✔ blacklist: styles are scoped, responsive and respect reduced motion (3.0235ms)
+✔ blacklist: stored entries are normalized with safe defaults (4.6628ms)
+✔ manifest exposes Funcy without changing extension wiring (0.9753ms)
+✔ primary visible surfaces use the canonical brand and omit old public links (3.779ms)
+✔ public identifier is excluded while the automation compatibility marker is retained (0.7418ms)
+✔ legacy settings, config protocols, and resource dependencies remain intact (3.1357ms)
+✔ bulk find/replace matches whole Cyrillic words and keeps alternation inside the word boundary (4.908ms)
+✔ bulk price rules share one calculation with minimum and rounding (1.9331ms)
+✔ bulk apply saves {current} after find/replace, returns the new title and rejects drops over 100% (2.0998ms)
+✔ strict sender posts exactly once and classifies every outcome (26.5879ms)
+✔ account guard bumps the epoch on account or key change and rejects stale effects (2.8768ms)
+✔ main popup disables manual resizing and has a reduced-motion-aware exit state (1.9966ms)
+✔ main popup omits the close button and closes only for outside clicks (1.4095ms)
+✔ legacy popup geometry is no longer read or written (0.8153ms)
+✔ cursor runtime stays absent while disabled and initializes once on either mode (1546.8411ms)
+✔ closed popup skips rendering and restores finance and effects on reopening (2845.9599ms)
+✔ effects page: preview draws, particle settings save at once and reset (7575.3137ms)
+✔ effects page: custom cursor uploads, adjusts, validates and removes the image (5827.4993ms)
+✔ effects page: dark popup and narrow widths stay inside the frame (2777.7932ms)
+✔ effects: static markup stays empty and search metadata remains (18.5736ms)
+✔ effects: the category view is mounted into the existing popup shell (1.1028ms)
+✔ effects: the page uses the shared frame, existing storage keys and popup actions (0.734ms)
+✔ effects: styles are scoped, responsive and respect reduced motion (2.1881ms)
+✔ effects: settings are normalized with safe defaults (2.7379ms)
+✔ effects: the page and the site effect share one particle model (1.1154ms)
+✔ release policy is frozen, rejects all suspended actions and permits translation (2.5381ms)
+✔ actual worker dispatcher rejects legacy actions without network and still dispatches translation (3.9295ms)
+✔ direct AI transport calls are blocked before fetch or timeout setup (1.298ms)
+✔ server features install no DOM, storage, verification or timer work on either profile (1.6206ms)
+✔ old templates are blocked atomically before editing drafts or sending either part (14.9664ms)
+✔ ordinary templates keep substitutions and submit exactly once (2.3647ms)
+✔ settings import preserves dormant data and cannot activate the release flags (4.99ms)
+FINANCE_CURRENCY_PASS
+✔ tests\finance_currency.test.js (53.5637ms)
+✔ finance_hub: finance_custom_select_dropdown markup is removed and search metadata remains (3.6947ms)
+✔ finance_hub: finance_custom_select_scrollbar_bounds markup is removed and search metadata remains (3.7525ms)
+FINANCE_DB_ATOMIC_PASS
+✔ tests\finance_db_atomic.test.js (59.6874ms)
+﹣ every Finance dropdown row remains the mouse target while hovered (1.3147ms) # Microsoft Edge is not installed
+FINANCE_FILTERS_PASS
+✔ tests\finance_filters.test.js (62.3051ms)
+✔ finance_hub: finance_grid_equal_height markup is removed and search metadata remains (7.2194ms)
+✖ finance hub renders every tab with seeded data and responds to filters (1287.8738ms)
+✔ finance controls preserve unrelated cards and contain scrolling inside the popup (5108.1004ms)
+✖ finance notifications preserve layout and the tab pill tracks responsive tabs (2263.3133ms)
+✔ finance hub refresh reports partial failures and exports CSV (2738.1704ms)
+✔ finance screenshot layouts align controls and separate coverage and table filters (3204.9228ms)
+✔ zero cost coverage keeps truthful totals and filters only its orders table (2636.8832ms)
+✔ finance hub shows onboarding when there is no data and fits a narrow popup (1002.65ms)
+✔ finance hub is readable at phone width (1130.3334ms)
+✔ money and percent formatting keeps a non-breaking symbol and never prints NaN (12.2272ms)
+✔ delta is explicit when there is no baseline and never divides by zero (0.1771ms)
+✔ sales series fills empty days and sums only closed/paid orders in the chosen currency (2.1425ms)
+✔ month and week steps bucket by the MSK calendar (0.23ms)
+✔ step selection follows the period and falls back to the data span (0.1435ms)
+✔ rankings group by name, skip refunds and fold the tail into "Прочее" (0.3479ms)
+✔ currency choice never mixes currencies (0.3414ms)
+✔ nice scale returns ascending ticks covering the maximum (0.1721ms)
+✔ finance_hub: static markup stays empty and search metadata remains (4.8311ms)
+✔ finance_hub: model, chart and page modules load in order before the content script that mounts them (0.9461ms)
+✔ finance_hub: the page uses the shared category frame, builds DOM nodes and talks only to popup actions (1.1182ms)
+✔ finance_hub: every metadata mode has a tab button and a mode action registered by the popup shell (1.2322ms)
+✖ finance_hub: styles are scoped, responsive and themed through the popup tokens (3.0471ms)
+✔ finance_hub: the overview data action also returns profit and the previous period for KPI deltas (0.3307ms)
+✔ finance_hub: finance_ios_subtabs markup is removed and search metadata remains (3.5595ms)
+✔ finance_hub: finance_kpi_alignment markup is removed and search metadata remains (3.433ms)
+✔ finance_hub: finance_operations_breakdown_ui markup is removed and search metadata remains (3.7261ms)
+✔ finance_hub: finance_operations_modal_theme markup is removed and search metadata remains (3.6621ms)
+✔ finance_hub: finance_overview_layout_cleanup markup is removed and search metadata remains (3.9883ms)
+✔ finance_hub: finance_overview_visual_contract markup is removed and search metadata remains (3.526ms)
+✔ finance_hub: finance_profit_missing_cost_ui markup is removed and search metadata remains (5.0267ms)
+FINANCE_REFRESH_PASS
+✔ tests\finance_refresh.test.js (50.4411ms)
+✔ finance_hub: finance_subtab_transition markup is removed and search metadata remains (3.5862ms)
+✔ finance_hub: finance_task08_ui_contract markup is removed and search metadata remains (3.5395ms)
+FINANCE_TIME_PASS
+✔ tests\finance_time.test.js (49.7953ms)
+✔ finance_hub: finance_uiux_regressions markup is removed and search metadata remains (3.6338ms)
+✔ chat and reconcile share one delivery; a repeat sends nothing (11.1849ms)
+✔ unknown quantity, refund, foreign chat or missing binding block delivery (2.6377ms)
+✔ a purchase of my own and an unknown role are skipped without effects (0.8336ms)
+✔ an uncertain part stops the delivery and is never repeated automatically (3.11ms)
+✔ a definite rejection before anything was sent may be retried, sending only unsent parts (1.9922ms)
+✔ an account switch between parts stops the delivery (0.9048ms)
+✔ orders delivered by the previous version are not delivered again; not adopted orders only observed (0.6875ms)
+✔ fewer FunPay secrets than the quantity is a partial result flagged for attention (0.7753ms)
+✔ a long sleep persists pending parts and resumes after a worker restart exactly once (2.1105ms)
+✔ continuations recheck disable, refund, holds and session epoch before sending (2.9153ms)
+✔ all lines are validated before the first POST and quantity does not repeat instructions (1.0351ms)
+HOVER_STABILITY_PASS
+✔ tests\hover_stability.test.js (45.9233ms)
+✔ interface elements screen fits both themes and widths without horizontal scroll (8352.3075ms)
+✔ element and section switches save instantly and keep unrelated ids (2130.0014ms)
+✔ keyboard row explains the hidden font block and search shows the parent as context (1937.1163ms)
+✔ suspended features and AI helper stay absent after restore and remount (1703.0445ms)
+✔ catalog load errors are reported with recovery while AI stays absent (2102.7816ms)
+✔ external storage changes update the screen (1708.957ms)
+✔ layout keeps the declared group and chat subgroup order and nests the keyboard under the font block (14.1417ms)
+✔ layout appends unknown groups instead of dropping them (1.323ms)
+✔ visibility matches labels, descriptions, groups and legacy labels; a matching child keeps its parent as context (2.45ms)
+✔ filters split elements into shown and hidden (1.2365ms)
+✔ previews substitute the real magic icon path (1.2298ms)
+✖ schedule dialog saves a draft rule with the saved zone and shows a preview (507.2324ms)
+✖ pricing dialog previews selected lots and applies only checked rows (430.6955ms)
+✔ offscreen lot editor preserves fields and reports pages without an editor through messages (510.359ms)
+✔ export, own-lot import and auto delivery propagate parser errors without successful null data (13.5625ms)
+✔ successful lot fields keep the existing export, import-preview and stock contracts (1.3913ms)
+✔ missing or malformed offscreen responses fail closed (2.7006ms)
+✔ startLotImport rejects duplicate concurrent and already-active imports (53.4776ms)
+✔ lot management keeps its help button after the page mounts (2121.823ms)
+✔ lot management uses a task-card skeleton while checking pending imports (671.0059ms)
+✔ lot management fits 1204, 680, and 420 pixel viewports in light and dark themes (2282.853ms)
+✖ bulk editor guides lot selection, changes, and review with live validation (2102.9352ms)
+✖ bulk editor selects by category, previews Cyrillic whole-word replacement and offers a retry for failed lots (32029.1338ms)
+✔ export shows category and lot totals, disables empty export, and uses a visible progress indicator (2260.9763ms)
+✔ import error reason stays visible and a completion report retains errors and skipped lots (2067.8522ms)
+✔ lot import actions use a supported icon glyph (509.9742ms)
+✔ an active import is announced and prevents starting a second import (547.8683ms)
+✔ primary dialog buttons keep readable contrast while hovered (568.3353ms)
+✔ shared popup utilities format russian plurals and create accessible status pills (531.0765ms)
+✔ shared dialog traps and restores focus and blocks close paths while busy (891.4776ms)
+✔ shared toast queue pauses on hover and stays inside an open dialog (1014.6716ms)
+✔ lot_io mounts its category view and keeps the existing action contracts (0.7445ms)
+✔ lot_io reuses the shell category header and keeps the shared title track (0.4993ms)
+✔ lot management view defines the hero, tool tiles, import card, empty state and narrow layouts (1.0142ms)
+✔ lot import accepts a JSON file dropped on the import tile through the same path as the file picker (0.1743ms)
+✔ rules are validated: zone, time format, equal bounds are not all day (14.9284ms)
+✔ overnight windows split at midnight, Sunday wraps to Monday, overlaps merge (0.5949ms)
+✔ membership uses the saved zone, not the computer clock (9.3293ms)
+✔ DST gap and fold follow wall-clock semantics (2.1961ms)
+✔ the next check is the nearest change within a day, else a control check in 24 hours (10.9515ms)
+✔ a saved rule is a draft; enabling it closes the lot and schedules one alarm (79.5451ms)
+✔ after a long sleep only the current state is applied, once (4.2321ms)
+✔ a lot that was already off is not switched on by the schedule; disabling a rule lifts only its blocker (7.1974ms)
+✔ invalid rules and foreign revisions are refused (0.9944ms)
+✔ tiny prices are compared exactly (4.174ms)
+✔ price rules are computed exactly from the fresh form (0.6513ms)
+✔ queued operations on one lot run in order against a fresh form (21.9313ms)
+✔ a stale bulk form cannot reopen a closed lot: only the intended fields are applied (61.0565ms)
+✔ a deleted lot is terminal for later queued updates (30.8284ms)
+✔ an account switch stops queued writes; a foreign page is refused (0.906ms)
+✔ patchLot saves only real changes and verifies them after a re-read (4.2313ms)
+✔ patchLot refuses to overwrite a manual edit made after the caller looked at the lot (0.3273ms)
+✔ setLotActive removes the active field to deactivate and reports unverified saves (0.3592ms)
+✔ activity service leaves unmanaged lots alone and never reads or acts on stock (3.4855ms)
+✔ a manual change by the seller pauses management; manual off is never overridden (1.3544ms)
+✔ traces of the retired stock sweep neither hold a lot off nor let automation switch it on (0.7592ms)
+MENU_REFERENCE_CONTRACT_FAIL: AssertionError [ERR_ASSERTION]: brand, title, and collapse control must live in the reference sidebar header
+    at testHeaderAndSearchMatchReference (C:\Users\Usser\Desktop\funpay-funcy\tests\menu_reference_contract.test.js:70:12)
+    at runAll (C:\Users\Usser\Desktop\funpay-funcy\tests\menu_reference_contract.test.js:331:5)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\menu_reference_contract.test.js:343:5)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14)
+    at Object..js (node:internal/modules/cjs/loader:2074:10)
+    at Module.load (node:internal/modules/cjs/loader:1656:32)
+    at Module._load (node:internal/modules/cjs/loader:1448:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '<nav class="fp-tools-nav">\n' +
+    '                <div class="fpt-nav-brand">\n' +
+    '                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n' +
+    '                    <span class="fpt-nav-brand-title">Funcy</span>\n' +
+    '                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n' +
+    '                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n' +
+    '                    </button>\n' +
+    '                </div>\n' +
+    '                <div class="fpt-nav-search">\n' +
+    '                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n' +
+    '...',
+  expected: /<div class="fpt-nav-brand">[\s\S]*?<img class="fp-tools-brand-logo"[^>]+data-icon="funcy-logo"[\s\S]*?<span class="fpt-nav-brand-title">FunPay Funcy<\/span>[\s\S]*?<button[^>]+id="fptNavCollapse"/,
+  operator: 'match',
+  diff: 'simple'
+}
+✖ tests\menu_reference_contract.test.js (58.9761ms)
+✔ decimal arithmetic is exact and keeps tiny prices apart (4.48ms)
+✔ rounding follows the quantum of the operation (0.6333ms)
+✔ allocation splits a batch cost exactly with a deterministic remainder (1.8738ms)
+✔ order quantity is parsed from the whole raw value with its unit (2.0611ms)
+✔ order facts keep unknown values unknown and take the order id from the page (0.9334ms)
+✔ verifier blocks effects on any unknown or mismatching fact (2.2901ms)
+✔ central navigation keeps active aliases and excludes retired financial pages (1.5964ms)
+NAVIGATION_SEARCH_ROUTES_PASS
+✔ tests\navigation_search_routes.test.js (5236.2438ms)
+✔ catalog reads preserve all feature data and never write settings or create previews (4.5307ms)
+✔ search continues to match descriptions, groups and prior feature labels without rendering rows (1.8029ms)
+✔ suspended AI actions reject locally without sending data (2.2827ms)
+✔ explicit toggles preserve unrelated feature IDs and AI confirmation retains stable IDs (2.1365ms)
+✔ public registry preserves available ID-to-selector pairs and excludes suspended features (10.2744ms)
+✔ renamed font controls retain their prior searchable labels locally (1.1209ms)
+✔ stored disabled IDs still hide the exact original live selectors across all six groups (2.3173ms)
+✔ sounds page: standard sound remains usable and branded presets are absent (3738.6752ms)
+✔ sounds page: a custom melody is loaded, trimmed on the waveform, saved and removed (12117.5419ms)
+✔ sounds page: dark theme and a narrow popup keep the layout inside the frame (6331.7888ms)
+✔ sounds: static markup stays empty and search metadata remains (3.8597ms)
+✔ sounds: the page sits in the customers group and is mounted by the popup (0.8948ms)
+✔ sounds: every preset file ships with the extension and is web accessible (1.1898ms)
+✔ sounds: the page uses the shared frame, the stored keys and popup actions only (0.5269ms)
+✔ sounds: the playback runtime no longer depends on the original source path (0.8941ms)
+✔ sounds: styles are scoped, responsive and respect reduced motion (2.3177ms)
+✔ sounds: stored values are normalized with safe defaults (1.006ms)
+✔ recordOrder merges repeated sightings without erasing known fields or moving purchasedAt (7.7765ms)
+✔ beginOp is idempotent and transitions follow the state machine (0.6147ms)
+✔ concurrent beginOp calls for one key create exactly one operation (0.3416ms)
+✔ recovery marks only sends of a previous worker as uncertain (1.0882ms)
+✔ prune drops old finished records and keeps orders with live operations (0.8128ms)
+✔ meta values round-trip (0.2827ms)
+✔ IndexedDB journal: multi-store transaction is atomic and v1 data survives the upgrade (401.3992ms)
+✔ account orders are keyed by account and order and carry a revision (3.7723ms)
+✔ an attempt and its event are written once per opKey (0.6786ms)
+✔ prune keeps unfinished attempts and their orders (0.7118ms)
+✔ recovery marks interrupted delivery parts uncertain (1.5632ms)
+✔ the card offers actions that match the evidence, never a generic retry (6.8134ms)
+✔ commands check the revision and the capability list (10.2754ms)
+✔ the list filters orders that need a decision and masks delivered goods (0.7754ms)
+✔ lot is resolved from the offer link first, then from a unique title in the same category (3.6349ms)
+✔ order loader reads each order once per account window and never invents quantity or binding (1.2243ms)
+✔ scheduler dispatches only its own alarms, keeps a running periodic alarm, and serializes recovery (1.3658ms)
+✔ persisted deadlines survive a worker restart and run once when overdue (1.0248ms)
+✔ order page parser reads lot, category, quantity, status and buyer from real DOM (471.3288ms)
+✔ order facts parser returns raw page facts without decisions (910.9161ms)
+✔ the first pass only records a baseline and never executes old orders (4.558ms)
+✔ known unfulfilled orders are retried even when they are far beyond the first page (1.4692ms)
+✔ pages are followed with continue until the previous border, missed paid orders are adopted (0.9933ms)
+✔ a repeating continue cursor reports failure without advancing the completed border (0.9298ms)
+✔ orders journal lists orders by decision and the card only offers allowed actions (33859.8216ms)
+✔ release: chat, review and lot AI stay absent after focus and dynamic markup; translations and manual images work (2239.3698ms)
+✔ release: own and other profiles keep cached data and do not mount server descriptions (1317.0844ms)
+✔ page windows: lot copy uses the menu palette, switches languages and closes like a dialog (1557.2566ms)
+✔ page windows: stacked windows close one at a time and dark pages get the dark menu palette (2660.318ms)
+✔ page windows: narrow screens show windows as bottom sheets without horizontal overflow (1278.0586ms)
+✖ page windows: the shell and its stylesheet load with the content scripts (1.8082ms)
+✔ page windows: every window is built with fptWindow.create and keeps its id (4.3291ms)
+✔ page windows: no window reads its colours from the page any more (3.3048ms)
+✔ page windows: the stylesheet uses the menu tokens and the violet accent (1.0835ms)
+✔ page windows: site theme rules and the popup outside-click leave windows alone (0.6622ms)
+✔ page windows: the shell closes on Escape, keeps Tab inside and restores focus (0.3044ms)
+✔ coalescing preserves every mutation batch in order and accepts frame id zero (4.7803ms)
+✔ pending work migrates in both visibility directions without duplicate execution (0.7599ms)
+✔ callback failures do not block later work and disposal cancels pending batches (0.871ms)
+✔ URL subscribers share detection, deduplicate events and dispose their sources (0.7953ms)
+✔ without Navigation API all URL subscribers use one polling timer (0.8923ms)
+✔ chat attachment disabling restores the native button without replacing either node (1178.5242ms)
+✔ order timers share one interval, avoid duplicates and clean removed rows (663.456ms)
+✔ stock cache keeps a newer storage event when the initial read resolves late (598.9449ms)
+✖ actions persist only explicit settings and never read deleted controls (4.7153ms)
+✔ auto-reply changes use the existing atomic store and propagate storage failures (1.7457ms)
+✔ partial nested settings updates retain saved theme fields (3.1267ms)
+✖ opening data actions never writes settings and invalid actions reject (1.3411ms)
+✔ account actions are proxied to the background service by record id and never carry keys (2.4265ms)
+✔ lot exports return data without constructing progress bars or modal controls (1.9068ms)
+✔ bonus and keyword additions preserve existing atomic-store arrays (1.6596ms)
+✔ retired financial pages reject popup action registrations (1.7091ms)
+✔ delivery updates preserve other lots and saved fields (2.375ms)
+✔ manual lot loading asks the background to sync stock and returns counts without secret contents (1.7804ms)
+✔ theme actions preserve other theme settings and never hydrate removed previews (2.1661ms)
+✖ real browser: lot management screen, navigation and shell geometry (24694.1307ms)
+✖ manifest eagerly loads each menu dependency once and every resource exists (2.4972ms)
+✔ one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu (4421.1345ms)
+✔ saved custom theme, page windows and enhanced selects work before opening and preserve their palette (1222.4795ms)
+✔ sales and operation filters are explicit and do not leak between requests (4.6787ms)
+✔ potential is a current snapshot and never applies a historical period to inventory (2.3035ms)
+✔ refresh coalesces concurrent calls, exposes partial failures and allows retry (2.2594ms)
+✔ custom date range rejects invalid dates and passes inclusive MSK dates to the engine (1.8225ms)
+✔ finance export uses the existing serializer and returns a file result without a dialog (1.2953ms)
+✔ profit filters return the aggregate totals and preserve unknown costs for export (1.4324ms)
+✔ real finance engines export positive profit and potential totals in the existing file schema (4.574ms)
+✔ expanded sidebar gains room while the collapsed rail remains compact (0.6899ms)
+✔ popup dimensions adapt to the viewport and ignore saved geometry (2.0879ms)
+✔ page surface clears the close control and shares the softer panel radius (0.3663ms)
+✔ narrow viewport automatically compacts the sidebar at the agreed breakpoint (0.2417ms)
+✔ deleted selection dialogs retain explicit selection and save actions (5.2964ms)
+✔ bulk lot edits preserve native fields and accept literal replacements and explicit empty fields (2.2657ms)
+✔ lot export reports failed items and rejects when nothing could be exported (1.9981ms)
+✔ lot export stops before requesting another lot when its abort signal is set (1.4852ms)
+✔ bulk lot updates stop before writing the next selected lot when cancelled (1.3366ms)
+✔ settings backup retains its format, exclusions and atomic auto-reply import (2.8809ms)
+✔ settings backups cannot export or restore retired piggy-bank data (1.4886ms)
+✔ concurrent feature mutations and partial settings writes retain both explicit changes (3.0968ms)
+✔ keyword attachments use the real atomic store and support an image-only response (3.1395ms)
+✔ ticket submit returns a validated draft and only confirmation sends it (1.5953ms)
+✔ popup controls are normalized at the shared popup boundary (0.7911ms)
+✔ shared control styles and normalization stay inside the extension popup (0.5805ms)
+✔ checkbox marks are centered beside their native accessible inputs (0.355ms)
+✔ popup fields share fixed geometry and price fields use the same control class (0.3949ms)
+✔ popup fields and buttons use one focus indicator without stacked outlines and shadows (0.8008ms)
+✔ popup buttons and selectable rows have clear press states with reduced motion support (0.2282ms)
+✔ popup creation leaves every category empty, retains navigation, and omits the close control (4.481ms)
+✔ feature search metadata remains available after removing category headings (2.0136ms)
+✔ deleted popup components have no remaining styles while page integrations stay styled (1.0227ms)
+✔ floor satisfies both the minimum profit and the minimum margin (3.7508ms)
+✔ markup and margin are different and named correctly (0.6669ms)
+✔ rounding up to the step is re-checked; tiny prices keep their precision (0.3806ms)
+✔ a ceiling below the floor blocks new sales; no raise without permission (0.9224ms)
+✔ fees reduce the net: the floor accounts for them (1.1536ms)
+✔ preview reads fresh prices and costs; apply writes only previewed rows with expect (9.0856ms)
+✔ a changed cost or rule invalidates the preview (1.021ms)
+✔ auto pricing is bounded per run and pauses after a manual price edit (1.9167ms)
+✔ quick replies screen fits both themes and widths without horizontal scroll (5658.3651ms)
+✔ route modes, tab keyboard navigation and search panes stay in sync (1699.6535ms)
+✔ templates can be toggled, created with images, edited, reset and deleted (2443.4765ms)
+✔ slash commands validate triggers and save, edit and delete through the store (2320.1501ms)
+✔ external changes rerender after the editor closes and load errors offer a retry (1808.8463ms)
+✔ templates: quick_replies_navigation markup is removed and search metadata remains (3.8717ms)
+✔ templates normalize to the chat runtime defaults without inventing custom entries (1.214ms)
+✔ stored templates override defaults, keep custom order and drop malformed entries (0.3656ms)
+✔ commands normalize options and keep legacy entries without ids (0.4162ms)
+✔ preview fills template variables, picks the first variant and marks AI prompts (0.5792ms)
+✔ command preview only substitutes variables the slash runtime supports (0.2123ms)
+✔ command validation adds the slash and rejects blanks, spaces, inner slashes and duplicates (0.3569ms)
+✔ templates: quick_replies_ui_contract markup is removed and search metadata remains (3.3774ms)
+✔ strict date parsing validates ru/en/uk calendar, MSK day and year rollover (5.3503ms)
+✔ send receipts require a new numeric ID, our author and the complete normalized body (1.6754ms)
+✔ reconcile checkpoints span budget exhaustion and worker recreation without moving completed border (5.4891ms)
+✔ unknown and minute-boundary dates stay visible without automatic adoption (0.6959ms)
+✔ offscreen parser shares creation and waits for every concurrent parser before closing (3.2103ms)
+✔ engine coalesces a signal during a pass and disabled automation clears its alarms (1.7442ms)
+✔ catalog route validation rejects arbitrary parameters, userinfo and external redirects before another request (16.6085ms)
+✔ release migration changes only exact retired defaults, preserving sessions and custom assets (1.0056ms)
+✔ extension and remote config no longer enable removed financial tools (0.6276ms)
+✔ update cleanup deletes piggy data and stale routes while install leaves storage unchanged (1.0074ms)
+✔ update cleanup retains the active route and removes only retired saved modes (0.1985ms)
+✔ worker cleanup cancels only retired alarms, removes secrets and keeps unrelated data (2.232ms)
+✔ retired rating route resets, active routes and malformed legacy values remain safe (0.219ms)
+✔ old backups cannot export or restore integrations or retired route state; sound choice survives without the heavy clip (5.6624ms)
+✔ retired popup pages reject actions and registrations (2.2312ms)
+✔ manifest resources exist, notification permissions are removed and bundled sounds are reachable (5.8269ms)
+✔ worker retirement runs on load and install, while shared parsing and support stay available (3.3884ms)
+✔ removed supplier module leaves no settings or page behind (0.1594ms)
+✖ reminder block: variable chips, preview, lot picker, manual send and no overflow (31821.6456ms)
+✔ only orders after enabling, with verified fulfillment and confirmation, get one task (9.3616ms)
+✔ any review cancels, an unknown review defers, refund and problems cancel (2.0026ms)
+✔ one reminder per chat within the cap; uncertain sends are not repeated and use the cap (0.9851ms)
+✔ disabling cancels pending tasks; re-enabling starts a new baseline without reviving them (0.6772ms)
+✔ candidates: closed orders without a review, checked once and grouped by lot and buyer (9.664ms)
+✔ candidates honours the per-call check limit (0.535ms)
+✔ manual reminder: old closed order without review, even with automation off (1.7248ms)
+✔ manual reminder re-checks the page and respects reviews, holds and the chat cap (0.9477ms)
+✔ URLs and fonts cannot introduce executable schemes or CSS (1.7921ms)
+✔ image URLs remain quoted and declarations reject escapes and rule breaks (0.9898ms)
+✔ CSV neutralizes formulas, including arithmetic, while keeping signed amounts (0.7504ms)
+✔ previously bundled wallpapers migrate to public assets in CSS and exported settings (0.2846ms)
+✖ theme numbers and colors cannot introduce CSS rules through sibling fields (0.8811ms)
+✔ live CSS supports HTTPS images and shorthands while rejecting URL parser escapes (0.2994ms)
+FunPay Funcy AR: ответ на подтверждение заказа #ABCD1234
+FunPay Funcy AR: ответ на новый заказ #ABCD1234 → чат 44
+✔ auto replies reject wrong order/account/chat and forged confirmation on paid orders (5.084ms)
+✔ cookie snapshot swaps the whole session and restores it before a queued account switch or logout (2.485ms)
+✔ retired profile descriptions cannot create, verify, delete lots or contact their server (1.0401ms)
+✔ browser: translations, buyer history, pinned migration, and imported CSS stay inert (849.6732ms)
+✖ tab-like controls use consistent hover and selected-state motion across popup sections (4.7379ms)
+✔ finance header separates title from tabs and segmented updates animate replacement content (1.8263ms)
+✖ every prefixed literal has an explicit backup decision, including dynamic key prefixes (24.5474ms)
+✔ device sessions and verification queues never leave or enter settings backups (4.6077ms)
+✔ import normalizes known settings before writing and rejects oversized files before reading (3.1485ms)
+✖ general: settings_page_recomposition markup is removed and search metadata remains (4.6563ms)
+✖ sidebar expansion preserves scroll and pending route reveal yields to manual scrolling (4283.2877ms)
+STORE_AUDIT_REMOVAL_RUNTIME_PASS
+✔ tests\store_audit_removal_runtime.test.js (43.2547ms)
+✔ support page: tickets load on open, filter, search and sort locally (3340.6443ms)
+✔ support page: a conversation opens, renders safe HTML, replies and closes the ticket (7312.653ms)
+✔ support page: a new ticket is built from the site form and sent only after the preview (7787.9623ms)
+✔ support page: order confirmation collects old orders, remembers limits and confirms before sending (3018.018ms)
+✔ support page: no orders, load errors and the empty list explain themselves (2548.5297ms)
+✔ support page: dark popup and narrow widths stay inside the frame (3088.6641ms)
+✔ support: static markup stays empty and search metadata remains (4.9423ms)
+✔ support: the category view is mounted into the existing popup shell (0.6827ms)
+✔ support: the page talks to support only through the registered popup actions (0.9961ms)
+✔ support: styles are scoped, responsive and respect reduced motion (2.8108ms)
+✔ support: statuses are grouped by word stem (1.4851ms)
+✔ support: tickets are counted, filtered and sorted locally (1.3688ms)
+✔ support: order request limits are clamped with safe defaults (0.5237ms)
+✔ support: form conditions and order ages read as on the site (0.5275ms)
+✔ support: typed text is escaped before it becomes ticket HTML (1.0651ms)
+✔ support: unconfirmed orders are filtered by age, oldest first (1.2441ms)
+T01_FINANCE_ATOMIC_REFRESH_PASS
+✔ tests\t01_finance_atomic_refresh.test.js (63.5059ms)
+T02_UPDATE_CONTRACT_PASS
+✔ tests\t02_update_contract.test.js (54.3025ms)
+✔ tests\t03_refresh_orchestration.test.js (46.8021ms)
+✔ tests\t04_separate_statuses.test.js (46.9077ms)
+✔ finance_hub: t05_potential_period_semantics markup is removed and search metadata remains (3.6654ms)
+T06_SINGLE_MSK_CALENDAR_MODEL_PASS
+✔ tests\t06_msk_calendar_model.test.js (51.4135ms)
+T07_REMOVE_GUESSED_FX_PASS
+✔ tests\t07_remove_guessed_fx.test.js (55.388ms)
+✔ finance_hub: t08_source_freshness markup is removed and search metadata remains (3.7949ms)
+✔ finance_hub: t09_idempotent_lifecycle markup is removed and search metadata remains (3.5967ms)
+T10_UNIFY_FINANCE_EXPORT_PASS
+✔ tests\t10_unify_finance_export.test.js (49.5755ms)
+T11_CUSTOM_DATE_RANGE_PASS
+✔ tests\t11_custom_date_range.test.js (61.7049ms)
+T11_HARDENING_PASS elapsed_10k_ms=4.16
+✔ tests\t11_hardening.test.js (62.2573ms)
+T12_PREVIOUS_PERIOD_KPI_COMPARISON_PASS
+✔ tests\t12_previous_period_kpi_comparison.test.js (58.1246ms)
+✔ finance_hub: t14_final_integration_audit markup is removed and search metadata remains (3.5099ms)
+✔ finance_hub: t15_finance_filter_css_isolation markup is removed and search metadata remains (3.5283ms)
+✔ finance_hub: t16_contextual_filter_visibility markup is removed and search metadata remains (3.6751ms)
+✔ finance_hub: t17_finance_header_information_architecture markup is removed and search metadata remains (3.5384ms)
+✔ finance_hub: t18_labeled_contextual_filters markup is removed and search metadata remains (3.3199ms)
+T18_NAVIGATION_IA_PASS
+✔ tests\t18_navigation_ia.test.js (52.5583ms)
+✔ finance_hub: t19_finance_ui_localization markup is removed and search metadata remains (3.3867ms)
+✔ finance_hub: t20_export_modal_theme_integration markup is removed and search metadata remains (3.6935ms)
+POTENTIAL_STOCK_SEMANTICS_PASS
+✔ tests\t21_potential_stock_semantics.test.js (42.5465ms)
+✔ finance_hub: t22_profit_missing_cost_onboarding markup is removed and search metadata remains (3.4218ms)
+✔ finance_hub: t23_scroll_and_empty_state_cleanup markup is removed and search metadata remains (3.4055ms)
+✔ finance_hub: t24_finance_hub_modularization markup is removed and search metadata remains (3.253ms)
+✔ unreviewed catalog entries remain hidden, including new entries and offline cache (23.5882ms)
+✔ unreviewed wallpapers cannot be fetched directly or through popup actions (2.2272ms)
+✔ invalid remote catalogue does not replace the last successful catalogue (1.8867ms)
+✔ theme contrast utilities exist and maintain readability standards (1.7626ms)
+✔ contrast calculation algorithm lifts problematic theme colors above WCAG AA standard (0.9546ms)
+✔ theme draftOnly actions return values without touching storage or the site (4.2256ms)
+✔ theme actions keep their original write-through behaviour without the draft flag (2.8037ms)
+✔ theme page metadata keeps searchable labels and only registered button ids (2.6095ms)
+✔ theme page module is wired in order, mounts safely and avoids native dialogs (1.0181ms)
+✔ theme page reads and writes only through popup actions and keeps drafts out of storage (0.343ms)
+✔ theme page styles stay inside the popup, use shared tokens and honour reduced motion (2.7554ms)
+✔ original FunPay look: defaults, reset and a light CSS without wallpaper or recolouring (4.4354ms)
+✔ theme page cards avoid bare header elements and keep native file inputs out of sight (0.221ms)
+✔ site theme rules are guarded against the popup without changing specificity (1.0769ms)
+✔ real browser: unreviewed catalogue entries remain hidden on refresh and offline (2387.902ms)
+✔ real browser: theme page builds every section from stored settings and keeps the dock closed (2408.8268ms)
+✔ real browser: buttons card follows the theme in auto mode and takes an explicit colour (2363.4887ms)
+✔ real browser: edits stay in the draft until Apply, Cancel restores, Apply enables a disabled theme (3225.7641ms)
+✔ real browser: original and custom tiles switch the base style in the draft only (2125.4488ms)
+✔ real browser: preset strip has no scrollbar, starts at the first tile and pages exactly one theme (5870.0531ms)
+✔ real browser: reset, export and share use page dialogs instead of native prompts (2340.7032ms)
+✔ real browser: swatches flag corrected colours and low contrast, previews follow every toggle (5511.9679ms)
+✔ real browser: dark popup, narrow layouts and reduced motion keep the page inside its frame (3580.1349ms)
+✔ real browser: background upload, palette from image, size limit and theme import stay in the draft (15877.547ms)
+✔ real browser: tools card has no stray backdrop or native file input, original look keeps shape settings (3081.2757ms)
+✔ real browser: the site theme does not leak into the popup and turns it dark (3115.3054ms)
+Funcy Flash Fix Error: ReferenceError: window is not defined
+    at evalmachine.<anonymous>:375:9
+    at async TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\theme_reload_regression.test.js:17:9)
+    at async Test.run (node:internal/test_runner/test:1404:7)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+✖ early theme loading preserves original, empty and legacy custom themes (6.6166ms)
+✖ general: ui_foundation_contract markup is removed and search metadata remains (4.8189ms)
+ℹ tests 505
+ℹ suites 0
+ℹ pass 482
+ℹ fail 22
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 267136.9673
+
+✖ failing tests:
+
+test at tests\auto_delivery_browser.test.js:11:1
+✖ auto-delivery page loads stock states, saves per-lot changes, and fits the full popup (2113.4069ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + ''
+  - 'Показаны сохранённые настройки. Обновите список, чтобы проверить остатки.'
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\auto_delivery_browser.test.js:126:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '',
+    expected: 'Показаны сохранённые настройки. Обновите список, чтобы проверить остатки.',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\finance_hub_browser.test.js:173:1
+✖ finance hub renders every tab with seeded data and responds to filters (1287.8738ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  9 !== 6
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\finance_hub_browser.test.js:180:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 9,
+    expected: 6,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\finance_hub_browser.test.js:327:1
+✖ finance notifications preserve layout and the tab pill tracks responsive tabs (2263.3133ms)
+  locator.evaluate: Error: strict mode violation: locator('.fpt-finance') resolved to 3 elements:
+      1) <div class="fpt-finance" data-mode="overview">…</div> aka locator('div').filter({ hasText: 'dashboardОбзорtrending_up' }).nth(3)
+      2) <div class="fpt-finance fpt-ad-lots-heading">…</div> aka getByText('Все0Активные0Проблемы0Загружаем список лотов…refreshОбновить')
+      3) <div class="fpt-finance fpt-ad-lots-header">…</div> aka locator('div').filter({ hasText: 'searchПо порядкуПроблемные сверхуПо названиюПо порядкуexpand_more' }).nth(4)
+  
+  Call log:
+  [2m  - waiting for locator('.fpt-finance')[22m
+  
+      at geometry (C:\Users\Usser\Desktop\funpay-funcy\tests\finance_hub_browser.test.js:335:57)
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\finance_hub_browser.test.js:352:30) {
+    log: [ "  - waiting for locator('.fpt-finance')" ]
+  }
+
+test at tests\finance_hub_ui_contract.test.js:49:1
+✖ finance_hub: styles are scoped, responsive and themed through the popup tokens (3.0471ms)
+  AssertionError [ERR_ASSERTION]: toasts render on the active page, including finance
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\finance_hub_ui_contract.test.js:55:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\lot_automation_browser.test.js:53:1
+✖ schedule dialog saves a draft rule with the saved zone and shows a preview (507.2324ms)
+  page.evaluate: TypeError: window.FPTLotAutomationPage.openScheduleDialog is not a function
+      at eval (eval at evaluate (:311:30), <anonymous>:1:35)
+      at UtilityScript.evaluate (<anonymous>:313:16)
+      at UtilityScript.<anonymous> (<anonymous>:1:44)
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\lot_automation_browser.test.js:56:20) {
+    log: []
+  }
+
+test at tests\lot_automation_browser.test.js:79:1
+✖ pricing dialog previews selected lots and applies only checked rows (430.6955ms)
+  page.evaluate: TypeError: window.FPTLotAutomationPage.openPricingDialog is not a function
+      at eval (eval at evaluate (:311:30), <anonymous>:1:35)
+      at UtilityScript.evaluate (<anonymous>:313:16)
+      at UtilityScript.<anonymous> (<anonymous>:1:44)
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\lot_automation_browser.test.js:82:20) {
+    log: []
+  }
+
+test at tests\lot_io_browser.test.js:215:1
+✖ bulk editor guides lot selection, changes, and review with live validation (2102.9352ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   '1. Выберите лоты',
+  -   '2. Что изменить',
+  -   '3. Проверьте изменения'
+  - ]
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\lot_io_browser.test.js:220:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ '1. Выберите лоты', '2. Что изменить', '3. Проверьте изменения' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\lot_io_browser.test.js:253:1
+✖ bulk editor selects by category, previews Cyrillic whole-word replacement and offers a retry for failed lots (32029.1338ms)
+  locator.textContent: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for locator('.fpt-bulk-category-chip[data-category="Аккаунты"]')[22m
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\lot_io_browser.test.js:263:37) {
+    name: 'TimeoutError',
+    log: [ `  - waiting for locator('.fpt-bulk-category-chip[data-category="Аккаунты"]')` ]
+  }
+
+test at tests\menu_reference_contract.test.js:1:1
+✖ tests\menu_reference_contract.test.js (58.9761ms)
+  'test failed'
+
+test at tests\page_windows_ui_contract.test.js:25:1
+✖ page windows: the shell and its stylesheet load with the content scripts (1.8082ms)
+  AssertionError [ERR_ASSERTION]: window styles load last and win over legacy rules
+  + actual - expected
+  
+  + 'css/scrollbars.css'
+  - 'css/page_windows.css'
+         ^
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\page_windows_ui_contract.test.js:33:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'css/scrollbars.css',
+    expected: 'css/page_windows.css',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\popup_actions.test.js:9:1
+✖ actions persist only explicit settings and never read deleted controls (4.7153ms)
+  Error: Unknown popup action: general:saveSettings
+      at Object.run (content/ui/popup_actions.js:85:33)
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_actions.test.js:12:17)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+
+test at tests\popup_actions.test.js:36:1
+✖ opening data actions never writes settings and invalid actions reject (1.3411ms)
+  Error: Unknown popup action: general:getSettings
+      at Object.run (content/ui/popup_actions.js:85:33)
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_actions.test.js:39:31)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7)
+
+test at tests\popup_browser.test.js:10:1
+✖ real browser: lot management screen, navigation and shell geometry (24694.1307ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '0px' !== '14px'
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_browser.test.js:510:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '0px',
+    expected: '14px',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\popup_eager_load_browser.test.js:7:1
+✖ manifest eagerly loads each menu dependency once and every resource exists (2.4972ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  '120' !== undefined
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_eager_load_browser.test.js:10:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '120',
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\review_reminder_browser.test.js:28:1
+✖ reminder block: variable chips, preview, lot picker, manual send and no overflow (31821.6456ms)
+  locator.textContent: Timeout 30000ms exceeded.
+  Call log:
+  [2m  - waiting for locator('.fpt-rv-card--reminders').locator('.fpt-qr-bubble')[22m
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\review_reminder_browser.test.js:39:71) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for locator('.fpt-rv-card--reminders').locator('.fpt-qr-bubble')" ]
+  }
+
+test at tests\safe_values.test.js:43:1
+✖ theme numbers and colors cannot introduce CSS rules through sibling fields (0.8811ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  16 !== 8
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\safe_values.test.js:47:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:969:18)
+      at Test.postRun (node:internal/test_runner/test:1537:19)
+      at Test.run (node:internal/test_runner/test:1462:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:969:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 16,
+    expected: 8,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\segmented_motion_contract.test.js:8:1
+✖ tab-like controls use consistent hover and selected-state motion across popup sections (4.7379ms)
+  AssertionError [ERR_ASSERTION]: .fpt-fin-tab transitions its visual state
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\segmented_motion_contract.test.js:24:16)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: ' min-height: 32px; height: 32px; font-size: 13px; ',
+    expected: /transition\s*:/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\settings_io_keys.test.js:10:1
+✖ every prefixed literal has an explicit backup decision, including dynamic key prefixes (24.5474ms)
+  AssertionError [ERR_ASSERTION]: Classify new key fptStartStateTitle in content\ui\main_popup.js
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\settings_io_keys.test.js:19:20)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\settings_page_recomposition.test.js:4:1
+✖ general: settings_page_recomposition markup is removed and search metadata remains (4.6563ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/. Input:
+  
+  '\n' +
+    '        <div class="fp-tools-body">\n' +
+    '            <nav class="fp-tools-nav">\n' +
+    '                <div class="fpt-nav-brand">\n' +
+    '                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n' +
+    '                    <span class="fpt-nav-brand-title">Funcy</span>\n' +
+    '                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n' +
+    '                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n' +
+    '                    </button>\n' +
+    '                </div>\n' +
+    '                <div class="fpt-nav-search">\n' +
+    '                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n' +
+    '                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n' +
+    '                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n' +
+    '                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n' +
+    '                </div>\n' +
+    '                <ul>\n' +
+    '                    <li class="fp-nav-divider">Основное</li>\n' +
+    '                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n' +
+    '                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Интерфейс</li>\n' +
+    '                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n' +
+    '                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Чат и продажи</li>\n' +
+    '                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n' +
+    '                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n' +
+    '                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n' +
+    '                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n' +
+    '                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n' +
+    '                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Торговля</li>\n' +
+    '                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n' +
+    '                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n' +
+    '                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Финансы</li>\n' +
+    '                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Прочее</li>\n' +
+    '\n' +
+    '                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n' +
+    '                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n' +
+    '                </ul>\n' +
+    '                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n' +
+    '            </nav>\n' +
+    '            <main class="fp-tools-content">\n' +
+    '                <div class="fp-tools-page-content" data-page="accounts"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="needs"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="templates"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_review"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n' +
+    '                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="theme"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="autobump"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="effects"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="settings_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="blacklist"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="tickets"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="sounds"></div>\n' +
+    '            </main>\n' +
+    '        </div>\n' +
+    '    '
+  
+      at assertEmptyCategory (C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\empty_category_contract.js:15:12)
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\settings_page_recomposition.test.js:4:98)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n        <div class="fp-tools-body">\n            <nav class="fp-tools-nav">\n                <div class="fpt-nav-brand">\n                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n                    <span class="fpt-nav-brand-title">Funcy</span>\n                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n                    </button>\n                </div>\n                <div class="fpt-nav-search">\n                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n                </div>\n                <ul>\n                    <li class="fp-nav-divider">Основное</li>\n                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n                    <li class="fp-nav-divider">Интерфейс</li>\n                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n                    <li class="fp-nav-divider">Чат и продажи</li>\n                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n                    <li class="fp-nav-divider">Торговля</li>\n                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n                    <li class="fp-nav-divider">Финансы</li>\n                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n                    <li class="fp-nav-divider">Прочее</li>\n\n                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n                </ul>\n                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n            </nav>\n            <main class="fp-tools-content">\n                <div class="fp-tools-page-content" data-page="accounts"></div>\n                <div class="fp-tools-page-content" data-page="needs"></div>\n                <div class="fp-tools-page-content" data-page="templates"></div>\n                <div class="fp-tools-page-content" data-page="auto_review"></div>\n                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n                <div class="fp-tools-page-content" data-page="theme"></div>\n                <div class="fp-tools-page-content" data-page="autobump"></div>\n                <div class="fp-tools-page-content" data-page="effects"></div>\n                <div class="fp-tools-page-content" data-page="settings_io"></div>\n                <div class="fp-tools-page-content" data-page="blacklist"></div>\n                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n                <div class="fp-tools-page-content" data-page="tickets"></div>\n                <div class="fp-tools-page-content" data-page="sounds"></div>\n            </main>\n        </div>\n    ',
+    expected: /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests\sidebar_scroll_browser.test.js:5:1
+✖ sidebar expansion preserves scroll and pending route reveal yields to manual scrolling (4283.2877ms)
+  AssertionError [ERR_ASSERTION]: an explicit route still reveals its selected item when the user has not scrolled
+  
+  false !== true
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\sidebar_scroll_browser.test.js:49:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\theme_reload_regression.test.js:6:1
+✖ early theme loading preserves original, empty and legacy custom themes (6.6166ms)
+  AssertionError [ERR_ASSERTION]: {"bgColor1":"#123456"}
+  
+  false !== true
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\theme_reload_regression.test.js:21:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\ui_foundation_contract.test.js:4:1
+✖ general: ui_foundation_contract markup is removed and search metadata remains (4.8189ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/. Input:
+  
+  '\n' +
+    '        <div class="fp-tools-body">\n' +
+    '            <nav class="fp-tools-nav">\n' +
+    '                <div class="fpt-nav-brand">\n' +
+    '                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n' +
+    '                    <span class="fpt-nav-brand-title">Funcy</span>\n' +
+    '                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n' +
+    '                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n' +
+    '                    </button>\n' +
+    '                </div>\n' +
+    '                <div class="fpt-nav-search">\n' +
+    '                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n' +
+    '                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n' +
+    '                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n' +
+    '                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n' +
+    '                </div>\n' +
+    '                <ul>\n' +
+    '                    <li class="fp-nav-divider">Основное</li>\n' +
+    '                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n' +
+    '                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Интерфейс</li>\n' +
+    '                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n' +
+    '                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Чат и продажи</li>\n' +
+    '                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n' +
+    '                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n' +
+    '                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n' +
+    '                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n' +
+    '                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n' +
+    '                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Торговля</li>\n' +
+    '                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n' +
+    '                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n' +
+    '                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Финансы</li>\n' +
+    '                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n' +
+    '                    <li class="fp-nav-divider">Прочее</li>\n' +
+    '\n' +
+    '                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n' +
+    '                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n' +
+    '                </ul>\n' +
+    '                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n' +
+    '            </nav>\n' +
+    '            <main class="fp-tools-content">\n' +
+    '                <div class="fp-tools-page-content" data-page="accounts"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="needs"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="templates"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_review"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n' +
+    '                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="theme"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="autobump"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="effects"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="settings_io"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="blacklist"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="tickets"></div>\n' +
+    '                <div class="fp-tools-page-content" data-page="sounds"></div>\n' +
+    '            </main>\n' +
+    '        </div>\n' +
+    '    '
+  
+      at assertEmptyCategory (C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\empty_category_contract.js:15:12)
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\ui_foundation_contract.test.js:4:93)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '\n        <div class="fp-tools-body">\n            <nav class="fp-tools-nav">\n                <div class="fpt-nav-brand">\n                    <img class="fp-tools-brand-logo" data-icon="funcy-logo" width="44" height="44" alt="" draggable="false">\n                    <span class="fpt-nav-brand-title">Funcy</span>\n                    <button type="button" id="fptNavCollapse" class="fpt-nav-collapse" aria-label="Свернуть меню" title="Свернуть меню" aria-expanded="true">\n                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="m14.5 5-7 7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>\n                    </button>\n                </div>\n                <div class="fpt-nav-search">\n                    <button type="button" id="fptNavSearchToggle" class="fpt-nav-search-ico" aria-label="Поиск функций" title="Поиск функций"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.7" stroke="currentColor" stroke-width="1.8"/><line x1="15.5" y1="15.5" x2="21" y2="21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>\n                    <input type="text" id="fptNavSearch" class="fpt-nav-search-input" placeholder="Поиск функций…" autocomplete="off" spellcheck="false">\n                    <button type="button" id="fptNavSearchClear" class="fpt-nav-search-clear" aria-label="Очистить" title="Очистить">✕</button>\n                    <div id="fptNavSearchResults" class="fpt-nav-search-results"></div>\n                </div>\n                <ul>\n                    <li class="fp-nav-divider">Основное</li>\n                    <li data-page="accounts"><a><span class="nav-icon material-symbols-rounded">group</span><span>Аккаунты</span></a></li>\n                    <li data-page="needs"><a><span class="nav-icon material-symbols-rounded">tune</span><span>Элементы интерфейса</span></a></li>\n                    <li class="fp-nav-divider">Интерфейс</li>\n                    <li data-page="theme"><a><span class="nav-icon material-symbols-rounded">palette</span><span>Темы</span></a></li>\n                    <li data-page="effects"><a><span class="nav-icon material-symbols-rounded">auto_awesome</span><span>Эффекты</span></a></li>\n                    <li class="fp-nav-divider">Чат и продажи</li>\n                    <li data-page="templates"><a><span class="nav-icon material-symbols-rounded">description</span><span>Быстрые ответы</span></a></li>\n                    <li data-page="auto_reply"><a><span class="nav-icon material-symbols-rounded">mark_chat_unread</span><span>Автоответчик</span></a></li>\n                    <li data-page="auto_review"><a><span class="nav-icon material-symbols-rounded">reviews</span><span>Отзывы и бонусы</span></a></li>\n                    <li data-page="auto_delivery"><a><span class="nav-icon material-symbols-rounded">bolt</span><span>Автовыдача</span></a></li>\n                    <li data-page="auto_orders"><a><span class="nav-icon material-symbols-rounded">local_shipping</span><span>Заказы и выдачи</span></a></li>\n                    <li data-page="sounds"><a><span class="nav-icon material-symbols-rounded">notifications_active</span><span>Звук уведомлений</span></a></li>\n                    <li class="fp-nav-divider">Торговля</li>\n                    <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>\n                    <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>\n                    <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>\n                    <li class="fp-nav-divider">Финансы</li>\n                    <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>\n                    <li class="fp-nav-divider">Прочее</li>\n\n                    <li data-page="settings_io"><a><span class="nav-icon material-symbols-rounded">database</span><span>Перенос настроек</span></a></li>\n                    <li data-page="tickets"><a><span class="nav-icon material-symbols-rounded">confirmation_number</span><span>Поддержка FunPay</span></a></li>\n                </ul>\n                <div class="fp-tools-nav-cloud"><img class="fp-tools-nav-cloud-img" data-icon="cloud" alt=""></div>\n            </nav>\n            <main class="fp-tools-content">\n                <div class="fp-tools-page-content" data-page="accounts"></div>\n                <div class="fp-tools-page-content" data-page="needs"></div>\n                <div class="fp-tools-page-content" data-page="templates"></div>\n                <div class="fp-tools-page-content" data-page="auto_review"></div>\n                <div class="fp-tools-page-content" data-page="auto_reply"></div>\n                <div class="fp-tools-page-content active" data-page="lot_io"></div>\n                <div class="fp-tools-page-content" data-page="finance_hub"></div>\n                <div class="fp-tools-page-content" data-page="theme"></div>\n                <div class="fp-tools-page-content" data-page="autobump"></div>\n                <div class="fp-tools-page-content" data-page="effects"></div>\n                <div class="fp-tools-page-content" data-page="settings_io"></div>\n                <div class="fp-tools-page-content" data-page="blacklist"></div>\n                <div class="fp-tools-page-content" data-page="auto_delivery"></div>\n                <div class="fp-tools-page-content" data-page="auto_orders"></div>\n                <div class="fp-tools-page-content" data-page="tickets"></div>\n                <div class="fp-tools-page-content" data-page="sounds"></div>\n            </main>\n        </div>\n    ',
+    expected: /<div class="fp-tools-page-content(?: active)?" data-page="general">\s*<\/div>/,
+    operator: 'match',
+    diff: 'simple'
+  }

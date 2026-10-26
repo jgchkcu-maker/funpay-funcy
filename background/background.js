@@ -1,14 +1,19 @@
+import { fetchCatalogPage } from './catalog_fetch.js';
+import { migrateRelease } from './release_migrations.js';
+import { parseHtmlViaOffscreen } from './offscreen_parser.js';
 // background/background.js - FunPay Funcy 2.8
 
+import './feature_availability.js';
 import './sales_db.js'; // FunPay Funcy: IndexedDB-хранилище заказов (self.FPTSalesDB)
 import './purchases_db.js'; // FunPay Funcy: IndexedDB-хранилище покупок (self.FPTPurchasesDB)
 import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище финансов (self.FPTFinanceDB)
-import { fetchAIResponse, fetchAILotGeneration, fetchAITranslation, fetchAIImageGeneration } from './ai.js';
+import { fetchAIResponse, fetchAILotGeneration, fetchAIImageGeneration } from './ai.js';
+import { fetchAITranslation } from './translate.js';
 import { cleanupRetiredFinancialToolData } from './retired_financial_tools.mjs';
 import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump } from './autobump.js';
 import {
     runAutoResponderCycle, resetAutoResponderState, configureOrderAutomation, runOrderReconcile,
-    getStrictChatSender, applyVariables, isBlacklisted
+    getStrictChatSender, getDeliveryChatSender, applyVariables, isBlacklisted
 } from './autoresponder.js';
 import { createAccountGuard, sha256Short, ACCOUNT_EPOCH_KEY } from './account_guard.js';
 import { createOrderDetailsLoader } from './order_details.js';
@@ -16,7 +21,7 @@ import { orderRole } from './order_facts.js';
 import { autoReplyOrderStatus } from './auto_reply_order_guard.js';
 import { createFulfillmentDispatcher } from './fulfillment_dispatcher.js';
 import { createOrderReconcile } from './order_reconcile.js';
-import { createOrderCommands } from './order_commands.js';
+import { createOrderCommands, orderNeedsAttention } from './order_commands.js';
 import { createReviewReminders, REMINDER_ALARM } from './review_reminders.js';
 import { createOpsJournal, createIndexedDbBackend } from './ops_db.js';
 import { createLotWriter, createLotWriteQueue } from './lot_writer.js';
@@ -25,12 +30,15 @@ import { createLotScheduleService, LOT_SCHEDULES_ALARM, LOT_SCHEDULES_KEY } from
 import { createPricingService, PRICING_ALARM, PRICING_KEY } from './pricing_service.js';
 import { createLotPolicyStore, releaseStockManagedLots } from './lot_policy.js';
 import { createJobScheduler } from './job_scheduler.js';
-import { patchAutoReplies, importAutoReplies } from './auto_reply_store.js';
+import { patchAutoReplies, importAutoReplies, replaceAutoReplies, AUTO_REPLY_RUNTIME_FIELDS, hasAutoReplyConfigurationChanges } from './auto_reply_store.js';
+import { createAccountVault, createIndexedDbVaultBackend } from './account_vault.js';
+import { createProfileManager, automationEnabledIn } from './account_profiles.js';
+import { createAccountsService } from './accounts_service.js';
 import {
     configureAutoDeliveryStore, saveAutoDeliveryLot, syncAutoDeliveryStockCounts,
     refreshAutoDeliveryLotStock, isAutoDeliveryLotEnabled
 } from './auto_delivery_store.js';
-import { startEngine, stopEngine, onHeartbeat, onKeepalivePing, ENGINE_HEARTBEAT_ALARM } from './fpt_engine.js';
+import { startEngine, stopEngine, onHeartbeat, configureEngine, runAutomationPass, ENGINE_HEARTBEAT_ALARM, ENGINE_CONTINUE_ALARM } from './fpt_engine.js';
 import './retired_integrations.js';
 
 const retiredIntegrationCleanup = globalThis.FPTRetiredIntegrations.cleanup(chrome.storage.local, chrome.alarms)
@@ -833,16 +841,7 @@ async function getAuthDetailsForBackground(force) {
 }
 
 // Функция для парсинга HTML через offscreen документ
-async function parseHtmlViaOffscreen(html, action, extra = {}) {
-    await ensureOffscreenDocument();
 
-    return await chrome.runtime.sendMessage({
-        target: 'offscreen',
-        action: action,
-        html: html,
-        ...extra
-    });
-}
 
 async function parseLotEditPageViaOffscreen(html) {
     const result = await parseHtmlViaOffscreen(html, 'parseLotEditPage', { detailed: true });
@@ -917,7 +916,7 @@ async function postOfferSave(payload, csrfToken) {
 
 // ─── Этап 0: журнал операций, фоновое изменение лотов, задания ─────────────────
 const ORDER_RECONCILE_ALARM = 'fpToolsOrderReconcile';
-const ORDER_RECONCILE_PERIOD_MIN = 5;
+
 const OPS_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
 
 let opsJournal = null;
@@ -953,11 +952,12 @@ const orderLoader = createOrderDetailsLoader({
     listOwnLots: () => listOwnLotsForBackground()
 });
 
-accountGuard.onChange(() => orderLoader.invalidate());
+accountGuard.onChange(() => { orderLoader.invalidate(); updateOrderBadge().catch(() => {}); });
 chrome.cookies.onChanged.addListener(({ cookie }) => {
     if (cookie?.name !== 'golden_key' || !/funpay\.com$/.test(cookie.domain || '')) return;
     accountGuard.invalidate();
     orderLoader.invalidate();
+    scheduleAccountReconcile();
 });
 
 async function fetchSalesPageForReconcile(continueToken) {
@@ -970,6 +970,17 @@ async function fetchSalesPageForReconcile(continueToken) {
     return parsed;
 }
 
+let badgeChain = Promise.resolve();
+function updateOrderBadge() {
+    badgeChain = badgeChain.catch(() => {}).then(async () => {
+        const account = await accountGuard.current();
+        const orders = opsJournal && account.accountId ? await opsJournal.listAccountOrders({ accountId: account.accountId }) : [];
+        const count = orders.filter(orderNeedsAttention).length;
+        await chrome.action.setBadgeBackgroundColor({ color: '#c0392b' });
+        await chrome.action.setBadgeText({ text: count ? String(Math.min(count, 999)) : '' });
+    });
+    return badgeChain;
+}
 let fulfillmentDispatcher = null;
 let reviewReminders = null;
 let orderReconcile = null;
@@ -978,13 +989,15 @@ if (opsJournal) {
         journal: opsJournal,
         guard: accountGuard,
         loadFacts: (orderId, scope) => orderLoader.load(orderId, scope),
-        sender: getStrictChatSender(),
+        sender: getDeliveryChatSender(),
         getAuth: () => getAuthDetailsForBackground(),
         getAutoReplies: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {},
         getDeliveryConfigs: async () => (await chrome.storage.local.get('fpToolsAutoDeliveryLots')).fpToolsAutoDeliveryLots || {},
         isLotEnabled: isAutoDeliveryLotEnabled,
         isBlacklisted,
         render: applyVariables,
+        scheduleContinuation: when => jobScheduler.scheduleDue('fpToolsDeliveryContinue', when, { earliest: true }),
+        onChanged: () => updateOrderBadge(),
         onDelivered: async ({ offerId, nodeId, source }) => {
             if (source === 'funpay_secrets' && offerId && nodeId) await refreshAutoDeliveryLotStock(offerId, nodeId);
         },
@@ -1005,6 +1018,7 @@ if (opsJournal && fulfillmentDispatcher) {
 }
 
 configureOrderAutomation({
+    guard: accountGuard,
     dispatcher: fulfillmentDispatcher,
     reconcile: orderReconcile,
     statusOf: async (orderId, chatId) => {
@@ -1098,6 +1112,14 @@ const lotPolicies = createLotPolicyStore({ storage: chrome.storage.local });
 const lotActivity = createLotActivityService({ queue: lotWriteQueue, policies: lotPolicies });
 
 const jobScheduler = createJobScheduler({ alarms: chrome.alarms, storage: chrome.storage.local });
+jobScheduler.register('fpToolsDeliveryContinue', () => runAutomationPass());
+configureEngine({ runDue: async () => {
+    await fulfillmentDispatcher?.resumeDue();
+    const result = await runOrderReconcile();
+    if (result?.incomplete) await jobScheduler.scheduleDue(ORDER_RECONCILE_ALARM, Date.now() + 1000);
+    await jobScheduler.runRecovery();
+    await updateOrderBadge();
+} });
 
 const lotSchedules = createLotScheduleService({
     storage: chrome.storage.local,
@@ -1136,37 +1158,17 @@ const pricingService = createPricingService({
 jobScheduler.register(PRICING_ALARM, () => pricingService.runAuto());
 releaseStockManagedLots({ storage: chrome.storage.local, policies: lotPolicies, bindingKeys: [LOT_SCHEDULES_KEY, PRICING_KEY] })
     .catch(error => console.warn('FunPay Funcy: пометки управления складом не сняты:', error?.message || error));
-jobScheduler.register(ORDER_RECONCILE_ALARM, () => runOrderReconcile());
+jobScheduler.register(ORDER_RECONCILE_ALARM, () => runAutomationPass());
 if (opsJournal) {
     jobScheduler.registerRecovery('ops', () => opsJournal.recoverInterruptedOps());
 }
 
 function syncOrderReconcileAlarm(enabled) {
-    const sync = enabled && opsJournal
-        ? jobScheduler.ensurePeriodic(ORDER_RECONCILE_ALARM, ORDER_RECONCILE_PERIOD_MIN, { delayInMinutes: 1 })
-        : jobScheduler.clear(ORDER_RECONCILE_ALARM);
-    Promise.resolve(sync).catch(error => console.warn('FunPay Funcy: alarm сверки заказов не настроен:', error?.message || error));
+    if (!enabled) jobScheduler.clearDue(ORDER_RECONCILE_ALARM).catch(() => {});
 }
 
-async function ensureOffscreenDocument() {
-    try {
-        const existingContexts = await chrome.runtime.getContexts({
-            contextTypes: ['OFFSCREEN_DOCUMENT'],
-            documentUrls: [chrome.runtime.getURL(OFFSCREEN_DOCUMENT_PATH)]
-        });
-        if (existingContexts.length) return true;
-        await chrome.offscreen.createDocument({
-            url: OFFSCREEN_DOCUMENT_PATH,
-            reasons: ['DOM_PARSER'],
-            justification: 'Keepalive + parsing FunPay page HTML',
-        });
-        return true;
-    } catch (e) {
-        if (String(e && e.message || '').includes('Only a single offscreen')) return true;
-        console.warn('FunPay Funcy: не удалось создать offscreen-документ:', e && e.message);
-        return false;
-    }
-}
+
+
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 25000) {
     const controller = new AbortController();
@@ -1398,18 +1400,90 @@ async function isAutomationActive() {
     const settings = await chrome.storage.local.get([
         'fpToolsAutoReplies', 'autoBumpEnabled', 'fpToolsLotSchedulesEnabled'
     ]);
-    const replies = settings.fpToolsAutoReplies || {};
-    return Boolean(replies.greetingEnabled || replies.keywordsEnabled || replies.autoReviewEnabled || replies.bonusForReviewEnabled
-        || replies.newOrderReplyEnabled || replies.orderConfirmReplyEnabled || replies.autoDeliveryEnabled || replies.reviewReminderEnabled
-        || settings.autoBumpEnabled || settings.fpToolsLotSchedulesEnabled);
+    return automationEnabledIn(settings) || Boolean(settings.fpToolsLotSchedulesEnabled);
 }
 
 let _fptSnapChain = Promise.resolve();
+// Сколько задач с подменой cookie сейчас выполняется: пока они идут, смена golden_key —
+// временная, и конфиг аккаунта по ней не переключается.
+let _fptCookieLockDepth = 0;
 
 function withCookieLock(fn) {
-    const next = _fptSnapChain.then(fn, fn);
+    const task = async () => {
+        _fptCookieLockDepth += 1;
+        try { return await fn(); } finally { _fptCookieLockDepth -= 1; }
+    };
+    const next = _fptSnapChain.then(task, task);
     _fptSnapChain = next.catch(() => {});
     return next;
+}
+
+// Куки сессии FunPay. PHPSESSID и golden_seal выданы под конкретный golden_key: если подменить
+// только ключ, FunPay видит чужую сессию и выходит из неё, а страница может отдать данные
+// прежнего аккаунта. Поэтому ключ всегда меняется вместе с ними, а возвращается весь набор.
+const FUNPAY_SESSION_COOKIES = Object.freeze(['golden_key', 'PHPSESSID', 'golden_seal']);
+
+const funpayCookieUrl = cookie => `https://${String(cookie.domain || 'funpay.com').replace(/^\./, '')}${cookie.path || '/'}`;
+
+async function readSessionCookies() {
+    const found = [];
+    for (const name of FUNPAY_SESSION_COOKIES) {
+        try { found.push(...await chrome.cookies.getAll({ name, domain: 'funpay.com' })); } catch (_) {}
+    }
+    return found;
+}
+
+async function clearSessionCookies() {
+    for (const cookie of await readSessionCookies()) {
+        try {
+            await chrome.cookies.remove({
+                url: funpayCookieUrl(cookie), name: cookie.name, storeId: cookie.storeId,
+                ...(cookie.partitionKey ? { partitionKey: cookie.partitionKey } : {})
+            });
+        } catch (_) {}
+    }
+}
+
+// Снимок куки сессии перед подменой; restoreGoldenKey(captureSession()) возвращает его как было.
+async function captureSession() {
+    return { cookies: await readSessionCookies() };
+}
+
+// Возвращает куки сессии, снятые перед подменой (без исходного ключа — сессии не остаётся).
+async function restoreGoldenKey(saved) {
+    await clearSessionCookies();
+    let keyRestored = false;
+    for (const cookie of saved?.cookies || []) {
+        const restored = await chrome.cookies.set({
+            url: funpayCookieUrl(cookie),
+            name: cookie.name, value: cookie.value,
+            ...(cookie.hostOnly ? {} : { domain: cookie.domain }),
+            path: cookie.path || '/', secure: cookie.secure, httpOnly: cookie.httpOnly,
+            sameSite: cookie.sameSite, storeId: cookie.storeId,
+            ...(cookie.partitionKey ? { partitionKey: cookie.partitionKey } : {}),
+            ...(cookie.session || cookie.expirationDate === undefined ? {} : { expirationDate: cookie.expirationDate })
+        }).catch(() => null);
+        if (cookie.name === 'golden_key' && restored) keyRestored = true;
+    }
+    if ((saved?.cookies || []).some(cookie => cookie.name === 'golden_key') && !keyRestored) {
+        throw new Error('Не удалось восстановить cookie исходного аккаунта.');
+    }
+}
+
+// Ставит golden_key в чистую сессию: прежние PHPSESSID и golden_seal снимаются, и на первом
+// запросе FunPay выдаёт их заново под новый ключ — как при входе по ключу в новом браузере.
+//  1. FunPay ставит golden_key как httpOnly на домен ".funpay.com"; защита ключа сохраняется.
+//  2. Если доменный вариант не записался (бывает в некоторых сборках Chrome) — host-only.
+async function writeGoldenKey(key) {
+    if (!key) throw new Error('Пустой ключ аккаунта.');
+    await clearSessionCookies();
+    const base = {
+        url: 'https://funpay.com/', name: 'golden_key', value: key, path: '/', secure: true, httpOnly: true,
+        sameSite: 'lax', expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
+    };
+    let setResult = await chrome.cookies.set({ ...base, domain: '.funpay.com' });
+    if (!setResult) setResult = await chrome.cookies.set(base);
+    if (!setResult) throw new Error('Не удалось записать куку аккаунта (cookies.set вернул null).');
 }
 
 function fptSnapshotForKey(key) {
@@ -1451,53 +1525,121 @@ function fptSnapshotForKey(key) {
             try { return await loadSnapshot(); } catch (e) { return null; }
         }
 
-        const setKey = async (value) => {
-            const result = await chrome.cookies.set({
-                url: 'https://funpay.com' + (original?.path || '/'),
-                name: 'golden_key',
-                value,
-                ...(original ? (original.hostOnly ? {} : { domain: original.domain }) : { domain: '.funpay.com' }),
-                path: original?.path || '/',
-                ...(original?.storeId ? { storeId: original.storeId } : {}),
-                ...(original?.partitionKey ? { partitionKey: original.partitionKey } : {}),
-                secure: true,
-                httpOnly: true,
-                sameSite: 'lax',
-                expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
-            });
-            if (!result) throw new Error('Не удалось записать временную cookie аккаунта.');
-            return result;
-        };
+        const saved = await captureSession();
 
         try {
-            // 2) Ставим cookie целевого аккаунта.
-            await setKey(key);
+            // 2) Ставим ключ целевого аккаунта в чистую сессию.
+            await writeGoldenKey(key);
             // 3) Грузим главную и заказы в ожидании под этим аккаунтом.
             return await loadSnapshot();
         } catch (e) {
             return null;
         } finally {
-            // 4) ВСЕГДА возвращаем исходную golden_key (или удаляем, если её не было).
-            if (original && original.value) {
-                const restored = await chrome.cookies.set({
-                    url: 'https://funpay.com' + (original.path || '/'),
-                    name: 'golden_key', value: original.value,
-                    ...(original.hostOnly ? {} : { domain: original.domain }),
-                    path: original.path || '/', secure: original.secure, httpOnly: true,
-                    sameSite: original.sameSite, storeId: original.storeId,
-                    ...(original.partitionKey ? { partitionKey: original.partitionKey } : {}),
-                    ...(original.expirationDate === undefined ? {} : { expirationDate: original.expirationDate })
-                });
-                if (!restored) throw new Error('Не удалось восстановить cookie исходного аккаунта.');
-            } else await chrome.cookies.remove({ url: 'https://funpay.com', name: 'golden_key' });
+            // 4) ВСЕГДА возвращаем исходную сессию целиком (или пустую, если входа не было).
+            await restoreGoldenKey(saved);
         }
     };
     return withCookieLock(run);
 }
 
+// --- Сохранённые аккаунты и свой конфиг у каждого ---
+let accountsService = null;
+try {
+    const accountVault = createAccountVault(createIndexedDbVaultBackend(self.indexedDB));
+    const accountProfiles = createProfileManager({
+        storage: chrome.storage.local,
+        vault: accountVault,
+        replaceAutoReplies,
+        runtimeFields: [...AUTO_REPLY_RUNTIME_FIELDS]
+    });
+    accountsService = createAccountsService({
+        storage: chrome.storage.local,
+        vault: accountVault,
+        profiles: accountProfiles,
+        guard: accountGuard,
+        cookies: {
+            get: () => chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' }),
+            capture: captureSession,
+            write: writeGoldenKey,
+            restore: restoreGoldenKey
+        },
+        snapshot: fptSnapshotForKey,
+        probeCurrent: probeCurrentSession,
+        isAutomationActive,
+        cookieLock: withCookieLock,
+        hash: sha256Short,
+        afterProfileChange: async () => {
+            accountGuard.invalidate();
+            orderLoader.invalidate();
+            await reviewReminders?.onSettingsChanged();
+            await lotSchedules.evaluate().catch(() => {});
+        },
+        // Ответ интерфейсу уходит раньше, чем вкладки перезагрузятся.
+        reloadFunPayTabs: async () => {
+            const tabs = await chrome.tabs.query({ url: ['https://funpay.com/*', 'https://*.funpay.com/*'] });
+            setTimeout(() => tabs.forEach(tab => chrome.tabs.reload(tab.id).catch(() => {})), 150);
+        }
+    });
+} catch (error) {
+    console.error('FunPay Funcy: хранилище аккаунтов недоступно:', error);
+}
+
+// Снимок текущего аккаунта без подмены кук: только его golden_seal обновляется по необходимости.
+async function probeCurrentSession() {
+    return withCookieLock(async () => {
+        const cookie = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
+        if (!cookie?.value) return null;
+        try { await ensureGoldenSeal(); } catch (_) {}
+        try {
+            const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
+            return { key: cookie.value, snap: await parseHtmlViaOffscreen(await resp.text(), 'parseAccountSnapshot') };
+        } catch (_) {
+            return { key: cookie.value, snap: null };
+        }
+    });
+}
+
+const ACCOUNT_KEEPALIVE_ALARM = 'fpToolsAccountKeepalive';
+
+
+const ACCOUNT_ACTIONS = Object.freeze({
+    accountsList: () => accountsService.list(),
+    accountsAddCurrent: request => accountsService.addCurrent(request),
+    accountsSwitch: request => accountsService.switchTo(request),
+    accountsRefresh: request => accountsService.refresh(request),
+    accountsRename: request => accountsService.rename(request),
+    accountsSetNote: request => accountsService.setNote(request),
+    accountsDelete: request => accountsService.remove(request),
+    accountsSync: request => accountsService.sync(request),
+    accountsUndoSync: () => accountsService.undoSync(),
+    accountsDismissNotice: () => accountsService.dismissNotice()
+});
+
+// Ручной вход в другой аккаунт на сайте FunPay: конфиг переключается после того, как cookie
+// успокоится. Временные подмены (снимки, переключение из Funcy) пропускаются.
+let accountReconcileTimer = null;
+function scheduleAccountReconcile(delay = 2000) {
+    clearTimeout(accountReconcileTimer);
+    accountReconcileTimer = setTimeout(() => {
+        if (!accountsService) return;
+        if (_fptCookieLockDepth > 0 || accountsService.isSwitching()) { scheduleAccountReconcile(); return; }
+        accountsService.reconcile().catch(error => console.warn('FunPay Funcy: конфиг аккаунта не сверен:', error?.message || error));
+    }, delay);
+}
+// Будильник создаётся один раз: повторный create сбрасывал бы таймер при каждом запуске воркера.
+chrome.alarms.clear(ACCOUNT_KEEPALIVE_ALARM);
+accountsService?.migrate()
+    .then(() => scheduleAccountReconcile(0))
+    .catch(error => console.warn('FunPay Funcy: аккаунты не перенесены:', error?.message || error));
+
 
 // --- Главный обработчик сообщений ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    const unavailable = globalThis.FPTFeatureAvailability.unavailableResponse(request?.action);
+    if (unavailable) {
+        sendResponse(unavailable);
+        return false;
+    }
     if (request?.action === 'fptPatchAutoReplies') {
         patchAutoReplies(request.patch)
             .then(autoReplies => sendResponse({ ok: true, autoReplies }))
@@ -1526,15 +1668,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             .catch(e => sendResponse({ ok: false, error: e && e.message }));
         return true;
     }
-    // 3.0: offscreen keepalive ping - receiving it resets the worker idle timer.
-    if (request && request.target === 'background' && request.action === 'fptEngineKeepalive') {
-        onKeepalivePing();
-        sendResponse({ ok: true });
-        return true;
+    if (request.action === 'fptEngineWake') {
+        let allowed = false;
+        try { allowed = sender.id === chrome.runtime.id && Boolean(sender.tab) && new URL(sender.url).origin === 'https://funpay.com'; } catch (_) {}
+        if (!allowed) { sendResponse({ ok: false }); return false; }
+        runAutomationPass().catch(error => console.warn('Funcy: проход:', error?.message));
+        sendResponse({ ok: true }); return false;
     }
     // Relay parse requests from content scripts to the offscreen document
     if (request.target === 'offscreen') {
-        parseHtmlViaOffscreen(request.html, request.action)
+        parseHtmlViaOffscreen(request.html, request.action, { messages: request.messages, chatId: request.chatId })
             .then(result => sendResponse(result))
             .catch(() => sendResponse(null));
         return true;
@@ -1602,34 +1745,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ ok: res.ok });
             } catch (e) {
                 sendResponse({ ok: false, error: e.message });
-            }
-        })();
-        return true;
-    }
-
-    // RMTHUB PROXY (bypasses CORS - content scripts can't fetch cross-origin)
-    if (request.action === 'rmthubFetch') {
-        (async () => {
-            const API = 'https://fptools-ai-server.vercel.app/api';
-            try {
-                const res = await fetch(`${API}/rmthub?username=${encodeURIComponent(request.username)}`);
-                if (res.status === 404) { sendResponse({ ok: false, notFound: true }); return; }
-                if (!res.ok) { sendResponse({ ok: false, status: res.status }); return; }
-                const json = await res.json();
-                if (json.error) { sendResponse({ ok: false, notFound: true }); return; }
-                // Fetch avatar
-                let avatar = 'https://funpay.com/img/layout/avatar.png';
-                const uid = String(json.user?.id || '');
-                if (uid) {
-                    try {
-                        const ar = await fetch(`${API}/avatar?user_id=${uid}`);
-                        const aj = await ar.json();
-                        if (aj.avatar && aj.avatar !== avatar) avatar = aj.avatar;
-                    } catch (_) {}
-                }
-                sendResponse({ ok: true, data: json, avatar });
-            } catch (e) {
-                sendResponse({ ok: false, error: String(e) });
             }
         })();
         return true;
@@ -2162,7 +2277,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const run = request.command === 'list' ? orderCommands.list({ filter: request.filter })
             : request.command === 'card' ? orderCommands.card({ orderKey: request.orderKey })
                 : orderCommands.command({ ...request, command: request.orderCommand || request.command });
-        run.then(data => sendResponse({ success: true, data }))
+        run.then(async data => { await updateOrderBadge(); sendResponse({ success: true, data }); })
             .catch(error => sendResponse({ success: false, error: error?.message || 'Ошибка журнала заказов.', code: error?.code }));
         return true;
     }
@@ -2351,110 +2466,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     // --- КОНЕЦ ИЗМЕНЕННОГО БЛОКА ---
 
-    // ACCOUNT & COOKIE HANDLERS
-    if (request.action === 'getGoldenKey') {
-        (async () => {
-            const cookie = await chrome.cookies.get({ url: "https://funpay.com", name: "golden_key" });
-            sendResponse({ success: !!cookie, key: cookie ? cookie.value : null });
-        })();
-        return true;
-    }
-    if (request.action === 'setGoldenKey') {
-        withCookieLock(async () => {
-            try {
-                if (!request.key) throw new Error('Пустой ключ аккаунта.');
-
-                // --- Логика входа повторяет то, что делает cookie-editor ---
-                // Кук-эдитор просто МЕНЯЕТ значение golden_key и НЕ трогает PHPSESSID —
-                // FunPay сам перепривязывает сессию к новому ключу на следующем запросе.
-                // Прошлые версии УДАЛЯЛИ PHPSESSID и так роняли в пустую сессию.
-                //
-                // Важные детали, без которых вход не срабатывал:
-                //  1. FunPay ставит golden_key как httpOnly на домен ".funpay.com".
-                //     chrome.cookies.set поддерживает httpOnly; сохраняем защиту ключа.
-                //     Удаляем старые варианты cookie перед записью.
-                //  2. domain ставим как у FunPay — с ведущей точкой ".funpay.com".
-
-                // 1) Снимаем все варианты golden_key (host-only и доменные, вкл. httpOnly).
-                try {
-                    const existing = await chrome.cookies.getAll({ name: 'golden_key', domain: 'funpay.com' });
-                    for (const c of existing) {
-                        const proto = c.secure ? 'https' : 'http';
-                        const host = c.domain.replace(/^\./, '');
-                        try {
-                            await chrome.cookies.remove({
-                                url: `${proto}://${host}${c.path || '/'}`,
-                                name: 'golden_key',
-                                storeId: c.storeId
-                            });
-                        } catch (_) {}
-                    }
-                } catch (_) {}
-
-                // 2) Ставим новый golden_key так же, как FunPay: domain ".funpay.com",
-                //    secure, path "/", долгий срок. PHPSESSID НЕ трогаем — пусть FunPay
-                //    перепривяжет сессию сам (как при смене ключа в cookie-editor).
-                let setResult = await chrome.cookies.set({
-                    url: 'https://funpay.com/',
-                    name: 'golden_key',
-                    value: request.key,
-                    domain: '.funpay.com',
-                    path: '/',
-                    secure: true,
-                    httpOnly: true,
-                    sameSite: 'lax',
-                    expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
-                });
-
-                // Подстраховка: некоторые сборки Chrome капризничают с domain+url.
-                // Пробуем host-only вариант, если доменный не записался.
-                if (!setResult) {
-                    setResult = await chrome.cookies.set({
-                        url: 'https://funpay.com/',
-                        name: 'golden_key',
-                        value: request.key,
-                        path: '/',
-                        secure: true,
-                        httpOnly: true,
-                        sameSite: 'lax',
-                        expirationDate: Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)
-                    });
-                }
-
-                if (!setResult) {
-                    throw new Error('Не удалось записать куку аккаунта (cookies.set вернул null).');
-                }
-
-                // 3) Перезагружаем вкладку — FunPay выдаст/перепривяжет сессию под новый ключ.
-                const tabId = sender.tab && sender.tab.id;
-                if (tabId != null) chrome.tabs.reload(tabId);
-                sendResponse({ success: true });
-            } catch (e) {
-                console.error('FunPay Funcy: setGoldenKey error:', e);
-                sendResponse({ success: false, error: e.message });
-            }
-        }).catch(error => sendResponse({ success: false, error: error.message }));
-        return true;
-    }
-    // ACCOUNT SNAPSHOT (avatar / balance / unread) для вкладки мультиаккаунтов
-    if (request.action === 'getAccountSnapshot') {
-        (async () => {
-            try {
-                const key = request.key;
-                if (!key) { sendResponse({ ok: false, error: 'no key' }); return; }
-                // Пока работает автоматизация, чужой аккаунт не подставляется в общую
-                // cookie даже на миг: показывается сохранённый снимок.
-                const active = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
-                if (active?.value !== key && await isAutomationActive()) {
-                    sendResponse({ ok: false, automationLocked: true, error: 'Пока работает автоматизация, данные других аккаунтов не обновляются вживую.' });
-                    return;
-                }
-                const snap = await fptSnapshotForKey(key);
-                sendResponse({ ok: true, snapshot: snap || {} });
-            } catch (e) {
-                sendResponse({ ok: false, error: e.message });
-            }
-        })();
+    // Сохранённые аккаунты: ключи сессий остаются в фоне, интерфейс работает по id записи.
+    if (Object.hasOwn(ACCOUNT_ACTIONS, request.action)) {
+        if (!accountsService) {
+            sendResponse({ ok: false, error: 'Хранилище аккаунтов недоступно в этом браузере.' });
+            return true;
+        }
+        ACCOUNT_ACTIONS[request.action](request)
+            .then(result => sendResponse({ ok: true, result }))
+            .catch(error => sendResponse({ ok: false, error: error?.message || 'Действие с аккаунтом не выполнено.', code: error?.code }));
         return true;
     }
 
@@ -2678,8 +2698,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'getCategoryList' || request.action === 'getLotList') {
         (async () => {
             try {
-                const response = await fetch(request.url);
-                const html = await response.text();
+                const html = await fetchCatalogPage(request.url, request.action);
                 const action = request.action === 'getCategoryList' ? 'parseCategoryPage' : 'parseLotListPage';
                 const items = await parseHtmlViaOffscreen(html, action);
                 sendResponse(items);
@@ -2911,10 +2930,10 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     }
     // <-- НОВЫЙ ОБРАБОТЧИК -->
     if (alarm.name === AUTO_RESPONDER_ALARM_NAME) {
-        await runAutoResponderCycle();
+        await runAutomationPass();
     }
     // 3.0: engine heartbeat - resurrects the active polling loop after the worker is killed
-    if (alarm.name === ENGINE_HEARTBEAT_ALARM) {
+    if (alarm.name === ENGINE_HEARTBEAT_ALARM || alarm.name === ENGINE_CONTINUE_ALARM) {
         await onHeartbeat();
         await jobScheduler.runRecovery();
     }
@@ -2989,21 +3008,27 @@ chrome.storage.onChanged.addListener((changes, area) => {
     if (changes.fpToolsAutoReplies) {
         const before = changes.fpToolsAutoReplies.oldValue || {};
         const after = changes.fpToolsAutoReplies.newValue || {};
-        if (Boolean(before.reviewReminderEnabled) !== Boolean(after.reviewReminderEnabled)) {
+        // При смене конфига аккаунта (маркер владельца в той же записи) напоминания
+        // перенастраивает сервис аккаунтов — уже для нового аккаунта.
+        if (!changes.fpToolsProfileOwner && Boolean(before.reviewReminderEnabled) !== Boolean(after.reviewReminderEnabled)) {
             reviewReminders?.onSettingsChanged().catch(error => console.warn('FunPay Funcy: напоминания не перенастроены:', error?.message || error));
         }
         const newSettings = changes.fpToolsAutoReplies.newValue || {};
         const isEnabled = newSettings.greetingEnabled || newSettings.keywordsEnabled || newSettings.autoReviewEnabled || newSettings.bonusForReviewEnabled ||
             newSettings.newOrderReplyEnabled || newSettings.orderConfirmReplyEnabled || newSettings.autoDeliveryEnabled || newSettings.reviewReminderEnabled;
 
-        // 3.0: drive the engine instead of the broken alarm
-        syncOrderReconcileAlarm(Boolean(isEnabled));
-        if (isEnabled) {
-            startEngine();
-        } else {
-            stopEngine();
-            chrome.alarms.clear(AUTO_RESPONDER_ALARM_NAME);
-            resetAutoResponderState();
+        // Durable cursor writes must not wake the engine that just wrote them.
+        const configurationChanged = hasAutoReplyConfigurationChanges(before, after);
+        if (configurationChanged) {
+            syncOrderReconcileAlarm(Boolean(isEnabled));
+            if (isEnabled) {
+                startEngine();
+            } else {
+                stopEngine();
+                jobScheduler.clearDue('fpToolsDeliveryContinue').catch(() => {});
+                chrome.alarms.clear(AUTO_RESPONDER_ALARM_NAME);
+                resetAutoResponderState();
+            }
         }
     }
     if (changes.autoBumpEnabled) {
@@ -3024,6 +3049,11 @@ chrome.runtime.onUpdateAvailable.addListener(function(details) {
 // отправки становятся uncertain, просроченные сроки заданий проверяются один раз,
 // будущие alarms восстанавливаются. Не зависит от включённости автоответчика.
 Promise.resolve()
+    .then(() => migrateRelease(chrome.storage.local, chrome.alarms))
+    .then(() => chrome.alarms.clear(AUTO_RESPONDER_ALARM_NAME))
+    .then(() => chrome.alarms.clear(ORDER_RECONCILE_ALARM))
     .then(() => jobScheduler.runRecovery({ force: true }))
     .then(() => jobScheduler.recoverDeadlines())
+    .then(() => startEngine())
+    .then(() => updateOrderBadge())
     .catch(error => console.warn('FunPay Funcy: восстановление заданий при запуске не удалось:', error?.message || error));

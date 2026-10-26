@@ -5,7 +5,7 @@ function loadStockLotsOnce() {
         const version = fptStockLotsVersion;
         fptStockLotsRead = chrome.storage.local.get('fpToolsAutoDeliveryLots').then(data => {
             if (version === fptStockLotsVersion) fptStockLots = data.fpToolsAutoDeliveryLots || {};
-        }).catch(error => { fptStockLotsRead = null; console.error('FunPay Funcy [stock]', error); });
+        }).catch(error => { fptStockLotsRead = null; console.error('Funcy [stock]', error); });
     }
     return fptStockLotsRead;
 }
@@ -27,7 +27,7 @@ async function initStockCounterDisplay() {
         const priceEl = row.querySelector('.tc-price');
         if (!priceEl) return;
 
-        const count = Number.isInteger(config.productCount) && config.productCount >= 0
+        const count = Number.isInteger(config?.productCount) && config.productCount >= 0
             ? config.productCount
             : null;
         const hasStock = count !== null;

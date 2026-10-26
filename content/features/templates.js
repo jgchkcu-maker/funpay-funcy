@@ -124,6 +124,11 @@ async function replaceTemplateVariables(template) {
 }
 
 async function applyTemplateToInput(chatInput, templateContent, images, sendOrder) {
+    // Check the original before variables, draft edits, uploads or automatic submit.
+    if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true && /\{ai:[^}]*\}/i.test(String(templateContent ?? ''))) {
+        showNotification('Этот шаблон использует временно недоступную функцию. Отредактируйте его перед отправкой', true);
+        return { handledInBackground: false, blocked: true };
+    }
     if (!chatInput || templateContent === undefined) return { handledInBackground: false };
 
     let processedText = await replaceTemplateVariables(templateContent);
@@ -171,7 +176,7 @@ async function applyTemplateToInput(chatInput, templateContent, images, sendOrde
                 await sendImages();
             }
         } catch (e) {
-            console.error('FunPay Funcy: ошибка отправки шаблона с картинкой', e);
+            console.error('Funcy: ошибка отправки шаблона с картинкой', e);
         }
         chatInput.value = '';
         return { handledInBackground: true };
@@ -261,6 +266,7 @@ async function useTemplate(templateConfig) {
     if (!chatInput) return;
 
     const applyResult = await applyTemplateToInput(chatInput, templateConfig.text, imgs, templateConfig.sendOrder);
+    if (applyResult?.blocked) return;
 
     if (!sendTemplatesImmediately) return;
     if (applyResult && applyResult.handledInBackground) return;
@@ -411,7 +417,7 @@ function toggleTemplatePopover(trigger) {
     }, 0);
 }
 
-// Opens the FunPay Funcy popup straight on the Templates page.
+// Opens the Funcy popup straight on the Templates page.
 async function openTemplateSettings() {
     try {
         if (typeof window.__fpEnsurePopup === 'function') await window.__fpEnsurePopup();

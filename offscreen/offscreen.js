@@ -1,15 +1,5 @@
 // offscreen/offscreen.js
 
-(function startOffscreenKeepalive() {
-    const PING_MS = 20000; // < 30s worker idle timeout
-    setInterval(() => {
-        try {
-            chrome.runtime.sendMessage({ target: 'background', action: 'fptEngineKeepalive', t: Date.now() })
-                .catch(() => {});
-        } catch (_) {}
-    }, PING_MS);
-})();
-
 (function () {
     let _reuseDoc = null;
     window.__fptParseHTML = function (html) {
@@ -207,8 +197,14 @@ function parseSalesPage(html) {
                 const buyerHref = buyerEl?.getAttribute("data-href")?.split("/");
                 const buyerId = buyerHref ? parseInt(buyerHref[buyerHref.length - 2] || "0", 10) : 0;
                 const orderDateText = row.querySelector(".tc-date-time")?.textContent.trim() || "";
-                const orderDate = parseFunPayDate(orderDateText);
-                orders.push({ orderId, description, subcategoryName, price, currency, buyerUsername, buyerId, orderStatus, orderDate, orderDateText, paymentType });
+                // Keep the legacy finance field, but malformed relative dates must not
+                // discard an otherwise observable order or turn it into a fresh one.
+                let orderDate;
+                try { orderDate = parseFunPayDate(orderDateText); }
+                catch (_) { orderDate = Date.now(); }
+                const orderDateStrict = globalThis.FPTOrderDate?.parse(orderDateText) ?? null;
+                const orderDatePrecisionMs = 60000;
+                orders.push({ orderId, description, subcategoryName, price, currency, buyerUsername, buyerId, orderStatus, orderDate, orderDateStrict, orderDatePrecisionMs, orderDateText, paymentType });
             } catch (e) {
                 console.error("FunPay Funcy Offscreen: Ошибка при парсинге одного заказа:", e, row);
                 throw e;
@@ -802,6 +798,29 @@ function solveCloneForm(html, attributes, attributePairs) {
     }
 }
 
+function parseChatMessages(messages, chatId) {
+    const idOf = (value, zero = false) => {
+        if (typeof value === 'number' && !Number.isSafeInteger(value)) return null;
+        const id = String(value ?? '');
+        return /^(0|[1-9]\d*)$/.test(id) && (zero || id !== '0') ? id : null;
+    };
+    try {
+        if (!idOf(chatId) || !Array.isArray(messages) || messages.length > 1000) throw new Error('Некорректный пакет сообщений.');
+        return { ok: true, messages: messages.map(raw => {
+            const id = idOf(raw?.id);
+            if (!id || typeof raw.html !== 'string') throw new Error('Сообщение без ID или HTML.');
+            const authorId = idOf(raw.author, true);
+            const doc = window.__fptParseHTML(raw.html);
+            const body = doc.querySelector(authorId === '0' ? '[role="alert"]' : '.chat-msg-text');
+            if (body) body.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+            const image = doc.querySelector('.chat-img-link');
+            return { id, chatId: String(chatId), authorId, text: body?.textContent?.trim() || '',
+                kind: body ? 'text' : image ? 'image' : 'unknown',
+                ...(!body && !image ? { invalidReason: 'Тело сообщения не распознано.' } : {}) };
+        }) };
+    } catch (error) { return { ok: false, error: error.message }; }
+}
+
 function parseChatList(html) {
     try {
         const doc = window.__fptParseHTML(html);
@@ -847,12 +866,20 @@ function parseUserLotsList(html) {
             const categoryLink = offerBlock.querySelector('.offer-list-title a');
             const parsedCategoryName = categoryLink?.textContent?.trim() || "";
             const categoryName = parsedCategoryName || "Без категории";
-            const nodeIdMatch = categoryLink?.getAttribute('href')?.match(/\/(?:lots|chips)\/(\d+)/);
-            const nodeId = nodeIdMatch ? nodeIdMatch[1] : null;
+            const nodeIdMatch = categoryLink?.getAttribute('href')?.match(/\/(lots|chips)\/(\d+)/);
+            const nodeId = nodeIdMatch ? nodeIdMatch[2] : null;
 
             if (!nodeId) return;
 
-            const idMatch = row.getAttribute('href')?.match(/(?:offer=|id=)(\d+)/);
+            // Валютные предложения (chips/offer?id=<userId>-<game>-<node>-...) не имеют формы
+            // offerEdit и склада. Их id составной: раньше из него бралось только начало (ID
+            // продавца), и потребители списка читали чужую форму. Теперь id берётся целиком,
+            // а kind: 'chips' говорит потребителям, что offerEdit для лота нет.
+            const href = row.getAttribute('href') || '';
+            const kind = nodeIdMatch[1] === 'chips' || /\/chips\/offer/.test(href) ? 'chips' : 'lots';
+            const idMatch = kind === 'chips'
+                ? href.match(/\/chips\/offer\?(?:[^#]*&)?id=(\d+(?:-\d+)+)(?![\w-])/)
+                : href.match(/\/lots\/offer\?(?:[^#]*&)?id=(\d+)(?![\w-])/);
             const id = idMatch ? idMatch[1] : null;
             const descriptionText = row.querySelector(".tc-desc-text")?.textContent?.trim();
             const description = row.querySelector('.tc-desc')?.textContent?.trim();
@@ -865,7 +892,7 @@ function parseUserLotsList(html) {
             const imageUrl = image?.getAttribute('src') || image?.getAttribute('data-src') || image?.dataset?.src || null;
 
             if (id) {
-                allLots.push({ id, title, nodeId, categoryName, imageUrl });
+                allLots.push({ id, title, nodeId, categoryName, imageUrl, ...(kind === 'chips' ? { kind } : {}) });
             }
         });
         
@@ -950,10 +977,14 @@ function parseUserCategories(html) {
                 
                 const lotItems = block.querySelectorAll('.tc-item');
                 const publicUrl = new URL(titleLink.href, 'https://funpay.com/');
-                const nodeIdMatch = publicUrl.pathname.match(/\/lots\/(\d+)/);
+                const nodeIdMatch = publicUrl.pathname.match(/\/(?:lots|chips)\/(\d+)/);
+                // У валюты (chips) на FunPay нет кнопки «Поднять предложения»: такие категории
+                // показываются с честной пометкой и пропускаются при поднятии.
+                const isChips = /^\/chips\//.test(publicUrl.pathname) || /^\/chips\//.test(url.pathname);
 
                 const lots = Array.from(lotItems).map(item => {
-                    const idMatch = item.getAttribute('href')?.match(/id=(\d+)/);
+                    // id валютного предложения составной (<userId>-<game>-<node>-...).
+                    const idMatch = item.getAttribute('href')?.match(isChips ? /id=(\d+(?:-\d+)*)/ : /id=(\d+)/);
                     // FIX: track auto-delivery per individual lot, not just category-wide
                     const lotHasAutoDelivery = !!item.querySelector('i.auto-dlv-icon, .sc-auto-delivery, [class*="auto-dlv"]');
                     return {
@@ -967,7 +998,10 @@ function parseUserCategories(html) {
                 // FIX: category has auto-delivery only if AT LEAST ONE lot has it
                 const categoryHasAutoDelivery = lots.some(l => l.hasAutoDelivery);
                 
-                categories.push({ id: url.pathname, name: name, lots: lots, hasAutoDelivery: categoryHasAutoDelivery });
+                categories.push({
+                    id: url.pathname, name: name, lots: lots, hasAutoDelivery: categoryHasAutoDelivery,
+                    ...(isChips ? { kind: 'chips', raisable: false } : {})
+                });
             }
         });
         return categories;
@@ -1594,6 +1628,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case 'solveCloneForm':
             sendResponse(solveCloneForm(message.html, message.attributes, message.attributePairs));
+            break;
+        case 'parseChatMessages':
+            sendResponse(parseChatMessages(message.messages, message.chatId));
             break;
         case 'parseChatList':
             sendResponse(parseChatList(message.html));

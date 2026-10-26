@@ -1,5 +1,5 @@
 /*
- * FunPay Funcy — доступ к ПОКУПКАМ из CONTENT-скриптов.
+ * Funcy — доступ к ПОКУПКАМ из CONTENT-скриптов.
  *
  * ВАЖНО про IndexedDB и origin:
  * IndexedDB изолирован по origin. Service worker расширения и страница funpay.com —

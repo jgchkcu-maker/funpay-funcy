@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 function load() {
     const ctx = vm.createContext({ window: {}, console });
-    for (const file of ['content/features/feature_registry.js', 'content/ui/interface_elements_page.js']) {
+    for (const file of ['background/feature_availability.js', 'content/features/feature_registry.js', 'content/ui/interface_elements_page.js']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), ctx, { filename: file });
     }
     return { page: ctx.window.FPTInterfaceElementsPage, registry: ctx.window.FPT_FEATURE_REGISTRY };
@@ -15,10 +15,10 @@ function load() {
 test('layout keeps the declared group and chat subgroup order and nests the keyboard under the font block', () => {
     const { page, registry } = load();
     const groups = page.layout(registry);
-    assert.deepEqual([...groups.map(group => group.name)], ['Верхняя панель', 'Чат', 'Создание и оформление лота',
+    assert.deepEqual([...groups.map(group => group.name)], ['Чат', 'Создание и оформление лота',
         'Копирование и импорт лотов', 'Цены и аналитика', 'Список лотов и профиль']);
-    assert.deepEqual([...groups[1].sections.map(section => section.name)], ['Поле ввода', 'Шапка диалога', 'Действия в диалоге']);
-    const lot = groups[2].sections[0].items;
+    assert.deepEqual([...groups[0].sections.map(section => section.name)], ['Поле ввода', 'Шапка диалога', 'Действия в диалоге']);
+    const lot = groups[1].sections[0].items;
     const font = lot.find(item => item.entry.id === 'lot_font_controls');
     assert.deepEqual([...font.children.map(child => child.id)], ['lot_keyboard_btn']);
     assert.ok(!lot.some(item => item.entry.id === 'lot_keyboard_btn'), 'child is not listed twice');
@@ -52,12 +52,13 @@ test('filters split elements into shown and hidden', () => {
     const disabled = new Set(['chat_reply', 'lot_clone_btn']);
     assert.deepEqual([...page.visibility(registry, disabled, { filter: 'hidden' }).keys()].sort(), ['chat_reply', 'lot_clone_btn']);
     assert.equal(page.visibility(registry, disabled, { filter: 'shown' }).size, registry.length - 2);
-    assert.deepEqual({ ...page.summarize(registry, disabled) }, { total: registry.length, hidden: 2, shown: registry.length - 2, groups: 6 });
+    assert.deepEqual({ ...page.summarize(registry, disabled) }, { total: registry.length, hidden: 2, shown: registry.length - 2, groups: 5 });
 });
 
 test('previews substitute the real magic icon path', () => {
     const { page, registry } = load();
-    const ai = registry.find(entry => entry.id === 'chat_ai_rewrite_btn');
+    assert.equal(registry.some(entry => entry.id === 'chat_ai_rewrite_btn'), false);
+    const ai = { preview: { kind: 'html', html: '<img src="{{MAGIC_ICON}}">' } };
     assert.match(page.previewHtml(ai), /icons\/magic\.png/);
     assert.doesNotMatch(page.previewHtml(ai), /\{\{MAGIC_ICON\}\}/);
 });

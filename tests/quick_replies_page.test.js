@@ -50,7 +50,7 @@ test('preview fills template variables, picks the first variant and marks AI pro
     const preview = api.previewText('{welcome}, {buyername}! {lotname} {bal} {activesells} {date} {да|конечно} {ai:поблагодари} <b>');
     assert.doesNotMatch(preview, /\{(welcome|buyername|lotname|bal|activesells|date)\}/);
     assert.match(preview, / да /);
-    assert.match(preview, /\[ИИ: поблагодари\]/);
+    assert.match(preview, /\[Временно недоступная вставка\]/);
     assert.ok(preview.endsWith('<b>'), 'markup stays plain text');
 });
 

@@ -206,9 +206,15 @@
     "fpToolsStockManagementReleasedV2",
     "fpToolsUnreadCount",
     "fpToolsWallpaperCache",
+    "fpToolsThemeCatalogCache",
     "fptLastVerifyAt",
     "fptPendingVerifyLots",
     "fptProfileDescrCache",
-    "fptProfileSession"
+    "fptProfileSession",
+    "fpToolsProfileOwner",
+    "fpToolsProfileNotice",
+    "fpToolsEngineContinue",
+    "fpToolsDeliveryContinue",
+    "fptEngineWake"
   ]
 }

@@ -63,13 +63,18 @@ export function createJobScheduler({ alarms, storage = null, log = console, reco
         return run;
     }
 
-    async function scheduleDue(name, dueAt) {
+    async function scheduleDue(name, dueAt, { earliest = false } = {}) {
         if (!handlers.has(name)) throw new Error(`Задание ${name} не зарегистрировано.`);
         const when = Number(dueAt);
         if (!Number.isFinite(when)) throw new Error('Некорректный срок задания.');
-        await withDeadlines(deadlines => { deadlines[name] = when; });
-        await scheduleAt(name, when);
-        return when;
+        const effective = await withDeadlines(deadlines => {
+            const saved = deadlines[name];
+            const effective = earliest && Number.isFinite(saved) ? Math.min(saved, when) : when;
+            deadlines[name] = effective;
+            return effective;
+        });
+        await scheduleAt(name, effective);
+        return effective;
     }
 
     async function clearDue(name) {

@@ -5,6 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const ROOT = path.resolve(__dirname, '..');
+const HIDDEN_IDS = new Set(['rmthub_seller_search', 'chat_ai_rewrite_btn', 'profanity_warning', 'lot_ai_gen_btn']);
+const availableIds = ids => ids.filter(id => !HIDDEN_IDS.has(id));
 const EXPECTED_GROUP_ORDER = [
     'Верхняя панель',
     'Чат',
@@ -87,9 +89,9 @@ const EXPECTED_GROUP_IDS = {
 };
 
 const EXPECTED_GROUP_COUNTS = {
-    'Верхняя панель': 1,
-    'Чат': 11,
-    'Создание и оформление лота': 5,
+    'Верхняя панель': 0,
+    'Чат': 9,
+    'Создание и оформление лота': 4,
     'Копирование и импорт лотов': 5,
     'Цены и аналитика': 6,
     'Список лотов и профиль': 8
@@ -110,7 +112,7 @@ const EXPECTED_CHAT_SUBGROUP_IDS = {
 function loadRegistrySource() {
     const source = fs.readFileSync(path.join(ROOT, 'content/features/feature_registry.js'), 'utf8');
     const result = vm.runInNewContext(
-        `${source}\n({ registry: FPT_FEATURE_REGISTRY, groupOrder: typeof FPT_NEEDS_GROUP_ORDER === 'undefined' ? null : FPT_NEEDS_GROUP_ORDER, chatSubgroupOrder: typeof FPT_NEEDS_CHAT_SUBGROUP_ORDER === 'undefined' ? null : FPT_NEEDS_CHAT_SUBGROUP_ORDER })`,
+        `${fs.readFileSync(path.join(ROOT, 'background/feature_availability.js'), 'utf8')}\n${source}\n({ registry: FPT_FEATURE_REGISTRY, groupOrder: typeof FPT_NEEDS_GROUP_ORDER === 'undefined' ? null : FPT_NEEDS_GROUP_ORDER, chatSubgroupOrder: typeof FPT_NEEDS_CHAT_SUBGROUP_ORDER === 'undefined' ? null : FPT_NEEDS_CHAT_SUBGROUP_ORDER })`,
         { window: {} }
     );
 
@@ -121,10 +123,10 @@ function sortIds(ids) {
     return [...ids].sort((left, right) => left.localeCompare(right));
 }
 
-test('registry preserves all 36 ID-to-selector pairs with the explicit taxonomy', () => {
+test('public registry preserves available ID-to-selector pairs and excludes suspended features', () => {
     const { registry, groupOrder, chatSubgroupOrder } = loadRegistrySource();
 
-    assert.equal(registry.length, 36, 'the registry retains exactly 36 features');
+    assert.equal(registry.length, 32, 'four suspended features are absent');
 
     const ids = registry.map(({ id }) => id);
     const selectors = registry.map(({ selector }) => selector);
@@ -134,7 +136,7 @@ test('registry preserves all 36 ID-to-selector pairs with the explicit taxonomy'
     const actualPairs = registry
         .map(({ id, selector }) => [id, selector])
         .sort(([left], [right]) => left.localeCompare(right));
-    const expectedPairs = [...EXPECTED_ID_SELECTOR_PAIRS]
+    const expectedPairs = EXPECTED_ID_SELECTOR_PAIRS.filter(([id]) => !HIDDEN_IDS.has(id))
         .sort(([left], [right]) => left.localeCompare(right));
     assert.deepEqual(actualPairs, expectedPairs, 'each original feature ID keeps its selector');
 
@@ -143,7 +145,7 @@ test('registry preserves all 36 ID-to-selector pairs with the explicit taxonomy'
             group,
             sortIds(registry.filter((entry) => entry.group === group).map(({ id }) => id))
         ])),
-        Object.fromEntries(EXPECTED_GROUP_ORDER.map((group) => [group, sortIds(EXPECTED_GROUP_IDS[group])]))
+        Object.fromEntries(EXPECTED_GROUP_ORDER.map((group) => [group, sortIds(availableIds(EXPECTED_GROUP_IDS[group]))]))
     );
     assert.deepEqual(
         Object.fromEntries(EXPECTED_GROUP_ORDER.map((group) => [
@@ -158,7 +160,7 @@ test('registry preserves all 36 ID-to-selector pairs with the explicit taxonomy'
 
     assert.deepEqual(
         sortIds([...new Set(registry.map(({ group }) => group))]),
-        sortIds(EXPECTED_GROUP_ORDER),
+        sortIds(EXPECTED_GROUP_ORDER.slice(1)),
         'entries use only the six allowed groups and none are missing a group'
     );
 
@@ -170,7 +172,7 @@ test('registry preserves all 36 ID-to-selector pairs with the explicit taxonomy'
         ])),
         Object.fromEntries(EXPECTED_CHAT_SUBGROUP_ORDER.map((subgroup) => [
             subgroup,
-            sortIds(EXPECTED_CHAT_SUBGROUP_IDS[subgroup])
+            sortIds(availableIds(EXPECTED_CHAT_SUBGROUP_IDS[subgroup]))
         ]))
     );
     assert.equal(chatEntries.filter(({ subgroup }) => !subgroup).length, 0, 'every chat feature has a subgroup');
@@ -218,6 +220,7 @@ test('stored disabled IDs still hide the exact original live selectors across al
         console,
         Event
     });
+    vm.runInContext(fs.readFileSync(path.join(ROOT, 'background/feature_availability.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_registry.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_disabler.js'), 'utf8'), context);
 
@@ -230,7 +233,6 @@ test('stored disabled IDs still hide the exact original live selectors across al
         .map((selector) => selector.trim())
         .sort();
     const expectedSelectors = [
-        '#fp-rmthub-form',
         '.fp-tools-font-controls',
         '.fp-tools-symbols-panel',
         '#fpToolsKeyboardToggleBtn',

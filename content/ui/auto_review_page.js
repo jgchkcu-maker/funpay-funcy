@@ -272,7 +272,7 @@
         const bonuses = makeBlock('bonuses', 'Бонус за 5★', 'Сообщение покупателю после пятизвёздочного отзыва', 'redeem', 'bonusForReviewEnabled');
         // Третий независимый блок: напоминание об отзыве (review_reminder_block.js).
         if (root.FPTReviewReminderBlock && root.FPTAutomationUI) {
-            root.FPTReviewReminderBlock.mount(grid, popup, { button, icon, iconButton, variables, field }).catch(error => console.warn('FunPay Funcy: блок напоминаний не загружен:', error?.message || error));
+            root.FPTReviewReminderBlock.mount(grid, popup, { button, icon, iconButton, variables, field }).catch(error => console.warn('Funcy: блок напоминаний не загружен:', error?.message || error));
         }
 
         const ratings = node('div', 'fpt-rv-ratings');

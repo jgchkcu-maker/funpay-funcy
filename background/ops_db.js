@@ -53,7 +53,7 @@ export const OP_STATES = Object.freeze(['pending', 'sending', 'done', 'uncertain
 // uncertain -> pending — только ручное решение продавца «отправить ещё раз».
 const OP_TRANSITIONS = Object.freeze({
     pending: ['sending', 'done', 'failed'],
-    sending: ['done', 'uncertain', 'failed'],
+    sending: ['pending', 'done', 'uncertain', 'failed'],
     uncertain: ['done', 'failed', 'pending'],
     failed: ['sending', 'pending'],
     done: []
@@ -439,11 +439,14 @@ export function createOpsJournal({ backend, now = () => Date.now(), instanceId }
         const stale = (await backend.getAll('ops')).filter(op => op.state === 'sending' && op.owner !== owner);
         const recovered = [];
         for (const op of stale) {
+            const parts = await listParts(op.key);
             const next = await backend.update('ops', op.key, current => {
                 if (!current || current.state !== 'sending' || current.owner === owner) return undefined;
-                return { ...current, state: 'uncertain', lastError: 'Отправка прервана остановкой расширения.', updatedAt: now() };
+                const waiting = current.kind === 'delivery' && parts.length && parts.every(p => ['pending', 'confirmed', 'accepted', 'manual', 'rejected'].includes(p.state));
+                return { ...current, state: waiting ? 'pending' : 'uncertain', lastError: waiting ? null : 'Отправка прервана остановкой расширения.', updatedAt: now() };
             });
             if (next?.state === 'uncertain') recovered.push(next);
+            if (next?.kind === 'delivery' && next.orderKey) await updateAccountOrder(next.orderKey, () => ({ deliveryState: next.state === 'pending' ? 'pending' : 'uncertain', problemState: next.state === 'uncertain' ? 'attention' : undefined }));
         }
         for (const part of await backend.getAll('parts')) {
             if (part.state !== 'sending' || part.owner === owner) continue;
@@ -474,9 +477,9 @@ export function createOpsJournal({ backend, now = () => Date.now(), instanceId }
 
     // Атомарно: запись попытки и события.
     // Повтор с тем же opKey возвращает существующую попытку (created=false).
-    async function beginAttempt({ opKey, kind, orderKey, payload = null, state = 'pending' }) {
+    async function beginAttempt({ opKey, kind, orderKey, payload = null, state = 'pending', parts = null }) {
         if (!opKey || !kind || !orderKey) throw new Error('Для попытки нужны opKey, kind и orderKey.');
-        return backend.transact(['ops', 'events'], async tx => {
+        return backend.transact(parts ? ['ops', 'events', 'parts'] : ['ops', 'events'], async tx => {
             const existing = await tx.get('ops', opKey);
             if (existing) return { op: existing, created: false };
             const at = now();
@@ -485,6 +488,10 @@ export function createOpsJournal({ backend, now = () => Date.now(), instanceId }
                 state, owner, attempts: state === 'sending' ? 1 : 0, lastError: null, createdAt: at, updatedAt: at
             };
             await tx.put('ops', op);
+            if (parts) for (const part of parts) {
+                if (part.opKey !== opKey || part.orderKey !== orderKey || part.state !== 'pending') throw new Error('Неверная подготовленная часть выдачи.');
+                await tx.put('parts', { ...part, owner: null, createdAt: at, updatedAt: at });
+            }
             await tx.put('events', { id: randomId('ev', at), orderKey, type: `${kind}.attempt`, at, data: { opKey } });
             return { op, created: true };
         });

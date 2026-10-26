@@ -13,7 +13,7 @@ async function handlePublicLotCopy() {
 }
 
 // Окно «Копирование лота» - общий каркас окон расширения (content/ui/page_windows.js):
-// та же палитра, фиолетовый акцент и элементы, что и в меню FunPay Funcy.
+// та же палитра, фиолетовый акцент и элементы, что и в меню Funcy.
 function ensureCloneWizardModal() {
     const existing = document.getElementById('fp-clone-wizard-overlay');
     if (existing) return existing;
@@ -69,7 +69,7 @@ function showCloneWizardError(message, retry) {
     if (retry) document.getElementById('fp-cw-retry')?.addEventListener('click', retry);
 }
 
-// FunPay Funcy: запуск ТОГО ЖЕ визарда создания лота, но из данных страницы
+// Funcy: запуск ТОГО ЖЕ визарда создания лота, но из данных страницы
 // купленного заказа (без offerId). Форму категории строит background по nodeId.
 async function openCloneWizardFromOrder(data) {
     const overlay = ensureCloneWizardModal();
@@ -157,7 +157,7 @@ function renderCloneReview() {
         formWarn = cloneNoteHtml('warning', 'info', `Не удалось построить форму категории${st.formError ? ': ' + escapeHtmlClone(st.formError) : ''}.`);
     }
     if (!st.source.enDiffers && (st.source.summary_ru || st.source.desc_ru)) {
-        formWarn += cloneNoteHtml('warning', 'translate', 'У лота нет отдельного английского текста - вкладка EN заполнена русским. Если категория требует валидный английский, FunPay может отклонить - отредактируйте EN или оставьте пустым.<br><button type="button" class="fpt-win-btn fpt-win-btn--sm" id="fp-cw-translate-en"><span class="material-symbols-rounded" aria-hidden="true">translate</span>Перевести</button>');
+        formWarn += cloneNoteHtml('warning', 'translate', 'У лота нет отдельного английского текста - вкладка EN заполнена русским. Если категория требует валидный английский, FunPay может отклонить - отредактируйте EN или оставьте пустым. При переводе выбранные поля передаются Google Translate.<br><button type="button" class="fpt-win-btn fpt-win-btn--sm" id="fp-cw-translate-en"><span class="material-symbols-rounded" aria-hidden="true">translate</span>Перевести</button>');
     }
 
     const canCreate = !!st.fields && !st.source.isChips && !!st.source.nodeId;
@@ -638,7 +638,8 @@ function setupImportWizardLogic(overlay) {
             const userId = (Array.isArray(appData) ? appData[0] : appData).userId;
             const lots = await chrome.runtime.sendMessage({ action: 'getUserLotsList', userId: userId });
 
-            myLotsCache = lots || [];
+            // Валюта (chips) не клонируется: у неё нет формы offerEdit.
+            myLotsCache = Array.isArray(lots) ? lots.filter(lot => lot?.kind !== 'chips') : [];
             renderMyLots();
         } catch (e) {
             listEl.innerHTML = importEmptyHtml('error', `Ошибка загрузки: ${escapeHtmlClone(e.message)}`, 'error');

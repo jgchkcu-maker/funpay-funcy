@@ -108,7 +108,8 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
     register('lot-io-export-btn', async () => {
         const response = await chrome.runtime.sendMessage({ action: 'getUserCategories' });
         if (!response?.success) throw new Error(response?.error || 'Не удалось загрузить категории.');
-        return response.data;
+        // Валюта (chips) не имеет формы offerEdit — экспортировать её нечем.
+        return Array.isArray(response.data) ? response.data.filter(category => category?.kind !== 'chips') : response.data;
     });
     register('lot-io-export-confirm', p => startExportProcess(p.categories, p.selectedCategoryIds, p));
     register('lot-io-select-all', p => window.fptPopupActions.toggleCategorySelection(p));

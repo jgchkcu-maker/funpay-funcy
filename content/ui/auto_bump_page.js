@@ -487,8 +487,9 @@
             dialog.footer.append(counter, cancel, save);
 
             const updateCounter = () => {
-                const knownSelected = categories.filter(category => selected.has(category.id)).length;
-                counter.textContent = categories.length ? `Выбрано: ${knownSelected} из ${categories.length}` : '';
+                const raisable = categories.filter(category => category.raisable !== false);
+                const knownSelected = raisable.filter(category => selected.has(category.id)).length;
+                counter.textContent = raisable.length ? `Выбрано: ${knownSelected} из ${raisable.length}` : '';
             };
 
             function renderList() {
@@ -501,9 +502,11 @@
                     return;
                 }
                 visible.forEach(category => {
+                    const raisable = category.raisable !== false;
                     const control = root.FPTPopupUI.createCheckboxControl(category.name, {
                         value: category.id,
-                        checked: selected.has(category.id),
+                        checked: raisable && selected.has(category.id),
+                        disabled: !raisable,
                         onChange: event => {
                             if (event.target.checked) selected.add(category.id);
                             else selected.delete(category.id);
@@ -516,7 +519,12 @@
                     const meta = node('span', 'fpt-lot-category-count',
                         `${lotCount} ${root.FPTPopupUI.pluralize(lotCount, ['лот', 'лота', 'лотов'])}`);
                     control.element.appendChild(meta);
-                    if (category.hasAutoDelivery) {
+                    if (!raisable) {
+                        const badge = node('span', 'fpt-ab-badge fpt-ab-badge--muted', 'Валюта — не поднимается');
+                        badge.title = 'FunPay не даёт поднимать предложения валюты: у них нет кнопки «Поднять предложения».';
+                        control.element.title = badge.title;
+                        control.element.appendChild(badge);
+                    } else if (category.hasAutoDelivery) {
                         const badge = node('span', 'fpt-ab-badge', 'Автовыдача');
                         control.element.appendChild(badge);
                     }
@@ -529,7 +537,7 @@
             selectAll.addEventListener('click', async () => {
                 try {
                     const next = await run('autobump-select-all', {
-                        categories: visible,
+                        categories: visible.filter(category => category.raisable !== false),
                         selectedCategoryIds: Array.from(selected)
                     });
                     selected.clear();
@@ -540,7 +548,7 @@
             });
             cancel.addEventListener('click', () => dialog.close());
             save.addEventListener('click', async () => {
-                const knownIds = new Set(categories.map(category => category.id));
+                const knownIds = new Set(categories.filter(category => category.raisable !== false).map(category => category.id));
                 const selectedCategoryIds = Array.from(selected).filter(id => knownIds.has(id));
                 dialog.setBusy(true);
                 try {

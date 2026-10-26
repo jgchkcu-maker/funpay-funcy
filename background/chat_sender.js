@@ -32,17 +32,20 @@ export function normalizeChatText(text) {
 }
 
 // Ищет наше сообщение в ответе runner: objects[].type === 'chat_node' с messages.
-export function findSentMessage(json, { chatId, text, accountId }) {
+export function findSentMessage(json, { chatId, text, accountId, afterMessageId = null }) {
     const wanted = normalizeChatText(text);
-    if (!wanted || !Array.isArray(json?.objects)) return null;
+    // Without a pre-send boundary the same text may be an old message in history.
+    // Preview cursors are deliberately NOT used as a send receipt or advanced here.
+    if (!wanted || !/^\d+$/.test(String(accountId || '')) || !/^\d+$/.test(String(afterMessageId ?? '')) || !Array.isArray(json?.objects)) return null;
     for (const object of json.objects) {
         if (object?.type !== 'chat_node' || String(object.id) !== String(chatId)) continue;
         const messages = Array.isArray(object.data?.messages) ? object.data.messages : [];
         for (const message of messages) {
             const author = message?.author != null ? String(message.author) : null;
-            if (accountId && author && author !== String(accountId)) continue;
+            if (author !== String(accountId) || !/^\d+$/.test(String(message?.id ?? ''))) continue;
+            if (BigInt(message.id) <= BigInt(afterMessageId)) continue;
             const body = normalizeChatText(stripMarkup(message?.html ?? message?.text ?? ''));
-            if (body.includes(wanted)) return { messageId: message.id != null ? String(message.id) : null, author };
+            if (body === wanted) return { messageId: String(message.id), author };
         }
     }
     return null;
@@ -57,7 +60,7 @@ export function buildRunnerMessageBody({ chatId, content, csrfToken }) {
 }
 
 export function createStrictChatSender({ fetchImpl = (...args) => globalThis.fetch(...args), timeoutMs = 20000, mark = text => text } = {}) {
-    async function send({ chatId, text, auth, accountId = null }) {
+    async function send({ chatId, text, auth, accountId = null, afterMessageId = null }) {
         if (!/^\d+$/.test(String(chatId || ''))) return { status: 'rejected', error: 'Некорректный чат.' };
         if (!auth?.csrf_token) return { status: 'rejected', error: 'Нет CSRF-токена FunPay.' };
         const content = mark(String(text || ''));
@@ -95,7 +98,7 @@ export function createStrictChatSender({ fetchImpl = (...args) => globalThis.fet
         if (!json || typeof json !== 'object') return { status: 'uncertain', httpStatus: response.status, error: 'FunPay вернул пустой ответ.' };
         if (json.error) return { status: 'rejected', httpStatus: response.status, error: `FunPay: ${typeof json.error === 'string' ? json.error : 'ошибка отправки'}.` };
 
-        const found = findSentMessage(json, { chatId, text: content, accountId });
+        const found = findSentMessage(json, { chatId, text: content, accountId, afterMessageId });
         if (found) return { status: 'confirmed', httpStatus: response.status, messageId: found.messageId };
         return { status: 'accepted', httpStatus: response.status };
     }

@@ -78,7 +78,9 @@ async function openBulkEditor(p = {}) {
     const app = JSON.parse(document.body?.dataset.appData || '{}');
     const userId = p.userId || (Array.isArray(app) ? app[0] : app).userId;
     if (!userId) throw new Error('Нет userId');
-    return chrome.runtime.sendMessage({ action: 'getUserLotsList', userId });
+    const lots = await chrome.runtime.sendMessage({ action: 'getUserLotsList', userId });
+    // Валюта (chips) не редактируется через offerEdit.
+    return Array.isArray(lots) ? lots.filter(lot => lot?.kind !== 'chips') : lots;
 }
 async function applyPopupBulkLots(p = {}, activate = false) {
     if (!Array.isArray(p.lots) || !p.lots.length) throw new Error('Выберите хотя бы один лот.');

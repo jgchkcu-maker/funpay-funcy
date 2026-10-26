@@ -18,105 +18,6 @@
     color: #9ca3af;
 }
 
-#fpToolsButton { 
-    font-weight: bold; 
-    cursor: pointer; 
-    user-select: none; 
-    color: #7663f6;
-    padding: 15px 8px;
-    position: relative; 
-    transition: all 0.3s ease, transform 0.3s ease; 
-    display: inline-block; 
-    font-size: 14px; 
-    letter-spacing: 0.5px; 
-    text-decoration: none; 
-    line-height: 20px; 
-    transform-style: preserve-3d; 
-    padding-top: 20px; 
-    padding-bottom: 10px; 
-    transform: translateY(1px); 
-}
-
-#fpToolsButton::before {
-    content: '';
-    position: absolute;
-    bottom: 9px;
-    left: 15%;
-    width: 70%;
-    height: 2px;
-    background: #7663f6;
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.3s ease;
-    box-shadow: 0 0 2px var(--fpt-accent-soft, rgba(27,117,187,0.3));
-    border-radius: 5px;
-}
-
-#fpToolsButton::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 70%;
-    height: 60%;
-    transform: translate(-50%, -50%);
-    background: transparent;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    border-radius: 15px;
-}
-
-@keyframes shineEffect {
-    0% {
-        background-position: -100% 0;
-    }
-
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-#fpToolsButton span {
-    position: absolute;
-    top: 60%;
-    left: 50%;
-    width: 80%;
-    height: 85%;
-    transform: translate(-50%, -50%);
-    background: transparent;
-    background-size: 200% 100%;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    border-radius: 10px;
-}
-
-#fpToolsButton span::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    background: transparent;
-    background-size: auto auto, auto auto, auto auto, auto auto, auto auto, auto auto, 2000% 2000%;
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    animation: starFloat 8s infinite linear, pulse 3s infinite ease-in-out, gradientFlow 15s infinite linear;
-    pointer-events: none;
-}
-
-@keyframes gradientFlow {
-    0% {
-        background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
-    }
-
-    100% {
-        background-position: 20px -20px, -20px 20px, 10px 10px, -10px -10px, 15px -15px, -15px 15px, 2000% 0%;
-    }
-}
-
 .fpt-nav-search {
     position: relative;
     padding: 8px 10px 6px;
@@ -309,133 +210,6 @@
     background: rgba(255, 255, 255, 0.25);
 }
 
-#fpToolsButton span::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 12px;
-    background: transparent;
-    opacity: 0;
-    animation: particleFloat 6s infinite linear;
-    pointer-events: none;
-}
-
-@keyframes starFloat {
-    0% {
-        background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
-    }
-
-    100% {
-        background-position: 20px -20px, -20px 20px, 10px 10px, -10px -10px, 15px -15px, -15px 15px, 0% 0%;
-    }
-}
-
-@keyframes particleFloat {
-    0% {
-        background-position: 0% 0%, 0% 0%, 0% 0%;
-        transform: translateY(0px);
-    }
-
-    50% {
-        background-position: 5px -5px, -5px 5px, 3px -3px;
-        transform: translateY(-2px);
-    }
-
-    100% {
-        background-position: 10px -10px, -10px 10px, 6px -6px;
-        transform: translateY(0px);
-    }
-}
-
-@keyframes pulse {
-    0% {
-        filter: brightness(1);
-    }
-
-    50% {
-        filter: brightness(1.2);
-    }
-
-    100% {
-        filter: brightness(1);
-    }
-}
-
-#fpToolsButton:hover span {
-    opacity: 1;
-    animation: shineEffect 30s infinite linear;
-}
-
-#fpToolsButton:hover span::before,
-#fpToolsButton:hover span::after {
-    opacity: 1;
-}
-
-#fpToolsButton span {
-    overflow: hidden;
-}
-
-#fpToolsButton span::before {
-    mask-image: linear-gradient(45deg, transparent 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%);
-    mask-size: 200% 100%;
-    animation: shimmer 3s infinite linear;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: -100% 0;
-    }
-
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-#fpToolsButton:hover span::before {
-    opacity: 1;
-}
-
-#fpToolsButton:hover {
-    text-shadow: 0 0 12px var(--fpt-accent-soft, rgba(27,117,187,0.5));
-    transform: translateY(0);
-}
-
-#fpToolsButton:hover::before {
-    transform: scaleX(1);
-    transform-origin: left;
-    box-shadow: 0 0 10px var(--fpt-accent-soft, rgba(27,117,187,0.5)), 0 0 20px rgba(255, 107, 107, 0.3);
-}
-
-#fpToolsButton:hover::after {
-    opacity: 1;
-}
-
-#fpToolsButton:hover span {
-    opacity: 1;
-    animation: shineEffect 1.5s infinite linear;
-}
-
-@keyframes fpToolsPulse {
-    0% {
-        text-shadow: 0 0 12px var(--fpt-accent-soft, rgba(27,117,187,0.5));
-    }
-
-    50% {
-        text-shadow: 0 0 15px var(--fpt-accent-soft, rgba(27,117,187,0.6)), 0 0 25px rgba(255, 107, 107, 0.4);
-    }
-
-    100% {
-        text-shadow: 0 0 12px var(--fpt-accent-soft, rgba(27,117,187,0.5));
-    }
-}
-
-#fpToolsButton:hover {
-    animation: fpToolsPulse 2s infinite ease-in-out;
-}
-
 .fp-tools-popup:not(.active):not(.is-closing) {
     /* Preserve the exit animation, then skip the closed panel's rendering work. */
     content-visibility: hidden;
@@ -471,17 +245,21 @@
     overflow: hidden;
 }
 
+/* Окно «вырастает» из кружка-лого в шапке: круговое раскрытие clip-path с центром в кнопке.
+   --fpt-reveal-x/y/r (центр кнопки в координатах окна и радиус до дальнего угла)
+   ставит setPopupRevealOrigin() в main_popup.js перед открытием и закрытием. */
 .fp-tools-popup.active {
     visibility: visible;
     opacity: 1;
-    animation: fptMenuPopIn 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+    /* Release the circular clip after opening so it cannot trim the shadow,
+       including after a viewport resize. Keep the initial frame during setup. */
+    animation: fptMenuRevealIn 0.55s cubic-bezier(0.65, 0, 0.25, 1) backwards;
 }
 .fp-tools-popup.is-closing {
     visibility: visible;
     opacity: 0;
-    transform: translate(-50%, -48%) scale(.985);
     pointer-events: none;
-    animation: none !important;
+    animation: fptMenuRevealOut 0.32s cubic-bezier(0.55, 0, 0.75, 0.2) both;
 }
 
 /* Прозрачное меню FunPay Funcy (управляется из «Кастомизация»).
@@ -516,15 +294,27 @@
     -webkit-backdrop-filter: blur(var(--fpt-menu-blur, 8px));
 }
 
-@keyframes fptMenuPopIn {
+@keyframes fptMenuRevealIn {
     from {
-        opacity: 0;
-        transform: translate(-50%, -48%);
+        opacity: 0.6;
+        clip-path: circle(17px at var(--fpt-reveal-x, 50%) var(--fpt-reveal-y, 0%));
     }
-
+    25% { opacity: 1; }
     to {
         opacity: 1;
-        transform: translate(-50%, -50%);
+        clip-path: circle(var(--fpt-reveal-r, 150%) at var(--fpt-reveal-x, 50%) var(--fpt-reveal-y, 0%));
+    }
+}
+
+@keyframes fptMenuRevealOut {
+    from {
+        opacity: 1;
+        clip-path: circle(var(--fpt-reveal-r, 150%) at var(--fpt-reveal-x, 50%) var(--fpt-reveal-y, 0%));
+    }
+    75% { opacity: 1; }
+    to {
+        opacity: 0;
+        clip-path: circle(17px at var(--fpt-reveal-x, 50%) var(--fpt-reveal-y, 0%));
     }
 }
 
@@ -687,6 +477,8 @@
         animation-duration: 0.01ms !important;
     }
 
+    .fp-tools-popup.is-closing { animation: none !important; }
+
     .fp-tools-popup > .fp-tools-header .close-btn__surface {
         transition-duration: 0.01ms;
     }
@@ -772,6 +564,164 @@
     justify-content: center;
 }
 
+/* Стартовый экран правой колонки: ни одна категория меню не развёрнута. */
+.fp-tools-content.fpt-start-state-active > .fp-tools-page-content { display: none !important; }
+
+.fp-tools-popup .fpt-start-state {
+    --fpt-start-accent: var(--fptm-accent, #7663f6);
+    box-sizing: border-box;
+    flex: 1 1 auto;
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100% - 32px);
+    margin: 16px;
+    padding: 32px 24px;
+    border: 1px solid var(--fptm-nav-border, rgba(119,99,246,0.16));
+    border-radius: 24px;
+    background:
+        radial-gradient(120% 70% at 50% 0%, var(--fptm-accent-soft, rgba(118,99,246,0.12)), transparent 62%),
+        var(--fptm-nav-surface, #fbfaff);
+    box-shadow: 0 14px 34px var(--fptm-nav-row-shadow, rgba(94,84,170,0.10));
+    color: var(--fptm-text, #16181d);
+    animation: fptStartStateIn .64s cubic-bezier(.2,.8,.2,1);
+}
+.fp-tools-popup .fpt-start-state[hidden] { display: none !important; }
+
+.fp-tools-popup .fpt-start-state-inner {
+    width: 100%;
+    max-width: 520px;
+    /* Блок чуть выше оптического центра — маскот не «проваливается» вниз. */
+    margin-top: -48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.fp-tools-popup .fpt-start-state-logo {
+    width: 210px;
+    height: 210px;
+    margin-bottom: 6px;
+    filter: drop-shadow(0 16px 24px rgba(92, 100, 246, 0.24));
+    user-select: none;
+    pointer-events: none;
+    animation: fptStartStateFloat 6s ease-in-out infinite;
+}
+.fp-tools-popup .fpt-start-state .fpt-start-state-title {
+    margin: 0 0 8px;
+    font-size: 22px;
+    line-height: 1.25;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--fptm-text, #16181d) !important;
+}
+.fp-tools-popup .fpt-start-state .fpt-start-state-text {
+    margin: 0;
+    max-width: 380px;
+    font-size: 14px;
+    line-height: 1.5;
+    text-wrap: balance;
+    color: var(--fptm-muted, rgba(22,24,29,0.74)) !important;
+}
+.fp-tools-popup .fpt-start-state-community {
+    width: 100%;
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid var(--fptm-nav-border, rgba(119,99,246,0.16));
+}
+.fp-tools-popup .fpt-start-state-label {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fptm-faint, rgba(22,24,29,0.56)) !important;
+}
+.fp-tools-popup .fpt-start-links {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+@container fpt-content (max-width: 560px) {
+    .fp-tools-popup .fpt-start-links { grid-template-columns: 1fr; }
+}
+.fp-tools-popup .fpt-start-state a.fpt-start-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    padding: 12px;
+    border: 1px solid var(--fptm-nav-border, rgba(119,99,246,0.16));
+    border-radius: 18px;
+    background: var(--fptm-bg, #fff);
+    color: var(--fptm-text, #16181d) !important;
+    text-align: left;
+    text-decoration: none !important;
+    transition: border-color .18s ease;
+}
+.fp-tools-popup .fpt-start-state a.fpt-start-link:hover {
+    border-color: var(--fptm-accent-border, rgba(118,99,246,0.35));
+}
+.fp-tools-popup .fpt-start-state a.fpt-start-link:focus-visible {
+    outline: 2px solid var(--fpt-start-accent);
+    outline-offset: 2px;
+}
+.fp-tools-popup .fpt-start-link-icon {
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+    filter: drop-shadow(0 6px 10px rgba(40, 80, 200, 0.22));
+}
+.fp-tools-popup .fpt-start-link-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.fp-tools-popup .fpt-start-link-text strong {
+    font-size: 14px;
+    font-weight: 650;
+    white-space: nowrap;
+    color: var(--fptm-text, #16181d) !important;
+}
+.fp-tools-popup .fpt-start-link-text span {
+    font-size: 12px;
+    line-height: 1.35;
+    color: var(--fptm-muted, rgba(22,24,29,0.74)) !important;
+}
+.fp-tools-popup .fpt-start-link-arrow {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--fptm-faint, rgba(22,24,29,0.56));
+    transition: color .18s ease;
+}
+.fp-tools-popup .fpt-start-link-arrow svg { width: 100%; height: 100%; }
+.fp-tools-popup .fpt-start-link:hover .fpt-start-link-arrow {
+    color: var(--fpt-start-accent);
+}
+
+@keyframes fptStartStateIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes fptStartStateFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fp-tools-popup .fpt-start-state,
+    .fp-tools-popup .fpt-start-state-logo { animation: none; }
+    .fp-tools-popup .fpt-start-state a.fpt-start-link,
+    .fp-tools-popup .fpt-start-link-arrow { transition: none; }
+}
+
 .fp-tools-content::-webkit-scrollbar {
     width: 6px;
 }
@@ -795,7 +745,7 @@
 
 .fp-tools-page-content.active {
     display: block;
-    animation: fadeIn 0.5s ease;
+    animation: fadeIn 1s ease;
 }
 
 /* Global notifications live in a fixed overlay so they never move page content. */
@@ -825,7 +775,8 @@
     border-radius: 14px;
     color: var(--fpt-text, #f4f2fb);
     background: var(--fpt-surface-2, rgba(32, 34, 42, .96));
-    box-shadow: 0 12px 32px var(--fpt-shadow, rgba(0, 0, 0, .24));
+    /* Keep the toast shadow calm even when the selected site theme uses a strong page shadow. */
+    box-shadow: 0 8px 22px rgba(10, 18, 28, .20), 0 2px 5px rgba(10, 18, 28, .08);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     font-size: 14px;
@@ -2837,47 +2788,6 @@ input:checked + .slider:before {
     align-items: center;
 }
 
-#fp-tools-read-all-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    margin-left: auto;
-    color: var(--fpt-text-muted, #a0a0a0);
-    transition: color 0.2s ease, transform 0.2s ease;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#fp-tools-read-all-btn .material-icons {
-    font-size: 22px;
-}
-
-#fp-tools-read-all-btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
-}
-
-#fp-tools-read-all-btn.loading .material-icons {
-    display: none;
-}
-
-#fp-tools-read-all-btn.loading::after {
-    content: '';
-    display: block;
-    width: 18px;
-    height: 18px;
-    border: 2px solid #a0a0a0;
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
 /* Исправление основного контейнера фильтров */
 .filter-container {
     width: 100%;
@@ -3185,47 +3095,6 @@ a.contact-item:hover {
     position: relative;
     display: flex;
     align-items: center;
-}
-
-#fp-tools-read-all-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px;
-    margin-left: auto;
-    color: var(--fpt-text-muted, #a0a0a0);
-    transition: color 0.2s ease, transform 0.2s ease;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#fp-tools-read-all-btn .material-icons {
-    font-size: 22px;
-}
-
-#fp-tools-read-all-btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
-}
-
-#fp-tools-read-all-btn.loading .material-icons {
-    display: none;
-}
-
-#fp-tools-read-all-btn.loading::after {
-    content: '';
-    display: block;
-    width: 18px;
-    height: 18px;
-    border: 2px solid #a0a0a0;
-    border-top-color: #fff;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
 }
 
 .fp-tools-chat-toggle {
@@ -3732,47 +3601,42 @@ html.fpt-custom-theme-on .price-editor-instructions code {
    FunPay Funcy 2.8 - UI additions & flat redesign overrides
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── Header button: flat accent style ──────────────────────────── */
+/* ── Header button: лого Funcy ────────────────────────────────────
+   Разметка повторяет аватарку FunPay (main.css): <li><a.user-link><div.user-link-photo>.
+   Ссылка сама получает правила шапки `.navbar-nav.logged>li>a` (бока 7px, line-height 20px,
+   на узком экране 7px 15px) - их не перебиваем; от `a.user-link` берём только вертикаль
+   13px. Внутри блок 34×34 inline-block/middle, как .user-link-photo, но лого квадратное.
+   Лого статичное: анимируется только раскрытие окна. */
 #fpToolsButton {
-    color: #7663f6 !important;
-    background: none !important;
-    -webkit-background-clip: unset !important;
-    background-clip: unset !important;
-    /* keep the transition cheap - only color/opacity, no transforms/filters that repaint */
-    transition: color 0.2s ease, opacity 0.2s ease !important;
-    animation: none !important;
-    transform: none !important;
-}
-
-#fpToolsButton::before {
-    background: #7663f6 !important;
-    height: 2px;
-    border-radius: 2px;
+    padding-top: 13px;
+    padding-bottom: 13px;
+    background: transparent !important;
+    text-decoration: none !important;
     box-shadow: none !important;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
 }
 
-/* Lightweight hover: just the underline + a subtle brightness, no infinite animations,
-   no text-shadow pulse, no particle/star layers (those were pinning the GPU). */
-#fpToolsButton:hover {
-    filter: brightness(1.15);
-    text-shadow: none !important;
-    animation: none !important;
-    transform: none !important;
-}
-#fpToolsButton:hover::before {
-    box-shadow: none !important;
-}
-#fpToolsButton:hover::after {
-    opacity: 0 !important;
+#fpToolsButton .fpt-logo-btn {
+    display: inline-block;
+    vertical-align: middle;
+    width: 34px;
+    height: 34px;
 }
 
-/* Remove all heavy animations from header button to fix GPU usage */
-#fpToolsButton span,
-#fpToolsButton span::before,
-#fpToolsButton span::after,
-#fpToolsButton::after {
-    display: none !important;
-    animation: none !important;
+#fpToolsButton .fpt-logo-btn img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+#fpToolsButton:focus-visible .fpt-logo-btn {
+    outline: 2px solid var(--fpt-accent, #8b5cf6);
+    outline-offset: 2px;
 }
 .fp-tools-popup {
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
@@ -4620,8 +4484,8 @@ a.contact-item.fp-tools-pinned:not(.active){
 /* === 3.1: reply answer text under the clickable reply card === */
 .fpt-reply-rest{white-space:pre-wrap;word-break:break-word;}
 
-/* FIX 2.8.8 (№1): скрываем скроллбар у попапа точности статистики (Chrome/WebKit) */
-#fpt-stats-accuracy-box::-webkit-scrollbar { width: 0; height: 0; display: none; }
+/* Keep a visible scroll affordance when the statistics popover overflows. */
+#fpt-stats-accuracy-box::-webkit-scrollbar { width: 6px; height: 6px; }
 
 /* ===== FunPay Funcy: оверлей загрузки статистики продаж ===== */
 .fp-stats-loading {
@@ -4740,3 +4604,21 @@ a.contact-item.fp-tools-pinned:not(.active){
 .fp-tools-popup[data-fpt-empty-shell="true"] .fp-tools-content {
     padding: 0; background: transparent !important;
 }
+
+/* Модульный чат: ручки ширины колонок (content/features/chat_column_resize.js). */
+.chat-full.fpt-chat-resizable { position: relative; }
+.chat-full > .fpt-chat-resizer {
+    position: absolute; top: 0; bottom: 0; z-index: 5;
+    width: 14px; margin-left: -7px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: col-resize; touch-action: none; outline: none;
+}
+.chat-full > .fpt-chat-resizer::before {
+    content: ''; width: 4px; height: 44px; border-radius: 4px;
+    background: var(--fpt-accent, currentColor);
+    opacity: 0; transition: opacity .15s ease, height .15s ease;
+}
+.chat-full > .fpt-chat-resizer:hover::before,
+.chat-full > .fpt-chat-resizer:focus-visible::before { opacity: .6; height: 72px; }
+.chat-full > .fpt-chat-resizer[data-dragging="true"]::before { opacity: .9; height: 96px; }
+html.fpt-chat-resizing, html.fpt-chat-resizing * { cursor: col-resize !important; user-select: none !important; }

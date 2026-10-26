@@ -1,0 +1,79 @@
+/* Native scrolling, shared chrome. No overflow, gutters or scroll handlers here. */
+:where(*)::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+:where(*)::-webkit-scrollbar-track,
+:where(*)::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+:where(*)::-webkit-scrollbar-thumb {
+    min-height: 28px;
+    min-width: 28px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--fptm-muted, var(--popup-color, #788394)) 65%, transparent);
+    background-clip: padding-box;
+}
+
+:where(*)::-webkit-scrollbar-thumb:hover {
+    background-color: var(--fptm-muted, var(--popup-color, #788394));
+}
+
+/* Chromium's standard scrollbar properties otherwise suppress the pseudo-elements,
+   including the user's scrollbar width/colors and the theme editor preview. */
+@supports selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: auto !important;
+        scrollbar-color: auto !important;
+    }
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: var(--fptm-muted, var(--popup-color, #788394)) transparent;
+    }
+}
+
+/* Popup chrome has a fixed neutral scrollbar. Repeated root specificity keeps
+   late injected menu/site themes from recolouring it. The site preview remains
+   an editable preview of the user's FunPay settings. No overflow rules change. */
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup,
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *)) {
+    scrollbar-color: #737985 transparent !important;
+}
+@supports selector(::-webkit-scrollbar) {
+    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup,
+    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *)) {
+        scrollbar-color: auto !important;
+    }
+}
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-track,
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-track,
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-corner {
+    background: transparent !important;
+}
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb,
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb {
+    background: #737985 !important;
+    background-clip: padding-box !important;
+    border: 2px solid transparent !important;
+    border-radius: 999px !important;
+}
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb:hover,
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb:hover {
+    background-color: #8a909a !important;
+}
+
+@media (forced-colors: active) {
+    :where(*)::-webkit-scrollbar-thumb {
+        background-color: ButtonText;
+    }
+    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb,
+    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb {
+        background-color: ButtonText !important;
+    }
+}

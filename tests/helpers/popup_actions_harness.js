@@ -22,6 +22,7 @@ function context(initial = {}) {
     };
     const ctx = vm.createContext(sandbox);
     const load = file => vm.runInContext(fs.readFileSync(path.join(__dirname, '../..', file), 'utf8'), ctx, { filename: file });
+    load('background/feature_availability.js');
     load('content/safe_values.js');
     load('background/retired_integrations.js');
     const source = path.join(__dirname, '../..', 'content/ui/popup_actions.js');

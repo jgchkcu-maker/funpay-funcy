@@ -897,7 +897,7 @@ function setupActionProcessing() {
                 ok++;
             } catch (e) {
                 fail++;
-                console.warn('FunPay Funcy clone fail', id, e);
+                console.warn('Funcy clone fail', id, e);
             }
         }
         updateLog(`Готово: ${ok} создано, ${fail} с ошибкой.`, fail > 0);

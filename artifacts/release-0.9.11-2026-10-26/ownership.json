@@ -1,0 +1,126 @@
+{
+  "baseline": "C:\\Users\\Usser\\.codex\\task-backups\\funcy-0.9.11-20261026\\baseline-checkout",
+  "files": [
+    {
+      "path": "background/chat_protocol.js",
+      "before_sha256": null,
+      "after_sha256": "1a80cfef137520f888f47bf33088a3815f5ae2bbc3a4ca9cfe7a26f0b897aba0"
+    },
+    {
+      "path": "background/chat_reader.js",
+      "before_sha256": null,
+      "after_sha256": "ef40cdfcebf25f0b867c3d800aa7fe22cc3075066896778aed4b97bd53a58961"
+    },
+    {
+      "path": "background/chat_stream.js",
+      "before_sha256": null,
+      "after_sha256": "1faaffdfa71209cb91ce47537cd841a1c2e2a5094ec146a7aa814bde0493d6b1"
+    },
+    {
+      "path": "background/autoresponder.js",
+      "before_sha256": "3b55662011fed2b0b18468e6c242f43cf4b63c97cfce3276175f6c9f95a3c6d2",
+      "after_sha256": "cf31915c1fd35a940ebda3292ae28d929ad6a2eddf587996cd34fd4f77646141"
+    },
+    {
+      "path": "background/background.js",
+      "before_sha256": "b056fd7cf13187921bded654ef9386a06af11806d28ec232ea67102326111973",
+      "after_sha256": "0bbea8aae7bc3b4f3d9d0b980418d314052423000502a2e75ee6080a335aba16"
+    },
+    {
+      "path": "background/auto_reply_store.js",
+      "before_sha256": "f46b3ad6f13a668dcc2b4f7e3be4c8dfd9ae652025da35ae2d4041d75a88592a",
+      "after_sha256": "828a5333a6d5dcac6c46e4a8a36a83feb85e332e1f76e7faa46a5336e66382e8"
+    },
+    {
+      "path": "offscreen/offscreen.js",
+      "before_sha256": "9d208ea37361a4aafb97d0589db4763eaca4cb0c1c14ec08410ce6abc6f9400a",
+      "after_sha256": "bdefa8cd90fbf0bcdc8c52028cb17838367fd75fc1c42b6ee8c4f5a2ba751dc7"
+    },
+    {
+      "path": "content/features/settings_io.js",
+      "before_sha256": "5d2e1ae8cde43a3ab25d868d0d8aeb058ba1d3bca9ba66b4f08eb644105c4add",
+      "after_sha256": "1e5f02ecafda93e25d275ec8d78ff5a95173e8832aa67c26e096d88428742ab5"
+    },
+    {
+      "path": "content/ui/auto_reply_page.js",
+      "before_sha256": "2a02dc70fff6c2518804a301a9e4b3b3ef10f14c92c964054264221f003027f2",
+      "after_sha256": "67148323303cd4fb646a01bea2a9232deec8fcada0fe0f9e6b5c174d60b65ef6"
+    },
+    {
+      "path": "css/scrollbars.css",
+      "before_sha256": "7cc799835864c35f6093afaad430f823c9b66988effedbf68a6d3dfef3aeec54",
+      "after_sha256": "b6e9090f342f48f564cdbd06a48eb5682c83b58ff386ff14c4528e80d289e119"
+    },
+    {
+      "path": "manifest.json",
+      "before_sha256": "fd8fb91104ce74a52b5ebb8518bfe68a4d5a2054b637a61f49f1eb5e13373082",
+      "after_sha256": "d225a615ac53b3265e6694398d377e4bb5efe91291658f2d84ec6cb63ef271b8"
+    },
+    {
+      "path": "popup/popup.html",
+      "before_sha256": "b2166d1ef14ce5847233fb256b295f83cd824e915e02a89de6346a465068ac44",
+      "after_sha256": "1ccbf56fa24680591396718cfeadd6b51b5c95e416ece0d4efb9828fb9bf3a8a"
+    },
+    {
+      "path": "tools/smoke-store.cjs",
+      "before_sha256": "1e8f50dab7379debd989bf303e80cd65617db8a5cf6c2f04a98ed726f07f0698",
+      "after_sha256": "4e2006d609e3649dce8c238066bea4ae2e9ae32217fe0150845361067939e020"
+    },
+    {
+      "path": "tests/chat_stream_0911.test.js",
+      "before_sha256": null,
+      "after_sha256": "734b9588bff9987d39147c8ab0a67d8b9dd1547fbaf7dbc521fb5942cd7d2150"
+    },
+    {
+      "path": "tests/release_0911_browser.test.js",
+      "before_sha256": null,
+      "after_sha256": "badc3e568625c7f826db7528f543e756f3c2473274a013b583bf9ac5f351b223"
+    },
+    {
+      "path": "docs/store/assets.md",
+      "before_sha256": "14b3ed9ee0da11150186362305cec40d626bf56aab4f0b417cf057d5469a052e",
+      "after_sha256": "85b4e6a098a42c1492a433701340bc860460d1bc23a6f5f4258b0ddd62ebfb14"
+    },
+    {
+      "path": "docs/store/listing.md",
+      "before_sha256": "210058ffc4f72768afe2c42467dbed425e0a444f0f8d2acaee694ad3a127b1fe",
+      "after_sha256": "912674b77645cb2bc5643cbe98b5ade8561bc429978233cfcb02ea8f6d03e0e0"
+    },
+    {
+      "path": "docs/store/manual-acceptance.md",
+      "before_sha256": "d43d0a19cd8fad14826523fd128ebb63e8d9114b435b3714b64877edd852fcc5",
+      "after_sha256": "e2247faf4ea2fb2e2dd926aeef012a6134b0b456b8cfddca6d4b65861fe40d14"
+    },
+    {
+      "path": "docs/store/permissions.md",
+      "before_sha256": "94b356ddf74305822f38254eccb8b915f2182673a4633da612dc18a3b23e3ffd",
+      "after_sha256": "1449903703a50a636a1ad6905a03ff5095ef73f38931d85dd933e2e2828846b5"
+    },
+    {
+      "path": "docs/store/privacy-policy.md",
+      "before_sha256": "8abe3abb10b0b0f35d03bb4a41f5ef0a0fb5c802625fda92cccee61dd894e721",
+      "after_sha256": "131b5db3471089a2ce02dfa54f97f5c2f0e0ca3b139ac18af93c6e01ae6f6884"
+    },
+    {
+      "path": "docs/store/release-status-0.9.10.md",
+      "before_sha256": null,
+      "after_sha256": "fc7664777f8ee865fe43990557b4538e56cf0d43cdd7c359edf0ace9a40171fd"
+    },
+    {
+      "path": "docs/store/screenshots.md",
+      "before_sha256": "3dd431def8dca1e1e5044613cbbdc8077272f7f100b9ed55fd222b34a39f860a",
+      "after_sha256": "3cb7b88a6c343e8d8966015dac6273d6baa733ff4ca21936de4fc8cf3315b53d"
+    },
+    {
+      "path": "content/engine_wake.js",
+      "before_sha256": "43356a5600ce9566b8bb1b497c296170871a2821b5f62a71d1ac7b9bdb16d265",
+      "after_sha256": "cba290e2c6656e1a3f03fa6197e3a7a09bb89a11637c61dfec0490f5c4fbcd1e"
+    },
+    {
+      "path": "tests/engine_wake.test.js",
+      "before_sha256": null,
+      "after_sha256": "c51b6b1794b362293f6a0c0cd5fae512a39ad2377201916ccd31f653618e2576"
+    }
+  ],
+  "note": "Only changes for 0.9.11 relative to the saved dirty 0.9.10 workspace. Git index unchanged."
+}

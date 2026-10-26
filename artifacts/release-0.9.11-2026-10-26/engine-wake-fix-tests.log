@@ -1,0 +1,23 @@
+✔ page mutations debounce into one wake and allow the next independent signal (1.5269ms)
+✔ synchronous context invalidation is contained and detaches stale page listeners (0.7099ms)
+✔ context lost during debounce cancels the send and detaches the observer (0.6894ms)
+✔ asynchronous context invalidation detaches the observer without an unhandled rejection (3.3781ms)
+✔ transient worker rejection does not disable future page signals (1.1209ms)
+✔ strict date parsing validates ru/en/uk calendar, MSK day and year rollover (5.7764ms)
+✔ send receipts require a new numeric ID, our author and the complete normalized body (1.6155ms)
+✔ reconcile checkpoints span budget exhaustion and worker recreation without moving completed border (5.7328ms)
+✔ unknown and minute-boundary dates stay visible without automatic adoption (1.0702ms)
+✔ offscreen parser shares creation and waits for every concurrent parser before closing (3.41ms)
+✔ engine coalesces a signal during a pass and disabled automation clears its alarms (1.7073ms)
+✔ catalog route validation rejects arbitrary parameters, userinfo and external redirects before another request (16.429ms)
+✔ release migration changes only exact retired defaults, preserving sessions and custom assets (0.9916ms)
+✔ a failure while preparing parts rolls back the entire attempt and its event (0.6646ms)
+✔ one continuation alarm keeps the earliest persisted deadline across concurrent orders (1.3525ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.0428

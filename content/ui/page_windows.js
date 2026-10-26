@@ -166,7 +166,7 @@
         }
         const onClose = st.onClose;
         if (typeof onClose === 'function') {
-            try { onClose(); } catch (error) { console.error('FunPay Funcy: window onClose failed', error); }
+            try { onClose(); } catch (error) { console.error('Funcy: window onClose failed', error); }
         }
         return true;
     }

@@ -31,6 +31,15 @@ test('CSV neutralizes formulas, including arithmetic, while keeping signed amoun
     assert.equal(safe.csvCell('hello "world"'), '"hello ""world"""');
 });
 
+test('previously bundled wallpapers migrate to public assets in CSS and exported settings', () => {
+    const legacy = 'chrome-extension://abcdefghijklmnop/themes/wallpapers/white-ghoul.webp';
+    const remote = 'https://raw.githubusercontent.com/jgchkcu-maker/funcy-assets/main/wallpapers/white-ghoul.webp';
+    assert.equal(safe.cssImageUrl(legacy), `url("${remote}")`);
+    assert.equal(safe.themeSettings({ bgImage: legacy }).bgImage, remote);
+    assert.equal(safe.cssImageUrl('chrome-extension://abcdefghijklmnop/themes/wallpapers/unknown.webp'), '');
+    assert.equal(safe.cssImageUrl('chrome-extension://abcdefghijklmnop/themes/wallpapers/../secrets.png'), '');
+});
+
 test('theme numbers and colors cannot introduce CSS rules through sibling fields', () => {
     const clean = safe.themeSettings({ borderRadius: '0px;}body{display:none', bgBlur: '0);}', scrollbarWidth: '1;}html{',
         scrollbarThumbColor: 'red;}body{display:none', textColor: 'url(https://evil)', containerBgOpacity: -5,

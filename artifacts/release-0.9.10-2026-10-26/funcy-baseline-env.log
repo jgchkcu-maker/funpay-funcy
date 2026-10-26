@@ -1,0 +1,65 @@
+✔ cursor runtime stays absent while disabled and initializes once on either mode (1615.5087ms)
+✔ closed popup skips rendering and restores finance and effects on reopening (3049.0692ms)
+✔ offscreen lot editor preserves fields and reports pages without an editor through messages (694.7025ms)
+MENU_REFERENCE_CONTRACT_FAIL: AssertionError [ERR_ASSERTION]: the main popup must use its own entrance animation
+    at testPopupEntranceDoesNotScale (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\menu_reference_contract.test.js:268:12)
+    at runAll (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\menu_reference_contract.test.js:336:5)
+    at Object.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\menu_reference_contract.test.js:343:5)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14)
+    at Object..js (node:internal/modules/cjs/loader:2074:10)
+    at Module.load (node:internal/modules/cjs/loader:1656:32)
+    at Module._load (node:internal/modules/cjs/loader:1448:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '\n' +
+    '    visibility: visible;\n' +
+    '    opacity: 1;\n' +
+    '    animation: fptMenuRevealIn 0.55s cubic-bezier(0.65, 0, 0.25, 1) both;\n',
+  expected: /animation:\s*fptMenuPopIn/,
+  operator: 'match',
+  diff: 'simple'
+}
+✖ tests\menu_reference_contract.test.js (102.9838ms)
+✔ chat attachment disabling restores the native button without replacing either node (1237.33ms)
+✔ order timers share one interval, avoid duplicates and clean removed rows (775.044ms)
+✔ stock cache keeps a newer storage event when the initial read resolves late (601.1075ms)
+✔ manifest eagerly loads each menu dependency once and every resource exists (6.9773ms)
+✔ one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu (4750.6353ms)
+✔ saved custom theme, page windows and enhanced selects work before opening and preserve their palette (1250.0517ms)
+✔ browser: translations, buyer history, pinned migration, and imported CSS stay inert (977.7072ms)
+✖ every prefixed literal has an explicit backup decision, including dynamic key prefixes (70.5344ms)
+✔ device sessions and verification queues never leave or enter settings backups (6.1763ms)
+✔ import normalizes known settings before writing and rejects oversized files before reading (3.7192ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 12
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10471.0294
+
+✖ failing tests:
+
+test at tests\menu_reference_contract.test.js:1:1
+✖ tests\menu_reference_contract.test.js (102.9838ms)
+  'test failed'
+
+test at tests\settings_io_keys.test.js:10:1
+✖ every prefixed literal has an explicit backup decision, including dynamic key prefixes (70.5344ms)
+  AssertionError [ERR_ASSERTION]: Classify new key fptStartStateTitle in content\ui\main_popup.js
+      at TestContext.<anonymous> (C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026\baseline-checkout\tests\settings_io_keys.test.js:19:20)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

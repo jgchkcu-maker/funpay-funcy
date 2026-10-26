@@ -157,11 +157,12 @@
         helpPanel.append(node('h2', '', 'Элементы интерфейса'));
         const helpList = node('ul', '');
         [
-            'Здесь собраны кнопки, поля и пункты меню, которые FunPay Funcy добавляет на страницы FunPay.',
+            'Здесь собраны кнопки, поля и пункты меню, которые Funcy добавляет на страницы FunPay.',
             'Выключенный элемент сразу пропадает со страницы — без перезагрузки. Сама функция и её настройки не удаляются.',
             'Значок глаза показывает, как элемент выглядит на сайте, чтобы его было проще узнать.',
             'Кнопка «Клавиатура» живёт внутри блока шрифта: если скрыть блок, пропадёт и она.',
-            'Опишите словами, что мешает, — ИИ подберёт элементы, а скрыты будут только те, что вы отметите.'
+            ...(globalThis.FPTFeatureAvailability?.isAvailable('ai') === true
+                ? ['Опишите словами, что мешает, — ИИ подберёт элементы, а скрыты будут только те, что вы отметите.'] : [])
         ].forEach(item => helpList.append(node('li', '', item)));
         helpPanel.append(helpList);
         const header = ui.ensureCategoryHeader(page, 'Элементы интерфейса', {
@@ -234,6 +235,7 @@
         retry.addEventListener('click', () => load());
 
         // --- AI assistant ------------------------------------------------------------------------
+        function createAISection() {
         const aiCard = node('section', 'fpt-qr-card fpt-ie-ai');
         aiCard.setAttribute('aria-labelledby', 'fpt-ie-ai-title');
         const aiHead = node('div', 'fpt-qr-card-head');
@@ -386,6 +388,10 @@
             footer.append(cancel, confirm);
             aiResult.append(head, list, footer);
         }
+
+        return { element: aiCard, sync: syncAiButton };
+        }
+        const aiSection = globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? createAISection() : null;
 
         // --- Toolbar -----------------------------------------------------------------------------
         const catalog = node('section', 'fpt-ie-catalog');
@@ -612,7 +618,7 @@
             groupViews.push({ group, card, status, toggle: unlocked.length ? groupToggle : null, unlocked, sections, navButton, navCount });
         });
 
-        screen.append(hero, banner, aiCard, catalog);
+        screen.append(hero, banner, ...(aiSection ? [aiSection.element] : []), catalog);
 
         // --- State → DOM -------------------------------------------------------------------------
         function sync() {
@@ -704,7 +710,7 @@
         function renderAll() {
             applyVisibility();
             sync();
-            syncAiButton();
+            aiSection?.sync();
         }
 
         // --- Writes ------------------------------------------------------------------------------

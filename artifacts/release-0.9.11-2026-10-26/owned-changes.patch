@@ -1,0 +1,1497 @@
+--- /dev/null
++++ b/background/chat_protocol.js
+@@ -0,0 +1,26 @@
++export function messageId(value, { zero = false } = {}) {
++    if (typeof value === 'number' && !Number.isSafeInteger(value)) return null;
++    const id = String(value ?? '');
++    return /^(0|[1-9]\d*)$/.test(id) && (zero || id !== '0') ? id : null;
++}
++export const compareIds = (a, b) => BigInt(a) < BigInt(b) ? -1 : BigInt(a) > BigInt(b) ? 1 : 0;
++export function orderedMessages(messages) {
++    const byId = new Map();
++    for (const raw of messages) {
++        const id = messageId(raw?.id);
++        if (!id) throw new Error('Сообщение без корректного ID.');
++        const message = { ...raw, id };
++        const previous = byId.get(message.id);
++        if (previous && JSON.stringify(previous) !== JSON.stringify(message)) throw new Error('Противоречивый повтор ID сообщения.');
++        byId.set(message.id, message);
++    }
++    return [...byId.values()].sort((a, b) => compareIds(a.id, b.id));
++}
++export function readDelay(response, now = Date.now()) {
++    const value = response.headers?.get?.('Retry-After');
++    const seconds = value && /^\d+(\.\d+)?$/.test(value) ? Number(value) * 1000 : null;
++    const date = value && seconds === null ? Date.parse(value) : NaN;
++    const delay = seconds ?? (Number.isFinite(date) ? date - now : 0);
++    const requested = Number.isFinite(delay) ? Math.min(delay, 24 * 60 * 60_000) : 0;
++    return Math.max(response.status === 403 ? 15 * 60_000 : 60_000, requested);
++}
+--- /dev/null
++++ b/background/chat_reader.js
+@@ -0,0 +1,94 @@
++import { messageId, readDelay } from './chat_protocol.js';
++
++// Read-only runner/history transport. A single queue per account, no immediate
++// retries. Persistent cooldown is shared with bookmark reads and backfill.
++export function createChatReader({ fetchImpl = (...args) => fetch(...args), parseMessages, parseChatList,
++    getCooldown = async () => 0, setCooldown = async () => {}, assertCurrent = async () => {},
++    now = () => Date.now(), timeoutMs = 15000, batchSize = 4 } = {}) {
++    const queues = new Map();
++    async function request(account, url, options) {
++        await assertCurrent(account);
++        const retryAt = await getCooldown(account);
++        if (retryAt > now()) throw Object.assign(new Error('Чтение чатов отложено.'), { retryAt });
++        const controller = new AbortController();
++        const timer = setTimeout(() => controller.abort(), timeoutMs);
++        try {
++            const response = await fetchImpl(url, { credentials: 'include', ...options, signal: controller.signal, redirect: 'error' });
++            if (!response.ok) {
++                const delay = [403, 429].includes(response.status) ? readDelay(response, now()) : 30000;
++                const until = now() + delay;
++                await setCooldown(account, until, `HTTP ${response.status}`);
++                throw Object.assign(new Error(`Чтение чатов: HTTP ${response.status}.`), { retryAt: until, httpStatus: response.status });
++            }
++            const json = await response.json();
++            if (json?.error) throw new Error('FunPay вернул ошибку чтения.');
++            await assertCurrent(account);
++            return json;
++        } catch (error) {
++            if (!error.retryAt) {
++                error.retryAt = now() + 30000;
++                await setCooldown(account, error.retryAt, 'Ошибка чтения или формата ответа.');
++            }
++            throw error;
++        } finally { clearTimeout(timer); }
++    }
++    function serial(account, work) {
++        const previous = queues.get(account.accountId) || Promise.resolve();
++        const run = previous.catch(() => {}).then(async () => {
++            try { return await work(); }
++            catch (error) {
++                if (!error.retryAt) {
++                    error.retryAt = now() + 30000;
++                    await setCooldown(account, error.retryAt, 'Формат ответа чата не распознан.');
++                }
++                throw error;
++            }
++        });
++        queues.set(account.accountId, run);
++        run.finally(() => { if (queues.get(account.accountId) === run) queues.delete(account.accountId); }).catch(() => {});
++        return run;
++    }
++    function runner(account, auth, objects) {
++        return request(account, 'https://funpay.com/runner/', { method: 'POST', headers: {
++            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest'
++        }, body: new URLSearchParams({ objects: JSON.stringify(objects), request: 'false', csrf_token: auth.csrf_token }) });
++    }
++    function tag() { return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0'); }
++    function bookmarks(account, auth) {
++        return serial(account, async () => {
++            const json = await runner(account, auth, [{ type: 'chat_bookmarks', id: account.accountId, tag: tag(), data: false },
++                { type: 'orders_counters', id: account.accountId, tag: tag(), data: false }]);
++            if (!Array.isArray(json?.objects)) throw new Error('Не распознан ответ runner.');
++            const object = json.objects.find(o => o.type === 'chat_bookmarks');
++            if (typeof object?.data?.html !== 'string') throw new Error('Список чатов отсутствует в ответе.');
++            return { chats: await parseChatList(object.data.html),
++                ordersCounters: json.objects.find(o => o.type === 'orders_counters')?.data ?? null };
++        });
++    }
++    function batch(account, auth, ids) {
++        return serial(account, async () => {
++            if (!ids.length || ids.length > batchSize || ids.some(id => !messageId(id))) throw new Error('Некорректный пакет чатов.');
++            const json = await runner(account, auth, ids.map(id => ({ type: 'chat_node', id, tag: tag(), data: { node: id, last_message: -1, content: '' } })));
++            if (!Array.isArray(json?.objects)) throw new Error('Не распознан пакет сообщений.');
++            const result = {};
++            for (const id of ids) {
++                const nodes = json.objects.filter(o => o.type === 'chat_node' && (String(o.data?.node?.id ?? o.id) === id));
++                if (nodes.length !== 1 || !Array.isArray(nodes[0].data?.messages)) {
++                    result[id] = { ok: false, error: 'Чат отсутствует в ответе или формат не распознан.' }; continue;
++                }
++                result[id] = await parseMessages(nodes[0].data.messages, id);
++            }
++            return result;
++        });
++    }
++    function history(account, chatId, beforeId) {
++        return serial(account, async () => {
++            if (!messageId(chatId) || !messageId(beforeId)) throw new Error('Некорректный курсор истории.');
++            const url = `https://funpay.com/chat/history?${new URLSearchParams({ node: chatId, last_message: beforeId })}`;
++            const json = await request(account, url, { headers: { 'x-requested-with': 'XMLHttpRequest' } });
++            if (String(json?.chat?.node?.id) !== chatId || !Array.isArray(json.chat.messages)) return { ok: false, error: 'История чата не распознана.' };
++            return parseMessages(json.chat.messages, chatId);
++        });
++    }
++    return Object.freeze({ bookmarks, batch, history, batchSize });
++}
+--- /dev/null
++++ b/background/chat_stream.js
+@@ -0,0 +1,134 @@
++import { messageId, compareIds, orderedMessages } from './chat_protocol.js';
++
++// Cursors are durable, account-scoped and independent from outgoing sends.
++// A reserved incoming message is never automatically replayed after interruption.
++export function createChatStream({ readSettings, updateSettings, guard, reader, processMessage,
++    now = () => Date.now(), maxChats = 8, maxMessages = 50, historyPages = 3, budgetMs = 20000 } = {}) {
++    let busy = false;
++    const read = async account => (await readSettings()).chatStreams?.[account.accountId];
++    async function change(account, mutate) {
++        await guard.assertCurrent(account);
++        return updateSettings(async settings => {
++            await guard.assertCurrent(account);
++            const scope = settings.chatStreams?.[account.accountId];
++            if (!scope || scope.epoch !== account.epoch) throw new Error('Область чатов сменилась.');
++            mutate(scope);
++        });
++    }
++    async function cooldown(account) { return (await read(account))?.retryAt || 0; }
++    async function setCooldown(account, retryAt, error) {
++        await change(account, scope => { scope.retryAt = retryAt; scope.error = error; });
++    }
++    async function poll(account, auth) {
++        if (busy) return { skipped: 'busy' };
++        busy = true;
++        const started = now();
++        let handled = 0, visited = 0, pages = 0;
++        try {
++            await guard.assertCurrent(account);
++            await updateSettings(async settings => {
++                await guard.assertCurrent(account);
++                settings.chatStreams ||= {};
++                const scope = settings.chatStreams[account.accountId] ||= { version: 1, chats: {}, pending: [] };
++                scope.epoch = account.epoch;
++                for (const chat of Object.values(scope.chats)) {
++                    if (chat.handling) chat.error = 'Результат обработки неизвестен; автоматический повтор остановлен.';
++                }
++            });
++            if (await cooldown(account) > now()) return { skipped: 'cooldown' };
++            const snapshot = await reader.bookmarks(account, auth);
++            await change(account, scope => {
++                scope.error = null;
++                for (const chat of snapshot.chats) {
++                    const id = messageId(chat.chatId), target = messageId(chat.msgId);
++                    if (!id || !target) continue;
++                    if (!scope.chats[id] && Object.keys(scope.chats).length >= 1000) {
++                        scope.error = 'Достигнут локальный лимит 1000 чатов; новые чаты пока не обрабатываются.';
++                        continue;
++                    }
++                    // Bootstrap establishes a global message-ID boundary. A chat
++                    // discovered later must backfill to that boundary or its beginning.
++                    // Sales reconciliation covers pre-boundary orders.
++                    const state = scope.chats[id] ||= { cursor: scope.seeded ? (scope.watermark || '0') : target,
++                        target, name: chat.chatName || '', newChat: Boolean(scope.seeded) };
++                    state.name = chat.chatName || state.name;
++                    if (compareIds(target, state.target) > 0) state.target = target;
++                    if (compareIds(state.target, state.cursor) > 0 && !scope.pending.includes(id)) scope.pending.push(id);
++                }
++                if (!scope.seeded) scope.watermark = snapshot.chats.reduce((max, chat) => {
++                    const id = messageId(chat.msgId);
++                    return id && compareIds(id, max) > 0 ? id : max;
++                }, '0');
++                scope.seeded = true;
++            });
++            const queue = [...(await read(account)).pending];
++            while (queue.length && visited < maxChats && now() - started < budgetMs && handled < maxMessages) {
++                const scope = await read(account);
++                const ids = queue.splice(0, Math.min(reader.batchSize || 4, maxChats - visited))
++                    .filter(id => !scope.chats[id].handling && !(scope.chats[id].retryAt > now()));
++                if (!ids.length) continue;
++                visited += ids.length;
++                const batch = await reader.batch(account, auth, ids);
++                for (const id of ids) {
++                    if (now() - started >= budgetMs || handled >= maxMessages) break;
++                    let state = (await read(account)).chats[id];
++                    try {
++                        if (!batch[id]?.ok) throw new Error(batch[id]?.error || 'Сообщения не распознаны.');
++                        let messages = orderedMessages([...(state.backfill || []), ...batch[id].messages]);
++                        if (!messages.length) throw new Error('Пустое окно сообщений при новом ID.');
++                        let startReached = false;
++                        while (compareIds(messages[0].id, state.cursor) > 0 && pages < historyPages && now() - started < budgetMs) {
++                            const oldest = messages[0].id;
++                            const history = await reader.history(account, id, oldest);
++                            pages++;
++                            if (!history?.ok) throw new Error(history?.error || 'История не распознана.');
++                            if (state.newChat && history.messages.length === 0) { startReached = true; break; }
++                            messages = orderedMessages([...history.messages, ...messages]);
++                            if (messages[0].id === oldest) throw new Error('История не закрывает пропуск.');
++                            if (messages.length > 1000) throw new Error('Пропуск превышает локальный лимит истории.');
++                        }
++                        if (!startReached && compareIds(messages[0].id, state.cursor) > 0) {
++                            await change(account, s => {
++                                s.chats[id].backfill = messages;
++                                s.chats[id].error = 'Дочитывается пропуск истории.';
++                                s.pending = [...s.pending.filter(value => value !== id), id];
++                            });
++                            continue;
++                        }
++                        if (compareIds(messages.at(-1).id, state.target) < 0) throw new Error('Окно не достигло нового ID из списка чатов.');
++                        await change(account, s => { delete s.chats[id].backfill; delete s.chats[id].error; });
++                        for (const message of messages.filter(m => compareIds(m.id, state.cursor) > 0)) {
++                            if (handled >= maxMessages || now() - started >= budgetMs) break;
++                            const author = messageId(message.authorId, { zero: true });
++                            if (author === null || message.invalidReason) throw new Error('Автор или тело сообщения не распознаны.');
++                            await guard.assertCurrent(account);
++                            const own = author === account.accountId;
++                            if (!own) {
++                                await change(account, s => { s.chats[id].handling = { id: message.id, at: now() }; });
++                                await processMessage({ ...message, chatId: id, buyerName: state.name, system: author === '0' }, account, auth);
++                            }
++                            await change(account, s => {
++                                s.chats[id].cursor = message.id;
++                                delete s.chats[id].newChat;
++                                delete s.chats[id].handling;
++                            });
++                            state.cursor = message.id;
++                            handled++;
++                        }
++                        await change(account, s => {
++                            if (compareIds(s.chats[id].cursor, s.chats[id].target) >= 0) s.pending = s.pending.filter(value => value !== id);
++                            else s.pending = [...s.pending.filter(value => value !== id), id];
++                        });
++                    } catch (error) {
++                        await change(account, s => {
++                            s.chats[id].error = s.chats[id].handling ? 'Результат обработки неизвестен; автоматический повтор остановлен.' : String(error.message);
++                            s.chats[id].retryAt = now() + 60000;
++                        });
++                    }
++                }
++            }
++            return { handled, visited, pages, pending: (await read(account)).pending.length };
++        } finally { busy = false; }
++    }
++    return Object.freeze({ poll, cooldown, setCooldown });
++}
+--- a/background/autoresponder.js
++++ b/background/autoresponder.js
+@@ -2,11 +2,9 @@
+ 
+ import { updateAutoReplies } from './auto_reply_store.js';
+ import { createStrictChatSender } from './chat_sender.js';
++import { createChatReader } from './chat_reader.js';
++import { createChatStream } from './chat_stream.js';
+ export { countAutoDeliverySecrets, createAutoDeliveryStore, isAutoDeliveryLotEnabled } from './auto_delivery_store.js';
+-
+-function randomTag() {
+-    return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
+-}
+ 
+ const BOT_MARKER = '\u2061';
+ const OLD_BOT_MARKER = '\u2064';
+@@ -17,11 +15,6 @@
+     if (t.startsWith(BOT_MARKER) || t.startsWith(OLD_BOT_MARKER)) return t;
+     return BOT_MARKER + t;
+ }
+-function isBotMarked(text) {
+-    return typeof text === 'string' && (text.startsWith(BOT_MARKER) || text.startsWith(OLD_BOT_MARKER));
+-}
+-
+-
+ async function fetchWithRetry(url, options, { retries = 4, baseDelay = 800 } = {}) {
+     let lastErr;
+     // FIX 2.8.1: браузер ИГНОРИРУЕТ заголовок Cookie в fetch() (forbidden header),
+@@ -35,6 +28,7 @@
+     options = _opts;
+     for (let attempt = 0; attempt <= retries; attempt++) {
+         try {
++            await assertMessageAccount();
+             const res = await fetch(url, options);
+             // Retry on rate-limit / server errors; return everything else to caller.
+             if (res.status === 429 || res.status >= 500) {
+@@ -128,6 +122,7 @@
+ const strictSender = createStrictChatSender({ mark: markOutgoing });
+ 
+ export async function sendChatMessage(chatId, text, auth) {
++    await assertMessageAccount();
+     const result = await strictSender.send({ chatId, text, auth, accountId: auth?.userId ? String(auth.userId) : null });
+     if (result.status === 'rejected' || result.status === 'uncertain') {
+         throw Object.assign(new Error(result.error || `sendMessage: ${result.status}`), { definite: result.status === 'rejected', outcome: result.status });
+@@ -139,6 +134,10 @@
+ export function getStrictChatSender() {
+     return strictSender;
+ }
++
++// Fulfillment bodies must remain byte-for-byte user content, without bot marks.
++const deliverySender = createStrictChatSender();
++export function getDeliveryChatSender() { return deliverySender; }
+ 
+ // 3.0: upload an image (data URL) to FunPay and send it to a chat, in the background.
+ async function sendChatImage(chatId, dataUrl, auth) {
+@@ -155,7 +154,7 @@
+         method: 'POST',
+         headers: { 'cookie': cookieStr, 'x-requested-with': 'XMLHttpRequest' },
+         body: fd
+-    });
++    }, { retries: 0 });
+     if (!upRes.ok) throw new Error(`uploadImage HTTP ${upRes.status}`);
+     const upJson = await upRes.json().catch(() => ({}));
+     const fileId = upJson.fileId;
+@@ -167,6 +166,7 @@
+         csrf_token: auth.csrf_token
+     };
+     // Отправка картинки в чат — внешний эффект: один POST без автоматических повторов.
++    await assertMessageAccount();
+     const res = await fetch('https://funpay.com/runner/', {
+         method: 'POST',
+         credentials: 'include',
+@@ -219,7 +219,7 @@
+         method: 'POST',
+         headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', cookie: `golden_key=${auth.golden_key}` },
+         body: payload
+-    });
++    }, { retries: 0 });
+     if (!res.ok) throw new Error(`sendReviewReply HTTP ${res.status}`);
+ }
+ 
+@@ -255,7 +255,10 @@
+ }
+ 
+ async function atomicUpdate(updater) {
+-    return updateAutoReplies(updater);
++    return updateAutoReplies(async settings => {
++        await assertMessageAccount();
++        return updater(settings);
++    });
+ }
+ 
+ export async function isBlacklisted(username, feature) {
+@@ -271,10 +274,10 @@
+     if (!settings.greetingEnabled || !settings.greetingText) return;
+ 
+     
+-    if (getMessageType(msg.messageText) === 'DEAR_VENDORS') return;
+-
+-    
+-    if (settings.ignoreSystemMessages && getMessageType(msg.messageText) !== 'NON_SYSTEM') return;
++    if (msg.msgType === 'DEAR_VENDORS') return;
++
++    
++    if (settings.ignoreSystemMessages && msg.msgType !== 'NON_SYSTEM') return;
+ 
+     
+     if (await isBlacklisted(msg.buyerName, 'response')) return;
+@@ -316,7 +319,7 @@
+ 
+ async function handleKeywords(msg, auth, settings) {
+     if (!settings.keywordsEnabled || !settings.keywords?.length) return;
+-    if (getMessageType(msg.messageText) !== 'NON_SYSTEM') return;
++    if (msg.msgType !== 'NON_SYSTEM') return;
+     if (await isBlacklisted(msg.buyerName, 'response')) return;
+ 
+     // 3.0: strip zero-width identifier chars and collapse whitespace before matching.
+@@ -429,17 +432,6 @@
+     }
+ }
+ 
+-function isMyOwnAction(messageText, myUsername) {
+-    if (!messageText || !myUsername) return false;
+-    const clean = String(messageText)
+-        .replace(/[\u200B\u200C\u200D\uFEFF\u2060\u2061\u2064]/g, '')
+-        .replace(/\s+/g, ' ')
+-        .trim();
+-    const esc = myUsername.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+-    const re = new RegExp(`(^|[^\\p{L}\\p{N}_])${esc}([^\\p{L}\\p{N}_]|$)`, 'iu');
+-    return re.test(clean);
+-}
+-
+ // --- Исполнение заказов ---------------------------------------------------------
+ // background.js подключает единый исполнитель (fulfillment_dispatcher), сверку и
+ // проверку роли. Без них события заказов только пишутся в лог: автоответчик не
+@@ -591,156 +583,69 @@
+     }
+ }
+ 
++let messageStream = null;
++let activeMessageAccount = null;
++
++async function assertMessageAccount() {
++    if (activeMessageAccount) {
++        await orderAutomation.guard.assertCurrent(activeMessageAccount);
++        const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
++        if (!isAutoResponderActive(settings)) throw new Error('Автоответы выключены.');
++    }
++}
++
++async function processIncoming(message, account, auth) {
++    activeMessageAccount = account;
++    try {
++        await assertMessageAccount();
++        const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
++        const msg = { chatId: message.chatId, messageId: message.id, messageText: message.text,
++            buyerName: message.buyerName, msgType: message.system ? getMessageType(message.text) : 'NON_SYSTEM',
++            orderId: message.system ? (message.text.match(RX.ORDER_ID) || [])[1] || null : null, source: 'chat' };
++        if (!message.system) {
++            if (message.kind !== 'text') return;
++            await handleGreeting(msg, auth, settings);
++            await assertMessageAccount();
++            await handleKeywords(msg, auth, settings);
++            return;
++        }
++        if (msg.msgType === 'DEAR_VENDORS') return notifyDearVendors(msg);
++        if (['ORDER_PURCHASED', 'ORDER_CONFIRMED', 'NEW_FEEDBACK', 'FEEDBACK_CHANGED', 'REFUND', 'PARTIAL_REFUND', 'ORDER_REOPENED'].includes(msg.msgType) && orderIdOf(msg)) {
++            // Register the order before advancing the incoming cursor. The durable
++            // fulfillment dispatcher owns replay/deduplication, never the preview.
++            const observation = await observeOrder(msg, { adopt: msg.msgType === 'ORDER_PURCHASED' });
++            if (!observation || observation.error || observation.status === 'error' ||
++                (observation.status === 'skipped' && !['not-seller', 'buyer'].includes(observation.role))) throw new Error('Заказ не записан в журнал.');
++            if (await roleForOrder(msg.orderId) !== 'seller') return;
++            await assertMessageAccount();
++            if (msg.msgType === 'ORDER_PURCHASED') await handleOrderPurchased(msg, auth, settings);
++            else if (msg.msgType === 'ORDER_CONFIRMED') await handleOrderConfirmed(msg, auth, settings);
++            else if (['NEW_FEEDBACK', 'FEEDBACK_CHANGED'].includes(msg.msgType)) await handleReview(msg, auth, settings);
++        }
++    } finally { activeMessageAccount = null; }
++}
++
+ async function _runAutoResponderCycleInner() {
+-    const { fpToolsAutoReplies = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+-
+-    if (!isAutoResponderActive(fpToolsAutoReplies)) return;
+-
++    const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
++    if (!isAutoResponderActive(settings) || !orderAutomation?.guard) return;
++    const account = await orderAutomation.guard.current({ fresh: true });
++    if (!account.accountId) return;
+     const auth = await getAuth();
+-    if (!auth.golden_key || !auth.csrf_token || !auth.userId) return;
+-
+-    try {
+-        // FunPay Funcy's approach: use a FRESH RANDOM tag every cycle. A single persisted tag
+-        // (the old behaviour) goes stale and FunPay stops returning chat updates - the
+-        // classic "autoresponder stops working until reload". We also request
+-        // orders_counters alongside chat_bookmarks so order events surface immediately.
+-        const msgTag = randomTag();
+-        const orderTag = randomTag();
+-
+-        const runnerPayload = {
+-            objects: JSON.stringify([
+-                { type: 'chat_bookmarks',  id: auth.userId, tag: msgTag,   data: false },
+-                { type: 'orders_counters', id: auth.userId, tag: orderTag, data: false }
+-            ]),
+-            request: false,
+-            csrf_token: auth.csrf_token
+-        };
+-
+-        // FunPay runner requires BOTH golden_key AND PHPSESSID - without PHPSESSID it
+-        // returns 200 but silently drops the request.
+-        const pollingCookieStr = auth.phpsessid
+-            ? `golden_key=${auth.golden_key}; PHPSESSID=${auth.phpsessid}`
+-            : `golden_key=${auth.golden_key}`;
+-
+-        const res = await fetchWithRetry('https://funpay.com/runner/', {
+-            method: 'POST',
+-            headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', cookie: pollingCookieStr },
+-            body: new URLSearchParams(runnerPayload)
+-        }, { retries: 2, baseDelay: 600 });
+-
+-        if (!res.ok) throw new Error(`Runner HTTP ${res.status}`);
+-        const data = await res.json();
+-        const chatObj = data.objects?.find(o => o.type === 'chat_bookmarks');
+-        if (!chatObj || !chatObj.data?.html) return;
+-
+-        const chats = await parseViaOffscreen(chatObj.data.html, 'parseChatList');
+-        const { fpToolsAutoReplies: fresh = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+-
+-        const lastSeen = fresh.lastSeenMsgIds || {};
+-        const isFirstRun = !fresh.autoResponderSeeded;
+-
+-        const updates = {}; // chatId -> newest msgId to persist
+-        const textUpdates = {}; // chatId -> last handled message text 
+-
+-        const passStartedAt = Date.now();
+-        for (const chat of chats) {
+-            if (!isFirstRun && Date.now() - passStartedAt >= 20000) break;
+-            const nodeMsg = chat.nodeMsg;            // last message id in the chat
+-            const userMsg = chat.userMsg;            // last id the account has read
+-            const prevSeen = lastSeen[chat.chatId] || 0;
+-
+-            let hasNew;
+-            if (nodeMsg != null) {
+-                hasNew = nodeMsg > prevSeen;
+-            } else {
+-                hasNew = chat.isUnread && !( (fresh.processedMessageIds || []).includes(chat.msgId) );
+-            }
+-            if (chat.lastByBot) {
+-                if (nodeMsg != null) updates[chat.chatId] = Math.max(prevSeen, nodeMsg);
+-                continue;
+-            }
+-
+-            if (!hasNew) continue;
+-
+-            // Always advance our per-chat marker so we never re-handle this id, even on first run.
+-            if (nodeMsg != null) updates[chat.chatId] = Math.max(prevSeen, nodeMsg);
+-
+-            if (isFirstRun) continue; 
+-            const lastText = (fresh.lastHandledText || {})[chat.chatId];
+-            const isSameText = lastText != null && lastText === chat.messageText;
+-
+-            const msgType = getMessageType(chat.messageText);
+-            const msg = {
+-                chatId:      chat.chatId,
+-                messageId:   chat.msgId,
+-                messageText: chat.messageText,
+-                buyerName:   chat.chatName,
+-                msgType,
+-                orderId:     (chat.messageText.match(RX.ORDER_ID) || [])[1] || null,
+-                source:      'chat'
+-            };
+-
+-            const iAmInitiator = isMyOwnAction(chat.messageText, auth.username);
+-
+-            if (msgType === 'DEAR_VENDORS') {
+-                await notifyDearVendors(msg);
+-            } else if (msgType === 'ORDER_PURCHASED' || msgType === 'ORDER_CONFIRMED'
+-                       || msgType === 'NEW_FEEDBACK' || msgType === 'FEEDBACK_CHANGED') {
+-                const role = iAmInitiator ? 'buyer' : await roleForOrder(msg.orderId);
+-                if (role !== 'seller') {
+-                    console.log(`FunPay Funcy AR: пропуск события по заказу #${msg.orderId} — роль продавца не подтверждена (${role}).`);
+-                } else if (msgType === 'ORDER_PURCHASED') {
+-                    await handleOrderPurchased(msg, auth, fresh);
+-                    await observeOrder(msg);
+-                } else if (msgType === 'ORDER_CONFIRMED') {
+-                    await handleOrderConfirmed(msg, auth, fresh);
+-                    await observeOrder(msg, { adopt: false });
+-                } else {
+-                    await handleReview(msg, auth, fresh);
+-                    await observeOrder(msg, { adopt: false });
+-                }
+-            } else if ((msgType === 'REFUND' || msgType === 'PARTIAL_REFUND' || msgType === 'ORDER_REOPENED') && orderIdOf(msg)) {
+-                // Возврат или повторное открытие: перечитываем заказ, чтобы остановить эффекты.
+-                await observeOrder(msg, { adopt: false });
+-            } else if (msgType === 'NON_SYSTEM' && !isSameText) {
+-                await handleGreeting(msg, auth, fresh);
+-                await handleKeywords(msg, auth, fresh);
+-            }
+-
+-            // remember the text we just handled for this chat (text guard above)
+-            textUpdates[chat.chatId] = chat.messageText;
+-        }
+-
+-        if (Object.keys(updates).length > 0 || Object.keys(textUpdates).length > 0 || isFirstRun) {
+-            await atomicUpdate(s => {
+-                const m = s.lastSeenMsgIds || {};
+-                for (const [cid, id] of Object.entries(updates)) {
+-                    m[cid] = Math.max(m[cid] || 0, id);
+-                }
+-                // cap size
+-                const keys = Object.keys(m);
+-                if (keys.length > 1000) {
+-                    // drop the lowest-id (oldest) entries
+-                    keys.sort((a, b) => m[a] - m[b]).slice(0, keys.length - 1000).forEach(k => delete m[k]);
+-                }
+-                s.lastSeenMsgIds = m;
+-
+-                const t = s.lastHandledText || {};
+-                for (const [cid, txt] of Object.entries(textUpdates)) t[cid] = txt;
+-                const tkeys = Object.keys(t);
+-                if (tkeys.length > 1000) {
+-                    // drop oldest by id ordering if available, else arbitrary
+-                    tkeys.slice(0, tkeys.length - 1000).forEach(k => delete t[k]);
+-                }
+-                s.lastHandledText = t;
+-
+-                s.autoResponderSeeded = true;
+-            });
+-        }
+-
+-    } catch (e) {
+-        console.error('FunPay Funcy AR: ошибка цикла', e.message);
+-    }
++    if (!auth.golden_key || !auth.csrf_token || String(auth.userId) !== account.accountId) return;
++    if (!messageStream) {
++        const reader = createChatReader({
++            parseMessages: (messages, chatId) => parseViaOffscreen('', 'parseChatMessages', { messages, chatId }),
++            parseChatList: html => parseViaOffscreen(html, 'parseChatList'),
++            assertCurrent: value => orderAutomation.guard.assertCurrent(value),
++            getCooldown: value => messageStream.cooldown(value),
++            setCooldown: (...args) => messageStream.setCooldown(...args)
++        });
++        messageStream = createChatStream({ reader, guard: orderAutomation.guard,
++            readSettings: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {},
++            updateSettings: updateAutoReplies, processMessage: processIncoming });
++    }
++    try { await messageStream.poll(account, auth); }
++    catch (error) { console.error('FunPay Funcy AR: чтение сообщений остановлено', error.message); }
+ }
+ 
+ export async function resetAutoResponderState() {
+@@ -750,5 +655,6 @@
+         delete settings.lastSeenMsgIds;
+         delete settings.lastHandledText;
+         delete settings.autoResponderSeeded;
++        delete settings.chatStreams;
+     });
+ }
+--- a/background/background.js
++++ b/background/background.js
+@@ -13,7 +13,7 @@
+ import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump } from './autobump.js';
+ import {
+     runAutoResponderCycle, resetAutoResponderState, configureOrderAutomation, runOrderReconcile,
+-    getStrictChatSender, applyVariables, isBlacklisted
++    getStrictChatSender, getDeliveryChatSender, applyVariables, isBlacklisted
+ } from './autoresponder.js';
+ import { createAccountGuard, sha256Short, ACCOUNT_EPOCH_KEY } from './account_guard.js';
+ import { createOrderDetailsLoader } from './order_details.js';
+@@ -30,7 +30,7 @@
+ import { createPricingService, PRICING_ALARM, PRICING_KEY } from './pricing_service.js';
+ import { createLotPolicyStore, releaseStockManagedLots } from './lot_policy.js';
+ import { createJobScheduler } from './job_scheduler.js';
+-import { patchAutoReplies, importAutoReplies, replaceAutoReplies, AUTO_REPLY_RUNTIME_FIELDS } from './auto_reply_store.js';
++import { patchAutoReplies, importAutoReplies, replaceAutoReplies, AUTO_REPLY_RUNTIME_FIELDS, hasAutoReplyConfigurationChanges } from './auto_reply_store.js';
+ import { createAccountVault, createIndexedDbVaultBackend } from './account_vault.js';
+ import { createProfileManager, automationEnabledIn } from './account_profiles.js';
+ import { createAccountsService } from './accounts_service.js';
+@@ -989,7 +989,7 @@
+         journal: opsJournal,
+         guard: accountGuard,
+         loadFacts: (orderId, scope) => orderLoader.load(orderId, scope),
+-        sender: getStrictChatSender(),
++        sender: getDeliveryChatSender(),
+         getAuth: () => getAuthDetailsForBackground(),
+         getAutoReplies: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {},
+         getDeliveryConfigs: async () => (await chrome.storage.local.get('fpToolsAutoDeliveryLots')).fpToolsAutoDeliveryLots || {},
+@@ -1018,6 +1018,7 @@
+ }
+ 
+ configureOrderAutomation({
++    guard: accountGuard,
+     dispatcher: fulfillmentDispatcher,
+     reconcile: orderReconcile,
+     statusOf: async (orderId, chatId) => {
+@@ -1676,7 +1677,7 @@
+     }
+     // Relay parse requests from content scripts to the offscreen document
+     if (request.target === 'offscreen') {
+-        parseHtmlViaOffscreen(request.html, request.action)
++        parseHtmlViaOffscreen(request.html, request.action, { messages: request.messages, chatId: request.chatId })
+             .then(result => sendResponse(result))
+             .catch(() => sendResponse(null));
+         return true;
+@@ -3016,15 +3017,18 @@
+         const isEnabled = newSettings.greetingEnabled || newSettings.keywordsEnabled || newSettings.autoReviewEnabled || newSettings.bonusForReviewEnabled ||
+             newSettings.newOrderReplyEnabled || newSettings.orderConfirmReplyEnabled || newSettings.autoDeliveryEnabled || newSettings.reviewReminderEnabled;
+ 
+-        // 3.0: drive the engine instead of the broken alarm
+-        syncOrderReconcileAlarm(Boolean(isEnabled));
+-        if (isEnabled) {
+-            startEngine();
+-        } else {
+-            stopEngine();
+-            jobScheduler.clearDue('fpToolsDeliveryContinue').catch(() => {});
+-            chrome.alarms.clear(AUTO_RESPONDER_ALARM_NAME);
+-            resetAutoResponderState();
++        // Durable cursor writes must not wake the engine that just wrote them.
++        const configurationChanged = hasAutoReplyConfigurationChanges(before, after);
++        if (configurationChanged) {
++            syncOrderReconcileAlarm(Boolean(isEnabled));
++            if (isEnabled) {
++                startEngine();
++            } else {
++                stopEngine();
++                jobScheduler.clearDue('fpToolsDeliveryContinue').catch(() => {});
++                chrome.alarms.clear(AUTO_RESPONDER_ALARM_NAME);
++                resetAutoResponderState();
++            }
+         }
+     }
+     if (changes.autoBumpEnabled) {
+--- a/background/auto_reply_store.js
++++ b/background/auto_reply_store.js
+@@ -1,6 +1,7 @@
+ const AUTO_REPLY_STORAGE_KEY = 'fpToolsAutoReplies';
+ const AUTO_REPLY_MAP_FIELDS = new Set(['reviewTemplates', 'reviewTemplateImages']);
+ export const AUTO_REPLY_RUNTIME_FIELDS = new Set([
++    'chatStreams',
+     'processedMessageIds',
+     'lastSeenMsgIds',
+     'lastHandledText',
+@@ -13,6 +14,11 @@
+     'deliveredOrderIds',
+     'bonusSentOrderIds'
+ ]);
++
++export function hasAutoReplyConfigurationChanges(before = {}, after = {}) {
++    return Object.keys({ ...before, ...after }).some(key =>
++        !AUTO_REPLY_RUNTIME_FIELDS.has(key) && JSON.stringify(before[key]) !== JSON.stringify(after[key]));
++}
+ 
+ function isRecord(value) {
+     return value !== null && typeof value === 'object' && !Array.isArray(value);
+--- a/offscreen/offscreen.js
++++ b/offscreen/offscreen.js
+@@ -798,6 +798,29 @@
+     }
+ }
+ 
++function parseChatMessages(messages, chatId) {
++    const idOf = (value, zero = false) => {
++        if (typeof value === 'number' && !Number.isSafeInteger(value)) return null;
++        const id = String(value ?? '');
++        return /^(0|[1-9]\d*)$/.test(id) && (zero || id !== '0') ? id : null;
++    };
++    try {
++        if (!idOf(chatId) || !Array.isArray(messages) || messages.length > 1000) throw new Error('Некорректный пакет сообщений.');
++        return { ok: true, messages: messages.map(raw => {
++            const id = idOf(raw?.id);
++            if (!id || typeof raw.html !== 'string') throw new Error('Сообщение без ID или HTML.');
++            const authorId = idOf(raw.author, true);
++            const doc = window.__fptParseHTML(raw.html);
++            const body = doc.querySelector(authorId === '0' ? '[role="alert"]' : '.chat-msg-text');
++            if (body) body.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
++            const image = doc.querySelector('.chat-img-link');
++            return { id, chatId: String(chatId), authorId, text: body?.textContent?.trim() || '',
++                kind: body ? 'text' : image ? 'image' : 'unknown',
++                ...(!body && !image ? { invalidReason: 'Тело сообщения не распознано.' } : {}) };
++        }) };
++    } catch (error) { return { ok: false, error: error.message }; }
++}
++
+ function parseChatList(html) {
+     try {
+         const doc = window.__fptParseHTML(html);
+@@ -1606,6 +1629,9 @@
+         case 'solveCloneForm':
+             sendResponse(solveCloneForm(message.html, message.attributes, message.attributePairs));
+             break;
++        case 'parseChatMessages':
++            sendResponse(parseChatMessages(message.messages, message.chatId));
++            break;
+         case 'parseChatList':
+             sendResponse(parseChatList(message.html));
+             break;
+--- a/content/features/settings_io.js
++++ b/content/features/settings_io.js
+@@ -135,6 +135,10 @@
+ 
+ async function getPopupSettingsExport() {
+     const all = globalThis.FPTRetiredIntegrations.sanitizeSettings(await chrome.storage.local.get(null));
++    if (all.fpToolsAutoReplies) {
++        all.fpToolsAutoReplies = { ...all.fpToolsAutoReplies };
++        delete all.fpToolsAutoReplies.chatStreams;
++    }
+     return { _magic: FP_CONFIG_MAGIC, _version: FP_CONFIG_VERSION, _date: new Date().toISOString(),
+         _extVer: chrome.runtime.getManifest().version,
+         settings: Object.fromEntries(Object.entries(all).filter(([key]) => isExportable(key))) };
+@@ -202,7 +206,7 @@
+     register('settings-io-mark', markSettingsIO);
+     register('fp-reset-autoresponder-btn', async () => {
+         await chrome.storage.local.remove('fpToolsAutoResponderTag');
+-        return window.fptPatchAutoReplies({ set: { processedMessageIds: [] } });
++        return window.fptPatchAutoReplies({ set: { processedMessageIds: [] }, unset: ['chatStreams'] });
+     });
+     register('fp-reset-pinned-btn', () => chrome.storage.local.remove(['fpToolsPinnedLots', 'fpToolsCtxPinnedLots']));
+     register('fp-reset-greeted-btn', () => window.fptPatchAutoReplies({ set: { greetedUsers: [] } }));
+--- a/content/ui/auto_reply_page.js
++++ b/content/ui/auto_reply_page.js
+@@ -814,7 +814,22 @@
+         const loadBanner = node('div', 'fpt-ar-banner');
+         loadBanner.hidden = true;
+ 
+-        view.append(hero, loadBanner, scenariosSection, keywordsSection);
++        const streamStatus = node('div', 'fpt-ar-banner fpt-ar-stream-status');
++        streamStatus.setAttribute('role', 'status');
++        streamStatus.hidden = true;
++        function renderStreamStatus(scopes) {
++            const notes = [];
++            for (const [accountId, scope] of Object.entries(scopes || {})) {
++                if (scope.error || scope.retryAt > Date.now()) notes.push(`Аккаунт ${accountId}: ${scope.error || 'чтение временно отложено'}`);
++                for (const [chatId, chat] of Object.entries(scope.chats || {})) {
++                    if (chat.handling && (chat.error || Date.now() - chat.handling.at > 30000)) notes.push(`Чат ${chatId}: результат ответа неизвестен. Проверьте переписку вручную перед сбросом состояния автоответчика.`);
++                    else if (chat.error) notes.push(`Чат ${chatId}: ${chat.error}`);
++                }
++            }
++            streamStatus.hidden = notes.length === 0;
++            streamStatus.textContent = notes.slice(0, 5).join(' ') + (notes.length > 5 ? ` Ещё: ${notes.length - 5}.` : '');
++        }
++        view.append(hero, loadBanner, streamStatus, scenariosSection, keywordsSection);
+         page.appendChild(view);
+ 
+         // --- Rendering ---------------------------------------------------------------------------
+@@ -928,6 +943,7 @@
+         }
+ 
+         function applyStored(autoReplies) {
++            renderStreamStatus(autoReplies?.chatStreams);
+             state.settings = normalizeSettings(autoReplies);
+             state.loaded = true;
+             state.loadError = null;
+@@ -1170,6 +1186,7 @@
+                 return;
+             }
+             if (area !== 'local' || !changes || !changes[STORE_KEY]) return;
++            renderStreamStatus(changes[STORE_KEY].newValue?.chatStreams);
+             if (cards.some(card => card.isDirty())) return;
+             reload();
+         };
+--- a/css/scrollbars.css
++++ b/css/scrollbars.css
+@@ -38,8 +38,42 @@
+     }
+ }
+ 
++/* Popup chrome has a fixed neutral scrollbar. Repeated root specificity keeps
++   late injected menu/site themes from recolouring it. The site preview remains
++   an editable preview of the user's FunPay settings. No overflow rules change. */
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup,
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *)) {
++    scrollbar-color: #737985 transparent !important;
++}
++@supports selector(::-webkit-scrollbar) {
++    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup,
++    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *)) {
++        scrollbar-color: auto !important;
++    }
++}
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-track,
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-track,
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-corner {
++    background: transparent !important;
++}
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb,
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb {
++    background: #737985 !important;
++    background-clip: padding-box !important;
++    border: 2px solid transparent !important;
++    border-radius: 999px !important;
++}
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb:hover,
++.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb:hover {
++    background-color: #8a909a !important;
++}
++
+ @media (forced-colors: active) {
+     :where(*)::-webkit-scrollbar-thumb {
+         background-color: ButtonText;
+     }
++    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb,
++    .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb {
++        background-color: ButtonText !important;
++    }
+ }
+--- a/manifest.json
++++ b/manifest.json
+@@ -2,7 +2,7 @@
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "manifest_version": 3,
+   "name": "Funcy",
+-  "version": "0.9.10",
++  "version": "0.9.11",
+   "description": "Неофициальное расширение для FunPay: автоответы, выдача, заказы, аналитика и управление лотами.",
+   "permissions": [
+     "storage",
+--- a/popup/popup.html
++++ b/popup/popup.html
+@@ -55,11 +55,13 @@
+ 
+     <div id="changelog-panel" class="changelog-panel" style="display:none">
+         <div class="changelog-header">
+-            <strong>Что нового в 2.8</strong>
++            <strong>Что нового в 0.9.11</strong>
+             <button id="changelog-close">✕</button>
+         </div>
+                 <ul class="changelog-list">
+-            <li><span class="tag new">Новое</span> Следите за обновлениями в магазине расширений.</li>
++            <li><span class="tag new">Новое</span> Автоответы читают сообщения по ID и автору; пропуски истории дочитываются.</li>
++            <li><span class="tag new">Новое</span> Автовыдача отправляет товар без добавленного невидимого маркера.</li>
++            <li><span class="tag new">Новое</span> Скроллбар меню сохраняет нейтральный серый цвет при смене темы.</li>
+         </ul>
+     </div>
+ 
+--- a/tools/smoke-store.cjs
++++ b/tools/smoke-store.cjs
+@@ -4,7 +4,8 @@
+ const os = require('node:os');
+ const path = require('node:path');
+ const assert = require('node:assert/strict');
+-const stage = path.resolve(process.argv[2] || 'dist/funcy-0.9.10-staging');
++const version = JSON.parse(fs.readFileSync(path.join(__dirname, '../manifest.json'), 'utf8')).version;
++const stage = path.resolve(process.argv[2] || `dist/funcy-${version}-staging`);
+ 
+ (async () => {
+     const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'funcy-store-smoke-'));
+@@ -31,13 +32,21 @@
+             const html = '<a class="tc-item info"><span class="tc-order">#SYNTH001</span><span class="tc-date-time">26 октября 2026, 12:34</span></a>';
+             const parsed = await chrome.runtime.sendMessage({ target: 'offscreen', action: 'parseSalesPage', html });
+             const malformed = await chrome.runtime.sendMessage({ target: 'offscreen', action: 'parseSalesPage', html: html.replace('26 октября 2026, 12:34', 'сегодня, xx:00') });
+-            return { orders, parsed, malformed, alarms: await chrome.alarms.getAll(), contexts: await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] }) };
++            const messages = await chrome.runtime.sendMessage({ target: 'offscreen', action: 'parseChatMessages', chatId: '77', messages: [
++                { id: '9007199254740993', author: 200, html: '<div class="chat-msg-text">Synthetic buyer</div>' },
++                { id: '9007199254740994', author: 100, html: '<div class="chat-msg-text">Synthetic own</div>' },
++                { id: '9007199254740995', author: 0, html: '<div role="alert">Synthetic system</div>' }
++            ] });
++            return { orders, parsed, malformed, messages, alarms: await chrome.alarms.getAll(), contexts: await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] }) };
+         });
+         assert.equal(result.orders.success, false);
+         assert.match(result.orders.error, /аккаунт|авториз|вход/i);
+         assert.equal(result.parsed.orders[0].orderDateStrict, Date.UTC(2026, 9, 26, 9, 34));
+         assert.equal(result.malformed.orders.length, 1);
+         assert.equal(result.malformed.orders[0].orderDateStrict, null);
++        assert.equal(result.messages.ok, true);
++        assert.deepEqual(result.messages.messages.map(m => m.authorId), ['200', '100', '0']);
++        assert.equal(result.messages.messages[0].id, '9007199254740993');
+         assert.ok(!result.alarms.some(a => ['fpToolsEngineHeartbeat', 'fpToolsAutoResponder', 'fpToolsAccountKeepalive'].includes(a.name)));
+         // CloseDocument follows delivery of the parse response; allow its promise to settle.
+         await page.waitForFunction(async () => !(await chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] })).length);
+@@ -62,7 +71,7 @@
+         assert.equal(migrated.fpToolsTheme.bgImage, null);
+         assert.equal(migrated.fpToolsTheme.bgColor1, '#123456');
+         assert.deepEqual(errors, []);
+-        console.log(JSON.stringify({ version: '0.9.10', stagedWorker: true, popup: true, offscreenStrictDate: true, offscreenClosed: true,
++        console.log(JSON.stringify({ version, stagedWorker: true, popup: true, offscreenStrictDate: true, offscreenMessageParser: true, offscreenClosed: true,
+             disabledAlarms: true, coldRestartMigration: true, customDataPreserved: true, browser: context.browser().version() }));
+     } finally {
+         await context.close();
+--- /dev/null
++++ b/tests/chat_stream_0911.test.js
+@@ -0,0 +1,178 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const { pathToFileURL } = require('node:url');
++const path = require('node:path');
++const load = file => import(pathToFileURL(path.join(__dirname, '../background', file)).href);
++const account = { accountId: '100', epoch: 1 };
++const message = (id, authorId = '200', text = 'команда') => ({ id: String(id), authorId, text, kind: 'text' });
++
++// All protocol inputs in this file are SYNTHETIC, not captured live FunPay data.
++async function fixture(options = {}) {
++    const { createChatStream } = await load('chat_stream.js');
++    const { createAutoReplyStore } = await load('auto_reply_store.js');
++    const data = { fpToolsAutoReplies: {} };
++    const store = createAutoReplyStore({ get: async () => structuredClone(data), set: async patch => Object.assign(data, structuredClone(patch)) });
++    let current = account;
++    const calls = [], batches = [];
++    const reader = { batchSize: 4,
++        bookmarks: async () => ({ chats: [{ chatId: '77', msgId: '10', chatName: 'Buyer' }] }),
++        batch: async (_, __, ids) => { batches.push(ids); return { 77: { ok: true, messages: [message(10), message(11), message(12, '100')] } }; },
++        history: async () => ({ ok: true, messages: [] }), ...options.reader };
++    const guard = { assertCurrent: async expected => { if (current.accountId !== expected.accountId || current.epoch !== expected.epoch) throw new Error('account-changed'); } };
++    const args = { reader, guard, readSettings: async () => structuredClone(data.fpToolsAutoReplies), updateSettings: store.updateAutoReplies,
++        processMessage: async msg => calls.push(msg), ...options };
++    const stream = createChatStream(args);
++    return { stream, data, calls, batches, reader, store, args, switch: value => { current = value; },
++        state: () => data.fpToolsAutoReplies.chatStreams['100'].chats['77'] };
++}
++
++test('bootstrap ignores history; buyer before own last message is processed exactly once', async () => {
++    const f = await fixture();
++    await f.stream.poll(account, {});
++    assert.equal(f.calls.length, 0);
++    f.reader.bookmarks = async () => ({ chats: [{ chatId: '77', msgId: '12' }] });
++    await f.stream.poll(account, {});
++    assert.deepEqual(f.calls.map(m => m.id), ['11']);
++    assert.equal(f.state().cursor, '12');
++    await f.stream.poll(account, {});
++    assert.equal(f.calls.length, 1);
++});
++
++test('system origin comes only from numeric author; marker-prefixed buyer remains buyer', async () => {
++    const f = await fixture();
++    await f.stream.poll(account, {});
++    f.reader.bookmarks = async () => ({ chats: [{ chatId: '77', msgId: '13' }] });
++    f.reader.batch = async () => ({ 77: { ok: true, messages: [message(13, '0', 'оплатил заказ #ABCDEFGH'), message(12, '200', '\u2061команда'), message(11, '200', 'оплатил заказ #ABCDEFGH'), message(10)] } });
++    await f.stream.poll(account, {});
++    assert.deepEqual(f.calls.map(m => [m.id, m.system]), [['11', false], ['12', false], ['13', true]]);
++});
++
++test('unknown author blocks cursor before later own messages', async () => {
++    const f = await fixture(); await f.stream.poll(account, {});
++    f.reader.bookmarks = async () => ({ chats: [{ chatId: '77', msgId: '12' }] });
++    f.reader.batch = async () => ({ 77: { ok: true, messages: [message(10), message(11, null), message(12, '100')] } });
++    await f.stream.poll(account, {});
++    assert.equal(f.state().cursor, '10'); assert.equal(f.calls.length, 0); assert.match(f.state().error, /Автор/);
++});
++
++test('interrupted processing survives worker recreation and never replays a reserved reply', async () => {
++    let attempts = 0;
++    const f = await fixture({ processMessage: async () => { attempts++; throw new Error('lost response'); } });
++    await f.stream.poll(account, {});
++    f.reader.bookmarks = async () => ({ chats: [{ chatId: '77', msgId: '12' }] });
++    await f.stream.poll(account, {});
++    assert.equal(f.state().handling.id, '11'); assert.equal(f.state().cursor, '10');
++    const { createChatStream } = await load('chat_stream.js');
++    await createChatStream(f.args).poll(account, {});
++    assert.equal(attempts, 1);
++});
++
++test('backfill persists across passes and stops on repeated history without jumping cursor', async () => {
++    let tick = 1000;
++    const f = await fixture({ historyPages: 1, now: () => tick });
++    await f.stream.poll(account, {});
++    f.reader.bookmarks = async () => ({ chats: [{ chatId: '77', msgId: '16' }] });
++    f.reader.batch = async () => ({ 77: { ok: true, messages: [message(15), message(16)] } });
++    f.reader.history = async (_, __, before) => ({ ok: true, messages: before === '15' ? [message(13), message(14)] : [message(10), message(11), message(12)] });
++    await f.stream.poll(account, {});
++    assert.equal(f.state().cursor, '10'); assert.ok(f.state().backfill.length);
++    await f.stream.poll(account, {});
++    assert.equal(f.state().cursor, '16'); assert.equal(f.calls.length, 6); assert.equal(f.state().backfill, undefined);
++    f.reader.bookmarks = async () => ({ chats: [{ chatId: '77', msgId: '20' }] });
++    f.reader.batch = async () => ({ 77: { ok: true, messages: [message(20)] } });
++    f.reader.history = async () => ({ ok: true, messages: [message(20)] });
++    await f.stream.poll(account, {});
++    assert.equal(f.state().cursor, '16'); assert.match(f.state().error, /пропуск/);
++});
++
++test('late account change cannot advance cursor or write into the next scope', async () => {
++    const f = await fixture(); await f.stream.poll(account, {});
++    f.reader.bookmarks = async () => ({ chats: [{ chatId: '77', msgId: '12' }] });
++    f.reader.batch = async () => { f.switch({ accountId: '300', epoch: 2 }); return { 77: { ok: true, messages: [message(10), message(11)] } }; };
++    await assert.rejects(f.stream.poll(account, {}), /account-changed/);
++    assert.equal(f.state().cursor, '10'); assert.equal(f.calls.length, 0);
++    assert.equal(f.data.fpToolsAutoReplies.chatStreams['300'], undefined);
++});
++
++test('pending reads coalesce, batches are bounded, and new chat starts after bootstrap boundary', async () => {
++    const f = await fixture(); await f.stream.poll(account, {});
++    f.reader.bookmarks = async () => ({ chats: Array.from({ length: 12 }, (_, i) => ({ chatId: String(80 + i), msgId: String(20 + i) })) });
++    f.reader.batch = async (_, __, ids) => { f.batches.push(ids); return Object.fromEntries(ids.map(id => [id, { ok: true, messages: [message(20 + Number(id) - 80)] }])); };
++    await f.stream.poll(account, {});
++    assert.deepEqual(f.batches.map(ids => ids.length), [4, 4]);
++    assert.equal(f.calls.length, 3); // Shared history budget also applies to proving a new chat's beginning.
++    assert.equal(f.data.fpToolsAutoReplies.chatStreams['100'].pending.length, 9);
++    for (let pass = 0; pass < 3; pass++) await f.stream.poll(account, {});
++    assert.equal(f.calls.length, 12);
++});
++
++test('IDs stay lossless, duplicate conflicts fail closed, and imported cursors are ignored', async () => {
++    const { orderedMessages, messageId } = await load('chat_protocol.js');
++    assert.equal(messageId(Number.MAX_SAFE_INTEGER + 1), null);
++    assert.deepEqual(orderedMessages([message('9007199254740993'), message('9007199254740992')]).map(m => m.id), ['9007199254740992', '9007199254740993']);
++    assert.equal(orderedMessages([message(11), message('11')]).length, 1);
++    assert.throws(() => orderedMessages([message(11), message(11, '300')]), /повтор/);
++    const f = await fixture(); await f.stream.poll(account, {});
++    await f.store.importAutoReplies({ greetingText: 'new', chatStreams: { malicious: true } });
++    assert.equal(f.state().cursor, '10'); assert.equal(f.data.fpToolsAutoReplies.greetingText, 'new');
++});
++
++test('runtime cursor writes do not request another engine pass; configuration edits still do', async () => {
++    const { hasAutoReplyConfigurationChanges } = await load('auto_reply_store.js');
++    const before = { keywordsEnabled: true, keywords: [], chatStreams: { 100: { cursor: '1' } }, greetedUsers: [] };
++    assert.equal(hasAutoReplyConfigurationChanges(before, { ...before, chatStreams: { 100: { cursor: '2' } }, greetedUsers: ['77'] }), false);
++    assert.equal(hasAutoReplyConfigurationChanges(before, { ...before, keywordsEnabled: false }), true);
++    assert.equal(hasAutoReplyConfigurationChanges(before, { ...before, keywords: [{ keyword: 'changed' }] }), true);
++});
++
++test('reader serializes batches per account, persists 429 cooldown, and never immediately retries', async () => {
++    const { createChatReader } = await load('chat_reader.js');
++    let calls = 0, cooldown = 0;
++    const reader = createChatReader({ now: () => 1000, getCooldown: async () => cooldown,
++        setCooldown: async (_, value) => { cooldown = value; },
++        fetchImpl: async () => { calls++; return { ok: false, status: 429, headers: { get: () => '120' } }; } });
++    const results = await Promise.allSettled([reader.bookmarks(account, {}), reader.bookmarks(account, {})]);
++    assert.ok(results.every(r => r.status === 'rejected')); assert.equal(calls, 1); assert.equal(cooldown, 121000);
++    const { readDelay } = await load('chat_protocol.js');
++    assert.equal(readDelay({ status: 403, headers: { get: () => null } }), 900000);
++});
++
++test('wired autoresponder handles a buyer payment quotation as ordinary text; only system author registers an order; delivery stays unmarked', async () => {
++    const previousChrome = global.chrome, previousFetch = global.fetch;
++    const stored = { fpToolsAutoReplies: { keywordsEnabled: true, keywords: [
++        { keyword: 'оплатил заказ', matchMode: 'contains', response: 'Обычный ответ' }
++    ] } };
++    const sent = [], observed = [];
++    let target = '10';
++    const messages = [message(10), message(11, '200', 'оплатил заказ #ABCDEFGH'), message(12, '100'), message(13, '0', 'оплатил заказ #ABCDEFGH'), message(14, '100')];
++    global.chrome = { cookies: { get: async () => ({ value: 'synthetic-only' }) },
++        tabs: { query: async () => [{ id: 1 }], sendMessage: async () => ({ success: true, data: { 'csrf-token': 'synthetic', userId: '100' } }) },
++        storage: { local: { get: async key => ({ [key]: structuredClone(stored[key]) }), set: async patch => Object.assign(stored, structuredClone(patch)) } },
++        offscreen: { createDocument: async () => {}, closeDocument: async () => {} },
++        runtime: { getURL: file => file, getContexts: async () => [], sendMessage: async request =>
++            request.action === 'parseChatList' ? [{ chatId: '77', msgId: target, chatName: 'Buyer' }] : { ok: true, messages: request.messages } }
++    };
++    global.fetch = async (_, options) => {
++        const payload = options.body;
++        const effect = JSON.parse(payload.get('request'));
++        if (effect) { sent.push(effect.data.content); return { ok: true, status: 200, text: async () => '{"objects":[]}' }; }
++        const objects = JSON.parse(payload.get('objects'));
++        const body = objects[0].type === 'chat_bookmarks' ? { objects: [{ type: 'chat_bookmarks', data: { html: 'synthetic' } }] }
++            : { objects: [{ type: 'chat_node', id: '77', data: { node: { id: '77' }, messages } }] };
++        return { ok: true, status: 200, json: async () => body };
++    };
++    try {
++        const ar = await load('autoresponder.js');
++        ar.configureOrderAutomation({ guard: { current: async () => account, assertCurrent: async () => account },
++            roleOf: async () => 'seller', dispatcher: { observe: async value => {
++                observed.push(value); assert.equal(stored.fpToolsAutoReplies.chatStreams['100'].chats['77'].cursor, '12');
++                return { status: 'observed' };
++            } } });
++        await ar.runAutoResponderCycle(); target = '14'; await ar.runAutoResponderCycle();
++        assert.deepEqual(sent, ['\u2061Обычный ответ']);
++        assert.equal(observed.length, 1); assert.equal(observed[0].orderId, 'ABCDEFGH');
++        assert.equal(stored.fpToolsAutoReplies.chatStreams['100'].chats['77'].cursor, '14');
++        await ar.getDeliveryChatSender().send({ chatId: '77', text: 'KEY\u2060-1', accountId: '100', auth: { csrf_token: 'synthetic' } });
++        assert.equal(sent.at(-1), 'KEY\u2060-1');
++    } finally { global.chrome = previousChrome; global.fetch = previousFetch; }
++});
+--- /dev/null
++++ b/tests/release_0911_browser.test.js
+@@ -0,0 +1,72 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const { chromium } = require(process.env.FPT_PLAYWRIGHT || 'C:/Users/Usser/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
++const { openQuickReplies } = require('./helpers/quick_replies_browser_harness');
++const root = path.join(__dirname, '..');
++const launch = () => chromium.launch({ headless: true, executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', ignoreDefaultArgs: ['--hide-scrollbars'] });
++
++test('real Chrome popup scrollbars stay neutral across blue/red themes; site preview stays editable', async () => {
++    const browser = await launch();
++    try {
++        const { page, errors } = await openQuickReplies(browser, {}, { width: 1200, height: 650 });
++        await page.addStyleTag({ path: path.join(root, 'css/scrollbars.css') });
++        await page.evaluate(() => {
++            const popup = document.querySelector('.fp-tools-popup');
++            popup.classList.add('fptm-themed');
++            popup._fptNavSections.setExpandedSections(['sales', 'customers', 'finance', 'interface', 'settings', 'help'], false);
++            const demo = document.createElement('div');
++            demo.innerHTML = '<div id="qa-popup-scroll" style="overflow:auto;height:120px;width:260px"><div style="height:600px;width:600px">Прокрутка попапа</div></div><textarea id="qa-popup-textarea" style="height:70px;width:260px"></textarea><div class="fpt-th-stage"><div id="qa-preview-scroll" style="overflow:auto;height:60px;width:260px"><div style="height:200px">Предпросмотр страницы</div></div></div>';
++            document.querySelector('.fp-tools-content').append(demo);
++            document.querySelector('#qa-popup-textarea').value = Array.from({ length: 50 }, (_, i) => `Строка ${i}`).join('\n');
++        });
++        await page.addStyleTag({ content: '.fp-tools-popup.fptm-themed .fp-tools-nav::-webkit-scrollbar-thumb{background:var(--fptm-border)!important} #qa-preview-scroll::-webkit-scrollbar-thumb{background:var(--fptm-border)!important}' });
++        const inspect = () => page.evaluate(() => {
++            const popup = document.querySelector('.fp-tools-popup');
++            const bounds = popup.getBoundingClientRect();
++            return { colors: ['.fpt-nav-scroll', '.fp-tools-content', '#qa-popup-scroll', '#qa-popup-textarea'].map(selector => getComputedStyle(document.querySelector(selector), '::-webkit-scrollbar-thumb').backgroundColor),
++                preview: getComputedStyle(document.querySelector('#qa-preview-scroll'), '::-webkit-scrollbar-thumb').backgroundColor,
++                bounds: [bounds.x, bounds.y, bounds.width, bounds.height] };
++        });
++        await page.evaluate(() => document.querySelector('.fp-tools-popup').style.setProperty('--fptm-border', '#0088ff'));
++        const blue = await inspect();
++        await page.evaluate(() => document.querySelector('.fp-tools-popup').style.setProperty('--fptm-border', '#ff2200'));
++        const red = await inspect();
++        assert.deepEqual(blue.colors, Array(4).fill('rgb(115, 121, 133)'));
++        assert.deepEqual(red.colors, blue.colors);
++        assert.equal(blue.preview, 'rgb(0, 136, 255)'); assert.equal(red.preview, 'rgb(255, 34, 0)');
++        assert.deepEqual(red.bounds, blue.bounds);
++        const scroll = await page.evaluate(() => {
++            const elements = ['.fpt-nav-scroll', '#qa-popup-scroll', '#qa-popup-textarea'].map(s => document.querySelector(s));
++            elements.forEach(el => { el.scrollTop = 50; });
++            document.querySelector('#qa-popup-scroll').scrollLeft = 50;
++            return { vertical: elements.map(el => el.scrollTop), horizontal: document.querySelector('#qa-popup-scroll').scrollLeft };
++        });
++        assert.ok(scroll.vertical.every(value => value > 0), JSON.stringify(scroll)); assert.equal(scroll.horizontal, 50);
++        const dir = path.join(root, 'artifacts/release-0.9.11-2026-10-26'); fs.mkdirSync(dir, { recursive: true });
++        await page.screenshot({ path: path.join(dir, 'popup-neutral-scrollbars.png') });
++        assert.deepEqual(errors, []);
++    } finally { await browser.close(); }
++});
++
++test('offscreen parses synthetic message IDs/authors/body without preview or author-name inference', async () => {
++    const browser = await launch();
++    try {
++        const page = await browser.newPage();
++        await page.setContent('<html><body></body></html>');
++        await page.evaluate(() => { window.chrome = { runtime: { onMessage: { addListener() {} } } }; });
++        await page.addScriptTag({ path: path.join(root, 'offscreen/offscreen.js') });
++        const result = await page.evaluate(() => parseChatMessages([
++            { id: '9007199254740993', author: 200, html: '<div class="media-user-name">Имя</div><div class="chat-msg-text">ключ<br>A&amp;B</div>' },
++            { id: 12, author: 0, html: '<div role="alert">оплатил заказ #ABCDEFGH</div>' },
++            { id: 13, html: '<div data-author="100"><div class="chat-msg-text">чужое имя не автор</div></div>' },
++            { id: 14, author: 100, html: '<a class="chat-img-link" href="https://example.test/image"></a>' }
++        ], '77'));
++        assert.equal(result.ok, true);
++        assert.equal(result.messages[0].id, '9007199254740993'); assert.equal(result.messages[0].text, 'ключ\nA&B');
++        assert.deepEqual(result.messages.map(m => m.authorId), ['200', '0', null, '100']);
++        assert.equal(result.messages[3].kind, 'image');
++        assert.equal(await page.evaluate(() => parseChatMessages([{ id: 9007199254740992, author: 100, html: '' }], '77').ok), false);
++    } finally { await browser.close(); }
++});
+--- a/docs/store/assets.md
++++ b/docs/store/assets.md
+@@ -1,4 +1,4 @@
+-# Ресурсы 0.9.10
++# Ресурсы 0.9.11
+ 
+ * Бывший дефолтный фон i.ibb.co заменён локальным CSS-градиентом. Только точное старое значение мигрирует; собственные фоны сохраняются.
+ * Звуки VK, Telegram, iPhone, Discord и WhatsApp исключены из исходного runtime и ZIP. Их id мигрируют в default; пользовательский звук сохраняется.
+--- a/docs/store/listing.md
++++ b/docs/store/listing.md
+@@ -1,4 +1,4 @@
+-# Карточка Funcy 0.9.10
++# Карточка Funcy 0.9.11
+ 
+ Название: **Funcy**.
+ 
+@@ -12,7 +12,9 @@
+ 
+ Каждая попытка выдачи сохраняется в локальном журнале. При потере ответа сообщение может быть доставлено: такие части не отправляются снова автоматически и требуют решения продавца. Длинные паузы шаблона сохраняются между запусками worker. `{quantity}` подставляет проверенное количество; инструкция отправляется один раз на заказ.
+ 
+-В 0.9.10 сохранено получение по превью чатов и невидимый служебный маркер в исходящих сообщениях. Эта версия не обещает обработку всех сообщений между двумя проверками или отсутствие маркера в копируемом товаре. Пригодность конкретного товара нужно проверить продавцу.
++В 0.9.11 входящие сообщения читаются по ID и автору; история дочитывается при пропуске окна. Товар отправляется без добавленного служебного символа. Неизвестный автор, неподтверждённая история или прерванная обработка останавливают автоматический повтор; состояние видно в разделе автоответов. Первый проход после обновления устанавливает исходную границу без ответов на старую переписку. Пригодность конкретного товара нужно проверить продавцу.
++
++Ползунок прокрутки меню сохраняет нейтральный серый цвет при смене темы сайта. Цвет прокрутки самой страницы по-прежнему настраивается.
+ 
+ Доступны собственный фон, цвета, стандартный звук FunPay и пользовательский отрывок звука. Каталожные обои без подтверждённых прав скрыты. При переводе полей выбранный текст передаётся Google Translate. AI, RMTHub и сторонние описания профиля недоступны.
+ 
+--- a/docs/store/manual-acceptance.md
++++ b/docs/store/manual-acceptance.md
+@@ -1,12 +1,12 @@
+-# Самостоятельная проверка Funcy 0.9.10
++# Самостоятельная проверка Funcy 0.9.11
+ 
+ Живые проверки в этой задаче отключены по просьбе пользователя. Этот список описывает будущую приёмку, а не выполненные действия. Используйте демонстрационный товар, который не жалко показать в тестовом чате. Не публикуйте реальные ключи и сессии в отчёте.
+ 
+ ## Подготовка
+ 
+ 1. Сохраните экспорт настроек и резервную копию текущего профиля Chrome. Экспорт настроек не заменяет резервную копию хранилища сессий аккаунтов и IndexedDB.
+-2. Для первичной проверки создайте отдельный профиль Chrome, откройте `chrome://extensions`, включите режим разработчика и нажмите «Загрузить распакованное расширение». Выберите `dist/funcy-0.9.10-staging` из этого проекта. ZIP для магазина сам по себе через эту кнопку не устанавливается; если staging отсутствует, распакуйте ZIP в отдельную папку.
+-3. Убедитесь, что указаны Funcy, версия 0.9.10, Chrome 120+. Не запускайте одновременно старую и новую автоматику для одного аккаунта. В новом профиле она должна быть выключена.
++2. Для первичной проверки создайте отдельный профиль Chrome, откройте `chrome://extensions`, включите режим разработчика и нажмите «Загрузить распакованное расширение». Выберите `dist/funcy-0.9.11-staging` из этого проекта. ZIP для магазина сам по себе через эту кнопку не устанавливается; если staging отсутствует, распакуйте ZIP в отдельную папку.
++3. Убедитесь, что указаны Funcy, версия 0.9.11, Chrome 120+. Не запускайте одновременно старую и новую автоматику для одного аккаунта. В новом профиле она должна быть выключена.
+ 4. Без входа проверьте открытие popup по иконке. Затем войдите в FunPay и откройте меню Funcy. Просмотрите лоты, автоответы, выдачу, журнал заказов, аккаунты, оформление, звуки и поддержку. Проверьте светлую/тёмную тему и узкое окно.
+ 5. Для обновления существующего **unpacked** экземпляра используйте тот же путь и ID расширения: сначала резервная копия папки и профиля, затем новые runtime-файлы и «Обновить». Установка из другого пути создаёт другой ID и не доказывает миграцию старых данных. Для версии из магазина проверка обновления требует подписанного обновления с тем же ID; unpacked-копия этого не подтверждает.
+ 
+@@ -22,8 +22,14 @@
+ ## Автоответчик — обычный чат
+ 
+ 1. Добавьте редкое тестовое ключевое слово и ответ. Включите автоответчик и дайте ему выполнить исходный проход: старые сообщения не должны вызвать рассылку.
+-2. Пусть другой участник отправит слово. Запишите время отправки и получения ответа. При открытой странице сигнал может ускорить проход; при закрытой вкладке проверка идёт alarm. Двойного ответа на то же превью быть не должно.
+-3. В этой версии читается только превью: несколько быстрых сообщений между опросами не являются обязательным сценарием успешной обработки. Это ограничение ускоренного 0.9.10.
++2. Пусть другой участник отправит слово. Запишите время отправки и получения ответа. При открытой странице сигнал может ускорить проход; при закрытой вкладке проверка идёт alarm. Двойного ответа на один ID сообщения быть не должно.
++3. Отправьте три разных сообщения с этим словом подряд до следующего прохода. Должно прийти три ответа по порядку, без потерь и дублей. Повторите с двумя одинаковыми сообщениями: у них разные ID, каждое должно обрабатываться отдельно.
++4. Покупатель отправляет слово, затем вы быстро отправляете собственный текст, содержащий это же слово. Ответ должен прийти только на сообщение покупателя. Повторите со словом внутри демонстрационной выдачи.
++5. Покупатель вручную пишет «оплатил заказ #ABCDEFGH». Это обычное сообщение: оно не должно создавать системную оплату или запускать выдачу. Обычное правило по словам может отвечать на этот текст.
++6. Во время паузы Chrome отправьте несколько сообщений, затем возобновите работу. Сообщения после исходной границы должны дочитаться. Если окно не закрывает пропуск или автор не распознан, в разделе автоответов должно появиться пояснение; курсор не должен перескакивать на последнее превью.
++7. После смены аккаунта проверьте отсутствие ответов в чатах предыдущего аккаунта. При первом включении 0.9.11 старые превью устанавливают новую границу: историческая переписка не вызывает рассылку.
++8. У нового чата после исходного прохода первое сообщение должно обработаться после проверки начала истории. При большом числе чатов работа продолжается следующими проходами: лимит 8 чатов, 50 обработанных сообщений и 3 страницы истории за проход, пачки до 4 чатов. Это локальные бюджеты, а не доказанные лимиты FunPay.
++9. Если после прерывания появилась надпись «результат ответа неизвестен», сначала проверьте реальную переписку. Автоматического повтора зарезервированного сообщения не будет. После ручного решения можно использовать существующий сброс истории автоответчика в «Переносе настроек» либо выключить все сценарии автоответов и выдачи и включить нужные заново: это устанавливает новую исходную границу для всех чатов. Не используйте сброс для автоматической повторной отправки.
+ 
+ ## Один согласованный заказ
+ 
+@@ -34,7 +40,7 @@
+ 3. После части A закройте DevTools worker и остановите worker через `chrome://serviceworker-internals` (если эта страница доступна в вашей версии), либо перезапустите Chrome. После срока часть B должна отправиться один раз. Alarm может опоздать; точность до секунды не требуется.
+ 4. Отдельно проверьте выключение выдачи, смену аккаунта и удержание до наступления части B. Она не должна отправиться. При реальном возврате новые части тоже должны остановиться. Не оформляйте лишний возврат только ради проверки без согласования с покупателем.
+ 5. Для обрыва POST используйте только безвредный демонстрационный текст. Остановите worker во время запроса. После восстановления состояние `sending` должно стать `uncertain`, автоматического повтора нет. Вначале сверяйте реальный чат, и лишь затем принимайте ручное решение «отправить ещё раз». `accepted` тоже не означает однозначного отказа.
+-6. Добавьте ключевое слово автоответчика в свою выдачу: самоответа быть не должно благодаря сохранённому маркеру. Проверьте копирование товара. Полная выдача без маркера в этот выпуск не входит.
++6. Добавьте ключевое слово автоответчика в свою выдачу: самоответа быть не должно благодаря проверке ID автора. Выдача должна совпасть с подготовленным текстом без добавления U+2061 или U+2064. Обычные автоответы сохраняют старую метку; проверяйте именно сообщение с товаром.
+ 
+ ### Проверка кодпоинтов копируемого товара
+ 
+@@ -45,7 +51,7 @@
+ Array.from(copied, ch => 'U+' + ch.codePointAt(0).toString(16).toUpperCase().padStart(4, '0'));
+ ```
+ 
+-В 0.9.10 в исходящих сообщениях сохраняется маркер U+2061. Не удаляйте произвольные невидимые символы самого товара. Если из-за маркера ключ перестаёт работать, этот конкретный товар не прошёл приёмку; не объявляйте ошибку исправленной.
++В 0.9.11 автоматическая выдача не добавляет U+2061/U+2064. Сравните массив кодпоинтов демонстрационного товара до отправки и после копирования из чата. Собственные невидимые символы товара должны сохраниться. Обычные автоответы по-прежнему отмечаются U+2061; это отдельные сообщения.
+ 
+ ## Сверка, длина и badge
+ 
+@@ -58,3 +64,13 @@
+ Повторите один безвредный чатовый сигнал с открытой вкладкой, с закрытой вкладкой и после сна компьютера. Измеряйте отдельно; DevTools worker во время проверки его засыпания должны быть закрыты. Убедитесь в отсутствии пачки повторных выдач после восстановления. Unpacked-режим Chrome допускает послабления для alarms, поэтому эти измерения не доказывают поведение подписанного релиза. Перед подачей повторите на экземпляре, максимально близком к установленному из магазина.
+ 
+ Форма результата: версия Chrome и расширения, способ установки, сценарий, ожидаемое/фактическое поведение, задержка, обезличенный снимок журнала. Публичный URL политики, актуальные снимки карточки и подтверждение прав на брендовые исходники нужны отдельно от ZIP.
++
++## Скроллбар попапа
++
++1. Включите голубую тему, откройте длинную страницу меню и разверните группы боковой навигации. Ползунки попапа и полей ввода должны быть нейтрально-серыми, при наведении немного светлее.
++2. Измените цвет ползунка страницы в редакторе темы и сохраните. Цвет страницы и её предпросмотра должен измениться; у попапа — сохраниться.
++3. Проверьте светлую и тёмную тему, узкое окно, прокрутку колёсиком, перетаскивание ползунка и горизонтальную прокрутку. Геометрия меню при смене цвета не должна меняться. В режиме высокой контрастности используются системные цвета.
++
++## Протокол и границы проверки
++
++Код читателя сверялся с закреплённым исходным кодом FunPayAPI в FunPayCardinal, но реальные обезличенные ответы FunPay в задаче не получены. Локальные тестовые ответы синтетические. При несовпадении реального формата чтение должно остановиться с пояснением; не снимайте проверки автора и ID ради обхода ошибки. Для расследования достаточно обезличенных полей ID/author и структуры HTML; cookies, токены, имена, текст покупателя и товар в отчёт не включайте.
+--- a/docs/store/permissions.md
++++ b/docs/store/permissions.md
+@@ -1,4 +1,4 @@
+-# Разрешения Funcy 0.9.10
++# Разрешения Funcy 0.9.11
+ 
+ | Разрешение | Назначение |
+ | --- | --- |
+--- a/docs/store/privacy-policy.md
++++ b/docs/store/privacy-policy.md
+@@ -1,12 +1,12 @@
+ # Политика конфиденциальности Funcy
+ 
+-Редакция для 0.9.10 от 26 октября 2026 года. Это текст для публикации; публичный URL ещё не задан.
++Редакция для 0.9.11 от 26 октября 2026 года. Это текст для публикации; публичный URL ещё не задан.
+ 
+ Funcy — неофициальное расширение для FunPay. Оно использует данные для выбранных пользователем инструментов: работы с лотами, чатами, заказами, автоматикой и оформлением сайта.
+ 
+ ## Что хранится на устройстве
+ 
+-В профиле Chrome, в chrome.storage и IndexedDB, хранятся настройки, шаблоны, заметки, чёрный список, выбранные лоты, данные статистики и финансов, информация о заказах, служебные отметки прочитанных чатов, журнал решений и попыток отправки. Части выдачи могут содержать сам товар, ключи и инструкции покупателю. Журнал нужен для восстановления и защиты от повторной отправки.
++В профиле Chrome, в chrome.storage и IndexedDB, хранятся настройки, шаблоны, заметки, чёрный список, выбранные лоты, данные статистики и финансов, информация о заказах, служебные отметки прочитанных чатов, журнал решений и попыток отправки. Части выдачи могут содержать сам товар, ключи и инструкции покупателю. Журнал нужен для восстановления и защиты от повторной отправки. В 0.9.11 при дочитывании пропуска локально сохраняются тела сообщений, их ID и авторы (до 1000 сообщений на дочитываемый чат). После закрытия пропуска буфер удаляется; при ошибке может сохраняться до восстановления или сброса состояния автоответчика. Курсоры, ожидающие чаты, паузы чтения и незавершённые попытки также остаются локально. Поле нового потока чатов исключено из экспорта настроек и не принимается из импортируемого файла.
+ 
+ При сохранении аккаунта расширение локально сохраняет данные сессии FunPay и конфигурацию аккаунта. Сессии не шифруются самим расширением; доступ к профилю браузера даёт доступ к локальным данным. Расширение использует cookies действующего входа для запросов FunPay и меняет cookies при выбранном пользователем переключении аккаунта или ручной проверке сохранённого аккаунта. Регулярного обхода всех сохранённых сессий в этом выпуске нет.
+ 
+--- /dev/null
++++ b/docs/store/release-status-0.9.10.md
+@@ -0,0 +1,48 @@
++# Funcy 0.9.10 — результат локальной подготовки
++
++Дата: 26 октября 2026 года. Выбран ускоренный вариант из согласованного плана. Живую приёмку пользователь исключил; её сценарии вынесены в manual-acceptance.md. Это не подтверждение готовности к подаче или одобрения Chrome Web Store.
++
++## Что поставляется
++
++ZIP: `dist/funcy-0.9.10.zip`, 207 файлов. Manifest находится в корне. Staging: `dist/funcy-0.9.10-staging`. Состав и хэши файлов — `dist/funcy-0.9.10-files.json`; SHA-256 — `dist/funcy-0.9.10.sha256`.
++
++SHA-256 пакета: `086c0ab6c2bfde492e9c27620461f4a2725fb98b300ef4b503f6caae62f4619a`.
++
++Строгая отправка требует собственного автора, нового ID относительно известной исходной границы и полного нормализованного текста. Без проверенной границы результат остаётся accepted. Для текущего непроверенного протокола это намеренно консервативная классификация; слепых повторов нет.
++
++Сверка использует отдельную строгую дату ru/en/uk с минутной точностью и календарём MSK, сохраняет продолжение и завершённую границу раздельно. Некорректная относительная дата не отбрасывает всю страницу продаж. Неизвестные и неоднозначные даты остаются наблюдаемыми без автоматического принятия в выдачу. Бюджет: до 10 проверок за проход, ограничение времени и страниц. Повтор continuation — ошибка, а не завершение.
++
++Выдача атомарно сохраняет попытку и все части, проверяет длину целых строк до первого POST, поддерживает {quantity} и сохраняет срок $sleep. Ожидание — pending; прерванный POST — uncertain. Продолжение проверяет аккаунт/epoch, настройки, удержания, заказ и исходные реквизиты. Тексты подготовленных частей сохраняются при изменении шаблона. Alarm выбирает ближайший сохранённый срок. Badge пересчитывается по заказам текущего аккаунта, включая восстановление и ручное разрешение.
++
++Один проход запускается heartbeat 30 секунд, сигналами страницы и предметными сроками. Удалены keepalive-пинги, цикл 5 секунд, watchdog и регулярный обход сохранённых сессий. Общий offscreen helper создаёт DOM_PARSER и закрывает документ после последнего разбора. Minimum Chrome: 120.
++
++Удалены сетевые реализации выключенных сервисов, лишние разрешения tabs/background и CDN jsDelivr; background service worker сохранён. Перевод выделен в translate.js и имеет видимое пояснение об отправке выбранных полей Google Translate. Ограничены маршруты чтения каталога и переходы. Удалены пользовательская скрытая подпись и чужая карточка магазина с просьбой о пяти звёздах. Брендовые звуки исключены; точечные миграции сохраняют свои ресурсы. Непроверенные обои скрыты, доступны редактор и свой фон. MIT-атрибуция и полные лицензии jQuery/Material Symbols сохранены.
++
++## Проверки
++
++| Проверка | Наблюдённый результат |
++| --- | --- |
++| Последний целевой прогон отправки, выдачи, сверки, MV3, миграций, журналов и отключённых сервисов | 60/60 |
++| Предыдущий целевой прогон с браузерными темами и звуками | 61/61 |
++| Перепроверка маршрутов каталога после последней правки | 10/10 release_0910 |
++| Полный прогон проекта | 505 тестов: 482 pass, 22 fail, 1 skip; около 267 секунд |
++| Сравнение падений с точным исходным dirty checkout | 21 исходное падение воспроизведено: 19 в основном сравнении и 2 в дополнительном |
++| Оставшееся падение полного прогона | Устаревшее ожидание отсутствия minimum_chrome_version; обновлено на 120, отдельный прогон 3/3 |
++| Статический staged пакет | 207 файлов; manifest-ресурсы, импорты, JS-синтаксис, HTML/CSS-ссылки и конкретные отключённые endpoints проверены |
++| Реальный staged MV3 в отдельном Chrome 156.0.8078.47 | Worker, popup, offscreen строгая дата, закрытие offscreen, выключенные alarms, холодный перезапуск, миграция и сохранение своих данных прошли |
++
++Полный набор не зелёный. Исходные падения относятся к старым UI-контрактам и браузерным сценариям: финансы, окна, массовый редактор, шаблоны, прокрутка, старый general route, радиус 8 вместо текущих 16, недостающая классификация fptStartStateTitle и анимация меню. Их код не переписывался ради релиза. Файлы и логи перечислены в `artifacts/release-0.9.10-2026-10-26/comparison.json`. После точечных исправлений полный прогон повторно не объявляется пройденным.
++
++Staged smoke использует только синтетические данные и профиль без аккаунта FunPay. Он не доказывает фактический протокол runner, CORS из живого FunPay, доставку товара, задержки в установленном релизе, поведение после сна или пригодность маркера для конкретного товара. Это unpacked-проверка с разрешённой загрузкой тестового расширения через Chrome DevTools Protocol.
++
++## Что осталось вне этой задачи
++
++Пункт 1.1, миграция входящих курсоров и выдача без маркера отложены до 0.9.11. В 0.9.10 сохранены превью и U+2061. Длина 1000 — рабочее значение, не доказанный максимум сервиса. Селекторы engine_wake сверены с исходными парсерами/фикстурами, на живом сайте не проверены; heartbeat остаётся страховкой.
++
++Политика, описание, разрешения, список снимков и инструкция ручной приёмки подготовлены в docs/store. Публичного URL политики и новых снимков для магазина ещё нет. Происхождение сохранённых пользовательских брендовых исходников необходимо подтвердить владельцу проекта перед подачей. Удалённые репозитории, публикация и покупки не выполнялись.
++
++## Граница изменений
++
++Исходный dirty diff и исходные untracked-файлы сохранены в `C:\Users\Usser\.codex\task-backups\funcy-0.9.10-20261026`. Посторонние изменения не откатывались. Git index не изменялся; этапные коммиты не созданы, поскольку task-owned изменения пересекаются с исходными незакоммиченными модулями аккаунтов, оформления и общей фоновой сборкой. Включение целых таких файлов нарушило бы запрет включать посторонний diff. Для просмотра подготовлены только собственные текстовые patch-группы относительно сохранённого снимка; двоичные удаления перечислены отдельно в ownership.json. Они не являются самостоятельными коммитами поверх HEAD.
++
++Автоматическая проверка разрешений отклонила очистку временных тестовых профилей и частичной загрузки тестового браузера с причиной `blocked by policy`. Эти временные файлы оставлены в системном Temp, в исходный runtime и ZIP не входят.
+--- a/docs/store/screenshots.md
++++ b/docs/store/screenshots.md
+@@ -1,6 +1,6 @@
+ # Снимки для карточки
+ 
+-Сделать на установленном staged пакете, скрыв имена, суммы, сессии, товар и переписку реальных покупателей. Старые README-снимки не подтверждают вид 0.9.10.
++Сделать на установленном staged пакете, скрыв имена, суммы, сессии, товар и переписку реальных покупателей. Старые README-снимки не подтверждают вид 0.9.11.
+ 
+ 1. Главное меню Funcy на FunPay, нейтральный фон, без личных данных.
+ 2. Автовыдача: настройки лота, переменные и пауза в шаблоне с демонстрационным товаром.
+--- a/content/engine_wake.js
++++ b/content/engine_wake.js
+@@ -1,23 +1,51 @@
+-// Optional page accelerator. No timers or polling; heartbeat covers absent/replaced nodes.
++// Optional debounced page accelerator. No polling; heartbeat covers missing nodes.
+ (function () {
+-    let queued = false;
++    let timer = null;
++    let stopped = false;
++    let observer;
+     const selectors = '.contact-item, .chat-msg-item, .tc-item, .counter-list';
++    function stop() {
++        stopped = true;
++        if (timer !== null) clearTimeout(timer);
++        timer = null;
++        observer?.disconnect();
++        document.removeEventListener('visibilitychange', onVisibilityChange);
++    }
++    function available() {
++        if (stopped) return false;
++        try {
++            if (globalThis.chrome?.runtime?.id) return true;
++        } catch (_) {}
++        stop();
++        return false;
++    }
++    function onVisibilityChange() {
++        if (!document.hidden) signal();
++    }
+     function signal() {
+-        if (queued) return;
+-        queued = true;
+-        setTimeout(() => {
+-            queued = false;
+-            chrome.runtime.sendMessage({ action: 'fptEngineWake' }).catch(() => {});
++        if (!available() || timer !== null) return;
++        timer = setTimeout(() => {
++            timer = null;
++            if (!available()) return;
++            // Reloading/updating the extension invalidates old content scripts.
++            // sendMessage can throw before returning a Promise, so .catch alone
++            // cannot handle that lifecycle transition.
++            try {
++                Promise.resolve(chrome.runtime.sendMessage({ action: 'fptEngineWake' })).catch(error => {
++                    if (/extension context invalidated/i.test(String(error?.message || error))) stop();
++                });
++            } catch (_) { stop(); }
+         }, 1000);
+     }
+-    const observer = new MutationObserver(records => {
++    observer = new MutationObserver(records => {
+         if (records.some(record => {
+             const element = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+             if (element?.closest(selectors)) return true;
+             return [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1 && (node.matches(selectors) || node.querySelector(selectors)));
+         })) signal();
+     });
++    if (!available()) return;
+     observer.observe(document.body, { childList: true, subtree: true, characterData: true, attributes: true,
+         attributeFilter: ['data-node-msg', 'data-user-msg', 'data-id', 'class'] });
+-    document.addEventListener('visibilitychange', () => { if (!document.hidden) signal(); });
++    document.addEventListener('visibilitychange', onVisibilityChange);
+ })();
+--- /dev/null
++++ b/tests/engine_wake.test.js
+@@ -0,0 +1,52 @@
++const test = require('node:test');
++const assert = require('node:assert/strict');
++const fs = require('node:fs');
++const path = require('node:path');
++const vm = require('node:vm');
++const source = fs.readFileSync(path.join(__dirname, '../content/engine_wake.js'), 'utf8');
++
++function setup(send = () => Promise.resolve()) {
++    const timers = new Map(), listeners = new Map();
++    let callback, calls = 0, disconnected = 0, counter = 0;
++    const runtime = { id: 'test-extension', sendMessage: msg => { calls++; assert.equal(msg.action, 'fptEngineWake'); return send(); } };
++    const document = { hidden: false, body: {},
++        addEventListener: (name, fn) => listeners.set(name, fn),
++        removeEventListener: (name, fn) => { if (listeners.get(name) === fn) listeners.delete(name); } };
++    vm.runInNewContext(source, { chrome: { runtime }, document,
++        MutationObserver: class { constructor(fn) { callback = fn; } observe() {} disconnect() { disconnected++; } },
++        setTimeout: fn => { const id = ++counter; timers.set(id, fn); return id; }, clearTimeout: id => timers.delete(id) });
++    return { runtime, timers, listeners, calls: () => calls, disconnected: () => disconnected,
++        mutate: () => callback([{ target: { nodeType: 1, closest: () => true } }]),
++        tick: () => { const pending = [...timers.values()]; timers.clear(); pending.forEach(fn => fn()); } };
++}
++
++test('page mutations debounce into one wake and allow the next independent signal', () => {
++    const h = setup(); h.mutate(); h.mutate(); h.listeners.get('visibilitychange')();
++    assert.equal(h.timers.size, 1); h.tick(); assert.equal(h.calls(), 1);
++    h.mutate(); h.tick(); assert.equal(h.calls(), 2);
++});
++
++test('synchronous context invalidation is contained and detaches stale page listeners', () => {
++    const h = setup(() => { throw new Error('Extension context invalidated.'); });
++    h.mutate(); assert.doesNotThrow(h.tick);
++    assert.equal(h.disconnected(), 1); assert.equal(h.listeners.size, 0);
++    h.mutate(); h.tick(); assert.equal(h.calls(), 1); assert.equal(h.timers.size, 0);
++});
++
++test('context lost during debounce cancels the send and detaches the observer', () => {
++    const h = setup(); h.mutate(); delete h.runtime.id; h.tick();
++    assert.equal(h.calls(), 0); assert.equal(h.disconnected(), 1); assert.equal(h.listeners.size, 0);
++});
++
++test('asynchronous context invalidation detaches the observer without an unhandled rejection', async () => {
++    const h = setup(() => Promise.reject(new Error('Extension context invalidated.')));
++    h.mutate(); h.tick(); await new Promise(resolve => setImmediate(resolve));
++    assert.equal(h.disconnected(), 1); assert.equal(h.listeners.size, 0);
++});
++
++test('transient worker rejection does not disable future page signals', async () => {
++    const h = setup(() => Promise.reject(new Error('Could not establish connection. Receiving end does not exist.')));
++    h.mutate(); h.tick(); await new Promise(resolve => setImmediate(resolve));
++    assert.equal(h.disconnected(), 0); h.mutate(); h.tick();
++    await new Promise(resolve => setImmediate(resolve)); assert.equal(h.calls(), 2);
++});

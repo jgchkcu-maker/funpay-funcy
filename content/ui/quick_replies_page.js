@@ -93,7 +93,8 @@
             result = result.replace(/\{(welcome|date|buyername|bal|activesells|lotname)\}/g, (_, key) => DEMO[key]);
         }
         result = result.replace(/\{([^{}|]*\|[^{}]*)\}/g, (full, inner) => /^ai:/i.test(inner) ? full : inner.split('|')[0]);
-        if (kind !== 'command') result = result.replace(/\{ai:([^}]+)\}/gi, (_, prompt) => `[ИИ: ${prompt.trim()}]`);
+        if (kind !== 'command') result = result.replace(/\{ai:([^}]+)\}/gi, (_, prompt) =>
+            globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? `[ИИ: ${prompt.trim()}]` : '[Временно недоступная вставка]');
         return result;
     }
 

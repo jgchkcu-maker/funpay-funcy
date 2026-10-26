@@ -17,13 +17,32 @@
     function fontName(value) {
         return typeof value === 'string' && /^[\p{L}\p{N} _-]{1,60}$/u.test(value) ? value : '';
     }
+    // Existing settings/exports may still point to files removed from the extension package.
+    function resolveWallpaper(value) {
+        if (typeof value !== 'string') return value;
+        const match = value.match(/^chrome-extension:\/\/[a-z0-9]+\/themes\/wallpapers\/(ghoul-ink|white-ghoul)\.webp$/i);
+        return match ? 'https://raw.githubusercontent.com/jgchkcu-maker/funcy-assets/main/wallpapers/' + match[1].toLowerCase() + '.webp' : value;
+    }
     function cssImageUrl(value) {
+        value = resolveWallpaper(value);
         if (typeof value !== 'string' || /[\x00-\x1f\x7f<>]/.test(value)) return '';
         try {
             const u = new URL(value);
             if (u.protocol !== 'https:' && !/^data:image\/(?:png|jpe?g|gif|webp);base64,[a-z0-9+/=]+$/i.test(value)) return '';
             return 'url("' + value.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '")';
         } catch (_) { return ''; }
+    }
+    // Video backgrounds are limited to the public asset repository, never arbitrary imports.
+    function wallpaperVideoUrl(value) {
+        return typeof value === 'string' && /^https:\/\/raw\.githubusercontent\.com\/jgchkcu-maker\/funcy-assets\/main\/wallpapers\/[\w/-]+\.mp4$/i.test(value) ? value : '';
+    }
+    function themeRadii(css, radius) {
+        const value = cssNumber(radius, 0, 100, 16);
+        return css.replace(/border-radius: (\d+(?:px|%)?(?: \d+(?:px|%)?){0,3})/g, (rule, corners) => {
+            // Keep circular avatars/pill controls; preserve square joining edges.
+            if (!corners.includes('px') || corners.includes('%') || corners.split(' ').some(c => parseFloat(c) >= 50)) return rule;
+            return 'border-radius: ' + corners.split(' ').map(c => parseFloat(c) === 0 ? '0' : `${value}px`).join(' ');
+        });
     }
     function cssDeclarations(map) {
         if (!map || typeof map !== 'object' || Array.isArray(map)) return '';
@@ -78,10 +97,11 @@
     function themeSettings(value) {
         const settings = value && typeof value === 'object' && !Array.isArray(value) ? { ...value } : {};
         const numbers = {
-            bgBlur: [0, 100, 0], bgBrightness: [0, 200, 100], borderRadius: [0, 100, 8],
+            bgBlur: [0, 100, 0], bgBrightness: [0, 200, 100], borderRadius: [0, 100, 16],
             containerBgOpacity: [0, 1, 1], circleSize: [0, 300, 100], circleOpacity: [0, 100, 100],
             circleBlur: [0, 100, 0], glassmorphismBlur: [0, 100, 10], scrollbarWidth: [0, 40, 8],
-            menuOpacity: [0, 100, 3], menuBlur: [0, 100, 8], textOutlineWidth: [0, 10, 1]
+            menuOpacity: [0, 100, 3], menuBlur: [0, 100, 8], textOutlineWidth: [0, 10, 1],
+            chatModuleGap: [0, 40, 12], chatContactsWidth: [220, 480, 280], chatDetailWidth: [200, 420, 280]
         };
         const colors = { bgColor1: '#ff6d15', bgColor2: '#f4cf78', containerBgColor: '#0b0b0b',
             textColor: '#f0f0f0', linkColor: '#2d6bb3', scrollbarThumbColor: '#555555',
@@ -92,8 +112,9 @@
             settings[key] = /^#?[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(color) ? (color.startsWith('#') ? color : '#' + color) : fallback;
         }
         if (Object.hasOwn(settings, 'font')) settings.font = fontName(settings.font) || 'Helvetica Neue';
-        if (Object.hasOwn(settings, 'bgImage')) settings.bgImage = cssImageUrl(settings.bgImage) ? settings.bgImage : '';
+        if (Object.hasOwn(settings, 'bgImage')) settings.bgImage = cssImageUrl(settings.bgImage) ? resolveWallpaper(settings.bgImage) : '';
+        if (Object.hasOwn(settings, 'bgVideo')) settings.bgVideo = wallpaperVideoUrl(settings.bgVideo) || null;
         return settings;
     }
-    return { funpayUrl, cssNumber, fontName, cssImageUrl, cssDeclarations, csvCell, themeSettings };
+    return { funpayUrl, cssNumber, fontName, cssImageUrl, cssDeclarations, csvCell, themeSettings, resolveWallpaper, wallpaperVideoUrl, themeRadii };
 });

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<title>Funcy — кнопки сообщений</title>
+<link rel="stylesheet" href="../../css/content_styles.css">
+<link rel="stylesheet" href="../../css/fpt_icons_theme.css">
+<style>
+    body { margin:0; padding:48px; background:#111d23; color:#f4f6f8; font:14px Arial,sans-serif; }
+    .chat-contacts { width:278px; background:#192d36; border-radius:16px; }
+    .chat-full-header { box-sizing:border-box; padding:20px; }
+    .chat-full-header h1 { font-family:Arial,sans-serif; font-weight:800; }
+    .contact-list { padding:0 20px 14px; }
+    .contact-list .contact-item { display:block; padding:12px 0; color:inherit; font-size:13px; }
+    .contact-item.unread { font-weight:700; }
+    .contact-item .fp-tools-user-status { float:right; opacity:.6; }
+    #feedback { margin:20px 0; max-width:340px; color:#b8c5cc; line-height:1.5; min-height:42px; }
+    .preview-options { display:flex; flex-wrap:wrap; gap:16px; max-width:360px; margin-top:24px; align-items:center; }
+    .preview-options label { display:flex; align-items:center; gap:8px; }
+    .preview-options button { background:#283c46; color:inherit; padding:8px 12px; border:0; border-radius:8px; }
+    body.light { background:#eef1f4; color:#222; }
+    body.light .chat-contacts { background:#fff; }
+    body.light #feedback { color:#5e6670; }
+    body.light .preview-options button { background:#dae1e7; }
+</style>
+<section class="chat-contacts">
+    <div class="chat-full-header"><h1>Сообщения</h1></div>
+    <div class="contact-list">
+        <a class="contact-item unread" data-id="101">Первый диалог<span class="fp-tools-user-status" data-fp-tooltip="Пометка">Помечен</span></a>
+        <a class="contact-item unread" data-id="102">Второй диалог</a>
+    </div>
+</section>
+<div id="feedback" role="status" aria-live="polite"></div>
+<div class="preview-options">
+    <button type="button" id="theme">Светлая тема</button>
+    <label>Скругление <input id="radius" type="range" min="0" max="30" value="8"><output id="radius-value">8 px</output></label>
+</div>
+<script>
+    const state = {};
+    window.chrome = { runtime:{id:'preview'}, storage:{local:{get:async()=>({...state}),set:async p=>Object.assign(state,p)}} };
+    window.fptExtAlive = () => true;
+    window.fptSafe = fn => Promise.resolve().then(fn);
+    window.createElement = (tag,attrs={}) => { const el=document.createElement(tag); for(const [k,v] of Object.entries(attrs)) el.setAttribute(k,v); return el; };
+    window.showNotification = message => { document.getElementById('feedback').textContent=message; };
+    window.fetch = async () => { await new Promise(r=>setTimeout(r,650)); return {ok:true}; };
+</script>
+<script src="../../content/features/misc.js"></script>
+<script>
+    initializeMarkAllAsRead();
+    document.getElementById('radius').addEventListener('input', e => {
+        document.documentElement.style.setProperty('--fpt-chat-action-radius',e.target.value+'px');
+        document.getElementById('radius-value').textContent=e.target.value+' px';
+    });
+    document.getElementById('theme').addEventListener('click', e => {
+        const light=document.body.classList.toggle('light');
+        e.target.textContent=light?'Тёмная тема':'Светлая тема';
+    });
+</script>
+</html>

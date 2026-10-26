@@ -17,9 +17,6 @@ function themeContext(initial = {}) {
     h.ctx.document.createElement = () => ({ width: 0, height: 0, getContext: () => ({ fillRect() {}, set fillStyle(_) {} }), toDataURL: () => 'data:image/png;base64,AAAA' });
     h.load('content/features/theme.js');
     h.ctx.applyCustomTheme = h.ctx.applyHeaderPosition = async () => {};
-    h.ctx.fetch = async url => ({ ok: true, json: async () => String(url).endsWith('index.json')
-        ? [{ id: 'one', name: 'one', file: 'one.fptheme' }] : { bgColor1: '#336699', font: 'Roboto', borderRadius: 12 } });
-    h.load('content/features/theme_gallery.js');
     return h;
 }
 
@@ -32,15 +29,8 @@ test('theme draftOnly actions return values without touching storage or the site
     assert.equal(defaults.font, 'Helvetica Neue');
     assert.equal(defaults.bgImage, null);
 
-    const random = await h.api.run('theme', 'randomizeThemeBtn', { draftOnly: true });
-    assert.match(random.bgColor1, /^#[0-9a-f]{6}$/);
-    const dark = await h.api.run('theme', 'fp-apply-dark-preset', { draftOnly: true });
-    assert.equal(dark.bgImage, 'data:image/png;base64,AAAA');
     const imported = await h.api.run('theme', 'importThemeBtn', { theme: { bgColor1: '#336699', font: 'Roboto' }, draftOnly: true });
     assert.equal(imported.font, 'Roboto');
-    const catalog = await h.api.run('theme', 'getThemeCatalog');
-    const gallery = await h.api.run('theme', 'applyCurrent', { theme: catalog[0], draftOnly: true });
-    assert.equal(gallery.borderRadius, 12);
 
     assert.deepEqual({ ...h.saved }, { fpToolsTheme: { font: 'Lato' }, enableCustomTheme: false }, 'draft values never reach storage');
     assert.equal(applied, 0, 'the live site theme is not re-applied for a draft');
@@ -48,11 +38,6 @@ test('theme draftOnly actions return values without touching storage or the site
 
 test('theme actions keep their original write-through behaviour without the draft flag', async () => {
     const h = themeContext({ enableCustomTheme: false });
-    await h.api.run('theme', 'fp-apply-dark-preset');
-    assert.equal(h.saved.enableCustomTheme, true);
-    assert.equal(h.saved.fpToolsTheme.bgColor1, '#0a0a0a');
-    const random = await h.api.run('theme', 'randomizeThemeBtn');
-    assert.deepEqual(h.saved.fpToolsTheme.bgColor1, random.bgColor1);
     const imported = await h.api.run('theme', 'importThemeBtn', { theme: { bgColor1: '#336699', font: 'Roboto' } });
     assert.equal(h.saved.fpToolsTheme.font, imported.font);
     await assert.rejects(h.api.run('theme', 'importThemeBtn', { theme: { nope: true } }), /формат/);
@@ -73,7 +58,9 @@ test('theme page metadata keeps searchable labels and only registered button ids
 
 test('theme page module is wired in order, mounts safely and avoids native dialogs', () => {
     const indexOf = file => contentScripts.indexOf(file);
-    assert.ok(indexOf('content/ui/theme_page.js') > indexOf('content/features/theme_gallery.js'));
+    assert.equal(indexOf('content/features/theme_gallery.js'), -1, 'the retired gallery module stays removed');
+    assert.ok(indexOf('content/features/theme_assets.js') > indexOf('content/ui/popup_actions.js'));
+    assert.ok(indexOf('content/features/theme_assets.js') < indexOf('content/ui/theme_page.js'));
     assert.ok(indexOf('content/ui/theme_page.js') > indexOf('content/ui/popup_components.js'));
     assert.ok(indexOf('content/ui/theme_page.js') > indexOf('content/features/theme.js'));
     assert.match(read('content/content_script.js'), /window\.FPTThemePage\.mount\(toolsPopup\)/);
@@ -88,10 +75,9 @@ test('theme page module is wired in order, mounts safely and avoids native dialo
 test('theme page reads and writes only through popup actions and keeps drafts out of storage', () => {
     assert.doesNotMatch(pageSource, /chrome\.storage/);
     assert.match(pageSource, /run\('saveSettings', \{ settings: payload \}\)/);
-    ['getThemeDefaults', 'exportThemeBtn', 'getThemeCatalog', 'applyCurrent', 'randomizeThemeBtn', 'generatePaletteBtn',
-        'importThemeBtn', 'fp-apply-dark-preset', 'resetThemeBtn', 'enableMagicStickBtn'].forEach(id =>
+    ['getThemeDefaults', 'exportThemeBtn', 'generatePaletteBtn', 'importThemeBtn', 'resetThemeBtn', 'enableMagicStickBtn'].forEach(id =>
         assert.ok(pageSource.includes(`'${id}'`), `${id} is used by the page`));
-    assert.equal((pageSource.match(/draftOnly: true/g) || []).length, 5, 'every value-producing action asks for a draft');
+    assert.equal((pageSource.match(/draftOnly: true/g) || []).length, 2, 'every value-producing action asks for a draft');
 });
 
 test('theme page styles stay inside the popup, use shared tokens and honour reduced motion', () => {
@@ -101,7 +87,7 @@ test('theme page styles stay inside the popup, use shared tokens and honour redu
     const selectors = [...block.matchAll(/(?:^|\})\s*([^{}@]+)\{/g)].map(match => match[1].trim()).filter(Boolean);
     selectors.forEach(list => list.split(',').map(item => item.trim()).filter(item => /^[.\w]/.test(item) && !/^\d+%$|^from$|^to$/.test(item)).forEach(selector =>
         assert.match(selector, /^\.fp-tools-popup\.fptm-themed /, `selector escaped the popup scope: ${selector}`)));
-    assert.doesNotMatch(block.replace(/\.fpt-th-preset-art--random[^}]*\}/, ''), /#7663f6/i, 'accent comes from --fptm-accent (only the decorative random tile is fixed)');
+    assert.doesNotMatch(block, /#7663f6/i, 'accent comes from --fptm-accent');
     assert.match(block, /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.fpt-th/);
     assert.match(block, /@container fpt-theme \(max-width: 900px\)/);
     assert.match(block, /\.fpt-th-range::-webkit-slider-thumb/);

@@ -814,7 +814,22 @@
         const loadBanner = node('div', 'fpt-ar-banner');
         loadBanner.hidden = true;
 
-        view.append(hero, loadBanner, scenariosSection, keywordsSection);
+        const streamStatus = node('div', 'fpt-ar-banner fpt-ar-stream-status');
+        streamStatus.setAttribute('role', 'status');
+        streamStatus.hidden = true;
+        function renderStreamStatus(scopes) {
+            const notes = [];
+            for (const [accountId, scope] of Object.entries(scopes || {})) {
+                if (scope.error || scope.retryAt > Date.now()) notes.push(`Аккаунт ${accountId}: ${scope.error || 'чтение временно отложено'}`);
+                for (const [chatId, chat] of Object.entries(scope.chats || {})) {
+                    if (chat.handling && (chat.error || Date.now() - chat.handling.at > 30000)) notes.push(`Чат ${chatId}: результат ответа неизвестен. Проверьте переписку вручную перед сбросом состояния автоответчика.`);
+                    else if (chat.error) notes.push(`Чат ${chatId}: ${chat.error}`);
+                }
+            }
+            streamStatus.hidden = notes.length === 0;
+            streamStatus.textContent = notes.slice(0, 5).join(' ') + (notes.length > 5 ? ` Ещё: ${notes.length - 5}.` : '');
+        }
+        view.append(hero, loadBanner, streamStatus, scenariosSection, keywordsSection);
         page.appendChild(view);
 
         // --- Rendering ---------------------------------------------------------------------------
@@ -928,6 +943,7 @@
         }
 
         function applyStored(autoReplies) {
+            renderStreamStatus(autoReplies?.chatStreams);
             state.settings = normalizeSettings(autoReplies);
             state.loaded = true;
             state.loadError = null;
@@ -1170,6 +1186,7 @@
                 return;
             }
             if (area !== 'local' || !changes || !changes[STORE_KEY]) return;
+            renderStreamStatus(changes[STORE_KEY].newValue?.chatStreams);
             if (cards.some(card => card.isDirty())) return;
             reload();
         };

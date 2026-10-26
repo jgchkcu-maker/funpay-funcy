@@ -1,0 +1,121 @@
+{
+  "full_run": {
+    "tests": 520,
+    "pass": 498,
+    "fail": 21,
+    "skip": 1
+  },
+  "failures": [
+    {
+      "file": "tests\\auto_delivery_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\finance_hub_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\finance_hub_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\finance_hub_ui_contract.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\lot_automation_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\lot_automation_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\lot_io_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\lot_io_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\menu_reference_contract.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\page_windows_ui_contract.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\popup_actions.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\popup_actions.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\popup_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\review_reminder_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\safe_values.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\segmented_motion_contract.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\settings_io_keys.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\settings_page_recomposition.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\sidebar_scroll_browser.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\theme_reload_regression.test.js",
+      "previous_baseline_reproduced": true
+    },
+    {
+      "file": "tests\\ui_foundation_contract.test.js",
+      "previous_baseline_reproduced": true
+    }
+  ],
+  "new_failure_files": [],
+  "prior_evidence": "artifacts/release-0.9.10-2026-10-26/comparison.json",
+  "full_run_precedes_final_targeted_fixes": true,
+  "final_targeted_run": {
+    "tests": 76,
+    "pass": 76,
+    "fail": 0
+  },
+  "staged_smoke": {
+    "version": "0.9.11",
+    "stagedWorker": true,
+    "popup": true,
+    "offscreenStrictDate": true,
+    "offscreenMessageParser": true,
+    "offscreenClosed": true,
+    "disabledAlarms": true,
+    "coldRestartMigration": true,
+    "customDataPreserved": true,
+    "browser": "156.0.8078.47"
+  },
+  "zip_sha256": "d3b900e4e4ec3631ae3f7f2bf664c56fdc9a68551df8600f9759456d65892359",
+  "engine_wake_fix": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "full_suite_repeated": false
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "themes": [
+    {
+      "id": "ghoul-ink",
+      "name": "Ghoul Ink",
+      "meta": "Манга, графит и красный",
+      "wallpaper": "wallpapers/ghoul-ink.webp",
+      "theme": {
+        "bgColor1": "#b3122e",
+        "bgColor2": "#ff5c72",
+        "linkColor": "#c9cfdb",
+        "textColor": "#eceef2",
+        "containerBgColor": "#0d0e12",
+        "containerBgOpacity": 0.86,
+        "font": "Montserrat",
+        "borderRadius": 12,
+        "bgBlur": 0,
+        "bgBrightness": 100,
+        "enableGlassmorphism": true,
+        "glassmorphismBlur": 12,
+        "enableImprovedSeparators": true,
+        "enableCustomScrollbar": true,
+        "scrollbarThumbColor": "#3a3d46",
+        "scrollbarTrackColor": "#0b0c0f",
+        "scrollbarWidth": 8
+      }
+    },
+    {
+      "id": "white-ghoul",
+      "name": "White Ghoul",
+      "meta": "Чёрный фон, серебро",
+      "wallpaper": "wallpapers/white-ghoul.webp",
+      "theme": {
+        "bgColor1": "#4e5462",
+        "bgColor2": "#e3e7ef",
+        "linkColor": "#b9c2d3",
+        "textColor": "#eef0f4",
+        "containerBgColor": "#0a0b0d",
+        "containerBgOpacity": 0.84,
+        "font": "Montserrat",
+        "borderRadius": 12,
+        "bgBlur": 0,
+        "bgBrightness": 100,
+        "enableGlassmorphism": true,
+        "glassmorphismBlur": 12,
+        "enableImprovedSeparators": true,
+        "enableCustomScrollbar": true,
+        "scrollbarThumbColor": "#43474f",
+        "scrollbarTrackColor": "#08090b",
+        "scrollbarWidth": 8
+      }
+    }
+  ]
+}
