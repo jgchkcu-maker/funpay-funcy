@@ -2,6 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const safe = require('../content/safe_values.js');
 
+test('theme font style accepts only supported weight and boolean italic', () => {
+    assert.deepEqual(safe.themeSettings({ fontWeight: '600', fontItalic: true }), { fontWeight: '600', fontItalic: true });
+    assert.deepEqual(safe.themeSettings({ fontWeight: '700; color: red', fontItalic: 'true' }), { fontWeight: '400', fontItalic: false });
+});
+
 test('URLs and fonts cannot introduce executable schemes or CSS', () => {
     for (const url of ['javascript:alert(1)', 'http://funpay.com/', 'https://funpay.com.evil/', 'https://evil@funpay.com/', 'https://funpay.com:444/']) assert.equal(safe.funpayUrl(url), '');
     assert.equal(safe.funpayUrl('https://funpay.com/lots/offer?id=123'), 'https://funpay.com/lots/offer?id=123');

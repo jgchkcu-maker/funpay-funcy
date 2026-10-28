@@ -38,12 +38,12 @@
     }
 }
 
-/* Popup chrome has a fixed neutral scrollbar. Repeated root specificity keeps
+/* Popup chrome follows its palette. Repeated root specificity keeps
    late injected menu/site themes from recolouring it. The site preview remains
    an editable preview of the user's FunPay settings. No overflow rules change. */
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup,
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *)) {
-    scrollbar-color: #737985 transparent !important;
+    scrollbar-color: var(--fptm-muted, #788394) transparent !important;
 }
 @supports selector(::-webkit-scrollbar) {
     .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup,
@@ -52,20 +52,22 @@
     }
 }
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-track,
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar,
+.fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar,
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-track,
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-corner {
     background: transparent !important;
 }
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb,
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb {
-    background: #737985 !important;
+    background: color-mix(in srgb, var(--fptm-muted, #788394) 65%, transparent) !important;
     background-clip: padding-box !important;
     border: 2px solid transparent !important;
     border-radius: 999px !important;
 }
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup::-webkit-scrollbar-thumb:hover,
 .fp-tools-popup.fp-tools-popup.fp-tools-popup.fp-tools-popup :where(*:not(.fpt-th-stage, .fpt-th-stage *))::-webkit-scrollbar-thumb:hover {
-    background-color: #8a909a !important;
+    background-color: var(--fptm-muted, #788394) !important;
 }
 
 @media (forced-colors: active) {

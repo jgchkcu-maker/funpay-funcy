@@ -112,6 +112,8 @@
             settings[key] = /^#?[0-9a-f]{3}(?:[0-9a-f]{3})?$/i.test(color) ? (color.startsWith('#') ? color : '#' + color) : fallback;
         }
         if (Object.hasOwn(settings, 'font')) settings.font = fontName(settings.font) || 'Helvetica Neue';
+        if (Object.hasOwn(settings, 'fontWeight')) settings.fontWeight = ['400', '600', '700'].includes(String(settings.fontWeight)) ? String(settings.fontWeight) : '400';
+        if (Object.hasOwn(settings, 'fontItalic')) settings.fontItalic = settings.fontItalic === true;
         if (Object.hasOwn(settings, 'bgImage')) settings.bgImage = cssImageUrl(settings.bgImage) ? resolveWallpaper(settings.bgImage) : '';
         if (Object.hasOwn(settings, 'bgVideo')) settings.bgVideo = wallpaperVideoUrl(settings.bgVideo) || null;
         return settings;

@@ -24,6 +24,8 @@
     const MAX_FILE_BYTES = 7 * 1024 * 1024;  // FunPay: 7 МБ на файл
     const BTN_ICON = 'attach_file';          // минималистичная скрепка
 
+    let sending = false;
+    let basketContext = null;
     let basket = [];        // [{ id, dataUrl, name }]
     let modalEl = null;
     let pendingReplaceId = null; // id карточки, которую заменяем через «заменить»
@@ -101,6 +103,10 @@
     // ───────────── добавление файлов из проводника ─────────────
 
     async function addFiles(fileList) {
+        if (sending) { notify('Дождитесь завершения отправки изображений.', true); return; }
+        const context = getChatContext();
+        if (!context.chatId) { notify('Не удалось определить чат.', true); return; }
+        if (basketContext && basketContext.chatId !== context.chatId) { notify('Выбранные фото относятся к другому чату. Вернитесь в него или закройте окно.', true); return; }
         const files = Array.from(fileList || []);
         if (!files.length) return;
         let skipped = 0;
@@ -115,6 +121,8 @@
         }
         if (skipped) notify(`Пропущено файлов: ${skipped} (не изображение или > 7 МБ).`, true);
 
+        if (!collected.length) return;
+        basketContext ||= context;
         if (pendingReplaceId && collected.length) {
             // режим «заменить»: подменяем одну картинку первой выбранной
             const idx = basket.findIndex(b => b.id === pendingReplaceId);
@@ -142,7 +150,7 @@
     // ───────────────────────── модалка ─────────────────────────
 
     // Окно отправки - общий каркас окон расширения (content/ui/page_windows.js).
-    function openModal() {
+    function openModal(restoredText) {
         if (modalEl) return;
         const win = fptWindow.create({
             id: 'fpt-tg-window',
@@ -174,7 +182,10 @@
         // как в Telegram: то, что уже набрано в поле «Написать...», переносим в подпись
         // и очищаем исходное поле, чтобы не отправилось дважды.
         const nativeInput = document.querySelector('.chat-form-input textarea, .chat-form textarea[name="content"]');
-        if (nativeInput && nativeInput.value.trim()) {
+        if (typeof restoredText === 'string') {
+            borrowedText = restoredText;
+            msg.value = restoredText;
+        } else if (nativeInput && nativeInput.value.trim()) {
             borrowedText = nativeInput.value;
             msg.value = nativeInput.value;
             nativeInput.value = '';
@@ -199,12 +210,13 @@
         // если закрыли БЕЗ отправки - вернём забранный текст обратно в поле «Написать...»
         if (!sent && borrowedText) {
             const ni = document.querySelector('.chat-form-input textarea, .chat-form textarea[name="content"]');
-            if (ni) { ni.value = borrowedText; ni.dispatchEvent(new Event('input', { bubbles: true })); }
+            if (ni) { ni.value = ni.value && ni.value !== borrowedText ? ni.value + '\n' + borrowedText : borrowedText; ni.dispatchEvent(new Event('input', { bubbles: true })); }
         }
         borrowedText = '';
         // ВСЕГДА очищаем выбранные картинки при закрытии меню, иначе при
         // следующем открытии всплывут старые (баг: «остались 6 картинок»).
         basket = [];
+        basketContext = null;
         pendingReplaceId = null;
         closeCellMenu();
         modalEl = null;
@@ -222,7 +234,7 @@
         const grid = modalEl.querySelector('#fptTgGrid');
         const title = modalEl.querySelector('.fpt-win-title');
         const n = basket.length;
-        title.textContent = `Выбрано ${n} ${plural(n)}`;
+        title.textContent = n ? `Выбрано ${n} ${plural(n)}` : 'Неотправленная подпись';
 
         grid.innerHTML = '';
         basket.forEach(item => {
@@ -621,6 +633,7 @@
                 if (tool === 'crop' && crop) applyCrop(true);
                 composite();
                 item.dataUrl = canvas.toDataURL('image/png');
+                item.name = (item.name || 'image').replace(/\.[^.]+$/, '') + '.png';
                 renderGrid();
                 closeEditor();
             }
@@ -641,17 +654,14 @@
         return { name: el ? el.textContent.trim() : '' };
     }
 
-    // FIX 2.8.1: надёжная отправка одного сообщения в background с таймаутом и ретраем.
-    // В MV3 service worker может «уснуть» (~30 c простоя) ровно между отправкой и
-    // ответом - тогда sendMessage зависает и спиннер крутится ВЕЧНО. Здесь мы
-    // ограничиваем ожидание, при таймауте/обрыве будим воркер и повторяем.
+    // A lost reply is ambiguous: never replay a send automatically.
     function sendMessageWithTimeout(msg, timeoutMs) {
         return new Promise((resolve) => {
             let done = false;
             const timer = setTimeout(() => {
                 if (done) return;
                 done = true;
-                resolve({ ok: false, error: 'timeout', _timeout: true });
+                resolve({ ok: false, error: 'Нет ответа от расширения. Проверьте чат перед повторной отправкой.', status: 'uncertain' });
             }, timeoutMs);
             try {
                 chrome.runtime.sendMessage(msg, (resp) => {
@@ -659,72 +669,76 @@
                     done = true;
                     clearTimeout(timer);
                     if (chrome.runtime.lastError) {
-                        resolve({ ok: false, error: chrome.runtime.lastError.message || 'port closed', _disconnected: true });
+                        resolve({ ok: false, error: chrome.runtime.lastError.message || 'port closed', status: 'uncertain' });
                     } else {
-                        resolve(resp || { ok: false, error: 'empty response', _empty: true });
+                        resolve(resp || { ok: false, error: 'empty response', status: 'uncertain' });
                     }
                 });
             } catch (e) {
                 if (done) return;
                 done = true;
                 clearTimeout(timer);
-                resolve({ ok: false, error: e.message, _threw: true });
+                resolve({ ok: false, error: e.message, status: 'rejected' });
             }
         });
     }
 
-    async function sendImageReliable(payload) {
-        // до 3 попыток: первый таймаут часто = спящий воркер, который как раз
-        // просыпается от нашего же сообщения, поэтому вторая попытка обычно проходит.
-        const TIMEOUTS = [20000, 25000, 30000];
-        let last = null;
-        for (let attempt = 0; attempt < TIMEOUTS.length; attempt++) {
-            const resp = await sendMessageWithTimeout(payload, TIMEOUTS[attempt]);
-            last = resp;
-            if (resp && resp.ok) return resp;
-            // повторяем только при «инфраструктурных» сбоях (воркер уснул/обрыв порта),
-            // но НЕ при явной ошибке самого FunPay (там ретрай бессмысленен).
-            if (!(resp && (resp._timeout || resp._disconnected || resp._empty))) return resp;
-            await new Promise(r => setTimeout(r, 400));
-        }
-        return last || { ok: false, error: 'не удалось связаться с фоновым процессом' };
-    }
-
     async function doSend() {
-        if (!modalEl) return;
+        if (!modalEl || sending) return;
         const text = (modalEl.querySelector('#fptTgMsg').value || '').trim();
         const imgs = basket.slice();
-        if (!imgs.length) { closeModal(); return; }
-
-        const { chatId, chatName } = getChatContext();
-        if (!chatId) { notify('Не удалось определить чат для отправки.', true); return; }
-
-        // если подпись пустая - НЕ дублируем то, что уже в поле ввода (его отправит сам пользователь);
-        // но если пользователь оставил подпись в модалке - используем её.
-        // показываем ОДИН сгруппированный пузырь со всеми картинками + подписью
-        const group = addPendingGroup(imgs.map(i => i.dataUrl), text);
+        if (!imgs.length && !text) { closeModal(); return; }
+        const context = basketContext || getChatContext();
+        const { chatId, chatName } = context;
+        if (!chatId || getChatContext().chatId !== chatId) {
+            notify('Чат изменился. Вернитесь в чат, где выбрали изображения.', true);
+            return;
+        }
+        sending = true;
+        const group = imgs.length ? addPendingGroup(imgs.map(i => i.dataUrl), text) : null;
         closeModal({ sent: true });
-        basket = [];
-
+        let remaining = [], caption = '', failed = false, accountScope = context.accountScope;
         try {
             for (let i = 0; i < imgs.length; i++) {
-                const sendId = 'img_' + Date.now() + '_' + i + '_' + Math.random().toString(36).slice(2, 8);
-                const resp = await sendImageReliable({
-                    action: 'fptSendImage', chatId, dataUrl: imgs[i].dataUrl, chatName, sendId
-                });
-                if (resp && resp.ok) markTileSent(group, i);
-                else { markTileError(group, i); notify('Не удалось отправить изображение: ' + ((resp && resp.error) || 'ошибка'), true); }
-                await new Promise(r => setTimeout(r, 250));
+                const resp = await sendMessageWithTimeout({
+                    action: 'fptSendImage', chatId, dataUrl: imgs[i].dataUrl,
+                    fileName: imgs[i].name, chatName, sendId: crypto.randomUUID(), accountScope
+                }, 65000);
+                if (!resp?.ok) {
+                    failed = true;
+                    markTileError(group, i);
+                    const uncertain = resp?.status === 'uncertain';
+                    // The current image may already be in the chat; only restore definitely unsent files.
+                    remaining = imgs.slice(uncertain ? i + 1 : i);
+                    caption = text;
+                    notify((uncertain ? 'Результат отправки неизвестен. Проверьте чат: ' : 'Не удалось отправить изображение: ') + (resp?.error || 'ошибка'), true);
+                    break;
+                }
+                accountScope = resp.result?.accountScope || accountScope;
+                context.accountScope = accountScope;
+                markTileSent(group, i);
+                if (i + 1 < imgs.length) await new Promise(r => setTimeout(r, 250));
             }
-            if (text) await sendImageReliable({ action: 'fptSendChatText', chatId, text });
+            if (!failed && text) {
+                const resp = await sendMessageWithTimeout({ action: 'fptSendChatText', chatId, text, accountScope }, 65000);
+                if (!resp?.ok) {
+                    if (resp?.status !== 'uncertain') caption = text;
+                    notify('Подпись: ' + (resp?.error || 'нет ответа') + (resp?.status === 'uncertain' ? ' Проверьте чат перед повторной отправкой.' : ''), true);
+                }
+            }
         } catch (e) {
-            console.error('Funcy: ошибка отправки', e);
-            notify('Ошибка при отправке: ' + e.message, true);
+            // Unexpected failures are ambiguous too; do not replay the batch.
+            notify('Отправка прервана. Проверьте чат: ' + e.message, true);
         } finally {
-            // FIX 2.8.1: временный пузырь снимаем ВСЕГДА (даже при исключении),
-            // чтобы спиннер никогда не «завис» навсегда. FunPay сам дорисует
-            // реальные сообщения; уже отправленные не теряются.
+            sending = false;
             finishPendingGroup(group);
+            if (remaining.length || caption) {
+                basket = remaining;
+                basketContext = context;
+                openModal(caption);
+                renderGrid();
+                notify('Неотправленные фото и подпись сохранены в окне отправки.', true);
+            }
         }
     }
 

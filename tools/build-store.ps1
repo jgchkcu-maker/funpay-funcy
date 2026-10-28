@@ -13,7 +13,7 @@ if (-not $resolvedStage.StartsWith([IO.Path]::GetFullPath($distRoot) + [IO.Path]
 New-Item -ItemType Directory -Force -Path $distRoot | Out-Null
 if (Test-Path -LiteralPath $resolvedStage) { Remove-Item -LiteralPath $resolvedStage -Recurse -Force }
 New-Item -ItemType Directory -Path $resolvedStage | Out-Null
-$runtimeDirectories = @('background', 'content', 'css', 'fonts', 'icons', 'offscreen', 'popup', 'licenses')
+$runtimeDirectories = @('background', 'content', 'css', 'fonts', 'icons', 'offscreen', 'popup', 'licenses', 'themes')
 $runtimeFiles = @('manifest.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md')
 foreach ($name in @($runtimeDirectories) + @($runtimeFiles)) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $name) -Destination (Join-Path $resolvedStage $name) -Recurse

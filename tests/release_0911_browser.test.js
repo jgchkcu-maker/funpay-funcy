@@ -1,13 +1,14 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { chromium } = require(process.env.FPT_PLAYWRIGHT || 'C:/Users/Usser/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const { openQuickReplies } = require('./helpers/quick_replies_browser_harness');
 const root = path.join(__dirname, '..');
 const launch = () => chromium.launch({ headless: true, executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', ignoreDefaultArgs: ['--hide-scrollbars'] });
 
-test('real Chrome popup scrollbars stay neutral across blue/red themes; site preview stays editable', async () => {
+test('real Chrome popup scrollbars follow theme with transparent tracks; site preview stays editable', async () => {
     const browser = await launch();
     try {
         const { page, errors } = await openQuickReplies(browser, {}, { width: 1200, height: 650 });
@@ -26,15 +27,19 @@ test('real Chrome popup scrollbars stay neutral across blue/red themes; site pre
             const popup = document.querySelector('.fp-tools-popup');
             const bounds = popup.getBoundingClientRect();
             return { colors: ['.fpt-nav-scroll', '.fp-tools-content', '#qa-popup-scroll', '#qa-popup-textarea'].map(selector => getComputedStyle(document.querySelector(selector), '::-webkit-scrollbar-thumb').backgroundColor),
+                tracks: ['.fpt-nav-scroll', '.fp-tools-content', '#qa-popup-scroll', '#qa-popup-textarea'].map(selector => getComputedStyle(document.querySelector(selector), '::-webkit-scrollbar-track').backgroundColor),
                 preview: getComputedStyle(document.querySelector('#qa-preview-scroll'), '::-webkit-scrollbar-thumb').backgroundColor,
                 bounds: [bounds.x, bounds.y, bounds.width, bounds.height] };
         });
-        await page.evaluate(() => document.querySelector('.fp-tools-popup').style.setProperty('--fptm-border', '#0088ff'));
+        await page.evaluate(() => { const s = document.querySelector('.fp-tools-popup').style; s.setProperty('--fptm-border', '#0088ff'); s.setProperty('--fptm-muted', '#303640'); });
         const blue = await inspect();
-        await page.evaluate(() => document.querySelector('.fp-tools-popup').style.setProperty('--fptm-border', '#ff2200'));
+        await page.evaluate(() => { const s = document.querySelector('.fp-tools-popup').style; s.setProperty('--fptm-border', '#ff2200'); s.setProperty('--fptm-muted', '#c7ccda'); });
         const red = await inspect();
-        assert.deepEqual(blue.colors, Array(4).fill('rgb(115, 121, 133)'));
-        assert.deepEqual(red.colors, blue.colors);
+        assert.ok(blue.colors.every(color => color === blue.colors[0]));
+        assert.ok(red.colors.every(color => color === red.colors[0]));
+        assert.notEqual(red.colors[0], blue.colors[0]);
+        assert.deepEqual(blue.tracks, Array(4).fill('rgba(0, 0, 0, 0)'));
+        assert.deepEqual(red.tracks, blue.tracks);
         assert.equal(blue.preview, 'rgb(0, 136, 255)'); assert.equal(red.preview, 'rgb(255, 34, 0)');
         assert.deepEqual(red.bounds, blue.bounds);
         const scroll = await page.evaluate(() => {
@@ -44,8 +49,7 @@ test('real Chrome popup scrollbars stay neutral across blue/red themes; site pre
             return { vertical: elements.map(el => el.scrollTop), horizontal: document.querySelector('#qa-popup-scroll').scrollLeft };
         });
         assert.ok(scroll.vertical.every(value => value > 0), JSON.stringify(scroll)); assert.equal(scroll.horizontal, 50);
-        const dir = path.join(root, 'artifacts/release-0.9.11-2026-10-26'); fs.mkdirSync(dir, { recursive: true });
-        await page.screenshot({ path: path.join(dir, 'popup-neutral-scrollbars.png') });
+        await page.screenshot({ path: path.join(os.tmpdir(), 'funcy-themed-scrollbars-test.png') });
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });

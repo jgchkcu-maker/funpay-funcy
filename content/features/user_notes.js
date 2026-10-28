@@ -1,7 +1,7 @@
 // content/features/user_notes.js
 // Метки пользователей + закрепление чатов.
 // Переработано: редактирование меток вынесено в отдельное окно,
-// добавлено наведённое меню (троеточие) и закрепление чатов наверх списка.
+// доступно управление метками и закрепление чатов наверх списка.
 
 let userStatuses = {};               // { userId: { name, color } }
 let pinnedChats = {};                // { userId: timestampWhenPinned }
@@ -150,155 +150,6 @@ function applyPinnedChats() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Наведённое меню (троеточие) на каждом чате                          */
-/* ------------------------------------------------------------------ */
-
-let activePopover = null;
-
-function closePopover() {
-    if (activePopover) {
-        activePopover.remove();
-        activePopover = null;
-    }
-    document.removeEventListener('click', onDocClickClosePopover, true);
-    window.removeEventListener('scroll', closePopover, true);
-}
-
-function onDocClickClosePopover(e) {
-    if (activePopover && !activePopover.contains(e.target) &&
-        !e.target.classList.contains('fp-tools-chat-dots')) {
-        closePopover();
-    }
-}
-
-function openChatPopover(contactItem, anchorBtn) {
-    closePopover();
-    const userId = contactItem.dataset.id;
-    if (!userId) return;
-
-    const pop = createElement('div', { class: 'fp-tools-chat-popover' });
-
-    // --- Раздел: метки ---
-    const labelsHeader = createElement('div', { class: 'fp-tools-pop-header' });
-    labelsHeader.textContent = 'Метка';
-    pop.appendChild(labelsHeader);
-
-    fpToolsCustomLabels.forEach(label => {
-        const row = createElement('div', { class: 'fp-tools-pop-item' });
-        const dot = createElement('span', { class: 'fp-tools-pop-dot' });
-        dot.style.backgroundColor = label.color;
-        const txt = createElement('span', { class: 'fp-tools-pop-text' });
-        txt.textContent = label.name;
-        row.appendChild(dot);
-        row.appendChild(txt);
-        const cur = userStatuses[userId];
-        if (cur && cur.name === label.name && cur.color === label.color) {
-            const check = createElement('span', { class: 'fp-tools-pop-check material-icons' });
-            check.textContent = 'check';
-            row.appendChild(check);
-        }
-        row.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setUserStatus(userId, { name: label.name, color: label.color });
-            closePopover();
-        });
-        pop.appendChild(row);
-    });
-
-    if (userStatuses[userId]) {
-        const removeRow = createElement('div', { class: 'fp-tools-pop-item fp-tools-pop-muted' });
-        const ic = createElement('span', { class: 'fp-tools-pop-icon material-icons' });
-        ic.textContent = 'label_off';
-        const t = createElement('span', { class: 'fp-tools-pop-text' });
-        t.textContent = 'Убрать метку';
-        removeRow.appendChild(ic);
-        removeRow.appendChild(t);
-        removeRow.addEventListener('click', (e) => {
-            e.preventDefault(); e.stopPropagation();
-            setUserStatus(userId, null);
-            closePopover();
-        });
-        pop.appendChild(removeRow);
-    }
-
-    // Управление метками
-    const manageRow = createElement('div', { class: 'fp-tools-pop-item fp-tools-pop-muted' });
-    const mIc = createElement('span', { class: 'fp-tools-pop-icon material-icons' });
-    mIc.textContent = 'settings';
-    const mT = createElement('span', { class: 'fp-tools-pop-text' });
-    mT.textContent = 'Управление метками';
-    manageRow.appendChild(mIc);
-    manageRow.appendChild(mT);
-    manageRow.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        closePopover();
-        openLabelManager();
-    });
-    pop.appendChild(manageRow);
-
-    pop.appendChild(createElement('div', { class: 'fp-tools-pop-divider' }));
-
-    // --- Раздел: закрепление ---
-    const pinRow = createElement('div', { class: 'fp-tools-pop-item' });
-    const pIc = createElement('span', { class: 'fp-tools-pop-icon material-icons' });
-    pIc.textContent = 'push_pin';
-    const pT = createElement('span', { class: 'fp-tools-pop-text' });
-    pT.textContent = isPinned(userId) ? 'Открепить чат' : 'Закрепить чат';
-    pinRow.appendChild(pIc);
-    pinRow.appendChild(pT);
-    pinRow.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        togglePin(userId);
-        closePopover();
-    });
-    pop.appendChild(pinRow);
-
-    document.body.appendChild(pop);
-    fptApplyThemeSurface(pop);
-    activePopover = pop;
-
-    // Позиционирование возле кнопки
-    const rect = anchorBtn.getBoundingClientRect();
-    const popRect = pop.getBoundingClientRect();
-    let top = rect.bottom + 4;
-    let left = rect.right - popRect.width;
-    if (left < 8) left = 8;
-    if (top + popRect.height > window.innerHeight - 8) {
-        top = rect.top - popRect.height - 4;
-    }
-    pop.style.top = `${top}px`;
-    pop.style.left = `${left}px`;
-
-    setTimeout(() => {
-        document.addEventListener('click', onDocClickClosePopover, true);
-        window.addEventListener('scroll', closePopover, true);
-    }, 0);
-}
-
-// Вешает кнопку-троеточие на контакт.
-function ensureDotsButton(contactItem) {
-    if (contactItem.querySelector('.fp-tools-chat-dots')) return;
-    const btn = createElement('button', {
-        class: 'fp-tools-chat-dots material-icons',
-        type: 'button',
-        title: 'Действия'
-    });
-    btn.textContent = 'more_vert';
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (activePopover) { closePopover(); return; }
-        openChatPopover(contactItem, btn);
-    });
-    contactItem.appendChild(btn);
-}
-
-function applyDotsButtons() {
-    document.querySelectorAll('a.contact-item').forEach(ensureDotsButton);
-}
-
-/* ------------------------------------------------------------------ */
 /* Отдельное окно управления метками                                   */
 /* ------------------------------------------------------------------ */
 
@@ -308,7 +159,7 @@ function openLabelManager() {
     const win = fptWindow.create({
         id: 'fp-tools-label-manager',
         title: 'Управление метками',
-        subtitle: 'Чтобы повесить метку на чат, наведите на него в списке и нажмите ⋮.',
+        subtitle: 'Чтобы назначить метку, откройте меню в шапке диалога.',
         icon: 'label',
         size: 'sm',
         removeOnClose: true
@@ -489,7 +340,6 @@ async function initializeUserNotes() {
     if (Array.isArray(data.fpToolsCustomLabels)) fpToolsCustomLabels = data.fpToolsCustomLabels;
 
     applyAllUserStatuses();
-    applyDotsButtons();
     applyPinnedChats();
     buildChatHeaderMenu();
 
@@ -502,7 +352,6 @@ async function initializeUserNotes() {
         requestAnimationFrame(() => {
             scheduled = false;
             applyAllUserStatuses();
-            applyDotsButtons();
             applyPinnedChats();
         });
     });

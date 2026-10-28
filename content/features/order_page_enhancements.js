@@ -231,7 +231,6 @@ function initOfferListFilter() {
 
     const bar = document.createElement('div');
     bar.id = 'fp-offer-filter';
-    bar.style.cssText = 'display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;font-family:Inter,sans-serif;';
 
     const filters = [
         { label: 'Все',          fn: () => true },
@@ -240,21 +239,14 @@ function initOfferListFilter() {
 
     let active = 0;
     const setActive = (btn) => {
-        // нейтральный «активный» вид в стиле кнопок FunPay: лёгкая обводка-акцент,
-        // без фиолетового фона/текста (раньше было rgba(27,117,187,0.16)/#4a9fd4 — мозолило на белой теме)
-        btn.style.borderColor = 'var(--fpt-text-muted, #8a90a0)';
-        btn.style.fontWeight = '800';
-        btn.style.opacity = '1';
+        btn.setAttribute('aria-pressed', 'true');
     };
     const clearActive = (btn) => {
-        btn.style.borderColor = '';
-        btn.style.fontWeight = '700';
-        btn.style.opacity = '0.75';
+        btn.setAttribute('aria-pressed', 'false');
     };
     filters.forEach(({ label, fn }, i) => {
         const btn = document.createElement('button');
         btn.className = 'btn btn-default';
-        btn.style.cssText = 'padding:4px 10px;font-size:11px;font-weight:700;background:transparent;';
         btn.textContent = label;
         if (i === 0) setActive(btn); else clearActive(btn);
         btn.addEventListener('click', () => {

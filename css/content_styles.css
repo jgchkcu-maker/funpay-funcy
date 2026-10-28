@@ -727,7 +727,7 @@
 }
 
 .fp-tools-content::-webkit-scrollbar-track {
-    background: var(--fpt-surface, #0e0f16);
+    background: transparent;
 }
 
 .fp-tools-content::-webkit-scrollbar-thumb {
@@ -4004,36 +4004,93 @@ html.fpt-custom-theme-on #autobump-category-search {
 #fp-lot-search-bar {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 14px;
+    position: relative;
+    width: min(100%, 360px);
+    margin: 12px 0 10px;
 }
 
 #fp-lot-search-input {
-    flex: 1;
-    max-width: 340px;
-    padding: 7px 12px;
-    background: transparent;
-    border: 1px solid var(--fpt-border, #c9ccd6);
-    border-radius: 8px;
+    width: 100%;
+    max-width: none;
+    height: 40px;
+    padding: 0 38px 0 38px;
+    background: color-mix(in srgb, currentColor 5%, transparent) !important;
+    border: 1px solid color-mix(in srgb, currentColor 18%, transparent) !important;
+    border-radius: var(--fpt-chat-action-radius, 8px);
     color: inherit;
-    font-size: 13px;
+    font-size: 14px;
     font-family: Inter, 'Segoe UI', sans-serif;
-    outline: none;
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-#fp-lot-search-input::placeholder { color: var(--fpt-text-muted, #9aa0b0); opacity: 0.8; }
+#fp-lot-search-input::placeholder { color: inherit; opacity: 0.55; }
 
 #fp-lot-search-input:focus {
-    border-color: var(--fpt-text-muted, #8a90a0);
-    box-shadow: 0 0 0 2px rgba(120,124,140,0.15);
+    border-color: color-mix(in srgb, currentColor 45%, transparent) !important;
+    box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 10%, transparent);
 }
 
-#fp-lot-search-count {
-    font-size: 11.5px;
-    color: #4a5070;
-    white-space: nowrap;
+#fp-lot-search-bar .fp-lot-search-icon {
+    position:absolute;left:11px;z-index:1;font-size:19px;opacity:.6;pointer-events:none;
 }
+#fp-lot-search-clear {
+    position:absolute;right:7px;z-index:1;width:27px;height:27px;padding:0;
+    border:0;border-radius:6px;background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer;
+}
+#fp-lot-search-clear:hover { background:color-mix(in srgb, currentColor 12%, transparent); }
+#fp-lot-search-clear[hidden] { display:none; }
+#fp-lot-search-count {
+    position:absolute;left:100%;margin-left:10px;font-size:12px;opacity:.7;white-space:nowrap;
+}
+
+.profile-data-container h5:has(> #fp-tools-select-lots-btn),
+.profile-data-container h5:has(> #fpt-raise-all-btn) {
+    display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:0;
+}
+.profile-data-container h5 > #fpt-raise-all-btn,
+.profile-data-container h5 > #fp-tools-select-lots-btn {
+    width:auto;min-height:30px;margin:0 !important;padding:5px 10px;
+    border:1px solid color-mix(in srgb, currentColor 15%, transparent) !important;
+    border-radius:var(--fpt-chat-action-radius, 8px);
+    background:color-mix(in srgb, currentColor 8%, transparent) !important;
+    color:inherit !important;font-size:12px;line-height:1.25;
+}
+.profile-data-container h5 > #fpt-raise-all-btn:hover,
+.profile-data-container h5 > #fp-tools-select-lots-btn:hover {
+    background:color-mix(in srgb, currentColor 16%, transparent) !important;
+}
+.profile-data-container .fp-tools-selection-controls-profile {
+    align-items:center;gap:8px;flex-wrap:wrap;
+}
+.profile-data-container .fp-tools-selection-controls-profile label {
+    display:inline-flex;align-items:center;gap:7px;min-height:30px;margin:0;
+    padding:4px 9px;border-radius:var(--fpt-chat-action-radius, 8px);
+    background:color-mix(in srgb, currentColor 8%, transparent);
+    font-size:12px;line-height:1.25;cursor:pointer;
+}
+.profile-data-container .fp-tools-selection-controls-profile input { margin:0;cursor:pointer; }
+.profile-data-container .fp-tools-selection-controls-profile #fp-tools-cancel-selection {
+    width:auto;min-height:30px;padding:5px 10px;
+    border:1px solid color-mix(in srgb, currentColor 15%, transparent) !important;
+    border-radius:var(--fpt-chat-action-radius, 8px);
+    background:color-mix(in srgb, currentColor 8%, transparent) !important;
+    color:inherit !important;font-size:12px;line-height:1.25;
+}
+.profile-data-container .fp-tools-selection-controls-profile #fp-tools-cancel-selection:hover {
+    background:color-mix(in srgb, currentColor 16%, transparent) !important;
+}
+#fp-offer-filter { display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 12px; }
+#fp-offer-filter > button.btn {
+    width:auto;min-height:32px;padding:6px 11px;border:1px solid transparent !important;
+    border-radius:var(--fpt-chat-action-radius, 8px);background:transparent !important;
+    color:inherit !important;font-size:12px;font-weight:600;line-height:1.2;opacity:.72;
+}
+#fp-offer-filter > button.btn:hover { background:color-mix(in srgb, currentColor 8%, transparent) !important;opacity:1; }
+#fp-offer-filter > button.btn[aria-pressed="true"] {
+    background:color-mix(in srgb, currentColor 13%, transparent) !important;
+    border-color:color-mix(in srgb, currentColor 14%, transparent) !important;opacity:1;
+}
+@media (max-width:480px) { #fp-lot-search-count { position:static;margin-left:8px; } }
 
 /* ===================================================
    CHAT ENHANCEMENTS
@@ -4376,62 +4433,7 @@ body.fpt-dnd-active .chat{ position:relative; }
     flex-grow:1;color:inherit;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
-/* --- Кнопка-троеточие на контакте при наведении (компактная) --- */
 a.contact-item{ position:relative; }
-.fp-tools-chat-dots{
-    position:absolute;top:50%;right:6px;
-    transform:translateY(-50%) scale(.85);
-    width:22px;height:22px;min-width:22px;
-    border:none;border-radius:6px;padding:0;
-    display:inline-flex;align-items:center;justify-content:center;
-    background:color-mix(in srgb, currentColor 14%, transparent);
-    color:inherit;cursor:pointer;line-height:1;
-    opacity:0;pointer-events:none;
-    transition:opacity .12s ease,transform .12s ease,background .14s ease;
-    z-index:5;
-}
-.fp-tools-chat-dots.material-icons{ font-size:16px; }
-a.contact-item:hover .fp-tools-chat-dots{
-    opacity:1;pointer-events:auto;transform:translateY(-50%) scale(1);
-}
-.fp-tools-chat-dots:hover{ background:color-mix(in srgb, currentColor 26%, transparent); }
-
-/* --- Поповер действий чата: повторяет поверхность .dropdown-menu --- */
-.fp-tools-chat-popover{
-    position:fixed;z-index:100000;min-width:200px;
-    border:1px solid color-mix(in srgb, currentColor 14%, transparent);
-    border-radius:10px;padding:5px;
-    box-shadow:0 10px 30px rgba(0,0,0,.45);
-    animation:fpToolsPopIn .12s ease-out;
-}
-@keyframes fpToolsPopIn{
-    from{opacity:0;transform:translateY(-4px);}
-    to{opacity:1;transform:translateY(0);}
-}
-.fp-tools-pop-header{
-    font-size:11px;text-transform:uppercase;letter-spacing:.5px;
-    opacity:.55;padding:6px 10px 4px;
-}
-.fp-tools-pop-item{
-    display:flex;align-items:center;gap:10px;
-    padding:8px 10px;border-radius:7px;
-    color:inherit;font-size:14px;cursor:pointer;user-select:none;
-    transition:background .12s ease;
-}
-.fp-tools-pop-item:hover{ background:color-mix(in srgb, currentColor 14%, transparent); }
-.fp-tools-pop-muted{ opacity:.8; }
-.fp-tools-pop-dot{
-    width:12px;height:12px;border-radius:50%;flex-shrink:0;
-    border:1px solid color-mix(in srgb, currentColor 30%, transparent);
-}
-.fp-tools-pop-icon,.fp-tools-pop-check{
-    font-size:18px;width:18px;text-align:center;flex-shrink:0;opacity:.85;
-}
-.fp-tools-pop-check{ margin-left:auto;opacity:1; }
-.fp-tools-pop-text{ flex-grow:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
-.fp-tools-pop-divider{
-    height:1px;margin:5px 6px;background:color-mix(in srgb, currentColor 14%, transparent);
-}
 
 /* --- Иконка закрепа на контакте --- */
 .fp-tools-pin-icon{

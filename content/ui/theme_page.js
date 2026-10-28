@@ -8,15 +8,30 @@
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     const SHARE_BOT_URL = 'https://t.me/FunPayThemesBot';
     const PREVIEW_FONTS_ID = 'fpt-th-preview-fonts';
+    const FOREST_WALLPAPER = 'themes/wallpapers/fog-pines.webp';
+    const FOREST_THEME = Object.freeze({
+        baseStyle: 'custom', bgColor1: '#55616b', bgColor2: '#c3ccd1',
+        containerBgColor: '#171b1d', containerBgOpacity: 0.94,
+        textColor: '#eeeeee', linkColor: '#a5c5d0', buttonColor: '', buttonActiveColor: '',
+        font: 'Manrope', fontWeight: '400', fontItalic: false,
+        bgBlur: 0, bgBrightness: 100, borderRadius: 14,
+        enableGlassmorphism: false, enableCustomScrollbar: true,
+        scrollbarTrackColor: '#1a1d1f', scrollbarThumbColor: '#697377', scrollbarWidth: 8,
+        bgVideo: null
+    });
     const FONT_OPTIONS = Object.freeze([
         ['Helvetica Neue', 'Системный (Helvetica Neue)'],
-        ['Roboto', 'Roboto'],
-        ['Open Sans', 'Open Sans'],
-        ['Lato', 'Lato'],
         ['Montserrat', 'Montserrat'],
-        ['Source Sans Pro', 'Source Sans Pro']
+        ['Manrope', 'Manrope'],
+        ['Rubik', 'Rubik'],
+        ['Nunito', 'Nunito'],
+        ['Comfortaa', 'Comfortaa'],
+        ['Exo 2', 'Exo 2'],
+        ['Playfair Display', 'Playfair Display'],
+        ['PT Serif', 'PT Serif'],
+        ['Oswald', 'Oswald']
     ]);
-    const GOOGLE_FONTS = Object.freeze(FONT_OPTIONS.slice(1).map(option => option[0]));
+    const GOOGLE_FONTS = Object.freeze([...FONT_OPTIONS.slice(1).map(option => option[0]), 'Roboto', 'Open Sans', 'Lato', 'Source Sans Pro']);
     const COLOR_FIELDS = Object.freeze([
         { key: 'bgColor1', label: 'Основной', hint: 'Кнопки' },
         { key: 'bgColor2', label: 'Акцентный', hint: 'Заголовки и меню' },
@@ -97,7 +112,7 @@
             style.id = PREVIEW_FONTS_ID;
             document.head.appendChild(style);
         }
-        const rule = `@import url('https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;700&display=swap');`;
+        const rule = `@import url('https://fonts.googleapis.com/css2?family=${font.replace(/ /g, '+')}:wght@400;600;700&display=swap');`;
         if (!style.textContent.includes(rule)) style.textContent += rule;
     }
 
@@ -781,6 +796,27 @@
                     syncAll();
                 }
             }));
+            const forestArt = iconArt('forest', 'preset');
+            forestArt.replaceChildren();
+            const forestThumbnail = node('img');
+            forestThumbnail.src = chrome.runtime.getURL(FOREST_WALLPAPER);
+            forestThumbnail.alt = '';
+            forestThumbnail.loading = 'lazy';
+            forestArt.appendChild(forestThumbnail);
+            strip.appendChild(presetTile({
+                id: 'builtin:fog-forest', name: 'Туманный лес', meta: 'Чёрно-белая тема', art: forestArt,
+                onPick: async () => {
+                    const version = ++draftVersion;
+                    const response = await fetch(chrome.runtime.getURL(FOREST_WALLPAPER));
+                    if (!response.ok) throw new Error('Не удалось загрузить обои темы.');
+                    const blob = await response.blob();
+                    if (!blob.size || blob.size > MAX_IMAGE_BYTES || blob.type !== 'image/webp') throw new Error('Не удалось прочитать обои темы.');
+                    const bgImage = await readFileAsDataUrl(blob);
+                    if (!root.FPTSafe.cssImageUrl(bgImage)) throw new Error('Не удалось прочитать обои темы.');
+                    if (version !== draftVersion) return;
+                    loadIntoDraft({ ...FOREST_THEME, bgImage }, 'builtin:fog-forest');
+                }
+            }));
             themePresets.forEach(preset => {
                 const id = `preset:${preset.id}`;
                 const art = iconArt('palette', 'preset');
@@ -952,12 +988,20 @@
         const fontHost = node('div', 'fpt-th-select-host');
         fontHost.appendChild(fontSelect);
         const fontSample = node('p', 'fpt-th-font-sample', 'Aa Быстрый ответ, честная сделка');
-        fontField.append(fontLabel, fontHost, fontSample);
+        fontField.append(fontLabel, fontHost);
         let syncingFont = false;
         fontSelect.addEventListener('change', () => { if (!syncingFont) ctx.edit({ font: fontSelect.value }); });
         track({
             sync() {
-                const font = FONT_OPTIONS.some(option => option[0] === state.draft.font) ? state.draft.font : FONT_OPTIONS[0][0];
+                const font = state.draft.font || FONT_OPTIONS[0][0];
+                let previous = fontSelect.querySelector('[data-legacy-font]');
+                if (previous && previous.value !== font) { previous.remove(); previous = null; }
+                if (!FONT_OPTIONS.some(option => option[0] === font) && !previous) {
+                    const option = node('option', '', `${font} (сохранённый)`);
+                    option.value = font;
+                    option.dataset.legacyFont = '1';
+                    fontSelect.appendChild(option);
+                }
                 if (fontSelect.value !== font) {
                     fontSelect.value = font;
                     // The themed dropdown refreshes its label on "change"; the flag keeps that from editing the draft.
@@ -966,6 +1010,8 @@
                     syncingFont = false;
                 }
                 fontSample.style.fontFamily = `'${font}', 'Helvetica Neue', Helvetica, Arial, sans-serif`;
+                fontSample.style.fontWeight = state.draft.fontWeight || '400';
+                fontSample.style.fontStyle = state.draft.fontItalic ? 'italic' : 'normal';
                 ensurePreviewFont(font);
             }
         });
@@ -979,10 +1025,42 @@
                 { value: 'bottom', label: 'Снизу', icon: 'vertical_align_bottom' }
             ]
         }, ctx)).element);
-        const shapeGrid = node('div', 'fpt-th-grid fpt-th-grid--two');
-        shapeGrid.append(fontField, positionField);
-        shape.body.append(shapeGrid, radiusSlider.element);
+        const weightField = node('div', 'fpt-th-field');
+        weightField.appendChild(node('span', 'fpt-th-field-label', 'Начертание'));
+        const weightSelect = node('select');
+        weightSelect.setAttribute('aria-label', 'Начертание');
+        [['400', 'Обычное'], ['600', 'Полужирное'], ['700', 'Жирное']].forEach(([value, label]) => {
+            const option = node('option', '', label); option.value = value; weightSelect.appendChild(option);
+        });
+        const weightHost = node('div', 'fpt-th-select-host');
+        weightHost.appendChild(weightSelect);
+        weightField.appendChild(weightHost);
+        let syncingWeight = false;
+        weightSelect.addEventListener('change', () => { if (!syncingWeight) ctx.edit({ fontWeight: weightSelect.value }); });
+        track({ sync() {
+            const weight = ['400', '600', '700'].includes(String(state.draft.fontWeight)) ? String(state.draft.fontWeight) : '400';
+            if (weightSelect.value !== weight) {
+                weightSelect.value = weight;
+                syncingWeight = true; weightSelect.dispatchEvent(new Event('change')); syncingWeight = false;
+            }
+        } });
+        const italicField = node('div', 'fpt-th-field fpt-th-italic-field');
+        italicField.appendChild(node('span', 'fpt-th-field-label', 'Курсив'));
+        const italicButton = node('button', 'fpt-th-italic-button');
+        italicButton.type = 'button';
+        italicButton.title = 'Курсив';
+        italicButton.setAttribute('aria-label', 'Курсив');
+        italicButton.setAttribute('role', 'switch');
+        italicButton.appendChild(icon('format_italic'));
+        italicButton.addEventListener('click', () => ctx.edit({ fontItalic: !state.draft.fontItalic }));
+        italicField.appendChild(italicButton);
+        track({ sync() { italicButton.setAttribute('aria-checked', String(!!state.draft.fontItalic)); } });
+        const typeGrid = node('div', 'fpt-th-type-grid');
+        typeGrid.append(fontField, weightField, italicField);
+        positionField.classList.add('fpt-th-position-field');
+        shape.body.append(typeGrid, fontSample, positionField, radiusSlider.element);
         if (typeof root.FPTPopupUI.enhanceSelect === 'function') root.FPTPopupUI.enhanceSelect(fontSelect, fontHost);
+        if (typeof root.FPTPopupUI.enhanceSelect === 'function') root.FPTPopupUI.enhanceSelect(weightSelect, weightHost);
 
         // --- Blocks --------------------------------------------------------------------------
         const blocks = createCard({

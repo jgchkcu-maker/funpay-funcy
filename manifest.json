@@ -220,7 +220,8 @@
         "background/remake.html",
         "background/remake.js",
         "icons/*.png",
-        "fonts/*.woff2"
+        "fonts/*.woff2",
+        "themes/wallpapers/fog-pines.webp"
       ],
       "matches": [
         "https://funpay.com/*",

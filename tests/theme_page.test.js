@@ -108,7 +108,7 @@ test('original FunPay look: defaults, reset and a light CSS without wallpaper or
     assert.equal(sandbox.resolve({}), 'original');
     const css = sandbox.css({ font: 'Roboto', borderRadius: 14, enableCustomScrollbar: true, scrollbarWidth: 6, scrollbarThumbColor: '#111111', scrollbarTrackColor: '#eeeeee' });
     assert.match(css, /border-radius: 14px/);
-    assert.match(css, /::-webkit-scrollbar \{ width: 6px; \}/);
+    assert.match(css, /::-webkit-scrollbar \{ width: 6px !important;/);
     assert.doesNotMatch(css, /body::before|i\.ibb\.co|#ff6d15|background: transparent !important/);
 
     const imported = await h.api.run('theme', 'importThemeBtn', { theme: { bgColor1: '#336699', font: 'Roboto' }, draftOnly: true });

@@ -1,6 +1,7 @@
 import { fetchCatalogPage } from './catalog_fetch.js';
 import { migrateRelease } from './release_migrations.js';
 import { parseHtmlViaOffscreen } from './offscreen_parser.js';
+import { createChatAttachmentSender } from './chat_attachments.js';
 // background/background.js - FunPay Funcy 2.8
 
 import './feature_availability.js';
@@ -70,7 +71,7 @@ const retiredIntegrationCleanup = globalThis.FPTRetiredIntegrations.cleanup(chro
     };
 })();
 
-const OFFSCREEN_DOCUMENT_PATH = 'offscreen/offscreen.html';
+const chatAttachmentSender = createChatAttachmentSender();
 
 const _imgSendInFlight = new Map();
 const _imgSendDone = new Map();
@@ -713,88 +714,18 @@ async function fptFetchWithSeal(url, options = {}) {
     return { response, seal };
 }
 
-async function sendChatImageInBackground(chatId, dataUrl, chatName) {
-    const blob = await (await fetch(dataUrl)).blob();
+async function getChatAttachmentSession(expectedAccount) {
+    const account = await accountGuard.current();
+    if (expectedAccount) await accountGuard.assertCurrent(expectedAccount);
+    const auth = await getAuthDetailsForBackground();
+    if (!account.accountId || String(auth.userId) !== account.accountId) throw new Error('Аккаунт FunPay изменился. Обновите страницу.');
+    return { auth, beforeSend: () => accountGuard.assertCurrent(account), accountScope: account };
+}
 
-    await ensureOffscreenDocument();
-
-    async function attempt(force) {
-        const auth = await getAuthDetailsForBackground(force);
-        if (!auth.golden_key || !auth.csrf_token) {
-            throw new Error('Нет авторизации для отправки изображения.');
-        }
-
-        // golden_seal (если она есть) браузер приложит сам через credentials:'include'.
-        // Никаких блокирующих проверок/до-запросов ПЕРЕД загрузкой не делаем — это и
-        // ломало отправку. При повторе (force) один раз best-effort обновим seal ниже.
-        if (force) {
-            try { await refreshGoldenSealOnce(); } catch (_) {}
-        }
-
-        const fd = new FormData();
-        fd.append('file', new File([blob], 'image.png', { type: blob.type || 'image/png' }));
-        fd.append('file_id', '0');
-        // ВАЖНО: без keepalive. keepalive:true отклоняет запросы с телом > 64 КБ,
-        // а картинка всегда больше — из-за этого загрузка падала с "Failed to fetch".
-        const upRes = await fetchWithTimeout('https://funpay.com/file/addChatImage', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'x-requested-with': 'XMLHttpRequest' },
-            body: fd
-        }, 25000);
-        if (upRes.status === 400) return { retry: true, where: 'upload' };
-        if (!upRes.ok) throw new Error(`Загрузка изображения: HTTP ${upRes.status}`);
-        const upJson = await upRes.json().catch(() => ({}));
-        const fileId = upJson.fileId;
-        if (!fileId) throw new Error('FunPay не вернул fileId: ' + (upJson.msg || 'неизвестная ошибка'));
-
-        const request = { action: 'chat_message', data: { node: chatId, last_message: -1, content: '', image_id: fileId } };
-        const payload = {
-            objects: JSON.stringify([{ type: 'chat_node', id: chatId, tag: '00000000', data: { node: chatId, last_message: -1, content: '' } }]),
-            request: JSON.stringify(request),
-            csrf_token: auth.csrf_token
-        };
-        const sendRes = await fetchWithTimeout('https://funpay.com/runner/', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest' },
-            body: new URLSearchParams(payload)
-        }, 25000);
-        if (sendRes.status === 400) return { retry: true, where: 'runner' };
-        if (!sendRes.ok) throw new Error(`Отправка изображения: HTTP ${sendRes.status}`);
-        const sendJson = await sendRes.json().catch(() => null);
-        const errMsg = sendJson?.error || sendJson?.response?.error;
-        if (errMsg) {
-            if (/csrf|обнов|refresh/i.test(String(errMsg))) return { retry: true, where: 'runner-err' };
-            throw new Error(`FunPay runner: ${errMsg}`);
-        }
-        return { ok: true, fileId };
-    }
-
-    async function attemptSafe(force) {
-        try {
-            return await attempt(force);
-        } catch (e) {
-            const msg = String(e && e.message || e);
-            if (e && (e.name === 'AbortError' || /aborted|timed out|Failed to fetch|network/i.test(msg))) {
-                return { retry: true, where: 'network', networkErr: msg };
-            }
-            throw e;
-        }
-    }
-
-    let res = await attemptSafe(false);
-    if (res && res.retry) {
-        console.warn(`FunPay Funcy: повтор загрузки (причина: "${res.where}"${res.networkErr ? ' / ' + res.networkErr : ''}).`);
-        await ensureOffscreenDocument();
-        res = await attemptSafe(true);
-        if (res && res.retry) {
-            throw new Error(res.where === 'network'
-                ? 'Не удалось отправить изображение: сеть или сессия FunPay. Обновите страницу и попробуйте снова.'
-                : 'FunPay вернул 400 даже после обновления csrf.');
-        }
-    }
-    return { fileId: res.fileId };
+async function sendChatImageInBackground(chatId, dataUrl, chatName, fileName, expectedAccount) {
+    const session = await getChatAttachmentSession(expectedAccount);
+    const result = await chatAttachmentSender.sendImage({ chatId, dataUrl, fileName, ...session });
+    return { ...result, accountScope: session.accountScope };
 }
 
 async function getAuthDetailsForBackground(force) {
@@ -1689,7 +1620,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     //
     if (request.action === 'fptSendImage') {
         (async () => {
-            const sendId = request.sendId || (request.chatId + ':' + (request.dataUrl || '').slice(0, 64));
+            const sendId = request.chatId + ':' + (request.sendId || crypto.randomUUID());
             try {
                 if (_imgSendInFlight.has(sendId)) {
                     const result = await _imgSendInFlight.get(sendId);
@@ -1701,7 +1632,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     sendResponse({ ok: true, result: doneAt.result, deduped: true });
                     return;
                 }
-                const p = sendChatImageInBackground(request.chatId, request.dataUrl, request.chatName);
+                const p = sendChatImageInBackground(request.chatId, request.dataUrl, request.chatName, request.fileName, request.accountScope);
                 _imgSendInFlight.set(sendId, p);
                 let result;
                 try { result = await p; }
@@ -1714,7 +1645,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ ok: true, result });
             } catch (e) {
                 _imgSendInFlight.delete(sendId);
-                sendResponse({ ok: false, error: e.message });
+                sendResponse({ ok: false, error: e.message, status: e.status || 'rejected' });
             }
         })();
         return true;
@@ -1724,27 +1655,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'fptSendChatText') {
         (async () => {
             try {
-                const auth = await getAuthDetailsForBackground();
-                if (!auth.golden_key || !auth.csrf_token) throw new Error('Нет авторизации.');
-                const cookieStr = auth.phpsessid
-                    ? `golden_key=${auth.golden_key}; PHPSESSID=${auth.phpsessid}`
-                    : `golden_key=${auth.golden_key}`;
-                const payload = {
-                    objects: JSON.stringify([{ type: 'chat_node', id: request.chatId, tag: '00000000', data: { node: request.chatId, last_message: -1, content: '' } }]),
-                    request: JSON.stringify({ action: 'chat_message', data: { node: request.chatId, last_message: -1, content: request.text } }),
-                    csrf_token: auth.csrf_token
-                };
-                const res = await fetch('https://funpay.com/runner/', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', 'cookie': cookieStr },
-                    body: new URLSearchParams(payload)
-                });
-                const json = await res.json().catch(() => null);
-                if (json?.error) throw new Error(json.error);
-                sendResponse({ ok: res.ok });
+                const session = await getChatAttachmentSession(request.accountScope);
+                const result = await chatAttachmentSender.sendText({ chatId: request.chatId, text: request.text, ...session });
+                sendResponse({ ok: true, result });
             } catch (e) {
-                sendResponse({ ok: false, error: e.message });
+                sendResponse({ ok: false, error: e.message, status: e.status || 'rejected' });
             }
         })();
         return true;

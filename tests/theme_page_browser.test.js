@@ -27,7 +27,7 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
     });
     await page.goto('https://funpay.com/');
     await page.setContent(`<html><head></head><body style="background:${dark ? '#101014' : '#f2f2f6'}"><ul class="nav navbar-nav navbar-right logged"><li><a class="user-link" data-toggle="dropdown"></a></li></ul><main id="content"></main></body></html>`);
-    await page.evaluate(({ seed, catalog }) => {
+    await page.evaluate(({ seed, catalog, forestBase64 }) => {
         document.body.dataset.appData = JSON.stringify([{ userId: 'qa-user' }]);
         const store = { fpToolsNavCollapsed: false, ...seed };
         window.qaStore = store; window.qaWrites = [];
@@ -46,6 +46,10 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
         window.fetch = async url => {
             const href = String(url);
             window.qaFetchCalls.push(href);
+            if (href.endsWith('/themes/wallpapers/fog-pines.webp')) {
+                const bytes = Uint8Array.from(atob(forestBase64), char => char.charCodeAt(0));
+                return { ok: true, blob: async () => new Blob([bytes], { type: 'image/webp' }) };
+            }
             if (href.endsWith('/funcy-assets/main/index.json')) return { ok: true, blob: async () => new Blob([JSON.stringify(window.qaCatalog)], { type: 'application/json' }) };
             if (href.includes('/funcy-assets/main/wallpapers/')) {
                 const data = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII='), char => char.charCodeAt(0));
@@ -53,7 +57,7 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
             }
             return { ok: true, json: async () => ({}), text: async () => '' };
         };
-    }, { seed: initial, catalog: assetCatalog });
+    }, { seed: initial, catalog: assetCatalog, forestBase64: fs.readFileSync(path.join(root, 'themes/wallpapers/fog-pines.webp')).toString('base64') });
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
     const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
@@ -92,6 +96,80 @@ const nextFrames = page => page.evaluate(() => new Promise(resolve => requestAni
 // Headless Chrome hides scrollbars by default, which would also hide the preview's custom scrollbar.
 const launch = () => chromium.launch({ executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true, ignoreDefaultArgs: ['--hide-scrollbars'] });
 
+test('real browser: custom scrollbar applies to site and chat without recolouring the popup', async () => {
+    const browser = await launch();
+    try {
+        const { page, errors } = await openThemePage(browser);
+        await page.evaluate(() => {
+            const site = document.createElement('div');
+            site.className = 'chat-message-list';
+            site.id = 'qa-theme-scroll';
+            site.style.cssText = 'overflow:auto;width:200px;height:80px';
+            site.innerHTML = '<div style="height:400px">Тест прокрутки</div>';
+            document.body.appendChild(site);
+        });
+        for (const baseStyle of ['original', 'custom']) {
+            await page.evaluate(async base => {
+                window.qaStore.enableCustomTheme = true;
+                window.qaStore.fpToolsTheme = { baseStyle: base, enableCustomScrollbar: true, scrollbarWidth: 12, scrollbarTrackColor: '#ffeecc', scrollbarThumbColor: '#884422' };
+                await window.applyCustomTheme();
+            }, baseStyle);
+            const colors = await page.evaluate(() => {
+                const site = document.querySelector('#qa-theme-scroll');
+                const popup = document.querySelector('.fp-tools-content');
+                return { width: getComputedStyle(site, '::-webkit-scrollbar').width,
+                    track: getComputedStyle(site, '::-webkit-scrollbar-track').backgroundColor,
+                    thumb: getComputedStyle(site, '::-webkit-scrollbar-thumb').backgroundColor,
+                    popupTrack: getComputedStyle(popup, '::-webkit-scrollbar-track').backgroundColor };
+            });
+            assert.deepEqual(colors, { width: '12px', track: 'rgb(255, 238, 204)', thumb: 'rgb(136, 68, 34)', popupTrack: 'rgba(0, 0, 0, 0)' }, baseStyle);
+        }
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
+
+test('real browser: new fonts are selectable and an old saved font remains intact', async () => {
+    const browser = await launch();
+    try {
+        const { page, errors } = await openThemePage(browser, { initial: { fpToolsTheme: { font: 'Lato' } } });
+        const select = page.locator('#fpt-th-font');
+        const shape = select.locator('xpath=ancestor::section[contains(@class,"fpt-th-card")]');
+        const layout = await shape.evaluate(el => {
+            const grid = el.querySelector('.fpt-th-type-grid').getBoundingClientRect();
+            const sample = el.querySelector('.fpt-th-font-sample').getBoundingClientRect();
+            return { gridWidth: grid.width, sampleWidth: sample.width, sampleText: el.querySelector('.fpt-th-font-sample').textContent };
+        });
+        assert.ok(Math.abs(layout.gridWidth - layout.sampleWidth) < 2);
+        assert.match(layout.sampleText, /честная сделка/);
+        assert.equal(await select.inputValue(), 'Lato');
+        assert.match(await select.locator('option:checked').textContent(), /сохранённый/);
+        await select.selectOption('Comfortaa');
+        assert.equal(await select.inputValue(), 'Comfortaa');
+        assert.equal(await select.locator('option[value="Lato"]').count(), 0);
+        assert.match(await page.locator('.fpt-th-font-sample').getAttribute('style'), /Comfortaa/);
+        assert.match(await page.locator('#fpt-th-preview-fonts').textContent(), /family=Comfortaa/);
+        await page.locator('select[aria-label="Начертание"]').selectOption('600');
+        const italic = page.getByRole('switch', { name: 'Курсив' });
+        await italic.hover();
+        await italic.evaluate(el => el.getAnimations().forEach(animation => animation.finish()));
+        const hoverStyle = await italic.evaluate(el => ({ transform: getComputedStyle(el).transform, shadow: getComputedStyle(el).boxShadow, transition: getComputedStyle(el).transitionProperty }));
+        assert.equal(hoverStyle.transform, 'matrix(1, 0, 0, 1, 0, -1)');
+        assert.equal(hoverStyle.shadow, 'none');
+        assert.match(hoverStyle.transition, /transform/);
+        await page.getByRole('switch', { name: 'Курсив' }).click();
+        await page.waitForFunction(() => getComputedStyle(document.querySelector('.fpt-th-font-sample')).fontStyle === 'italic');
+        assert.equal(await page.getByRole('switch', { name: 'Курсив' }).getAttribute('aria-checked'), 'true');
+        await shape.screenshot({ path: path.join(shots, 'funcy-theme-font-compact.png') });
+        assert.equal(await page.locator('.fpt-th-font-sample').evaluate(el => getComputedStyle(el).fontWeight), '600');
+        assert.equal(await page.locator('.fpt-th-font-sample').evaluate(el => getComputedStyle(el).fontStyle), 'italic');
+        await page.locator('.fpt-th-apply').click();
+        await page.waitForFunction(() => window.qaStore.fpToolsTheme?.fontWeight === '600' && window.qaStore.fpToolsTheme?.fontItalic === true);
+        await page.waitForFunction(() => /font-weight:\s*600;\s*font-style:\s*italic/.test(document.getElementById('fp-tools-custom-theme')?.textContent || ''));
+        assert.match(await page.locator('#fp-tools-custom-theme').textContent(), /font-weight:\s*600;\s*font-style:\s*italic/);
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
+
 test('real browser: unreviewed catalogue entries remain hidden on refresh and offline', async () => {
     const browser = await launch();
     try {
@@ -100,12 +178,38 @@ test('real browser: unreviewed catalogue entries remain hidden on refresh and of
         assert.match(await page.locator('.fpt-th-catalog-status').textContent(), /проверки прав/);
         await page.getByRole('button', { name: 'Обновить каталог тем', exact: true }).click();
         await page.waitForSelector('.fpt-th[data-catalog-state="ready"]');
-        assert.equal(await page.locator('.fpt-th-preset').count(), 2);
+        assert.equal(await page.locator('.fpt-th-preset').count(), 3);
         assert.equal(await page.evaluate(() => window.qaFetchCalls.filter(url => url.includes('/wallpapers/')).length), 0);
         await page.evaluate(() => { window.fetch = async () => { throw Error('offline'); }; });
         await page.getByRole('button', { name: 'Обновить каталог тем', exact: true }).click();
         await page.waitForSelector('.fpt-th[data-catalog-state="ready"]');
-        assert.equal(await page.locator('.fpt-th-preset').count(), 2);
+        assert.equal(await page.locator('.fpt-th-preset').count(), 3);
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
+
+test('real browser: local forest theme loads into draft and survives application and export', async () => {
+    const browser = await launch();
+    try {
+        const { page, errors } = await openThemePage(browser);
+        const forest = page.locator('.fpt-th-preset[data-preset-id="builtin:fog-forest"]');
+        await forest.click();
+        await page.waitForFunction(() => document.querySelector('.fpt-th-preset[data-preset-id="builtin:fog-forest"]')?.getAttribute('aria-pressed') === 'true');
+        assert.equal(await page.locator('#fpt-th-borderRadius').inputValue(), '14');
+        assert.equal(await page.locator('#fpt-th-font').inputValue(), 'Manrope');
+        assert.equal(await page.evaluate(() => window.qaWrites.some(write => 'fpToolsTheme' in write)), false);
+        await page.locator('.fpt-th-stage').screenshot({ path: path.join(shots, 'fpt-forest-theme-preview.png') });
+        await page.locator('.fpt-th-apply').click();
+        await page.waitForFunction(() => window.qaStore.fpToolsTheme?.bgImage?.startsWith('data:image/webp;base64,'));
+        await page.waitForFunction(() => document.querySelector('#fp-tools-custom-theme')?.textContent.includes('data:image/webp;base64,'));
+        const stored = await page.evaluate(async () => ({
+            saved: window.qaStore.fpToolsTheme,
+            exported: await window.fptPopupActions.run('theme', 'exportThemeBtn')
+        }));
+        assert.equal(stored.saved.borderRadius, 14);
+        assert.equal(stored.saved.containerBgColor, '#171b1d');
+        assert.equal(stored.saved.enableCustomScrollbar, true);
+        assert.equal(stored.exported.bgImage, stored.saved.bgImage);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });
@@ -131,7 +235,7 @@ test('real browser: theme page builds every section from stored settings and kee
         assert.deepEqual(summary.cards, ['Готовые темы', 'Фон', 'Цвета', 'Кнопки', 'Шрифт и форма', 'Блоки', 'Чат', 'Детали', 'Инструменты']);
         assert.equal(summary.swatches, 5);
         assert.equal(summary.sliders, 12);
-        assert.deepEqual(summary.presets, ['Оригинальная', 'Своя']);
+        assert.deepEqual(summary.presets, ['Оригинальная', 'Своя', 'Туманный лес']);
         assert.equal(summary.masterOn, true);
         assert.equal(summary.heroState, 'on');
         assert.deepEqual(summary.dock, { open: 'false', inert: true });
@@ -273,8 +377,8 @@ test('real browser: preset strip has no scrollbar, starts at the first tile and 
             const visible = tiles.filter(r => r.left >= box.left - 1 && r.right <= box.right + 1).length;
             return { tiles: tiles.length, visible, prev: prev.disabled, next: next.disabled };
         });
-        assert.equal(fit.tiles, 2);
-        assert.equal(fit.visible, 2);
+        assert.equal(fit.tiles, 3);
+        assert.equal(fit.visible, 3);
         assert.deepEqual([fit.prev, fit.next], [true, true]);
         await wide.page.close();
 
@@ -427,6 +531,9 @@ test('real browser: dark popup, narrow layouts and reduced motion keep the page 
         await page.emulateMedia({ reducedMotion: 'reduce' });
         const motion = await page.evaluate(() => getComputedStyle(document.querySelector('.fpt-th-dock')).transitionDuration);
         assert.match(motion, /^0\.00\d*s|1e-05s|0s/);
+        const italic = page.getByRole('switch', { name: 'Курсив' });
+        await italic.hover();
+        assert.equal(await italic.evaluate(el => getComputedStyle(el).transform), 'none');
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });
