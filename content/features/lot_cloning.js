@@ -123,6 +123,22 @@ function escapeHtmlClone(str) {
     ));
 }
 
+// Цена: округляем до 2 знаков (длинные дроби → «Invalid price»), минимум 1.
+function formatClonePrice(v) {
+    let n = parseFloat(String(v ?? '').replace(',', '.'));
+    if (Number.isNaN(n) || n <= 0) return '';
+    if (n < 1) n = 1;
+    return (Math.round(n * 100) / 100).toString();
+}
+
+// Цена для нового лота: finalPrice (нетто продавца после пересчёта комиссии), иначе rawPrice.
+// rawPrice бывает ценой покупателя (список лотов продавца, страница заказа) — подставлять её
+// напрямую нельзя, если есть пересчитанная.
+function cloneSourcePrice(src) {
+    if (!src) return '';
+    return (src.finalPrice != null ? formatClonePrice(src.finalPrice) : '') || formatClonePrice(src.rawPrice);
+}
+
 function cloneNoteHtml(kind, iconName, html) {
     return `<div class="fpt-win-note" data-kind="${kind}"><span class="material-symbols-rounded" aria-hidden="true">${iconName}</span><div class="fpt-win-note-copy">${html}</div></div>`;
 }
@@ -358,16 +374,7 @@ async function executeCloneCreate() {
     fields['fields[desc][ru]'] = descRu;
     fields['fields[desc][en]'] = descEn;
     
-    // Цена: округляем до 2 знаков (длинные дроби → «Invalid price»), минимум 1.
-    const fmtPrice = (v) => {
-        let n = parseFloat(String(v).replace(',', '.'));
-        if (Number.isNaN(n) || n <= 0) return '';
-        if (n < 1) n = 1;
-        return (Math.round(n * 100) / 100).toString();
-    };
-    let priceStr = '';
-    if (st.source.finalPrice != null) priceStr = fmtPrice(st.source.finalPrice);
-    if (!priceStr && st.source.rawPrice) priceStr = fmtPrice(st.source.rawPrice);
+    const priceStr = cloneSourcePrice(st.source);
     if (priceStr) fields['price'] = priceStr;
     fields['amount'] = (st.source.amount && /^\d+$/.test(st.source.amount)) ? st.source.amount : (fields['amount'] || '1');
     fields['active'] = 'on';
@@ -898,7 +905,7 @@ function renderImportPreviewPanel(src, previewEl) {
                 <div class="fpt-win-card-head">
                     <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">checklist</span></span>
                     <h3 class="fpt-win-card-title">Что импортировать</h3>
-                    <span class="fpt-win-card-note">Цена: <span class="fpt-win-strong">${escapeHtmlClone(src.rawPrice || '-')}</span></span>
+                    <span class="fpt-win-card-note">Цена: <span class="fpt-win-strong">${escapeHtmlClone(cloneSourcePrice(src) || '-')}</span></span>
                 </div>
                 <div class="fpt-win-checks">
                     ${check('Название', 'fp-iw-opt-title', true)}
@@ -975,9 +982,10 @@ function renderImportPreviewPanel(src, previewEl) {
         if (doTitle) setFormField('summary', src.summary_ru, src.summary_en);
         if (doDesc) setFormField('desc', src.desc_ru, src.desc_en);
         if (doPayMsg) setFormField('payment_msg', src.payment_msg_ru || '', src.payment_msg_en || '');
-        if (doPrice && src.rawPrice) {
+        const priceStr = cloneSourcePrice(src);
+        if (doPrice && priceStr) {
             const priceInp = document.querySelector('input[name="price"]');
-            if (priceInp) { priceInp.value = src.rawPrice; priceInp.dispatchEvent(new Event('input', { bubbles: true })); }
+            if (priceInp) { priceInp.value = priceStr; priceInp.dispatchEvent(new Event('input', { bubbles: true })); }
         }
         if (doSecrets && src.secrets) {
             // включаем галку автовыдачи и подставляем товары

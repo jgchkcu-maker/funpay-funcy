@@ -429,8 +429,11 @@ function parsePublicLotForClone(html) {
         // формат "sellerNetPrice,commissionMultiplier,currencyRate". Первый множитель —
         // это РОВНО цена продавца (нетто) в рублях. Берём её напрямую, без пересчётов,
         // что избавляет от «Invalid price» из-за кривого деления на коэффициент.
+        // FunPay сам считает сумму как количество × f0 × f1 × f2: f0 — цена за единицу в валюте
+        // баланса покупателя (data-cy), f1 — комиссия способа оплаты, f2 — курс способа оплаты.
         let price = '';
         let priceFromFactors = '';
+        let factorsCurrency = '';
         const methodSelect = doc.querySelector('select[name="method"]');
         if (methodSelect) {
             methodSelect.querySelectorAll('option[data-factors]').forEach(opt => {
@@ -438,7 +441,10 @@ function parsePublicLotForClone(html) {
                 const f = (opt.getAttribute('data-factors') || '').split(',');
                 if (f.length && f[0]) {
                     const v = parseFloat(f[0]);
-                    if (!Number.isNaN(v) && v > 0) priceFromFactors = String(v);
+                    if (!Number.isNaN(v) && v > 0) {
+                        priceFromFactors = String(v);
+                        factorsCurrency = (opt.getAttribute('data-cy') || '').toLowerCase();
+                    }
                 }
             });
         }
@@ -459,8 +465,8 @@ function parsePublicLotForClone(html) {
             const pm = doc.body.textContent.match(/(\d[\d\s]*[.,]?\d*)\s*(₽|руб|грн|\$|€|USD|EUR|RUB|UAH)/i);
             if (pm) price = pm[1].replace(/\s/g, '').replace(',', '.');
         }
-        // валюта: data-factors всегда в рублях; иначе пытаемся по символу
-        let priceCurrencyHint = priceFromFactors ? 'rub' : '';
+        // валюта data-factors — data-cy выбранного способа (валюта баланса текущего аккаунта)
+        let priceCurrencyHint = priceFromFactors ? (factorsCurrency || 'rub') : '';
 
         let amount = '';
         const amountInput = doc.querySelector('input[name="amount"]');

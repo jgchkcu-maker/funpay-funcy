@@ -1931,24 +1931,26 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 if (source.nodeId && !source.isChips) {
                     try {
                         fields = await cloneBuildFieldsInternal(auth, source.nodeId, source.matchAttributes, source.matchPairs);
-
-                        if (rawPrice) {
-                            const rawNum = parseFloat(String(rawPrice).replace(',', '.'));
-                            if (priceAlreadyNet) {
-                                // цена уже нетто (продавца) — берём как есть
-                                source.finalPrice = (!Number.isNaN(rawNum) && rawNum > 0) ? rawNum : null;
-                            } else {
-                                try {
-                                    const net = await cloneCalcNetPrice(auth, source.nodeId, rawNum, priceCurrency);
-                                    // если пересчёт дал мусор (<=0 или NaN) — используем исходную цену
-                                    source.finalPrice = (net != null && !Number.isNaN(net) && net > 0) ? net : ((!Number.isNaN(rawNum) && rawNum > 0) ? rawNum : null);
-                                } catch (_) {
-                                    source.finalPrice = (!Number.isNaN(rawNum) && rawNum > 0) ? rawNum : null;
-                                }
-                            }
-                        }
                     } catch (e) {
                         formError = e.message;
+                    }
+                }
+
+                // Цена считается отдельно от сборки формы: импорт в открытую форму берёт
+                // finalPrice, даже если форма категории не собралась.
+                if (rawPrice && source.nodeId && !source.isChips) {
+                    const rawNum = parseFloat(String(rawPrice).replace(',', '.'));
+                    if (priceAlreadyNet) {
+                        // цена уже нетто (продавца) — берём как есть
+                        source.finalPrice = (!Number.isNaN(rawNum) && rawNum > 0) ? rawNum : null;
+                    } else {
+                        try {
+                            const net = await cloneCalcNetPrice(auth, source.nodeId, rawNum, priceCurrency);
+                            // если пересчёт дал мусор (<=0 или NaN) — используем исходную цену
+                            source.finalPrice = (net != null && !Number.isNaN(net) && net > 0) ? net : ((!Number.isNaN(rawNum) && rawNum > 0) ? rawNum : null);
+                        } catch (_) {
+                            source.finalPrice = (!Number.isNaN(rawNum) && rawNum > 0) ? rawNum : null;
+                        }
                     }
                 }
 

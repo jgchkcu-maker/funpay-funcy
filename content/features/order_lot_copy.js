@@ -27,6 +27,14 @@
 
     function txt(el) { return el ? el.textContent.trim() : ''; }
 
+    function unitPriceFromOrderTotal(total, quantity) {
+        const sum = parseFloat(String(total || ''));
+        if (Number.isNaN(sum) || sum <= 0) return '';
+        if (!Number.isFinite(quantity) || quantity <= 1) return String(sum);
+        return String(Math.round((sum / quantity) * 1e6) / 1e6);
+    }
+    if (typeof module !== 'undefined' && module.exports) module.exports = { unitPriceFromOrderTotal };
+
     // Найти значение param-item по заголовку <h5> (Игра/Категория/Сервер/…)
     function paramByTitle(title) {
         const items = document.querySelectorAll('.param-item');
@@ -106,6 +114,10 @@
                 break;
             }
         }
+
+        // «Сумма» — за весь заказ, а цена лота на FunPay — за единицу: делим на «Количество».
+        const quantity = parseInt(paramByTitle('Количество').replace(/\s/g, ''), 10);
+        rawPrice = unitPriceFromOrderTotal(rawPrice, quantity);
 
         // продавец (из шапки чата, если есть)
         let sellerName = '', sellerId = '';
@@ -259,6 +271,7 @@
         obs.observe(document.body, { childList: true, subtree: true });
     }
 
+    if (typeof document === 'undefined') return; // загрузка в node-тестах
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
