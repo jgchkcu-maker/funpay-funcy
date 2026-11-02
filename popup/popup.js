@@ -104,24 +104,24 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // ─── Changelog toggle ────────────────────────────────────────────
     const changelogPanel = document.getElementById('changelog-panel');
-    document.getElementById('changelogBtn')?.addEventListener('click', (e) => {
+    const changelogBtn = document.getElementById('changelogBtn');
+    const setChangelogVisible = (visible) => {
+        if (changelogPanel) changelogPanel.style.display = visible ? 'block' : 'none';
+        changelogBtn?.setAttribute('aria-expanded', visible ? 'true' : 'false');
+    };
+    changelogBtn?.addEventListener('click', (e) => {
         e.preventDefault();
-        if (changelogPanel) {
-            const isVisible = changelogPanel.style.display !== 'none';
-            changelogPanel.style.display = isVisible ? 'none' : 'block';
-        }
+        if (changelogPanel) setChangelogVisible(changelogPanel.style.display === 'none');
     });
 
-    document.getElementById('changelog-close')?.addEventListener('click', () => {
-        if (changelogPanel) changelogPanel.style.display = 'none';
-    });
+    document.getElementById('changelog-close')?.addEventListener('click', () => setChangelogVisible(false));
 
     // Auto-show changelog once for new version
     try {
         if (typeof chrome !== 'undefined' && chrome.storage?.local) {
             chrome.storage.local.get('fpToolsLastSeenVersion', ({ fpToolsLastSeenVersion } = {}) => {
                 if (fpToolsLastSeenVersion !== version) {
-                    if (changelogPanel) changelogPanel.style.display = 'block';
+                    setChangelogVisible(true);
                     chrome.storage.local.set({ fpToolsLastSeenVersion: version });
                 }
             });

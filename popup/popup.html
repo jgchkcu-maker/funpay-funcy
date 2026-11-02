@@ -8,9 +8,9 @@
 </head>
 <body class="light-theme">
     <div class="popup-wrapper">
-        <header>
+        <header class="popup-head">
             <div class="header-logo">
-                <img src="../icons/icon128.png" alt="Funcy" width="28" height="28">
+                <img src="../icons/icon128.png" alt="Funcy" width="34" height="34">
                 <div class="header-text">
                     <h1>Funcy</h1>
                     <span id="version-display"></span>
@@ -19,51 +19,73 @@
             <div id="status-dot" class="status-dot" title="Проверка статуса..."></div>
         </header>
 
-        <main>
-            <p class="instruction-text">
-                Все настройки находятся прямо на сайте FunPay - ищите кнопку в шапке.
-            </p>
+        <main class="popup-body">
+            <section class="popup-card popup-intro">
+                <p class="instruction-text">
+                    Все настройки — прямо на FunPay, кнопка Funcy в шапке сайта.
+                </p>
+                <a id="goToFunPayBtn" class="cta-button" href="https://funpay.com" target="_blank">
+                    <span class="material-symbols-rounded" aria-hidden="true">open_in_new</span>
+                    Открыть FunPay
+                </a>
+            </section>
 
-            <a id="goToFunPayBtn" class="cta-button" href="https://funpay.com" target="_blank">
-                Открыть FunPay
-            </a>
+            <section class="quick-stats" id="quickStats" style="display:none">
+                <div class="stat-item">
+                    <span class="stat-label">Авто-ответы</span>
+                    <span class="stat-value" id="statAutoReply">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Авто-поднятие</span>
+                    <span class="stat-value" id="statAutoBump">-</span>
+                </div>
+            </section>
+
+            <!-- «Что нового»: самостоятельная карточка, показывается один раз после обновления
+                 и по кнопке в подвале (popup.js). -->
+            <section id="changelog-panel" class="popup-card changelog-card" style="display:none" aria-labelledby="changelog-title">
+                <div class="changelog-head">
+                    <span class="changelog-icon"><span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span></span>
+                    <div class="changelog-titles">
+                        <h2 id="changelog-title">Что нового</h2>
+                        <span class="changelog-sub">Обновление 0.9.13</span>
+                    </div>
+                    <button type="button" id="changelog-close" class="icon-button" aria-label="Закрыть">
+                        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+                    </button>
+                </div>
+                <ul class="changelog-list">
+                    <li>
+                        <span class="tag fix">Фикс</span>
+                        <span class="changelog-text">Копия лота берёт цену продавца, без комиссии покупателя.</span>
+                    </li>
+                    <li>
+                        <span class="tag fix">Фикс</span>
+                        <span class="changelog-text">Копия из заказа берёт цену за 1&nbsp;шт., а не всю сумму.</span>
+                    </li>
+                    <li>
+                        <span class="tag new">Новое</span>
+                        <span class="changelog-text">Перевод чатов и лотов — только с вашего разрешения.</span>
+                    </li>
+                    <li>
+                        <span class="tag opt">Чище</span>
+                        <span class="changelog-text">Убраны AI-функции и старые серверы расширения.</span>
+                    </li>
+                </ul>
+            </section>
         </main>
 
-        <div class="divider"></div>
-
-        <section class="quick-stats" id="quickStats" style="display:none">
-            <div class="stat-item">
-                <span class="stat-label">Авто-ответы</span>
-                <span class="stat-value" id="statAutoReply">-</span>
+        <footer class="popup-foot">
+            <a href="#" id="changelogBtn" class="foot-link" aria-controls="changelog-panel" aria-expanded="false">
+                <span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+                Что нового
+            </a>
+            <!-- версия уже в шапке, поэтому в подвале только автор -->
+            <div class="credits">
+                Made with ♥ by
+                <a href="https://t.me/nakazan163" target="_blank" rel="noopener noreferrer">@nakazan163</a>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">Авто-поднятие</span>
-                <span class="stat-value" id="statAutoBump">-</span>
-            </div>
-        </section>
-
-        <footer>
-            <div class="quick-links">
-                <a href="#" id="changelogBtn" title="Что нового">
-                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M13 2.05v2.02c3.95.49 7 3.85 7 7.93 0 3.21-1.81 6-4.5 7.54L13 17v5h5l-1.22-1.22C19.91 19.07 22 15.76 22 12c0-5.18-3.94-9.45-9-9.95zM11 2.05C5.95 2.55 2 6.82 2 12c0 3.76 2.09 7.07 5.22 8.78L6 22h5v-5l-2.5 2.47C6.81 18 5 15.21 5 12c0-4.08 3.05-7.44 7-7.93V2.05z"/></svg>
-                    Что нового
-                </a>
-            </div>
-            <div class="credits">Made with ♥ by <a href="https://t.me/nakazan163" target="_blank" rel="noopener noreferrer">@nakazan163</a> · v<span id="footer-version"></span></div>
         </footer>
-    </div>
-
-    <div id="changelog-panel" class="changelog-panel" style="display:none">
-        <div class="changelog-header">
-            <strong>Что нового в 0.9.13</strong>
-            <button id="changelog-close">✕</button>
-        </div>
-        <ul class="changelog-list">
-            <li><span class="tag fix">Фикс</span> Копирование лота ставит цену продавца без комиссии, а не цену покупателя.</li>
-            <li><span class="tag fix">Фикс</span> Копия со страницы заказа получает цену за 1 шт., а не сумму всего заказа.</li>
-            <li><span class="tag new">Новое</span> Перевод сообщений и лотов работает только после вашего разрешения.</li>
-            <li><span class="tag opt">Чище</span> Убраны AI-функции и обращения к старым серверам расширения.</li>
-        </ul>
     </div>
 
     <script src="popup.js"></script>
