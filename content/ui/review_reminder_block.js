@@ -520,7 +520,7 @@
             for (const id of [...selected]) if (!data.orders.some(order => order.orderId === id)) selected.delete(id);
             setTabLabel(tabButtons[0], 'Без отзыва', data.orders.length);
             if (!data.orders.length) {
-                ordersPane.append(empty('task_alt', 'Заказов без отзыва нет', 'По всем проверенным завершённым заказам отзыв уже есть.'));
+                ordersPane.append(empty('check_circle', 'Заказов без отзыва нет', 'По всем проверенным завершённым заказам отзыв уже есть.'));
             } else {
                 const list = node('div', 'fpt-rm-orders');
                 list.setAttribute('role', 'group');

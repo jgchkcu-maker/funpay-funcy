@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: finance hub renders every tab with seeded data and responds to filters
+ok 1 - finance hub renders every tab with seeded data and responds to filters
+  ---
+  duration_ms: 4985.3975
+  type: 'test'
+  ...
+# Subtest: finance controls preserve unrelated cards and contain scrolling inside the popup
+ok 2 - finance controls preserve unrelated cards and contain scrolling inside the popup
+  ---
+  duration_ms: 5899.006
+  type: 'test'
+  ...
+# Subtest: finance notifications preserve layout and the tab pill tracks responsive tabs
+ok 3 - finance notifications preserve layout and the tab pill tracks responsive tabs
+  ---
+  duration_ms: 9773.7117
+  type: 'test'
+  ...
+# Subtest: finance hub refresh reports partial failures and exports CSV
+ok 4 - finance hub refresh reports partial failures and exports CSV
+  ---
+  duration_ms: 2720.4937
+  type: 'test'
+  ...
+# Subtest: finance screenshot layouts align controls and separate coverage and table filters
+ok 5 - finance screenshot layouts align controls and separate coverage and table filters
+  ---
+  duration_ms: 3179.7916
+  type: 'test'
+  ...
+# Subtest: zero cost coverage keeps truthful totals and filters only its orders table
+ok 6 - zero cost coverage keeps truthful totals and filters only its orders table
+  ---
+  duration_ms: 2701.8743
+  type: 'test'
+  ...
+# Subtest: finance hub shows onboarding when there is no data and fits a narrow popup
+ok 7 - finance hub shows onboarding when there is no data and fits a narrow popup
+  ---
+  duration_ms: 1004.3495
+  type: 'test'
+  ...
+# Subtest: finance hub is readable at phone width
+ok 8 - finance hub is readable at phone width
+  ---
+  duration_ms: 994.4064
+  type: 'test'
+  ...
+# Subtest: manifest eagerly loads each menu dependency once and every resource exists
+ok 9 - manifest eagerly loads each menu dependency once and every resource exists
+  ---
+  duration_ms: 5.309
+  type: 'test'
+  ...
+# Subtest: one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu
+ok 10 - one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu
+  ---
+  duration_ms: 5569.6728
+  type: 'test'
+  ...
+# Subtest: saved custom theme, page windows and enhanced selects work before opening and preserve their palette
+ok 11 - saved custom theme, page windows and enhanced selects work before opening and preserve their palette
+  ---
+  duration_ms: 1527.7944
+  type: 'test'
+  ...
+# Subtest: real browser: custom scrollbar applies to site and chat without recolouring the popup
+ok 12 - real browser: custom scrollbar applies to site and chat without recolouring the popup
+  ---
+  duration_ms: 2642.1065
+  type: 'test'
+  ...
+# Subtest: real browser: new fonts are selectable and an old saved font remains intact
+ok 13 - real browser: new fonts are selectable and an old saved font remains intact
+  ---
+  duration_ms: 2982.2297
+  type: 'test'
+  ...
+# Subtest: real browser: catalogue themes can be selected and remain available offline
+ok 14 - real browser: catalogue themes can be selected and remain available offline
+  ---
+  duration_ms: 3440.5426
+  type: 'test'
+  ...
+# Subtest: real browser: theme page builds every section from stored settings and keeps the dock closed
+ok 15 - real browser: theme page builds every section from stored settings and keeps the dock closed
+  ---
+  duration_ms: 2351.6348
+  type: 'test'
+  ...
+# Subtest: real browser: buttons card follows the theme in auto mode and takes an explicit colour
+ok 16 - real browser: buttons card follows the theme in auto mode and takes an explicit colour
+  ---
+  duration_ms: 2368.4696
+  type: 'test'
+  ...
+# Subtest: real browser: edits stay in the draft until Apply, Cancel restores, Apply enables a disabled theme
+ok 17 - real browser: edits stay in the draft until Apply, Cancel restores, Apply enables a disabled theme
+  ---
+  duration_ms: 3250.8145
+  type: 'test'
+  ...
+# Subtest: real browser: original and custom tiles switch the base style in the draft only
+ok 18 - real browser: original and custom tiles switch the base style in the draft only
+  ---
+  duration_ms: 2169.0084
+  type: 'test'
+  ...
+# Subtest: real browser: preset strip has no scrollbar, starts at the first tile and pages exactly one theme
+ok 19 - real browser: preset strip has no scrollbar, starts at the first tile and pages exactly one theme
+  ---
+  duration_ms: 6055.847
+  type: 'test'
+  ...
+# Subtest: real browser: reset, export and share use page dialogs instead of native prompts
+ok 20 - real browser: reset, export and share use page dialogs instead of native prompts
+  ---
+  duration_ms: 2386.1566
+  type: 'test'
+  ...
+# Subtest: real browser: swatches flag corrected colours and low contrast, previews follow every toggle
+ok 21 - real browser: swatches flag corrected colours and low contrast, previews follow every toggle
+  ---
+  duration_ms: 5640.5431
+  type: 'test'
+  ...
+# Subtest: real browser: dark popup, narrow layouts and reduced motion keep the page inside its frame
+ok 22 - real browser: dark popup, narrow layouts and reduced motion keep the page inside its frame
+  ---
+  duration_ms: 3564.1221
+  type: 'test'
+  ...
+# Subtest: real browser: background upload, palette from image, size limit and theme import stay in the draft
+ok 23 - real browser: background upload, palette from image, size limit and theme import stay in the draft
+  ---
+  duration_ms: 15829.6532
+  type: 'test'
+  ...
+# Subtest: real browser: tools card has no stray backdrop or native file input, original look keeps shape settings
+ok 24 - real browser: tools card has no stray backdrop or native file input, original look keeps shape settings
+  ---
+  duration_ms: 3061.479
+  type: 'test'
+  ...
+# Subtest: real browser: the site theme does not leak into the popup and turns it dark
+ok 25 - real browser: the site theme does not leak into the popup and turns it dark
+  ---
+  duration_ms: 3116.7248
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 59182.4765

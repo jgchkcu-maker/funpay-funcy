@@ -21,23 +21,6 @@ function fptNeedsEntryMatches(entry, query) {
 
 if (typeof window !== 'undefined' && window.fptPopupActions) {
     window.fptPopupActions.register('needs', 'getFeatureRegistry', () => fptNeedsRegistry());
-    window.fptPopupActions.register('needs', 'fptNeedsAskBtn', async p => {
-        if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) throw new Error('Функция временно недоступна.');
-        const text = String(p.text || '').trim();
-        if (!text) throw new Error('Опишите, что хотите скрыть.');
-        const registry = fptNeedsRegistry().filter(entry => !entry.locked);
-        const response = await chrome.runtime.sendMessage({ action: 'getAIProcessedText', text, myUsername: '',
-            type: 'feature_match', context: JSON.stringify(registry.map(({ id, label, desc }) => ({ id, label, desc }))) });
-        if (!response?.success) throw new Error(response?.error || 'Не удалось подобрать элементы.');
-        let matches;
-        try {
-            matches = JSON.parse(String(response.data).replace(/^```(?:json)?\s*/i, '').replace(/```$/, '').trim());
-        } catch (_) {
-            throw new Error('ИИ ответил в неожиданном формате. Переформулируйте запрос.');
-        }
-        const allowed = new Set(registry.map(entry => entry.id));
-        return (Array.isArray(matches) ? matches : []).filter(match => match && allowed.has(match.id));
-    });
     // Writes the disabled list through the shared queue so quick consecutive toggles never overwrite each other.
     function fptNeedsWriteDisabled(change) {
         const known = new Set(fptNeedsRegistry().filter(entry => !entry.locked).map(entry => entry.id));
@@ -50,13 +33,6 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
             if (typeof window.fptApplyDisabledFeatures === 'function') await window.fptApplyDisabledFeatures(next.fpToolsDisabledFeatures);
         }).then(next => next.fpToolsDisabledFeatures);
     }
-    // AI suggestions are elements the seller wants to hide (see the feature_match prompt).
-    window.fptPopupActions.register('needs', 'fptNeedsAiConfirm', p => {
-        if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) throw new Error('Функция временно недоступна.');
-        return fptNeedsWriteDisabled((disabled, known) => {
-            for (const id of p.ids || []) if (known.has(id)) disabled.add(id);
-        });
-    });
     window.fptPopupActions.register('needs', 'fptApplyNeedsSelection', p => fptNeedsWriteDisabled((disabled, known) => {
         for (const [id, enabled] of Object.entries(p.enabled || {})) {
             if (!known.has(id)) continue;

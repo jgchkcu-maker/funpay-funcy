@@ -25,6 +25,13 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsEngineContinue',
     'fpToolsDeliveryContinue',
     'fptEngineWake',
+    // Имя DOM-события цены покупателя, не ключ хранилища; исключено, чтобы решение было явным.
+    'fptBuyerPriceStateChange',
+    // id заголовка стартового экрана меню (DOM), не ключ хранилища.
+    'fptStartStateTitle',
+    // Имя сообщения background и имя старого alarm, не ключи хранилища.
+    'fptChipWrite',
+    'fpToolsAccountKeepalive',
     'fpToolsSalesCollecting',
     'fpToolsPurchasesCollecting',
     'fpToolsFinanceCollecting',
@@ -66,16 +73,20 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsPopupDragged',
     // Когда на этом устройстве делали копию и импорт — история только этого браузера.
     'fpToolsSettingsIOHistory',
+    // Согласие на передачу текста Google Translate даётся на этом устройстве и не переносится.
+    'fpToolsTranslateConsentAt',
+    // Старый флаг выставлялся без ответа пользователя; согласием не считается.
+    'fpToolsTranslateConsent',
     // Retired feature data must not return through old backups.
     'fpToolsPiggyBanks',
 ]);
 
 const DEVICE_ONLY_PATTERNS = [
-    /^fptProfileSession/, /^fptPendingVerifyLots$/, /^fptLastVerifyAt$/,
-    /^fptProfileDescrCache/, /^fpToolsAutoResponderTag$/, /^fpToolsStockManagementReleased/
+    /^fpToolsAutoResponderTag$/, /^fpToolsStockManagementReleased/
 ];
 function isExportable(key) {
-    return !EXCLUDE_KEYS.has(key) && !DEVICE_ONLY_PATTERNS.some(pattern => pattern.test(key));
+    return !globalThis.FPTRetiredIntegrations.isRetiredKey(key)
+        && !EXCLUDE_KEYS.has(key) && !DEVICE_ONLY_PATTERNS.some(pattern => pattern.test(key));
 }
 
 function normalizeImportedSettings(settings) {

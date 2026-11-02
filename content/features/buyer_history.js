@@ -97,40 +97,160 @@ function renderHistoryPanel(orders, name, anchor) {
     }, 0);
 }
 
-// ─── Translation engine ────────────────────────────────────────────────────────
+// ─── Translation engine (Unified background service worker transport) ───────
 
-async function translateText(text) {
-    if (!text.trim()) return null;
-    const url = 'https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ru&dt=t&q=' + encodeURIComponent(text);
-    try {
-        const res = await fetch(url);
-        const json = await res.json();
-        const result = json[0].map(s => s[0]).join('');
-        return result === text ? null : result;
-    } catch (_) { return null; }
+let _chatEpoch = 1;
+const _translationRequests = new WeakMap();
+
+// explicit: the user clicked a translate button. Background translation (dialog mode)
+// does not re-open the consent window after the user declined it.
+async function checkTranslateConsent({ explicit = true } = {}) {
+    return !!(await window.FPTTranslateConsent?.ensure({ explicit }));
 }
 
-async function appendTranslation(msgTextEl) {
-    if (msgTextEl.dataset.fpTransDone) return;
-    msgTextEl.dataset.fpTransDone = '1';
+function bumpChatEpoch() {
+    _chatEpoch++;
+    document.querySelectorAll('[data-fp-trans-state="pending"]').forEach(clearMessageTranslation);
+}
 
-    const orig = msgTextEl.innerText.trim();
-    if (!orig || orig.length < 3) return;
+function extractCleanMessageText(el) {
+    if (!el) return '';
+    const clone = el.cloneNode(true);
+    // .fpt-reply-rest contains the actual reply, not translation UI.
+    clone.querySelectorAll('.fp-trans-wrap, .fpt-reply-card').forEach(n => n.remove());
+    return clone.textContent.trim();
+}
 
-    const translated = await translateText(orig);
-    if (!translated) return;
+function renderTranslationBlock(textEl, translatedText) {
+    textEl.querySelectorAll('.fp-trans-wrap').forEach(w => w.remove());
+    if (!translatedText || !translatedText.trim()) return;
 
     const wrap = document.createElement('div');
     wrap.className = 'fp-trans-wrap';
-    wrap.innerHTML =
-        '<div class="fp-trans-divider"></div>' +
-        '<div class="fp-trans-text">' + bhEsc(translated) + '</div>';
+    const divider = document.createElement('div');
+    divider.className = 'fp-trans-divider';
+    const textDiv = document.createElement('div');
+    textDiv.className = 'fp-trans-text';
+    textDiv.textContent = translatedText;
+    wrap.appendChild(divider);
+    wrap.appendChild(textDiv);
+    textEl.appendChild(wrap);
+}
 
-    msgTextEl.appendChild(wrap);
+function renderTranslationError(textEl, message) {
+    textEl.querySelectorAll('.fp-trans-wrap').forEach(w => w.remove());
+    const wrap = document.createElement('div');
+    wrap.className = 'fp-trans-wrap fp-trans-error';
+    const divider = document.createElement('div');
+    divider.className = 'fp-trans-divider';
+    const textDiv = document.createElement('div');
+    textDiv.className = 'fp-trans-text fp-trans-error-text';
+    textDiv.textContent = `(Перевод: ${message})`;
+    wrap.appendChild(divider);
+    wrap.appendChild(textDiv);
+    textEl.appendChild(wrap);
+}
+
+function clearMessageTranslation(textEl) {
+    _translationRequests.delete(textEl);
+    textEl.querySelectorAll('.fp-trans-wrap').forEach(w => w.remove());
+    delete textEl.dataset.fpTransState;
+}
+
+async function translateMessageElement(textEl, { force = false } = {}) {
+    if (!textEl) return false;
+    const currentState = textEl.dataset.fpTransState;
+    if (currentState === 'pending' || (!force && currentState === 'done')) {
+        return false;
+    }
+
+    const orig = extractCleanMessageText(textEl);
+    if (!orig || orig.length < 2) return false;
+
+    const epoch = _chatEpoch;
+    const request = {};
+    _translationRequests.set(textEl, request);
+    textEl.dataset.fpTransState = 'pending';
+    const isCurrent = () => epoch === _chatEpoch
+        && _translationRequests.get(textEl) === request
+        && textEl.isConnected
+        && extractCleanMessageText(textEl) === orig;
+
+    try {
+        const allowed = await checkTranslateConsent({ explicit: force });
+        if (!isCurrent()) return false;
+        if (!allowed) {
+            clearMessageTranslation(textEl);
+            return false;
+        }
+        const response = await chrome.runtime.sendMessage({
+            action: 'translateChatText',
+            text: orig,
+            target: 'ru'
+        });
+
+        if (!isCurrent()) {
+            return false;
+        }
+
+        if (response && response.success) {
+            const translated = response.text ? response.text.trim() : '';
+            textEl.dataset.fpTransState = 'done';
+            if (translated && translated !== orig) {
+                renderTranslationBlock(textEl, translated);
+            } else {
+                textEl.querySelectorAll('.fp-trans-wrap').forEach(w => w.remove());
+            }
+            return true;
+        } else {
+            textEl.dataset.fpTransState = 'error';
+            renderTranslationError(textEl, response?.error || 'Не удалось перевести');
+            return false;
+        }
+    } catch (err) {
+        if (!isCurrent()) return false;
+        textEl.dataset.fpTransState = 'error';
+        renderTranslationError(textEl, err.message || 'Ошибка сети при переводе');
+        return false;
+    }
+}
+
+// Backward-compatible translateText wrapper
+async function translateText(text) {
+    if (!text || !text.trim()) return null;
+    try {
+        if (!(await checkTranslateConsent())) return null;
+        const res = await chrome.runtime.sendMessage({
+            action: 'translateChatText',
+            text: text.trim(),
+            target: 'ru'
+        });
+        if (res && res.success && res.text) {
+            return res.text === text ? null : res.text;
+        }
+        return null;
+    } catch (_) {
+        return null;
+    }
+}
+
+window.FPTChatTranslate = Object.freeze({
+    translateMessageElement,
+    clearMessageTranslation,
+    extractCleanMessageText,
+    bumpChatEpoch,
+    checkTranslateConsent,
+    renderTranslationBlock,
+    renderTranslationError
+});
+
+async function appendTranslation(msgTextEl) {
+    return translateMessageElement(msgTextEl);
 }
 
 function removeAllTranslations() {
     document.querySelectorAll('.fp-trans-wrap').forEach(el => el.remove());
+    document.querySelectorAll('[data-fp-trans-state]').forEach(clearMessageTranslation);
     document.querySelectorAll('[data-fp-trans-done]').forEach(el => delete el.dataset.fpTransDone);
 }
 
@@ -141,16 +261,24 @@ function startRealtimeTranslation() {
     const list = document.querySelector('.chat-message-list');
     if (!list) return;
 
-    list.querySelectorAll('.chat-msg-text').forEach(appendTranslation);
+    if (_chatObserver) {
+        _chatObserver.disconnect();
+        _chatObserver = null;
+    }
+
+    list.querySelectorAll('.chat-msg-text').forEach(el => {
+        translateMessageElement(el);
+    });
 
     _chatObserver = new MutationObserver((muts) => {
+        if (!_translateMode) return;
         for (const mut of muts) {
             for (const node of mut.addedNodes) {
                 if (node.nodeType !== 1) continue;
                 const els = node.matches?.('.chat-msg-text')
                     ? [node]
                     : [...(node.querySelectorAll?.('.chat-msg-text') || [])];
-                els.forEach(appendTranslation);
+                els.forEach(el => translateMessageElement(el));
             }
         }
     });
@@ -158,10 +286,26 @@ function startRealtimeTranslation() {
 }
 
 function stopRealtimeTranslation() {
+    bumpChatEpoch();
     _chatObserver?.disconnect();
     _chatObserver = null;
     removeAllTranslations();
 }
+
+// Reset and invalidate on contact/chat click
+document.addEventListener('click', (e) => {
+    if (e.target.closest('.contact-item')) {
+        bumpChatEpoch();
+        if (_translateMode) {
+            removeAllTranslations();
+            _chatObserver?.disconnect();
+            _chatObserver = null;
+            setTimeout(() => {
+                if (_translateMode) startRealtimeTranslation();
+            }, 350);
+        }
+    }
+});
 
 (function injectTranslateStyles() {
     if (document.getElementById('fp-trans-styles')) return;
@@ -173,10 +317,14 @@ function stopRealtimeTranslation() {
             border-top: 1px solid rgba(255,255,255,0.08);
         }
         .fp-trans-text {
-            color: rgba(200,202,220,0.55);
+            color: rgba(200,202,220,0.65);
             font-size: 0.92em;
             line-height: 1.4;
             word-break: break-word;
+        }
+        .fp-trans-error-text {
+            color: rgba(255,120,120,0.85);
+            font-style: italic;
         }
     `;
     document.head.appendChild(s);
@@ -188,14 +336,13 @@ function attachChatMenuItems(chatHeader) {
     if (!chatHeader || chatHeader.dataset.fpHistAttached) return;
 
     const chatEl = chatHeader.closest(".chat") || chatHeader.parentElement?.closest(".chat");
-    const buyerUserId = chatEl?.dataset?.user;
-    if (!buyerUserId) return;
-
-    const userLink = chatHeader.querySelector(".media-user-name a[href*=\"/users/\"]");
-    const buyerName = userLink ? userLink.textContent.trim() : "Покупатель";
+    const buyerName = chatHeader.dataset?.fptBuyer
+        || chatHeader.dataset?.userName
+        || chatEl?.dataset?.fptBuyer
+        || chatHeader.querySelector('.media-user-name a')?.textContent.trim()
+        || '';
 
     const tryInject = () => {
-        // Ищем родное выпадающее меню FunPay (находится в .chat-header-controls .dropdown-menu)
         const menu = chatHeader.querySelector('.dropdown-menu');
         if (!menu) { setTimeout(tryInject, 200); return; }
         if (menu.querySelector('#fp-buyer-hist-menu-btn')) return;
@@ -228,9 +375,11 @@ function attachChatMenuItems(chatHeader) {
         // 2. Режим перевода
         const transLi = document.createElement('li');
         transLi.innerHTML = '<a href="#" id="fp-translate-menu-btn">🌐 Включить перевод</a>';
-        transLi.querySelector('a').addEventListener('click', (e) => {
+        transLi.querySelector('a').addEventListener('click', async (e) => {
             e.preventDefault();
             const a = e.currentTarget;
+            // Ask before the mode starts, so declining leaves the chat untouched.
+            if (!_translateMode && !(await checkTranslateConsent())) return;
             _translateMode = !_translateMode;
             if (_translateMode) {
                 a.textContent = '🌐 Выключить перевод';
@@ -253,10 +402,10 @@ function attachChatMenuItems(chatHeader) {
                 const authorEl = item.querySelector('.chat-msg-author-link');
                 if (authorEl) lastAuthor = authorEl.textContent.trim();
                 const author = lastAuthor || 'Собеседник';
-                const text   = item.querySelector('.chat-msg-text')?.textContent.trim() || '';
+                const textEl = item.querySelector('.chat-msg-text');
+                const text = extractCleanMessageText(textEl);
                 const dateEl = item.querySelector('.chat-msg-date');
-                // у первого сообщения серии есть видимая дата, у последующих - только в title
-                const date   = dateEl ? (dateEl.textContent.trim() || dateEl.getAttribute('title')?.trim() || '') : '';
+                const date = dateEl ? (dateEl.textContent.trim() || dateEl.getAttribute('title')?.trim() || '') : '';
                 if (text) msgs.push(date ? `[${date}] ${author}: ${text}` : `${author}: ${text}`);
             });
             if (!msgs.length) { if (typeof showNotification === 'function') showNotification('Нет сообщений для экспорта', true); return; }

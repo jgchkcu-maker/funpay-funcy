@@ -112,39 +112,6 @@
         header.helpButton.before(helpAnchor);
         helpAnchor.append(header.helpButton, helpPanel);
 
-        const metric = (iconName, label) => {
-            const element = node('div', 'fpt-qr-metric fpt-lot-metric');
-            const badge = node('span', 'fpt-qr-metric-icon');
-            badge.appendChild(icon(iconName));
-            const copy = node('div', 'fpt-qr-metric-copy');
-            const value = node('strong', 'fpt-qr-metric-value', '—');
-            copy.append(node('span', 'fpt-qr-metric-label', label), value);
-            element.append(badge, copy);
-            return { element, value };
-        };
-        const hero = node('section', 'fpt-qr-hero fpt-lot-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-lot-hero-title');
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.appendChild(icon('inventory_2'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Лоты под контролем');
-        heroTitle.id = 'fpt-lot-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill fpt-lot-hero-pill', 'Проверяем импорт…');
-        heroPill.setAttribute('role', 'status');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Резервная копия в JSON, перенос лотов из файла и правка многих лотов за один запуск.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricImport = metric('description', 'Импорт');
-        const metricDone = metric('check_circle', 'Обработано');
-        const metricProblems = metric('report', 'Ошибки и пропуски');
-        const metrics = node('div', 'fpt-qr-metrics fpt-lot-metrics');
-        metrics.append(metricImport.element, metricDone.element, metricProblems.element);
-        hero.append(heroMain, metrics);
-        view.appendChild(hero);
-
         const tool = (modifier, iconName, title, description) => {
             const card = node('article', `fpt-lot-tool fpt-lot-tool--${modifier}`);
             const head = node('div', 'fpt-lot-tool-head');
@@ -201,33 +168,6 @@
         view.append(section);
         page.replaceChildren(view);
         page.prepend(header.element);
-
-        // Hero summary of the import that is running, paused or just finished.
-        function updateHero({ state = 'idle', name = '', done = 0, total = 0, errors = 0, skipped = 0 } = {}) {
-            const pill = {
-                loading: ['Проверяем импорт…', ''],
-                idle: ['Готово к работе', 'success'],
-                running: [`Импорт идёт · ${done} из ${total}`, ''],
-                postponed: [`Приостановлен · ${done} из ${total}`, 'warning'],
-                error: ['Ошибка импорта', 'error'],
-                finished: ['Импорт завершён', errors ? 'warning' : 'success']
-            }[state] || ['Готово к работе', 'success'];
-            heroPill.textContent = pill[0];
-            if (pill[1]) heroPill.dataset.kind = pill[1];
-            else delete heroPill.dataset.kind;
-            hero.dataset.state = ['running', 'postponed', 'error'].includes(state) ? 'on' : 'off';
-            const hasResult = ['running', 'postponed', 'error', 'finished'].includes(state);
-            metricImport.value.textContent = hasResult ? shortenFileName(name || 'Импорт лотов', 28) : state === 'loading' ? '…' : 'Нет активного';
-            metricImport.value.title = hasResult ? name || '' : '';
-            metricDone.value.textContent = hasResult ? `${done} из ${total}` : '—';
-            const problems = [
-                errors ? `${errors} ${root.FPTPopupUI.pluralize(errors, ['ошибка', 'ошибки', 'ошибок'])}` : '',
-                skipped ? `${skipped} ${root.FPTPopupUI.pluralize(skipped, ['пропуск', 'пропуска', 'пропусков'])}` : ''
-            ].filter(Boolean).join(' · ');
-            metricProblems.value.textContent = hasResult ? problems || 'Нет' : '—';
-            metricProblems.value.title = hasResult ? `Ошибок: ${errors}, пропущено: ${skipped}` : '';
-            metricProblems.element.dataset.tone = hasResult && errors ? 'error' : '';
-        }
 
         const shortenFileName = (name, maxLength = 44) => {
             const value = String(name || 'Импорт лотов');
@@ -288,7 +228,6 @@
         const showTaskEmpty = (loading = false) => {
             currentTask = null;
             updateImportStatus(null, loading);
-            updateHero({ state: loading ? 'loading' : 'idle' });
             taskCount.textContent = loading ? 'Загрузка…' : '0 задач';
             if (loading) {
                 taskContent.replaceChildren(createTaskSkeleton());
@@ -386,10 +325,6 @@
             status.append(dot, node('span', '', statusText));
             fileCopy.append(fileName, status);
             const counts = importCounts(task.lots);
-            updateHero({
-                state: hasError ? 'error' : isPostponed ? 'postponed' : 'running',
-                name: task.name, done: completed, total, errors: counts.errors, skipped: counts.skipped
-            });
             const outcomeSummary = node('p', 'fpt-lot-task-outcomes');
             outcomeSummary.setAttribute('aria-live', 'polite');
             for (const [kind, label, value] of [['success', 'Добавлено', counts.success], ['error', 'Ошибки', counts.errors], ['skipped', 'Пропущено', counts.skipped]]) {
@@ -453,12 +388,11 @@
             const counts = importCounts(lots);
             const total = Array.isArray(lots) ? lots.length : 0;
             taskCount.textContent = 'Последний импорт';
-            updateHero({ state: 'finished', name: 'Последний импорт', done: total, total, errors: counts.errors, skipped: counts.skipped });
             const report = node('article', 'fpt-lot-import-report');
             report.dataset.state = counts.errors ? 'warning' : 'success';
             report.setAttribute('aria-live', 'polite');
             const reportIcon = node('span', 'fpt-lot-report-icon');
-            reportIcon.appendChild(icon(counts.errors ? 'warning' : 'task_alt'));
+            reportIcon.appendChild(icon(counts.errors ? 'warning' : 'check_circle'));
             const reportCopy = node('div', 'fpt-lot-report-copy');
             reportCopy.appendChild(node('strong', '', `Импорт завершён: ${counts.success} ${root.FPTPopupUI.pluralize(counts.success, ['лот добавлен', 'лота добавлено', 'лотов добавлено'])}`));
             reportCopy.appendChild(node('p', '', `Ошибок: ${counts.errors} · пропущено: ${counts.skipped} · всего: ${total} ${root.FPTPopupUI.pluralize(total, ['лот', 'лота', 'лотов'])}.`));

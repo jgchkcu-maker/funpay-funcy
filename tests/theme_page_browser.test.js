@@ -27,7 +27,7 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
     });
     await page.goto('https://funpay.com/');
     await page.setContent(`<html><head></head><body style="background:${dark ? '#101014' : '#f2f2f6'}"><ul class="nav navbar-nav navbar-right logged"><li><a class="user-link" data-toggle="dropdown"></a></li></ul><main id="content"></main></body></html>`);
-    await page.evaluate(({ seed, catalog, forestBase64 }) => {
+    await page.evaluate(({ seed, catalog }) => {
         document.body.dataset.appData = JSON.stringify([{ userId: 'qa-user' }]);
         const store = { fpToolsNavCollapsed: false, ...seed };
         window.qaStore = store; window.qaWrites = [];
@@ -46,10 +46,6 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
         window.fetch = async url => {
             const href = String(url);
             window.qaFetchCalls.push(href);
-            if (href.endsWith('/themes/wallpapers/fog-pines.webp')) {
-                const bytes = Uint8Array.from(atob(forestBase64), char => char.charCodeAt(0));
-                return { ok: true, blob: async () => new Blob([bytes], { type: 'image/webp' }) };
-            }
             if (href.endsWith('/funcy-assets/main/index.json')) return { ok: true, blob: async () => new Blob([JSON.stringify(window.qaCatalog)], { type: 'application/json' }) };
             if (href.includes('/funcy-assets/main/wallpapers/')) {
                 const data = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aL1sAAAAASUVORK5CYII='), char => char.charCodeAt(0));
@@ -57,7 +53,7 @@ async function openThemePage(browser, { dark = false, viewport = { width: 1440, 
             }
             return { ok: true, json: async () => ({}), text: async () => '' };
         };
-    }, { seed: initial, catalog: assetCatalog, forestBase64: fs.readFileSync(path.join(root, 'themes/wallpapers/fog-pines.webp')).toString('base64') });
+    }, { seed: initial, catalog: assetCatalog });
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json')));
     const content = manifest.content_scripts.find(s => s.js?.includes('content/content_script.js'));
     for (const css of content.css) await page.addStyleTag({ path: path.join(root, css) });
@@ -145,6 +141,8 @@ test('real browser: new fonts are selectable and an old saved font remains intac
         assert.match(await select.locator('option:checked').textContent(), /сохранённый/);
         await select.selectOption('Comfortaa');
         assert.equal(await select.inputValue(), 'Comfortaa');
+        // The editor re-syncs on the next animation frame, which is when the saved-font option is dropped.
+        await page.waitForFunction(() => !document.querySelector('#fpt-th-font option[value="Lato"]'));
         assert.equal(await select.locator('option[value="Lato"]').count(), 0);
         assert.match(await page.locator('.fpt-th-font-sample').getAttribute('style'), /Comfortaa/);
         assert.match(await page.locator('#fpt-th-preview-fonts').textContent(), /family=Comfortaa/);
@@ -170,46 +168,21 @@ test('real browser: new fonts are selectable and an old saved font remains intac
     } finally { await browser.close(); }
 });
 
-test('real browser: unreviewed catalogue entries remain hidden on refresh and offline', async () => {
+test('real browser: catalogue themes can be selected and remain available offline', async () => {
     const browser = await launch();
     try {
         const { page, errors } = await openThemePage(browser);
-        assert.equal(await page.locator('.fpt-th-preset[data-preset-id^="preset:"]').count(), 0);
-        assert.match(await page.locator('.fpt-th-catalog-status').textContent(), /проверки прав/);
-        await page.getByRole('button', { name: 'Обновить каталог тем', exact: true }).click();
-        await page.waitForSelector('.fpt-th[data-catalog-state="ready"]');
-        assert.equal(await page.locator('.fpt-th-preset').count(), 3);
-        assert.equal(await page.evaluate(() => window.qaFetchCalls.filter(url => url.includes('/wallpapers/')).length), 0);
+        assert.equal(await page.locator('.fpt-th-preset[data-preset-id^="preset:"]').count(), 2);
+        await page.locator('.fpt-th-preset[data-preset-id="preset:gargantua"]').click();
+        await page.waitForFunction(() => document.querySelector('.fpt-th-preset[data-preset-id="preset:gargantua"]')?.getAttribute('aria-pressed') === 'true');
+        assert.equal(await page.evaluate(() => window.qaWrites.some(write => 'fpToolsTheme' in write)), false);
+        await page.locator('.fpt-th-apply').click();
+        await page.waitForFunction(() => window.qaStore.fpToolsTheme?.bgImage?.startsWith('data:image/png;base64,'));
         await page.evaluate(() => { window.fetch = async () => { throw Error('offline'); }; });
         await page.getByRole('button', { name: 'Обновить каталог тем', exact: true }).click();
         await page.waitForSelector('.fpt-th[data-catalog-state="ready"]');
-        assert.equal(await page.locator('.fpt-th-preset').count(), 3);
-        assert.deepEqual(errors, []);
-    } finally { await browser.close(); }
-});
-
-test('real browser: local forest theme loads into draft and survives application and export', async () => {
-    const browser = await launch();
-    try {
-        const { page, errors } = await openThemePage(browser);
-        const forest = page.locator('.fpt-th-preset[data-preset-id="builtin:fog-forest"]');
-        await forest.click();
-        await page.waitForFunction(() => document.querySelector('.fpt-th-preset[data-preset-id="builtin:fog-forest"]')?.getAttribute('aria-pressed') === 'true');
-        assert.equal(await page.locator('#fpt-th-borderRadius').inputValue(), '14');
-        assert.equal(await page.locator('#fpt-th-font').inputValue(), 'Manrope');
-        assert.equal(await page.evaluate(() => window.qaWrites.some(write => 'fpToolsTheme' in write)), false);
-        await page.locator('.fpt-th-stage').screenshot({ path: path.join(shots, 'fpt-forest-theme-preview.png') });
-        await page.locator('.fpt-th-apply').click();
-        await page.waitForFunction(() => window.qaStore.fpToolsTheme?.bgImage?.startsWith('data:image/webp;base64,'));
-        await page.waitForFunction(() => document.querySelector('#fp-tools-custom-theme')?.textContent.includes('data:image/webp;base64,'));
-        const stored = await page.evaluate(async () => ({
-            saved: window.qaStore.fpToolsTheme,
-            exported: await window.fptPopupActions.run('theme', 'exportThemeBtn')
-        }));
-        assert.equal(stored.saved.borderRadius, 14);
-        assert.equal(stored.saved.containerBgColor, '#171b1d');
-        assert.equal(stored.saved.enableCustomScrollbar, true);
-        assert.equal(stored.exported.bgImage, stored.saved.bgImage);
+        assert.equal(await page.locator('.fpt-th-preset[data-preset-id^="preset:"]').count(), 2);
+        assert.match(await page.locator('.fpt-th-catalog-status').textContent(), /сохранённые темы/);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });
@@ -223,8 +196,8 @@ test('real browser: theme page builds every section from stored settings and kee
             swatches: document.querySelectorAll('.fpt-th-swatches .fpt-th-swatch').length,
             sliders: document.querySelectorAll('.fpt-th-range').length,
             presets: [...document.querySelectorAll('.fpt-th-preset-name')].map(el => el.textContent),
-            masterOn: document.querySelector('.fpt-th-hero .fpt-th-switch').checked,
-            heroState: document.querySelector('.fpt-th-hero').dataset.state,
+            masterOn: document.querySelector('.fpt-th-controls .fpt-th-switch').checked,
+            overviewCards: document.querySelectorAll('.fpt-th-hero').length,
             dock: { open: document.querySelector('.fpt-th-dock').dataset.open, inert: document.querySelector('.fpt-th-dock').inert },
             radius: document.getElementById('fpt-th-borderRadius').value,
             primary: document.querySelectorAll('.fpt-th-swatches .fpt-th-swatch-input')[0].value,
@@ -235,9 +208,9 @@ test('real browser: theme page builds every section from stored settings and kee
         assert.deepEqual(summary.cards, ['Готовые темы', 'Фон', 'Цвета', 'Кнопки', 'Шрифт и форма', 'Блоки', 'Чат', 'Детали', 'Инструменты']);
         assert.equal(summary.swatches, 5);
         assert.equal(summary.sliders, 12);
-        assert.deepEqual(summary.presets, ['Оригинальная', 'Своя', 'Туманный лес']);
+        assert.deepEqual(summary.presets, ['Оригинальная', 'Своя', 'Gargantua', 'Underwater']);
         assert.equal(summary.masterOn, true);
-        assert.equal(summary.heroState, 'on');
+        assert.equal(summary.overviewCards, 0);
         assert.deepEqual(summary.dock, { open: 'false', inert: true });
         assert.equal(summary.radius, '16');
         assert.equal(summary.primary, '#7663f6');
@@ -305,7 +278,6 @@ test('real browser: edits stay in the draft until Apply, Cancel restores, Apply 
         await nextFrames(page);
         let state = await page.evaluate(() => ({
             dock: document.querySelector('.fpt-th-dock').dataset.open, inert: document.querySelector('.fpt-th-dock').inert,
-            pill: document.querySelector('.fpt-th-hero .fpt-th-pill').textContent,
             badge: document.querySelector('.fpt-th-preview-head .fpt-th-pill').textContent,
             label: document.querySelector('.fpt-th-apply .fpt-th-button-label').textContent,
             stageRadius: document.querySelector('.fpt-th-stage').style.getPropertyValue('--fpt-th-radius'),
@@ -314,7 +286,7 @@ test('real browser: edits stay in the draft until Apply, Cancel restores, Apply 
         }));
         assert.equal(state.dock, 'true');
         assert.equal(state.inert, false);
-        assert.equal(state.pill, 'Есть неприменённые изменения');
+        assert.match(await page.locator('.fpt-th-dock-text').textContent(), /Есть неприменённые изменения/);
         assert.equal(state.badge, 'Черновик');
         assert.equal(state.label, 'Применить и включить');
         assert.equal(state.stageRadius, '22px');
@@ -330,10 +302,9 @@ test('real browser: edits stay in the draft until Apply, Cancel restores, Apply 
         await setRange(page, 'fpt-th-borderRadius', 18);
         await page.locator('.fpt-th-apply').click();
         await page.waitForFunction(() => document.querySelector('.fpt-th-dock').dataset.open === 'false');
-        const saved = await page.evaluate(() => ({ writes: window.qaWrites, store: window.qaStore, state: document.querySelector('.fpt-th-hero').dataset.state, master: document.querySelector('.fpt-th-hero .fpt-th-switch').checked }));
+        const saved = await page.evaluate(() => ({ writes: window.qaWrites, store: window.qaStore, master: document.querySelector('.fpt-th-controls .fpt-th-switch').checked }));
         assert.equal(saved.store.fpToolsTheme.borderRadius, 18);
         assert.equal(saved.store.enableCustomTheme, true, 'applying a disabled theme turns it on');
-        assert.equal(saved.state, 'on');
         assert.equal(saved.master, true);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
@@ -377,9 +348,10 @@ test('real browser: preset strip has no scrollbar, starts at the first tile and 
             const visible = tiles.filter(r => r.left >= box.left - 1 && r.right <= box.right + 1).length;
             return { tiles: tiles.length, visible, prev: prev.disabled, next: next.disabled };
         });
-        assert.equal(fit.tiles, 3);
-        assert.equal(fit.visible, 3);
-        assert.deepEqual([fit.prev, fit.next], [true, true]);
+        assert.equal(fit.tiles, 4);
+        assert.ok(fit.visible > 0);
+        assert.equal(fit.prev, true);
+        assert.equal(fit.next, fit.visible === fit.tiles);
         await wide.page.close();
 
         const { page, errors } = await openThemePage(browser, { viewport: { width: 480, height: 900 } });
@@ -409,8 +381,7 @@ test('real browser: preset strip has no scrollbar, starts at the first tile and 
         assert.ok(Math.abs(state.left - Math.min(state.max, state.offsets[1])) <= 2, `one click moves exactly one tile (${state.left} vs ${state.offsets[1]}, max ${state.max})`);
         assert.equal(state.prev, false);
 
-        await page.locator('.fpt-th-strip-nav button').nth(1).click({ force: true });
-        await page.locator('.fpt-th-strip-nav button').nth(1).click({ force: true });
+        for (let i = 0; i < 5; i += 1) await page.locator('.fpt-th-strip-nav button').nth(1).click({ force: true });
         await settle();
         state = await probe();
         assert.ok(near(state.left, state.max), `rapid clicks stop at the end (${state.left} vs ${state.max}; ${state.offsets})`);
@@ -421,7 +392,7 @@ test('real browser: preset strip has no scrollbar, starts at the first tile and 
         state = await probe();
         assert.ok(state.offsets.some(offset => near(offset, state.left)) || near(state.left, state.max), `free scrolling snaps to a tile edge (${state.left})`);
 
-        for (let i = 0; i < 4; i += 1) await page.locator('.fpt-th-strip-nav button').nth(0).click({ force: true });
+        for (let i = 0; i < 6; i += 1) await page.locator('.fpt-th-strip-nav button').nth(0).click({ force: true });
         await settle();
         state = await probe();
         assert.equal(state.left, 0, 'paging back returns to the first tile');

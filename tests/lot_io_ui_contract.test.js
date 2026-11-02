@@ -28,8 +28,8 @@ test('lot_io reuses the shell category header and keeps the shared title track',
     assert.match(styles, /width:\s*36px;\s*height:\s*36px/);
 });
 
-test('lot management view defines the hero, tool tiles, import card, empty state and narrow layouts', () => {
-    assert.match(page, /fpt-qr-hero fpt-lot-hero/);
+test('lot management view defines tool tiles, import card, empty state and narrow layouts', () => {
+    assert.doesNotMatch(page, /fpt-qr-hero fpt-lot-hero/);
     for (const label of ['Резервная копия', 'Импорт из файла', 'Массовое редактирование']) assert.ok(page.includes(`'${label}'`), `missing tool ${label}`);
     assert.match(styles, /\.fpt-lot-action-band \{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/s);
     assert.match(styles, /\.fpt-lot-tool--import\.is-dragover/);

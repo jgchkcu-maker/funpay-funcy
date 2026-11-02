@@ -1022,88 +1022,6 @@
 .chat-buttons-container:not([data-fpt-fullwidth="1"]) .custom-chat-template-btn { flex: 0 0 auto; }
 
 
-#aiModeToggleBtn {
-    background: transparent;
-    border: none;
-    padding: 0;
-    /* Match FunPay's .btn-round send button size */
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    margin-left: 4px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    align-self: center;
-    transition: background 0.2s, box-shadow 0.2s;
-}
-
-#aiModeToggleBtn:hover {
-    background: var(--fpt-accent-soft, rgba(27,117,187,0.12));
-}
-
-#aiModeToggleBtn.active {
-    background: var(--fpt-accent-soft, rgba(27,117,187,0.15));
-    box-shadow: 0 0 8px var(--fpt-accent-soft, rgba(27,117,187,0.35));
-}
-
-/* Magic wand icon: black PNG tinted via filter */
-#aiModeToggleBtn .ai-magic-icon {
-    width: 20px;
-    height: 20px;
-    display: block;
-    /* Gray when inactive */
-    filter: brightness(0) saturate(100%) invert(55%) sepia(8%) saturate(400%) hue-rotate(200deg) brightness(90%);
-    transition: filter 0.2s;
-}
-
-#aiModeToggleBtn:hover .ai-magic-icon {
-    filter: brightness(0) saturate(100%) invert(55%) sepia(40%) saturate(800%) hue-rotate(220deg) brightness(110%);
-}
-
-#aiModeToggleBtn.active .ai-magic-icon {
-    /* Purple when active */
-    filter: brightness(0) saturate(100%) invert(38%) sepia(60%) saturate(900%) hue-rotate(230deg) brightness(110%);
-}
-
-.ai-loading-textarea {
-    animation: ai-loading-pulse 1.5s infinite ease-in-out;
-    background: linear-gradient(45deg, rgba(138, 43, 226, 0.1), rgba(65, 105, 225, 0.1), rgba(138, 43, 226, 0.1));
-    background-size: 200% 200%;
-    animation: ai-gradient-animation 3s ease infinite, ai-loading-pulse 1.5s infinite ease-in-out;
-}
-
-@keyframes ai-loading-pulse {
-    0% {
-        box-shadow: 0 0 3px rgba(138, 43, 226, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 8px rgba(65, 105, 225, 0.5), 0 0 5px rgba(138, 43, 226, 0.5);
-    }
-
-    100% {
-        box-shadow: 0 0 3px rgba(138, 43, 226, 0.3);
-    }
-}
-
-@keyframes ai-gradient-animation {
-    0% {
-        background-position: 0% 50%
-    }
-
-    50% {
-        background-position: 100% 50%
-    }
-
-    100% {
-        background-position: 0% 50%
-    }
-}
-
-
 #insertButton {
     margin-top: 5px;
     padding: 5px 10px;
@@ -1201,38 +1119,6 @@
 @media (max-width: 991px) {
     .fp-game-nav-btn {
         display: none;
-    }
-}
-
-#fpToolsProfanityWarning {
-    display: none;
-    padding: 8px 12px;
-    background: linear-gradient(45deg, #ff416c, #ff4b2b);
-    color: white;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    animation: pulse-warning 2s infinite;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-@keyframes pulse-warning {
-    0% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(255, 75, 43, 0.7);
-    }
-
-    70% {
-        transform: scale(1.01);
-        box-shadow: 0 4px 15px 0 rgba(255, 75, 43, 0);
-    }
-
-    100% {
-        transform: scale(1);
-        box-shadow: 0 0 0 0 rgba(255, 75, 43, 0);
     }
 }
 
@@ -2067,6 +1953,119 @@ html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) .fp-tools-stats-container {
     opacity: 1;
 }
 
+/* Profile offer cards: shared heading rhythm and stable native table columns. */
+.profile-data-container .offer-list-title-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.profile-data-container .offer .offer-list-title {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    gap: 12px;
+    min-width: 0;
+}
+.profile-data-container .offer > .offer-list-title { margin-bottom: 16px; }
+.profile-data-container .offer .offer-list-title h3 { margin: 0; min-width: 0; line-height: 1.4; }
+.profile-data-container .offer .fp-tools-category-selector { flex: 0 0 21px; margin: 0; }
+.profile-data-container .offer-list-title-container .offer-list-title-button { flex: 0 0 auto; padding-left: 0; }
+.profile-data-container .offer .tc:not(.tc-short) > .tc-header > div,
+.profile-data-container .offer .tc:not(.tc-short) > .tc-item > div {
+    padding: 12px 16px;
+    vertical-align: middle;
+}
+.profile-data-container .offer .tc:not(.tc-short) > .tc-header > div { height: 44px; }
+.profile-data-container .offer .tc:not(.tc-short) > .tc-item > div { height: 52px; }
+.profile-data-container .offer .tc:not(.tc-short) > .tc-header > .action-lots-header-cell,
+.profile-data-container .offer .tc:not(.tc-short) > .tc-item > .action-lots-checkbox-cell {
+    box-sizing: border-box;
+    width: 52px;
+    min-width: 52px;
+    max-width: 52px;
+    padding-left: 16px;
+    padding-right: 12px;
+}
+.profile-data-container .offer .action-lots-checkbox-cell .lot-box { margin: 0; }
+@media (max-width: 640px) {
+    html.fpt-custom-theme-on .profile-data-container .offer { padding: 16px; }
+    .profile-data-container .offer-list-title-container { gap: 10px; margin-bottom: 12px; }
+    .profile-data-container .offer .offer-list-title { gap: 10px; }
+    .profile-data-container .offer > .offer-list-title { margin-bottom: 12px; }
+    .profile-data-container .offer .tc:not(.tc-short) > .tc-header > div,
+    .profile-data-container .offer .tc:not(.tc-short) > .tc-item > div { padding-left: 8px; padding-right: 8px; }
+    .profile-data-container .offer .tc:not(.tc-short) > .tc-header > .action-lots-header-cell,
+    .profile-data-container .offer .tc:not(.tc-short) > .tc-item > .action-lots-checkbox-cell {
+        width: 40px; min-width: 40px; max-width: 40px; padding-left: 10px; padding-right: 8px;
+    }
+}
+
+/* Native selling editors (currency/server matrix), separate from profile showcases. */
+.tc.tc-selling:has(.tc-input) {
+    margin-bottom: 16px;
+    border-spacing: 0;
+}
+.tc.tc-selling:has(.tc-input) > .tc-header > div,
+.tc.tc-selling:has(.tc-input) > .tc-item > div {
+    box-sizing: border-box;
+    padding: 12px 16px;
+    vertical-align: middle;
+}
+.tc.tc-selling:has(.tc-input) > .tc-header > div { height: 44px; line-height: 20px; }
+.tc.tc-selling:has(.tc-input) > .tc-item > div { height: 64px; }
+.tc.tc-selling:has(.tc-input) > .tc-header > .tc-checkbox,
+.tc.tc-selling:has(.tc-input) > .tc-item > .tc-checkbox {
+    width: 60px;
+    min-width: 60px;
+}
+.tc.tc-selling:has(.tc-input) .tc-checkbox label { margin-bottom: 0; vertical-align: middle; }
+.tc.tc-selling:has(.tc-input) .form-group,
+.tc.tc-selling:has(.tc-input) .form-control-box { margin: 0; }
+.tc.tc-selling:has(.tc-input) .form-control { min-height: 40px; padding: 9px 12px; }
+.tc.tc-selling:has(.tc-input) .help-block { line-height: 1.45; }
+.selling-min .form-group { margin-bottom: 16px; }
+.selling-min .form-group > label { margin-bottom: 8px; }
+.selling-min .form-control { min-height: 40px; padding: 9px 12px; }
+.selling-min .help-block { margin-top: 8px; margin-bottom: 0; line-height: 1.45; }
+.selling-min .btn { min-height: 40px; padding-top: 9px; padding-bottom: 9px; }
+.page-content .row:has(> [class*="col-"] > .tc-selling .tc-input) { display: flex; flex-wrap: wrap; align-items: stretch; }
+.page-content .row:has(> [class*="col-"] > .tc-selling .tc-input)::before,
+.page-content .row:has(> [class*="col-"] > .tc-selling .tc-input)::after { display: none; }
+.page-content .row:has(> [class*="col-"] > .tc-selling .tc-input) > [class*="col-"] { display: flex; flex-direction: column; min-width: 0; }
+.page-content [class*="col-"]:has(> .tc-selling .tc-input) > .btn:last-child { margin-top: auto; min-height: 40px; }
+.page-content .row:has(> [class*="col-"] > .tc-selling .tc-input) .selling-min:not(.affix):not(.affix-bottom) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 32px;
+}
+.page-content .row:has(> [class*="col-"] > .tc-selling .tc-input) .selling-min > .btn:last-child { margin-top: auto; }
+/* The native modal and full-page lot editor share the same field rhythm. */
+.modal-offer-editor .modal-body { padding: 20px; }
+.modal-offer-editor .modal-footer { padding: 16px 20px; }
+.modal-offer-editor .form-group,
+.page-content .form-offer-editor .form-group { margin-bottom: 16px; }
+.modal-offer-editor .form-group > label,
+.page-content .form-offer-editor .form-group > label { margin-bottom: 8px; }
+@media (max-width: 767px) {
+    .page-content .row:has(> [class*="col-"] > .tc-selling .tc-input) > [class*="col-"] { width: 100%; }
+    .page-content .row:has(> [class*="col-"] > .tc-selling .tc-input) .selling-min:not(.affix):not(.affix-bottom) { padding-top: 16px; }
+}
+@media (max-width: 640px) {
+    .tc.tc-selling:has(.tc-input) { min-width: 560px; }
+    .page-content :is([class^="col-"], [class*=" col-"]):has(> .tc-selling .tc-input) {
+        min-width: 0;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    .selling-min:not(.affix):not(.affix-bottom) { margin-top: 16px; }
+    .modal-offer-editor .modal-body { padding: 16px; }
+    .modal-offer-editor .modal-footer { padding: 12px 16px; }
+}
+
 .action-lots {
     width: auto;
     display: flex !important;
@@ -2080,65 +2079,264 @@ html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) .fp-tools-stats-container {
     width: 80px;
 }
 
+/* Панель действий с выбранными лотами: строка «выбрано + кнопки», ниже — уведомления.
+   Выглядит как окна расширения: lot_management.js красит её палитрой меню (fptWindow.paint →
+   --fptm-*), а без неё (тесты, ранний показ) берутся цвета страницы. */
+.fpt-lot-actions {
+    --fpt-lot-bg: var(--fptm-bg, var(--fpt-surface, #ffffff));
+    --fpt-lot-text: var(--fptm-text, var(--fpt-text, #16181d));
+    --fpt-lot-muted: var(--fptm-muted, var(--fpt-text-muted, #626975));
+    --fpt-lot-edge: var(--fptm-nav-border, var(--fpt-border, #dce0e5));
+    --fpt-lot-line: var(--fptm-border, var(--fpt-border, #dce0e5));
+    --fpt-lot-hover: var(--fptm-hover, color-mix(in srgb, currentColor 7%, transparent));
+    --fpt-lot-accent: var(--fptm-accent, #7663f6);
+    --fpt-lot-accent-soft: var(--fptm-accent-soft, rgba(118, 99, 246, .14));
+    --fpt-lot-accent-border: var(--fptm-accent-border, rgba(118, 99, 246, .42));
+    --fpt-lot-on-accent: var(--fptm-on-accent, #ffffff);
+    --fpt-lot-shadow: var(--fptm-shadow, rgba(0, 0, 0, .3));
+    --fpt-lot-success: var(--fptm-success, #3aa876);
+    --fpt-lot-danger: var(--fptm-danger, #d9545f);
+    --fpt-lot-warning: var(--fptm-warning, #c98a1e);
+}
+/* Статусные цвета меню заданы на :root под тему сайта; панель следует своей палитре. */
+.fpt-lot-actions.fptm-light {
+    --fptm-success: #267a58;
+    --fptm-danger: #b83e4a;
+    --fptm-warning: #8b5d10;
+}
+.fpt-lot-actions.fptm-dark {
+    --fptm-success: #80d9ad;
+    --fptm-danger: #ff9aa3;
+    --fptm-warning: #ffd27a;
+}
+
 .actions {
-    width: 100%;
+    width: min(1080px, calc(100% - 32px));
+    max-width: calc(100% - 32px);
+    box-sizing: border-box;
     z-index: 1000;
     display: none;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    background-color: var(--fpt-surface, #1e1e1e);
-    border-top: 1px solid var(--fpt-border, #333);
-    padding: 15px 20px;
-    font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-    justify-content: space-between;
+    bottom: max(18px, env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    background:
+        linear-gradient(180deg, color-mix(in srgb, var(--fpt-lot-accent) 6%, transparent), transparent 70%),
+        var(--fpt-lot-bg);
+    color: var(--fpt-lot-text);
+    color-scheme: var(--fptm-color-scheme, normal);
+    border: 1px solid var(--fpt-lot-edge);
+    border-radius: var(--fpt-chat-action-radius, 18px);
+    padding: 8px;
+    font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    justify-content: center;
     align-items: center;
-    box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+    flex-wrap: wrap;
+    gap: 8px;
+    box-shadow: 0 22px 60px -18px var(--fpt-lot-shadow), 0 2px 8px rgba(0, 0, 0, .06);
+    max-height: calc(100svh - 36px);
+    overflow-y: auto;
+    animation: fpt-lot-actions-in .24s cubic-bezier(.22, 1, .36, 1);
 }
-#fp-chip-delete-warning {
-    z-index: 1001;
-    max-width: 90vw;
-    background-color: #3a2a12;
-    color: #ffcf8f;
-    border: 1px solid rgba(255, 176, 80, 0.5);
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
-    padding: 8px 16px;
+.fpt-lot-actions[aria-busy="true"] { cursor: progress; }
+@keyframes fpt-lot-actions-in {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+}
+
+.fpt-lot-selection-summary {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 10px 0 2px;
+    border-right: 1px solid var(--fpt-lot-line);
     font-size: 13px;
     font-weight: 600;
-    text-align: center;
-    line-height: 1.35;
-    box-shadow: 0 -4px 14px rgba(0,0,0,0.3);
-    pointer-events: none;
-    font-family: Inter, 'Segoe UI', sans-serif;
+    white-space: nowrap;
 }
-
-.actions div {
-    display: flex;
-    gap: 10px;
+.fpt-lot-selection-count {
+    display: grid;
+    place-items: center;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 8px;
+    box-sizing: border-box;
+    border-radius: var(--fpt-chat-action-radius, 10px);
+    background: var(--fpt-lot-accent);
+    color: var(--fpt-lot-on-accent);
+    box-shadow: 0 4px 12px -4px color-mix(in srgb, var(--fpt-lot-accent) 70%, transparent);
+    font-size: 13.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
 }
-
-.actions span.log {
-    color: var(--fpt-text-muted, #ccc);
-    font-size: 14px;
-}
-
-.action-lot {
-    background: var(--fpt-accent, #1b75bb);
-    border: none;
-    padding: 10px 18px;
-    border-radius: 20px;
-    width: auto;
-    font-family: 'Segoe UI', sans-serif;
-    color: #fff;
-    font-weight: bold;
+.fpt-lot-selection-label { color: var(--fpt-lot-muted); font-weight: 500; }
+.fpt-lot-clear-selection {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--fpt-chat-action-radius, 9px);
+    background: transparent;
+    color: var(--fpt-lot-muted);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color .16s ease, color .16s ease;
+}
+.fpt-lot-clear-selection .material-symbols-rounded { font-size: 18px; }
+.fpt-lot-clear-selection:hover:not(:disabled) { background: var(--fpt-lot-hover); color: var(--fpt-lot-text); }
+.fpt-lot-clear-selection:focus-visible { outline: 2px solid var(--fpt-lot-accent); outline-offset: 2px; }
+.fpt-lot-clear-selection:disabled { opacity: .4; cursor: inherit; }
+
+.actions .fpt-lot-action-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex: 1 1 0;
+    flex-wrap: wrap;
+    gap: 3px;
+    min-width: 0;
+}
+.fpt-lot-action-divider {
+    flex: 0 0 1px;
+    align-self: center;
+    height: 20px;
+    margin: 0 5px;
+    background: var(--fpt-lot-line);
 }
 
-.action-lot:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+.fpt-lot-actions .action-lot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    margin: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    padding: 0 11px;
+    border-radius: var(--fpt-chat-action-radius, 10px);
+    width: auto;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--fpt-lot-text);
+    white-space: nowrap;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .14s ease, background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+.fpt-lot-actions .action-lot .material-symbols-rounded { font-size: 19px; color: var(--fpt-lot-muted); transition: color .16s ease; }
+.fpt-lot-actions .action-lot:hover:not(:disabled) { background: var(--fpt-lot-hover); }
+.fpt-lot-actions .action-lot:hover:not(:disabled) .material-symbols-rounded { color: var(--fpt-lot-accent); }
+.fpt-lot-actions .action-lot:active:not(:disabled) { transform: scale(.97); }
+/* Главное действие — как основная кнопка окон расширения. */
+.fpt-lot-actions .action-lot.price-editor,
+.fpt-lot-actions .action-lot.clone-lots {
+    background: var(--fpt-lot-accent);
+    border-color: var(--fpt-lot-accent);
+    color: var(--fpt-lot-on-accent);
+    box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--fpt-lot-accent) 80%, transparent);
+}
+.fpt-lot-actions .action-lot.price-editor .material-symbols-rounded,
+.fpt-lot-actions .action-lot.clone-lots .material-symbols-rounded,
+.fpt-lot-actions .action-lot.price-editor:hover:not(:disabled) .material-symbols-rounded,
+.fpt-lot-actions .action-lot.clone-lots:hover:not(:disabled) .material-symbols-rounded { color: inherit; }
+.fpt-lot-actions .action-lot.price-editor:hover:not(:disabled),
+.fpt-lot-actions .action-lot.clone-lots:hover:not(:disabled) { background: var(--fpt-lot-accent); filter: brightness(1.08); }
+.fpt-lot-actions .action-lot.delete-lot,
+.fpt-lot-actions .action-lot.delete-lot .material-symbols-rounded { color: var(--fpt-lot-danger); }
+.fpt-lot-actions .action-lot.delete-lot:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--fpt-lot-danger) 12%, transparent);
+    border-color: color-mix(in srgb, var(--fpt-lot-danger) 26%, transparent);
+}
+.fpt-lot-actions .action-lot.delete-lot:hover:not(:disabled) .material-symbols-rounded { color: var(--fpt-lot-danger); }
+.fpt-lot-action-badge {
+    display: inline-grid;
+    place-items: center;
+    min-width: 19px;
+    height: 19px;
+    margin-right: -4px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    background: var(--fpt-lot-accent-soft);
+    color: var(--fpt-lot-accent);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+.fpt-lot-action-badge[hidden] { display: none; }
+.fpt-lot-actions .action-lot:disabled { opacity: .38; cursor: not-allowed; box-shadow: none; }
+.fpt-lot-actions[aria-busy="true"] .action-lot:disabled { cursor: progress; }
+.fpt-lot-actions .action-lot:focus-visible { outline: 2px solid var(--fpt-lot-accent); outline-offset: 2px; }
+
+/* Уведомления под кнопками — как заметки в окнах расширения (info / warning / danger / success). */
+#fp-chip-delete-warning,
+.fpt-lot-actions .fpt-lot-feedback {
+    --fpt-lot-tone: var(--fpt-lot-accent);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 100%;
+    min-width: 0;
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    overflow: hidden;
+    color: var(--fpt-lot-text);
+    background: color-mix(in srgb, var(--fpt-lot-tone) 10%, var(--fpt-lot-bg));
+    border: 1px solid color-mix(in srgb, var(--fpt-lot-tone) 30%, transparent);
+    border-radius: var(--fpt-chat-action-radius, 13px);
+    padding: 8px 8px 8px 12px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+#fp-chip-delete-warning { --fpt-lot-tone: var(--fpt-lot-warning); padding-right: 12px; }
+#fp-chip-delete-warning > .material-symbols-rounded,
+.fpt-lot-feedback-icon { flex: 0 0 auto; align-self: flex-start; margin-top: 1px; font-size: 19px; line-height: 1.1; color: var(--fpt-lot-tone); }
+#fp-chip-delete-warning > .fpt-lot-warning-text { min-width: 0; }
+.fpt-lot-actions .fpt-lot-feedback[hidden] { display: none; }
+.fpt-lot-feedback[data-state="progress"] { --fpt-lot-tone: var(--fpt-lot-accent); }
+.fpt-lot-feedback[data-state="success"] { --fpt-lot-tone: var(--fpt-lot-success); }
+.fpt-lot-feedback[data-state="error"] { --fpt-lot-tone: var(--fpt-lot-danger); }
+.fpt-lot-feedback[data-state="progress"] .fpt-lot-feedback-icon { animation: fpt-lot-spin 1s linear infinite; }
+@keyframes fpt-lot-spin { to { transform: rotate(360deg); } }
+.fpt-lot-feedback-content { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; max-height: 25svh; overflow-y: auto; }
+.fpt-lot-feedback-title { font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.fpt-lot-feedback-message { color: var(--fpt-lot-muted); white-space: pre-wrap; }
+.fpt-lot-feedback-message:empty { display: none; }
+.fpt-lot-feedback-close { display: grid; place-items: center; align-self: flex-start; width: 26px; height: 26px; flex: 0 0 26px; padding: 0; border: 0; border-radius: var(--fpt-chat-action-radius, 8px); background: transparent; color: var(--fpt-lot-muted); cursor: pointer; transition: background-color .16s ease, color .16s ease; }
+.fpt-lot-feedback-close .material-symbols-rounded { font-size: 17px; }
+.fpt-lot-feedback-close:hover { background: var(--fpt-lot-hover); color: var(--fpt-lot-text); }
+.fpt-lot-feedback-close:focus-visible { outline: 2px solid var(--fpt-lot-accent); outline-offset: 2px; }
+.fpt-lot-feedback-progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    display: none;
+    width: max(var(--fpt-lot-progress, 0%), 10px);
+    height: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(90deg, color-mix(in srgb, var(--fpt-lot-tone) 55%, transparent), var(--fpt-lot-tone));
+    transition: width .3s ease;
+}
+.fpt-lot-feedback[data-state="progress"] .fpt-lot-feedback-progress { display: block; }
+
+@media (max-width: 640px) {
+    .fpt-lot-actions { width: calc(100% - 24px); max-width: none; bottom: max(12px, env(safe-area-inset-bottom)); gap: 6px; padding: 6px; }
+}
+/* Когда кнопки не помещаются в одну строку со счётчиком, счётчик уходит отдельной шапкой. */
+@media (max-width: 900px) {
+    .fpt-lot-selection-summary { flex: 0 0 100%; border-right: 0; padding: 0 2px 7px; border-bottom: 1px solid var(--fpt-lot-line); }
+    .fpt-lot-clear-selection { margin-left: auto; }
+    .actions .fpt-lot-action-buttons { flex-basis: 100%; justify-content: flex-start; }
+    .fpt-lot-action-divider { display: none; }
 }
 
 .currency-converter-container {
@@ -2471,10 +2669,6 @@ html:not(.fpt-theme-dark):not(.fpt-custom-theme-on) .fp-tools-stats-container {
 
 .btn-copy:hover {
     background: rgba(255, 255, 255, 0.25);
-}
-
-.action-lot.price-editor {
-    background: linear-gradient(45deg, #16a085, #f4d03f);
 }
 
 .fp-tools-popup .fp-tools-nav .btn .material-icons {
@@ -4035,7 +4229,7 @@ html.fpt-custom-theme-on #autobump-category-search {
 }
 #fp-lot-search-clear {
     position:absolute;right:7px;z-index:1;width:27px;height:27px;padding:0;
-    border:0;border-radius:6px;background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer;
+    border:0;border-radius:var(--fpt-chat-action-radius, 6px);background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer;
 }
 #fp-lot-search-clear:hover { background:color-mix(in srgb, currentColor 12%, transparent); }
 #fp-lot-search-clear[hidden] { display:none; }
@@ -4043,54 +4237,86 @@ html.fpt-custom-theme-on #autobump-category-search {
     position:absolute;left:100%;margin-left:10px;font-size:12px;opacity:.7;white-space:nowrap;
 }
 
-.profile-data-container h5:has(> #fp-tools-select-lots-btn),
-.profile-data-container h5:has(> #fpt-raise-all-btn) {
-    display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:0;
+.fpt-offers-toolbar {
+    margin: 0 0 20px;
+    padding: 0 0 14px;
+    border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+    color: inherit;
+    font-family: inherit;
 }
-.profile-data-container h5 > #fpt-raise-all-btn,
-.profile-data-container h5 > #fp-tools-select-lots-btn {
-    width:auto;min-height:30px;margin:0 !important;padding:5px 10px;
-    border:1px solid color-mix(in srgb, currentColor 15%, transparent) !important;
-    border-radius:var(--fpt-chat-action-radius, 8px);
-    background:color-mix(in srgb, currentColor 8%, transparent) !important;
-    color:inherit !important;font-size:12px;line-height:1.25;
+.fpt-offers-toolbar-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+.fpt-offers-toolbar-head > h5.mb10.text-bold { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.4; letter-spacing: 0; text-transform: none; }
+.fpt-offers-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.fpt-offers-toolbar-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.fpt-offers-toolbar-tools:empty { display: none; }
+.fpt-offers-toolbar #fp-lot-search-bar { flex: 1 1 240px; width: auto; min-width: 0; margin: 0; }
+.fpt-offers-toolbar #fp-lot-search-input { height: 38px; font-size: 13px; padding-right: 110px; box-sizing: border-box; }
+.fpt-offers-toolbar #fp-lot-search-count { left: auto; right: 36px; margin: 0; pointer-events: none; font-variant-numeric: tabular-nums; }
+.fpt-offers-toolbar #fp-offer-filter { margin: 0; }
+.fpt-offers-toolbar-actions .btn,
+#fp-tools-selection-controls label {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    width: auto; min-height: 34px; box-sizing: border-box; margin: 0; padding: 7px 10px;
+    border: 1px solid color-mix(in srgb, currentColor 16%, transparent) !important;
+    border-radius: var(--fpt-chat-action-radius, 8px);
+    background: color-mix(in srgb, currentColor 5%, transparent) !important;
+    color: inherit !important; font: 600 12px/1.3 'Segoe UI', sans-serif;
+    text-transform: none; letter-spacing: 0; white-space: nowrap; cursor: pointer;
+    transition: background .15s, border-color .15s;
 }
-.profile-data-container h5 > #fpt-raise-all-btn:hover,
-.profile-data-container h5 > #fp-tools-select-lots-btn:hover {
-    background:color-mix(in srgb, currentColor 16%, transparent) !important;
+.fpt-offers-toolbar-actions .btn:hover:not(:disabled),
+#fp-tools-selection-controls label:hover { background: color-mix(in srgb, currentColor 10%, transparent) !important; }
+.fpt-offers-toolbar-actions .material-symbols-rounded { font-size: 17px; flex: 0 0 auto; }
+#fp-tools-select-lots-btn .material-symbols-rounded,
+#fp-tools-cancel-selection .material-symbols-rounded { font-size: 17px; vertical-align: middle; }
+.fpt-offers-toolbar-actions #fp-tools-select-lots-btn { background: color-mix(in srgb, currentColor 11%, transparent) !important; }
+#fp-tools-selection-controls { align-items: center; gap: 6px; flex-wrap: wrap; }
+#fp-tools-selection-controls .fpt-select-all-control { position: relative; }
+/* Keep a native, keyboard-accessible checkbox over the label; SVG owns its appearance. */
+#fp-tools-selection-controls #fp-tools-select-all-lots {
+    position: absolute; inset: 0; z-index: 1; display: block !important; visibility: visible !important;
+    width: 100%; height: 100%; margin: 0; opacity: 0 !important; cursor: pointer;
 }
-.profile-data-container .fp-tools-selection-controls-profile {
-    align-items:center;gap:8px;flex-wrap:wrap;
+#fp-tools-selection-controls .fpt-select-all-icon { display: block; flex: 0 0 17px; width: 17px; height: 17px; pointer-events: none; }
+.fpt-select-all-icon .fpt-select-all-check,
+.fpt-select-all-icon .fpt-select-all-partial { display: none; }
+#fp-tools-select-all-lots:checked:not(:indeterminate) + .fpt-select-all-icon .fpt-select-all-check,
+#fp-tools-select-all-lots:indeterminate + .fpt-select-all-icon .fpt-select-all-partial { display: block; }
+#fp-tools-selection-controls .fpt-select-all-control:has(input:checked),
+#fp-tools-selection-controls .fpt-select-all-control:has(input:indeterminate) { background: color-mix(in srgb, currentColor 11%, transparent) !important; }
+.fpt-offers-toolbar-actions #fp-tools-cancel-selection { border-color: transparent !important; background: transparent !important; opacity: .75; }
+.fpt-offers-toolbar-actions #fp-tools-cancel-selection:hover { opacity: 1; }
+.fpt-offers-toolbar-actions .btn:disabled { opacity: .5; cursor: wait; }
+.fpt-offers-toolbar-actions .btn:focus-visible,
+#fp-tools-selection-controls label:focus-within,
+#fp-offer-filter > button:focus-visible { outline: 2px solid var(--fpt-accent, #1b75bb); outline-offset: 2px; }
+#fp-offer-filter {
+    display: flex; align-items: center; gap: 2px; flex-wrap: wrap; width: max-content; max-width: 100%; margin: 0 0 12px;
+    padding: 3px; border-radius: var(--fpt-chat-action-radius, 9px); background: color-mix(in srgb, currentColor 5%, transparent);
+    border: 1px solid color-mix(in srgb, currentColor 8%, transparent);
 }
-.profile-data-container .fp-tools-selection-controls-profile label {
-    display:inline-flex;align-items:center;gap:7px;min-height:30px;margin:0;
-    padding:4px 9px;border-radius:var(--fpt-chat-action-radius, 8px);
-    background:color-mix(in srgb, currentColor 8%, transparent);
-    font-size:12px;line-height:1.25;cursor:pointer;
-}
-.profile-data-container .fp-tools-selection-controls-profile input { margin:0;cursor:pointer; }
-.profile-data-container .fp-tools-selection-controls-profile #fp-tools-cancel-selection {
-    width:auto;min-height:30px;padding:5px 10px;
-    border:1px solid color-mix(in srgb, currentColor 15%, transparent) !important;
-    border-radius:var(--fpt-chat-action-radius, 8px);
-    background:color-mix(in srgb, currentColor 8%, transparent) !important;
-    color:inherit !important;font-size:12px;line-height:1.25;
-}
-.profile-data-container .fp-tools-selection-controls-profile #fp-tools-cancel-selection:hover {
-    background:color-mix(in srgb, currentColor 16%, transparent) !important;
-}
-#fp-offer-filter { display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:0 0 12px; }
 #fp-offer-filter > button.btn {
-    width:auto;min-height:32px;padding:6px 11px;border:1px solid transparent !important;
-    border-radius:var(--fpt-chat-action-radius, 8px);background:transparent !important;
-    color:inherit !important;font-size:12px;font-weight:600;line-height:1.2;opacity:.72;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+    width: auto; min-height: 30px; margin: 0; padding: 6px 11px; border: 1px solid transparent !important;
+    border-radius: var(--fpt-chat-action-radius, 6px); background: transparent !important;
+    color: inherit !important; font-size: 12px; font-weight: 600; line-height: 1.2; opacity: .65;
+    text-transform: none; letter-spacing: 0; transition: background .15s, opacity .15s;
 }
-#fp-offer-filter > button.btn:hover { background:color-mix(in srgb, currentColor 8%, transparent) !important;opacity:1; }
+#fp-offer-filter .material-symbols-rounded { font-size: 17px; }
+#fp-offer-filter > button.btn:hover { background: color-mix(in srgb, currentColor 6%, transparent) !important; opacity: 1; }
 #fp-offer-filter > button.btn[aria-pressed="true"] {
-    background:color-mix(in srgb, currentColor 13%, transparent) !important;
-    border-color:color-mix(in srgb, currentColor 14%, transparent) !important;opacity:1;
+    background: color-mix(in srgb, currentColor 11%, transparent) !important;
+    border-color: color-mix(in srgb, currentColor 9%, transparent) !important; opacity: 1;
 }
-@media (max-width:480px) { #fp-lot-search-count { position:static;margin-left:8px; } }
+@media (max-width: 640px) {
+    .fpt-offers-toolbar-head { gap: 10px; }
+    .fpt-offers-toolbar-actions { flex: 1 1 100%; }
+    .fpt-offers-toolbar #fp-lot-search-bar { flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .fpt-offers-toolbar *, .fpt-lot-actions .action-lot, .fpt-lot-clear-selection, .fpt-lot-feedback-progress { transition: none !important; }
+    .actions, .fpt-lot-feedback[data-state="progress"] .fpt-lot-feedback-icon { animation: none; }
+}
 
 /* ===================================================
    CHAT ENHANCEMENTS
@@ -4119,24 +4345,6 @@ html.fpt-custom-theme-on #autobump-category-search {
 .chat-form-btn {
     position: relative;
 }
-/* ── ИИ-кнопка «Ответить» на отзыв (клон «Опубликовать» со звёздочкой) ── */
-#fp-tools-ai-review-reply-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    position: relative;
-}
-#fp-tools-ai-review-reply-btn .fp-ai-reply-star {
-    font-size: 13px;
-    line-height: 1;
-    color: #ffe69a;
-    text-shadow: 0 0 6px rgba(255, 222, 138, 0.6);
-}
-#fp-tools-ai-review-reply-btn[disabled] {
-    opacity: 0.85;
-    cursor: progress;
-}
-
 /* ════════════════════════════════════════════════════════════════════════
    POPOVER ШАБЛОНОВ у кнопки-скрепки
    ════════════════════════════════════════════════════════════════════════ */
@@ -4144,10 +4352,9 @@ html.fpt-custom-theme-on #autobump-category-search {
 .fpt-tpl-popover-btn .material-symbols-rounded{ font-size:20px;vertical-align:middle;line-height:1; }
 .fpt-tpl-popover-cell{ display:flex;align-items:center; }
 
-/* ── Унификация кнопок композера: скрепка, шаблоны, ИИ - один размер, по центру ── */
+/* ── Унификация кнопок композера: скрепка и шаблоны — один размер, по центру ── */
 .chat-form .chat-btn-image,
-#fpt-tpl-popover-btn,
-#aiModeToggleBtn{
+#fpt-tpl-popover-btn{
     /* 36px с ровным шагом 6px между кнопками; отправка (40px) отделена чуть большим отступом */
     width:36px !important;height:36px !important;min-width:36px;padding:0 !important;
     display:inline-flex !important;align-items:center;justify-content:center;
@@ -4157,10 +4364,8 @@ html.fpt-custom-theme-on #autobump-category-search {
     transition:background .15s;
 }
 .chat-form .chat-btn-image:hover,
-#fpt-tpl-popover-btn:hover,
-#aiModeToggleBtn:hover,
-#aiModeToggleBtn.active{ background:var(--fpt-accent-soft, rgba(27,117,187,.18)) !important; }
-/* одинаковый размер иконок во всех трёх кнопках */
+#fpt-tpl-popover-btn:hover{ background:var(--fpt-accent-soft, rgba(27,117,187,.18)) !important; }
+/* одинаковый размер иконок в обеих кнопках */
 #fpt-tpl-popover-btn .material-symbols-rounded{ font-size:20px; }
 .chat-form .chat-btn-image > i,
 .chat-form .chat-btn-image .fa{ font-size:17px; }
@@ -4169,9 +4374,6 @@ html.fpt-custom-theme-on #autobump-category-search {
 /* иконка-скрепка по центру кружка */
 .chat-form .chat-btn-image > i,
 .chat-form .chat-btn-image .fa{ margin:0;line-height:1; }
-/* кнопка ИИ ровно в ряд, без наложения */
-#aiModeToggleBtn{ position:relative;z-index:1; }
-#aiModeToggleBtn .ai-magic-icon{ width:20px;height:20px;display:block; }
 .fpt-tpl-popover{
     position:fixed;z-index:10050;min-width:230px;max-width:300px;
     background:var(--fpt-surface, #15161d);border:1px solid var(--fpt-border, #2a2d44);border-radius:12px;

@@ -43,7 +43,7 @@
         return nonZero.map(([sign, value]) => formatAmount(value, sign)).join(' + ');
     }
 
-    // Totals for the hero. The balance is summed only when every known balance uses one currency.
+    // The balance is summed only when every known balance uses one currency.
     function summarize(accounts) {
         const list = Array.isArray(accounts) ? accounts : [];
         const balances = list.map(account => parseBalance(account.balance)).filter(Boolean);
@@ -138,18 +138,6 @@
         if (title) el.title = title;
         return el;
     }
-    function metric(iconName, label) {
-        const element = node('div', 'fpt-qr-metric');
-        const badge = node('span', 'fpt-qr-metric-icon');
-        badge.append(icon(iconName));
-        const copy = node('div', 'fpt-qr-metric-copy');
-        const value = node('strong', 'fpt-qr-metric-value', '—');
-        const sub = node('span', 'fpt-am-metric-sub');
-        sub.hidden = true;
-        copy.append(node('span', 'fpt-qr-metric-label', label), value, sub);
-        element.append(badge, copy);
-        return { element, value, sub };
-    }
     function avatar(account, className = '') {
         const wrap = node('span', `fpt-am-avatar ${className}`.trim());
         wrap.setAttribute('aria-hidden', 'true');
@@ -241,28 +229,6 @@
 
         const screen = node('div', 'fpt-accounts');
         page.append(screen);
-
-        // --- Hero --------------------------------------------------------------------------------
-        const hero = node('section', 'fpt-qr-hero fpt-am-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-am-hero-title');
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.append(icon('switch_account'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Управление аккаунтами');
-        heroTitle.id = 'fpt-am-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill', 'Загрузка…');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Сохраните свои аккаунты FunPay и переключайтесь между ними в один клик. У каждого аккаунта свои настройки Funcy.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricTotal = metric('group', 'Сохранено');
-        const metricBalance = metric('account_balance_wallet', 'Общий баланс');
-        const metricUnread = metric('mark_chat_unread', 'Непрочитанные');
-        const metrics = node('div', 'fpt-qr-metrics');
-        metrics.append(metricTotal.element, metricBalance.element, metricUnread.element);
-        hero.append(heroMain, metrics);
 
         const banner = node('div', 'fpt-qr-banner');
         banner.setAttribute('role', 'alert');
@@ -357,7 +323,7 @@
         syncButton.addEventListener('click', () => openSync());
         refreshButton.addEventListener('click', () => refreshAll());
 
-        screen.append(hero, banner, syncBanner, noticeCard, currentCard, listSection);
+        screen.append(banner, syncBanner, noticeCard, currentCard, listSection);
 
         // --- Derived state -----------------------------------------------------------------------
         const isActive = account => Boolean(state.activeId) && account.id === state.activeId;
@@ -375,35 +341,6 @@
         const matches = account => !state.query
             || normalize(`${account.name} ${account.username || ''} ${account.note || ''}`).includes(state.query);
         const label = account => account?.name || account?.username || 'аккаунт';
-
-        function renderHero() {
-            const summary = summarize(state.accounts);
-            const active = activeAccount();
-            metricTotal.value.textContent = state.loaded ? String(summary.total) : '—';
-            metricBalance.value.textContent = state.loaded && summary.balance ? summary.balance : '—';
-            metricBalance.value.title = summary.balance === 'разные валюты' ? 'Балансы в разных валютах не складываются' : '';
-            metricBalance.sub.hidden = !state.loaded || !summary.pending;
-            metricBalance.sub.textContent = summary.pending ? `+${summary.pending} в ожидании` : '';
-            metricBalance.sub.title = summary.pendingCount
-                ? `Оплачено, но не подтверждено: ${summary.pendingCount} ${pluralize(summary.pendingCount, ['заказ', 'заказа', 'заказов'])}` : '';
-            metricUnread.value.textContent = state.loaded ? String(summary.unread) : '—';
-            hero.dataset.state = active ? 'on' : 'off';
-            const name = currentName();
-            if (!state.loaded) {
-                heroPill.dataset.kind = state.loadError ? 'error' : 'neutral';
-                heroPill.textContent = state.loadError ? 'Ошибка загрузки' : 'Загрузка…';
-            } else if (active) {
-                heroPill.dataset.kind = 'success';
-                heroPill.textContent = `Вы в аккаунте ${active.name}`;
-            } else if (state.current.loggedIn && name) {
-                heroPill.dataset.kind = 'neutral';
-                heroPill.textContent = `${name} не сохранён`;
-            } else {
-                heroPill.dataset.kind = 'neutral';
-                heroPill.textContent = 'Вход не выполнен';
-            }
-            heroPill.title = heroPill.textContent;
-        }
 
         function renderSyncBanner() {
             const last = state.lastSync;
@@ -646,7 +583,6 @@
         }
 
         function renderAll() {
-            renderHero();
             renderSyncBanner();
             renderNotice();
             renderCurrent();
@@ -762,7 +698,6 @@
                         counts.failed += 1;
                     } finally {
                         state.busy.delete(id);
-                        renderHero();
                         renderList();
                     }
                 }

@@ -15,10 +15,12 @@ test('interface elements screen fits both themes and widths without horizontal s
                     return content.scrollWidth - content.clientWidth;
                 });
                 assert.ok(overflow <= 0, `no horizontal scroll (${dark ? 'dark' : 'light'}, ${width})`);
-                assert.equal(await page.locator('.fpt-ie-row').count(), 32);
+                assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row').count(), 32);
+                assert.equal(await page.locator('.fpt-ie-display .fpt-ie-row').count(), 3);
                 assert.equal(await page.locator('.fpt-ie-group').count(), 5);
                 assert.equal(await page.locator('.fpt-ie-nav').isVisible(), width === 1480, 'section nav only on wide screens');
-                assert.match(await page.locator('.fpt-ie-hero .fpt-qr-pill').textContent(), /Скрыто 1/);
+                assert.equal(await page.locator('.fpt-ie-hero').count(), 0);
+                assert.equal(await page.locator('.fpt-ie-row[data-id="chat_reply"]').getAttribute('data-state'), 'off');
                 assert.deepEqual(errors, []);
                 await page.close();
             }
@@ -35,7 +37,7 @@ test('element and section switches save instantly and keep unrelated ids', async
         assert.deepEqual(await disabled(page), ['chat_char_counter', 'rmthub_seller_search']);
         assert.equal(await page.getAttribute('.fpt-ie-row[data-id="chat_char_counter"]', 'data-state'), 'off');
         assert.match(await page.locator('.fpt-ie-group[data-group="Чат"] .fpt-qr-card-copy p').textContent(), /Показано 8 из 9/);
-        assert.match(await page.locator('.fpt-qr-metric').nth(1).textContent(), /1 элемент/);
+        assert.match(await page.getByRole('radio', { name: /Скрыты/ }).textContent(), /1/);
         // The disabler CSS hides the live element right away.
         assert.match(await page.evaluate(() => document.getElementById('fp-tools-disabled-features').textContent), /#fp-chat-char-count/);
 
@@ -50,7 +52,26 @@ test('element and section switches save instantly and keep unrelated ids', async
         await page.waitForFunction(() => window.qaStorage.read().fpToolsDisabledFeatures.length === 1);
         assert.deepEqual(await disabled(page), ['rmthub_seller_search']);
         assert.equal(await page.getByRole('button', { name: 'Показать всё' }).isDisabled(), true);
-        assert.match(await page.locator('.fpt-ie-hero .fpt-qr-pill').textContent(), /Всё на месте/);
+        assert.equal(await page.locator('.fpt-ie-row[data-state="off"]').count(), 0);
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
+});
+
+test('display options are opt-in settings saved under their own keys', async () => {
+    const browser = await launch();
+    try {
+        const { page, errors } = await openInterfaceElements(browser, { fptShowCommission: true });
+        const balance = page.getByRole('switch', { name: 'Скрыть баланс' });
+        const commission = page.getByRole('switch', { name: 'Комиссия раздела' });
+        await page.waitForFunction(() => document.querySelector('.fpt-ie-display input[data-setting="hideBalance"]')?.disabled === false);
+        assert.equal(await balance.isChecked(), false);
+        assert.equal(await commission.isChecked(), true);
+        assert.equal(await page.getByRole('switch', { name: 'Реальные цены лотов' }).isChecked(), false);
+        await balance.click();
+        await page.waitForFunction(() => window.qaStorage.read().hideBalance === true);
+        await commission.click();
+        await page.waitForFunction(() => window.qaStorage.read().fptShowCommission === false);
+        assert.deepEqual(await disabled(page), []);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });
@@ -66,7 +87,7 @@ test('keyboard row explains the hidden font block and search shows the parent as
         assert.equal(await keyboard.locator('.fpt-ie-row-note').isVisible(), false);
 
         await page.getByRole('radio', { name: /Скрыты/ }).click();
-        assert.equal(await page.locator('.fpt-ie-row:visible').count(), 2, 'hidden keyboard plus its parent as context');
+        assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 2, 'hidden keyboard plus its parent as context');
         assert.equal(await page.getAttribute('.fpt-ie-row[data-id="lot_font_controls"]', 'data-context'), 'true');
         assert.equal(await page.getByRole('switch', { name: 'Показывать «Блок шрифта и спецсимволов»' }).isDisabled(), true);
 
@@ -74,9 +95,9 @@ test('keyboard row explains the hidden font block and search shows the parent as
         await page.fill('#fptNeedsFilter', 'несуществующий элемент');
         assert.equal(await page.locator('.fpt-ie-empty').isVisible(), true);
         await page.locator('.fpt-ie-empty').getByRole('button', { name: 'Сбросить поиск' }).click();
-        assert.equal(await page.locator('.fpt-ie-row:visible').count(), 32);
+        assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 32);
         await page.fill('#fptNeedsFilter', 'шапка диалога');
-        assert.equal(await page.locator('.fpt-ie-row:visible').count(), 2);
+        assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 2);
         assert.equal(await page.locator('.fpt-ie-group:visible').count(), 1);
     } finally { await browser.close(); }
 });
@@ -87,7 +108,7 @@ test('suspended features and AI helper stay absent after restore and remount', a
         const { page, errors, external } = await openInterfaceElements(browser, { aiModeActive: true, fpToolsDisabledFeatures: ['chat_ai_rewrite_btn', 'rmthub_seller_search'] });
         for (const query of ['ИИ-режим', 'RMTHub']) {
             await page.fill('#fptNeedsFilter', query);
-            assert.equal(await page.locator('.fpt-ie-row:visible').count(), 0);
+            assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 0);
         }
         await page.fill('#fptNeedsFilter', '');
         await external({ aiModeActive: true, fpToolsDisabledFeatures: [] });
@@ -106,7 +127,7 @@ test('suspended features and AI helper stay absent after restore and remount', a
 test('catalog load errors are reported with recovery while AI stays absent', async () => {
     const browser = await launch();
     try {
-        const { page } = await openInterfaceElements(browser, {}, { failFirstRead: true, ai: { response: { success: false, error: 'Нет ключа API' } } });
+        const { page } = await openInterfaceElements(browser, {}, { failFirstRead: true });
         assert.equal(await page.locator('.fpt-qr-banner').isVisible(), true);
         assert.equal(await page.getByRole('switch', { name: 'Показывать «Ответы на сообщения»' }).isDisabled(), true);
         await page.locator('.fpt-qr-banner').getByRole('button', { name: 'Повторить' }).click();
@@ -123,6 +144,6 @@ test('external storage changes update the screen', async () => {
         await external({ fpToolsDisabledFeatures: ['lot_search_bar'] });
         await page.waitForFunction(() => document.querySelector('.fpt-ie-row[data-id="lot_search_bar"]').dataset.state === 'off');
         assert.equal(await page.getByRole('switch', { name: 'Показывать «Строка поиска по лотам»' }).isChecked(), false);
-        assert.equal(await page.locator('.fpt-ie-map-tick[data-state="off"]').count(), 1);
+        assert.match(await page.getByRole('radio', { name: /Скрыты/ }).textContent(), /1/);
     } finally { await browser.close(); }
 });

@@ -41,9 +41,7 @@ export const ACCOUNT_DATA_KEYS = Object.freeze([
     'fpToolsPinnedChats',
     'fpToolsChatDrafts',
     'fpToolsSmartBumpState',
-    'fpToolsAutoBumpLogs',
-    'fptPendingVerifyLots',
-    'fptLastVerifyAt'
+    'fpToolsAutoBumpLogs'
 ]);
 
 export const ACCOUNT_PROFILE_KEYS = Object.freeze([...ACCOUNT_CONFIG_KEYS, ...ACCOUNT_DATA_KEYS]);

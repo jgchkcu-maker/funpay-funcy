@@ -16,14 +16,20 @@ test('browser: translations, buyer history, pinned migration, and imported CSS s
             window.store = { fpToolsPinnedLots: [{ offerId: '123', nodeId: '2', gameName: malicious,
                 html: '<a class="tc-item" href="javascript:window.pwned=2"><div class="tc-desc-text">&lt;img src=x onerror=alert(1)&gt;<img src=x onerror="window.pwned=3"></div><div class="tc-price">10</div></a>' },
                 { offerId: '321', title: malicious, sellerName: malicious, sellerId: '2', lotUrl: 'javascript:window.pwned=9' }],
-                fpToolsCtxPinnedLots: [{ offerId: '999', nodeId: '2', title: malicious, lotUrl: 'javascript:window.pwned=10' }] };
+                fpToolsCtxPinnedLots: [{ offerId: '999', nodeId: '2', title: malicious, lotUrl: 'javascript:window.pwned=10' }],
+                fpToolsTranslateConsentAt: 1 };
             window.chrome = { storage: { local: {
                 async get(keys, callback) { const data = keys == null ? structuredClone(window.store) : Object.fromEntries((Array.isArray(keys) ? keys : [keys]).map(k => [k, window.store[k]])); callback?.(data); return data; },
                 async set(data) { Object.assign(window.store, data); }
-            } }, runtime: { getManifest: () => ({ version: 'test' }) } };
-            window.fetch = async () => ({ json: async () => [[['<b>x</b><img src=x onerror="window.pwned=4">']]] });
+            } }, runtime: {
+                getManifest: () => ({ version: 'test' }),
+                sendMessage: async message => {
+                    if (message.action !== 'translateChatText') throw new Error('Unexpected translation action');
+                    return { success: true, text: '<b>x</b><img src=x onerror="window.pwned=4">' };
+                }
+            } };
         });
-        for (const file of ['content/safe_values.js', 'background/retired_integrations.js', 'content/scripts/jquery.js', 'content/features/lot_management.js', 'content/features/buyer_history.js', 'content/features/settings_io.js']) await page.addScriptTag({ path: path.join(root, file) });
+        for (const file of ['content/safe_values.js', 'background/retired_integrations.js', 'content/scripts/jquery.js', 'content/features/lot_management.js', 'content/features/translate_consent.js', 'content/features/buyer_history.js', 'content/features/settings_io.js']) await page.addScriptTag({ path: path.join(root, file) });
         await page.evaluate(async () => {
             await displayPinnedLotsOnLoad();
             await appendTranslation(document.getElementById('message'));

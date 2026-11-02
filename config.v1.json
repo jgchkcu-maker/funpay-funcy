@@ -99,7 +99,6 @@
   "features": {
     "templates": true,
     "editorMode": true,
-    "aiRewrite": true,
     "cursorFx": true,
     "background": true,
     "slashCommands": true,
@@ -121,7 +120,6 @@
     "themeGallery": true,
     "marketAnalytics": true,
     "lotManagement": true,
-    "aiLotCreator": true,
     "lotCloning": true,
     "imageGenerator": true,
     "statsExport": true,
@@ -131,7 +129,6 @@
     "autoDelivery": true,
     "blacklist": true,
     "lotContextMenu": true,
-    "sellerSearch": true,
     "lotOfferActions": true,
     "inlinePrice": true,
     "categoryPeek": true,
@@ -141,7 +138,6 @@
     "profileLotsCopy": true,
     "chatImage": true,
     "bulkEdit": true,
-    "profileDesc": true,
     "financeHub": true
   },
   "message": null,
@@ -164,16 +160,6 @@
     "pollSeconds": 300,
     "delaySeconds": 30,
     "templates": {}
-  },
-  "profileDesc": {
-    "enabled": true,
-    "server": "https://fpt-descs.starobinskiy01.workers.dev",
-    "verifyNodeId": "2046",
-    "verifyTitle": "FPT Verify",
-    "verifyPrice": "1000",
-    "maxChars": 250,
-    "maxLines": 4,
-    "cacheTtl": 3600
   },
   "themeGallery": {
     "enabled": true,

@@ -52,7 +52,8 @@ test('finance_hub: styles are scoped, responsive and themed through the popup to
     assert.match(css, /container-name: fpt-finance/);
     assert.match(css, /@container fpt-finance \(max-width: 560px\)/);
     assert.match(css, /:root\.fpt-theme-dark \.fp-tools-popup\.fptm-themed \.fpt-finance\s*\{/);
-    assert.ok(read('content/ui/popup_components.js').includes('.fp-tools-page-content.active'), 'toasts render on the active page, including finance');
+    // Toasts sit in one viewport region outside the popup, so they cover no page, including finance.
+    assert.ok(read('content/ui/popup_components.js').includes("document.querySelector('body > .fpt-popup-toast-region')"), 'toasts render in the shared page region');
 });
 
 test('finance_hub: the overview data action also returns profit and the previous period for KPI deltas', () => {

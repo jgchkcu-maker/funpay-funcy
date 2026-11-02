@@ -152,6 +152,8 @@
     scrollbar-color: var(--fptm-border) transparent;
 }
 .fpt-win-body--flush { padding: 0; overflow: hidden; display: flex; }
+.fpt-win-scrim .fpt-win-text { margin: 0 0 10px; color: var(--fptm-text); font-size: 14px; line-height: 1.5; }
+.fpt-win-scrim .fpt-win-text:last-child { margin-bottom: 0; color: var(--fptm-muted, var(--fptm-text)); font-size: 13px; }
 
 .fpt-win-foot {
     flex: 0 0 auto;

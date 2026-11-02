@@ -86,7 +86,7 @@ function mountPopupCategoryHeaders(toolsPopup) {
 // Ссылки сообщества для стартового экрана правой колонки.
 const FPT_COMMUNITY_LINKS = Object.freeze({
     channel: 'https://t.me/funpay_funcy',
-    chat: 'https://t.me/funpay_funcy_chat'
+    chat: 'https://t.me/+QKlhvncWkag2YmEy'
 });
 
 const FPT_START_STATE_ICONS = Object.freeze({

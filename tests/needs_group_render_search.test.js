@@ -23,15 +23,15 @@ test('search continues to match descriptions, groups and prior feature labels wi
         for (const label of entry.legacyLabels || []) assert.equal(h.ctx.fptNeedsEntryMatches(entry, label.toLowerCase()), true);
     }
 });
-test('suspended AI actions reject locally without sending data', async () => {
+test('removed AI actions are not registered without sending data', async () => {
     const h = needs({ fpToolsDisabledFeatures: ['chat_reply', 'chat_ai_rewrite_btn'] });
-    await assert.rejects(h.api.run('needs', 'fptNeedsAskBtn', { text: 'убрать элемент' }), /временно недоступна/);
-    await assert.rejects(h.api.run('needs', 'fptNeedsAiConfirm', { ids: ['chat_reply'] }), /временно недоступна/);
+    await assert.rejects(h.api.run('needs', 'fptNeedsAskBtn', { text: 'убрать элемент' }), /Unknown popup action/);
+    await assert.rejects(h.api.run('needs', 'fptNeedsAiConfirm', { ids: ['chat_reply'] }), /Unknown popup action/);
     assert.equal(h.messages.length, 0);
     assert.deepEqual(h.saved.fpToolsDisabledFeatures, ['chat_reply', 'chat_ai_rewrite_btn']);
 });
 
-test('explicit toggles preserve unrelated feature IDs and AI confirmation retains stable IDs', async () => {
+test('explicit toggles preserve unrelated feature IDs and ignore removed feature IDs', async () => {
     const h = needs({ fpToolsDisabledFeatures: ['chat_reply'] });
     const registry = await h.api.run('needs', 'getFeatureRegistry');
     const id = registry.find(e => !e.locked && e.id !== 'chat_reply').id;

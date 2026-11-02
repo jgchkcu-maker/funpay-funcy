@@ -53,7 +53,11 @@ const stage = path.resolve(process.argv[2] || `dist/funcy-${version}-staging`);
         await page.evaluate(async () => {
             await chrome.storage.local.set({ notificationSound: 'tg', fpToolsCustomSoundData: 'local-test-clip',
                 fpToolsTheme: { bgImage: 'https://i.ibb.co/ZpS0d56R/PH6-UEvp-Kn-KI.jpg', bgColor1: '#123456' },
-                fpToolsAutoReplies: {} });
+                fpToolsAutoReplies: {}, aiModeActive: true, FPTFeatureAvailability: { ai: true },
+                fptProfileSession: { token: 'legacy-test-session' }, fptProfileDescrCache: { '1': { description: 'old' } },
+                fptPendingVerifyLots: { '123': 1 }, fptLastVerifyAt: 1,
+                fpToolsDisabledFeatures: ['chat_ai_rewrite_btn', 'rmthub_seller_search', 'chat_reply'],
+                fpToolsTemplateSettings: { custom: [{ text: '{ai:old}', images: [] }] } });
         });
         await context.close();
         context = await chromium.launchPersistentContext(profile, options);
@@ -70,9 +74,22 @@ const stage = path.resolve(process.argv[2] || `dist/funcy-${version}-staging`);
         assert.equal(migrated.fpToolsCustomSoundData, 'local-test-clip');
         assert.equal(migrated.fpToolsTheme.bgImage, null);
         assert.equal(migrated.fpToolsTheme.bgColor1, '#123456');
+        await probe.waitForFunction(async () => !Object.hasOwn(await chrome.storage.local.get('aiModeActive'), 'aiModeActive'));
+        const serviceData = await probe.evaluate(() => chrome.storage.local.get([
+            'aiModeActive', 'FPTFeatureAvailability', 'fptProfileSession', 'fptProfileDescrCache',
+            'fptPendingVerifyLots', 'fptLastVerifyAt', 'fpToolsDisabledFeatures', 'fpToolsTemplateSettings'
+        ]));
+        assert.deepEqual(Object.keys(serviceData).sort(), ['fpToolsDisabledFeatures', 'fpToolsTemplateSettings']);
+        // loadUnpacked registers a fresh installation and may reset interface switches.
+        // Preservation of unrelated IDs on normal startup is covered by the cleanup unit test.
+        for (const id of ['chat_ai_rewrite_btn', 'rmthub_seller_search']) {
+            assert.ok(!serviceData.fpToolsDisabledFeatures.includes(id));
+        }
+        assert.equal(serviceData.fpToolsTemplateSettings.custom[0].text, '{ai:old}');
         assert.deepEqual(errors, []);
         console.log(JSON.stringify({ version, stagedWorker: true, popup: true, offscreenStrictDate: true, offscreenMessageParser: true, offscreenClosed: true,
-            disabledAlarms: true, coldRestartMigration: true, customDataPreserved: true, browser: context.browser().version() }));
+            disabledAlarms: true, coldRestartMigration: true, retiredServiceDataRemoved: true,
+            legacyTemplatesPreserved: true, customDataPreserved: true, browser: context.browser().version() }));
     } finally {
         await context.close();
         const resolved = fs.realpathSync(profile);

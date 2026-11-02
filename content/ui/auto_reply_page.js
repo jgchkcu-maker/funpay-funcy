@@ -57,7 +57,7 @@
         },
         {
             id: 'orderConfirm',
-            iconName: 'task_alt',
+            iconName: 'check_circle',
             title: 'Ответ при подтверждении заказа',
             description: 'Сообщение после того, как покупатель подтвердил выполнение заказа.',
             label: 'Сообщение покупателю',
@@ -464,17 +464,6 @@
         return panel;
     }
 
-    function createMetric(iconName, label) {
-        const metric = node('div', 'fpt-ar-metric');
-        const iconWrap = node('span', 'fpt-ar-metric-icon');
-        iconWrap.appendChild(icon(iconName));
-        const copy = node('div', 'fpt-ar-metric-copy');
-        const value = node('strong', 'fpt-ar-metric-value', '—');
-        copy.append(node('span', 'fpt-ar-metric-label', label), value);
-        metric.append(iconWrap, copy);
-        return { element: metric, value };
-    }
-
     // --- Mount ---------------------------------------------------------------------------------
 
     async function mount(popup) {
@@ -504,29 +493,6 @@
         } else {
             view.appendChild(helpPanel);
         }
-
-        // --- Hero --------------------------------------------------------------------------
-        const hero = node('section', 'fpt-ar-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-ar-hero-title');
-        const heroMain = node('div', 'fpt-ar-hero-main');
-        const heroIcon = node('span', 'fpt-ar-hero-icon');
-        heroIcon.appendChild(icon('mark_chat_unread'));
-        const heroCopy = node('div', 'fpt-ar-hero-copy');
-        const heroTitleRow = node('div', 'fpt-ar-hero-title-row');
-        const heroTitle = node('h2', 'fpt-ar-hero-title', 'Ответы покупателям');
-        heroTitle.id = 'fpt-ar-hero-title';
-        const heroPill = node('span', 'fpt-ar-pill', 'Загрузка…');
-        heroTitleRow.append(heroTitle, heroPill);
-        const heroDescription = node('p', 'fpt-ar-hero-description',
-            'Расширение само отвечает в чатах FunPay: приветствует, подтверждает заказы и реагирует на ключевые слова.');
-        heroCopy.append(heroTitleRow, heroDescription);
-        heroMain.append(heroIcon, heroCopy);
-        const metricActive = createMetric('bolt', 'Включено сценариев');
-        const metricRules = createMetric('rule', 'Правил по словам');
-        const metricGreeting = createMetric('waving_hand', 'Повторное приветствие');
-        const metrics = node('div', 'fpt-ar-metrics');
-        metrics.append(metricActive.element, metricRules.element, metricGreeting.element);
-        hero.append(heroMain, metrics);
 
         // --- Scenario cards ------------------------------------------------------------------
         const scenariosSection = node('section', 'fpt-ar-section');
@@ -829,31 +795,10 @@
             streamStatus.hidden = notes.length === 0;
             streamStatus.textContent = notes.slice(0, 5).join(' ') + (notes.length > 5 ? ` Ещё: ${notes.length - 5}.` : '');
         }
-        view.append(hero, loadBanner, streamStatus, scenariosSection, keywordsSection);
+        view.append(loadBanner, streamStatus, scenariosSection, keywordsSection);
         page.appendChild(view);
 
         // --- Rendering ---------------------------------------------------------------------------
-        function renderHero() {
-            const settings = state.settings;
-            const active = countActiveScenarios(settings);
-            const on = active > 0;
-            hero.dataset.state = state.loaded && on ? 'on' : 'off';
-            if (!state.loaded) {
-                heroPill.textContent = state.loadError ? 'Нет данных' : 'Загрузка…';
-                heroPill.dataset.kind = state.loadError ? 'error' : 'neutral';
-                metricActive.value.textContent = '—';
-                metricRules.value.textContent = '—';
-                metricGreeting.value.textContent = '—';
-                return;
-            }
-            heroPill.textContent = on ? 'Работает' : 'Выключен';
-            heroPill.dataset.kind = on ? 'success' : 'neutral';
-            metricActive.value.textContent = `${active} из ${SCENARIOS.length + 1}`;
-            const rules = ruleCount(settings);
-            metricRules.value.textContent = `${rules} ${root.FPTPopupUI.pluralize(rules, ['правило', 'правила', 'правил'])}`;
-            metricGreeting.value.textContent = settings.greetingEnabled ? cooldownText(settings.greetingCooldownDays) : 'Приветствие выключено';
-        }
-
         function ruleRow(rule, index) {
             const row = node('article', 'fpt-ar-rule');
             row.dataset.index = String(index);
@@ -936,7 +881,6 @@
         }
 
         function renderAll() {
-            renderHero();
             renderBanner();
             cards.forEach(card => card.render());
             renderKeywords();

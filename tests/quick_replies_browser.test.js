@@ -54,10 +54,11 @@ test('templates can be toggled, created with images, edited, reset and deleted',
         const { page, state, errors } = await openQuickReplies(browser, {});
         await page.getByRole('switch', { name: 'Отправлять сразу по клику' }).click();
         await page.waitForFunction(() => window.qaStorage.read().fpToolsTemplateSettings?.sendTemplatesImmediately === false);
-        assert.match(await page.locator('.fpt-qr-metric').nth(2).textContent(), /В поле ввода/);
+        assert.equal(await page.getByRole('switch', { name: 'Отправлять сразу по клику' }).isChecked(), false);
         await page.getByRole('switch', { name: 'Показывать шаблон «Попросить отзыв»' }).click();
         await page.waitForFunction(() => window.qaStorage.read().fpToolsTemplateSettings?.standard?.review?.enabled === false);
-        assert.match(await page.locator('.fpt-qr-metric').first().textContent(), /3 из 4/);
+        assert.equal(await page.locator('#fptQuickRepliesTemplatesTab .fpt-qr-tab-count').textContent(), '3');
+        assert.equal(await page.locator('.fpt-quick-replies .fpt-qr-hero').count(), 0);
 
         await page.getByRole('button', { name: 'Новый шаблон' }).click();
         const dialog = page.locator('.fpt-lot-dialog');
@@ -98,7 +99,7 @@ test('templates can be toggled, created with images, edited, reset and deleted',
         await greeting.getByRole('button', { name: 'Сбросить к исходному' }).click();
         await dialog.getByRole('button', { name: 'Сбросить' }).click();
         await dialog.waitFor({ state: 'detached' });
-        assert.equal((await state()).fpToolsTemplateSettings.standard.greeting.text, '{welcome}, {buyername}! Чем могу помочь?');
+        assert.equal((await state()).fpToolsTemplateSettings.standard.greeting.text, '{welcome} {buyername}, чем могу помочь?');
         assert.equal(await greeting.getByRole('button', { name: 'Сбросить к исходному' }).count(), 0);
 
         await row.getByRole('button', { name: 'Удалить' }).click();

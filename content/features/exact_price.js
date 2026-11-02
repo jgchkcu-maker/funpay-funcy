@@ -1,4 +1,6 @@
 // content/features/exact_price.js
+// Резервный инструмент: точный расчёт цены продавца по таблице FunPay,
+// активен, когда живое поле «Цена покупателю» недоступно или отключено.
 
 function initializeExactPrice() {
     // Убедимся, что мы на странице редактирования или создания лота
@@ -20,10 +22,22 @@ function initializeExactPrice() {
     const exactPriceButton = createElement('div', { class: 'set-exact-price' }, {}, 'Рассчитать, чтобы получить эту сумму');
     inputPrice.parentNode.insertBefore(exactPriceButton, inputPrice.nextSibling);
 
+    // Согласование с живым полем «Цена покупателю»:
+    // Если живое поле активно и работает, кнопка скрывается.
+    function updateVisibility() {
+        const buyerGroup = document.getElementById('fpt-buyer-price-group');
+        const isBuyerActive = window.FPTBuyerPriceActive === true && buyerGroup && buyerGroup.style.display !== 'none' && !buyerGroup.hidden;
+        exactPriceButton.style.display = isBuyerActive ? 'none' : '';
+    }
+
+    window.addEventListener('fptBuyerPriceStateChange', (e) => {
+        const active = e.detail?.active;
+        exactPriceButton.style.display = active ? 'none' : '';
+    });
+    updateVisibility();
+
     // Читает «сколько заплатит покупатель» из живой таблицы расчёта FunPay.
-    // ВАЖНО: поле цены продавца — в рублях, поэтому берём ТОЛЬКО рублёвые строки (₽),
-    // иначе Math.min цепляет $/€ (их числа мельче) и считает в чужой валюте.
-    // Среди рублёвых берём минимум — самый дешёвый для покупателя способ (напр. СБП).
+    // Берём ТОЛЬКО рублёвые строки (₽) с минимальным значением.
     const readBuyerPriceRub = () => {
         const body = document.querySelector('.js-calc-table-body');
         if (!body) return null;
@@ -32,7 +46,6 @@ function initializeExactPrice() {
             const cell = tr.querySelector('td:last-child');
             if (!cell) return;
             const txt = cell.textContent;
-            // только рубли: символ ₽ или слово руб
             if (!/[₽]|руб/i.test(txt)) return;
             const n = parseFloat(txt.replace(/[^\d.,]/g, '').replace(/\s/g, '').replace(',', '.'));
             if (!isNaN(n) && n > 0) vals.push(n);
@@ -47,7 +60,7 @@ function initializeExactPrice() {
         inputPrice.dispatchEvent(new Event('keyup', { bubbles: true }));
     };
 
-    // Ждёт пересчёта таблицы FunPay (нужно только если таблицы ещё нет / поле было пустым).
+    // Ждёт пересчёта таблицы FunPay
     const waitRecalc = (prevBuyer) => new Promise(resolve => {
         let tries = 0;
         const tick = () => {
@@ -60,7 +73,7 @@ function initializeExactPrice() {
     });
 
     exactPriceButton.addEventListener('click', async () => {
-        const desiredAmount = parseFloat((inputPrice.value || '').replace(',', '.')); // хотим получить (в рублях покупателя)
+        const desiredAmount = parseFloat((inputPrice.value || '').replace(',', '.'));
         if (isNaN(desiredAmount) || desiredAmount <= 0) {
             showNotification('Введите в поле сумму, которую хотите получить.', true);
             return;
@@ -68,12 +81,6 @@ function initializeExactPrice() {
 
         exactPriceButton.textContent = 'Считаю…';
         try {
-            // Комиссия FunPay линейна: buyerPrice = sellerPrice × k, где k — фиксированный
-            // множитель метода. Достаточно узнать k ОДИН раз и поделить — почти мгновенно.
-            //
-            // ВАЖНО: таблица могла быть посчитана для ДРУГОГО значения, чем сейчас в поле.
-            // Поэтому сначала ставим в поле desiredAmount как пробную цену продавца и ОДИН раз
-            // ждём пересчёт — тогда таблица гарантированно соответствует полю и k будет точным.
             const prevBuyer = readBuyerPriceRub();
             setPrice(desiredAmount);
             let buyerForProbe = await waitRecalc(prevBuyer);
@@ -85,18 +92,16 @@ function initializeExactPrice() {
                 return;
             }
 
-            const k = buyerForProbe / sellerProbe;   // множитель метода (например 1.0183 для СБП)
+            const k = buyerForProbe / sellerProbe;
             if (!isFinite(k) || k <= 0) {
                 showNotification('Не удалось определить комиссию. Повторите.', true);
                 exactPriceButton.textContent = 'Рассчитать, чтобы получить эту сумму';
                 return;
             }
 
-            // Один расчёт — мгновенно.
             const sellerPrice = desiredAmount / k;
             setPrice(sellerPrice);
 
-            // Разовая корректировка округления копеек (без цикла, один быстрый пересчёт).
             const buyerNow = await waitRecalc(buyerForProbe);
             if (buyerNow && Math.abs(buyerNow - desiredAmount) > 0.02) {
                 const k2 = buyerNow / sellerPrice;

@@ -1,0 +1,24 @@
+Built-in ImageGen prompt used for source-background.png:
+
+Use case: ads-marketing. Asset type: master artwork background for two Chrome Web Store promotional banners for the browser extension Funcy. Create ONE wide 2800 x 1120 px landscape image, aspect ratio 2.5:1, full bleed opaque. Brand palette must coordinate with a glossy cyan-to-violet F icon and the existing Funcy screenshots: midnight indigo #171137, deep violet #2a1d6b, vivid periwinkle #7663f6, very restrained cyan and pink accents. Composition: the entire left 48% is calm deep indigo negative space for typography to be composited later. Right half has a refined dimensional arrangement of broad translucent lavender glass ribbons and a single curving polished cyan-violet orbital arc, with a subtle luminous halo centered around x=78%, y=47%, to frame an actual product screenshot that will be composited later. The lower right contains a little more of the orbital form, leaving the center-right relatively clean. Beautiful controlled studio light, soft depth, meticulous smooth materials, elegant restrained specular reflections, fine subtle grain. This is a polished original commercial software brand artwork, distinctive yet quiet enough to let the product screenshot be the hero. Background transitions continuously, no hard division, no panels. Do not draw any UI, charts, cards, screens, text, letters, logos, mascots, people, watermarks or icons. Do not place anything in the left negative space. No galaxy, no stars, no confetti, no heavy neon bloom. The final deliverable is the background artwork only; exact brand logo, real screenshot and Russian copy will be added deterministically afterward.
+
+Actual generated source resolution: 1983 x 793 pixels. Exact-size exports: tools/store-promo.cjs.
+
+Exact small tile copy:
+Funcy
+Ваш магазин.
+Под контролем.
+Инструменты для FunPay
+Автовыдача · Автоответы · Аналитика
+
+Exact marquee copy:
+Funcy
+ДЛЯ ПРОДАВЦОВ FUNPAY
+Магазин
+под контролем.
+Автовыдача, автоответы
+и аналитика — прямо в браузере.
+Лоты · Заказы · Оформление
+
+Original logo: icons/funcy-logo.png.
+Original interface capture with synthetic data: docs/store/screenshots/raw/finance.png.

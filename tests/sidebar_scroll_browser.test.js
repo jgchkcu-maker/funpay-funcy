@@ -35,12 +35,13 @@ test('sidebar expansion preserves scroll and pending route reveal yields to manu
             scroll.scrollTop = 80;
             return scroll.scrollTop;
         });
-        await page.waitForTimeout(450);
+        await page.waitForTimeout(900);
         assert.equal(await page.locator('.fpt-nav-scroll').evaluate(scroll => scroll.scrollTop), manualPosition,
             'a pending route reveal must not undo the user scrolling');
 
         await page.evaluate(() => window.fptOpenPopupPage('settings_io'));
-        await page.waitForTimeout(450);
+        // The route reveal waits 700 ms for the group expansion to finish.
+        await page.waitForTimeout(900);
         const visible = await page.evaluate(() => {
             const viewport = document.querySelector('.fpt-nav-scroll').getBoundingClientRect();
             const item = document.querySelector('.fpt-nav-child[data-page="settings_io"]').getBoundingClientRect();

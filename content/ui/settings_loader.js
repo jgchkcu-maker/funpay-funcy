@@ -1,7 +1,6 @@
 // content/ui/settings_loader.js
 
 let fpToolsAccounts = [];
-let aiModeActive = false;
 
 function getPopupViewportLimits() {
     const winW = Math.max(1, window.innerWidth || 1);
@@ -44,7 +43,6 @@ async function loadSavedSettings() {
     window.__fptAutoReplySettingsReady = false;
     const settings = await chrome.storage.local.get(null);
     fpToolsAccounts = settings.fpToolsAccounts || [];
-    aiModeActive = globalThis.FPTFeatureAvailability?.isAvailable('ai') === true && settings.aiModeActive === true;
     if (typeof loadTemplateSettings === 'function') await loadTemplateSettings();
     const logoutLink = document.querySelector('.menu-item-logout');
     if(logoutLink && !document.querySelector('.fp-tools-logout-clean')) {

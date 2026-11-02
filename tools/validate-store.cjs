@@ -4,9 +4,17 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(process.argv[2] || 'dist/staging');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 const errors = [];
+if (typeof manifest.description !== 'string' || !manifest.description.trim() || manifest.description.length > 132) {
+    errors.push('Manifest description must contain 1 to 132 characters');
+}
 const files = [];
 function walk(dir) { for (const entry of fs.readdirSync(dir, { withFileTypes: true })) { const full = path.join(dir, entry.name); if (entry.isDirectory()) walk(full); else files.push(full); } }
 walk(root);
+for (const file of ['background/ai.js', 'background/feature_availability.js', 'content/features/ai_chat.js',
+    'content/features/ai_lot_creator.js', 'content/features/rmthub_search.js', 'content/features/profile_descriptions.js',
+    'content/features/new_chat_starter.js', 'css/ai_creator.css', 'icons/magic.png']) {
+    if (fs.existsSync(path.join(root, file))) errors.push(`Removed service resource restored: ${file}`);
+}
 function requireFile(file, from) {
     if (/[${}*]/.test(file)) return;
     const target = path.resolve(root, file);

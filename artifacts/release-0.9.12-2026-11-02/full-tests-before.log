@@ -1,0 +1,3572 @@
+TAP version 13
+# Subtest: key lists are disjoint, classified and leave per-account lot services alone
+ok 1 - key lists are disjoint, classified and leave per-account lot services alone
+  ---
+  duration_ms: 5.426
+  type: 'test'
+  ...
+# Subtest: first run marks the current account as owner without touching live settings
+ok 2 - first run marks the current account as owner without touching live settings
+  ---
+  duration_ms: 7.5683
+  type: 'test'
+  ...
+# Subtest: switching stores the old config, gives a new account defaults and restores the old one on return
+ok 3 - switching stores the old config, gives a new account defaults and restores the old one on return
+  ---
+  duration_ms: 2.8295
+  type: 'test'
+  ...
+# Subtest: sync copies config only, keeps the target history and can be undone
+ok 4 - sync copies config only, keeps the target history and can be undone
+  ---
+  duration_ms: 2.6775
+  type: 'test'
+  ...
+# Subtest: sync into the active account writes live keys and clears its fresh-account notice
+ok 5 - sync into the active account writes live keys and clears its fresh-account notice
+  ---
+  duration_ms: 1.2376
+  type: 'test'
+  ...
+# Subtest: automationEnabledIn reads auto-reply switches and auto bump
+ok 6 - automationEnabledIn reads auto-reply switches and auto bump
+  ---
+  duration_ms: 0.3493
+  type: 'test'
+  ...
+# Subtest: accounts screen fits both themes and widths and never renders or stores session keys
+ok 7 - accounts screen fits both themes and widths and never renders or stores session keys
+  ---
+  duration_ms: 12725.9569
+  type: 'test'
+  ...
+# Subtest: active row, unread badge and expired session reflect stored data without an overview card
+ok 8 - active row, unread badge and expired session reflect stored data without an overview card
+  ---
+  duration_ms: 5780.8246
+  type: 'test'
+  ...
+# Subtest: empty list offers the current account and adding it saves the session without the key
+ok 9 - empty list offers the current account and adding it saves the session without the key
+  ---
+  duration_ms: 5861.0499
+  type: 'test'
+  ...
+# Subtest: signed-out visitors see a hint instead of the add button
+ok 10 - signed-out visitors see a hint instead of the add button
+  ---
+  duration_ms: 3582.163
+  type: 'test'
+  ...
+# Subtest: a signed-in account with an expired saved session can refresh it in place
+ok 11 - a signed-in account with an expired saved session can refresh it in place
+  ---
+  duration_ms: 4948.3484
+  type: 'test'
+  ...
+# Subtest: switching asks first, moves each account to its own config and rolls back an expired session
+ok 12 - switching asks first, moves each account to its own config and rolls back an expired session
+  ---
+  duration_ms: 14757.3236
+  type: 'test'
+  ...
+# Subtest: a plain switch between configured accounts without automation stays one click
+ok 13 - a plain switch between configured accounts without automation stays one click
+  ---
+  duration_ms: 4398.1283
+  type: 'test'
+  ...
+# Subtest: rename inline with Enter, cancel with Escape and delete through the dialog
+ok 14 - rename inline with Enter, cancel with Escape and delete through the dialog
+  ---
+  duration_ms: 7882.2824
+  type: 'test'
+  ...
+# Subtest: notes are written inline, shown under the name and found by search
+ok 15 - notes are written inline, shown under the name and found by search
+  ---
+  duration_ms: 5844.2619
+  type: 'test'
+  ...
+# Subtest: refresh updates every account in turn, failures keep their old time and stale data refreshes on open
+ok 16 - refresh updates every account in turn, failures keep their old time and stale data refreshes on open
+  ---
+  duration_ms: 3148.2645
+  type: 'test'
+  ...
+# Subtest: while automation runs other accounts are not refreshed and say so instead of failing
+ok 17 - while automation runs other accounts are not refreshed and say so instead of failing
+  ---
+  duration_ms: 5575.4852
+  type: 'test'
+  ...
+# Subtest: sync copies the config after two steps and can be undone
+ok 18 - sync copies the config after two steps and can be undone
+  ---
+  duration_ms: 3995.6612
+  type: 'test'
+  ...
+# Subtest: external storage changes re-render and a failed read can be retried
+ok 19 - external storage changes re-render and a failed read can be retried
+  ---
+  duration_ms: 3831.7751
+  type: 'test'
+  ...
+# Subtest: returning to the page refreshes data that went stale while it was closed
+ok 20 - returning to the page refreshes data that went stale while it was closed
+  ---
+  duration_ms: 3475.732
+  type: 'test'
+  ...
+# Subtest: balances parse FunPay formats with spaces, commas and currency signs
+ok 21 - balances parse FunPay formats with spaces, commas and currency signs
+  ---
+  duration_ms: 6.467
+  type: 'test'
+  ...
+# Subtest: summary adds balances of one currency and counts unread and expired sessions
+ok 22 - summary adds balances of one currency and counts unread and expired sessions
+  ---
+  duration_ms: 72.1059
+  type: 'test'
+  ...
+# Subtest: initials, relative time and avatar urls
+ok 23 - initials, relative time and avatar urls
+  ---
+  duration_ms: 2.5942
+  type: 'test'
+  ...
+# Subtest: pending money is summed per currency across accounts
+ok 24 - pending money is summed per currency across accounts
+  ---
+  duration_ms: 1.8122
+  type: 'test'
+  ...
+# Subtest: legacy records move their keys out of storage and keep working by id
+ok 25 - legacy records move their keys out of storage and keep working by id
+  ---
+  duration_ms: 11.1355
+  type: 'test'
+  ...
+# Subtest: adding the current account dedupes by FunPay id and refreshes an expired session
+ok 26 - adding the current account dedupes by FunPay id and refreshes an expired session
+  ---
+  duration_ms: 4.0088
+  type: 'test'
+  ...
+# Subtest: refresh keeps the last good snapshot time when FunPay fails or automation blocks it
+ok 27 - refresh keeps the last good snapshot time when FunPay fails or automation blocks it
+  ---
+  duration_ms: 1.7119
+  type: 'test'
+  ...
+# Subtest: a snapshot of a key that now belongs to another user is rejected
+ok 28 - a snapshot of a key that now belongs to another user is rejected
+  ---
+  duration_ms: 0.7794
+  type: 'test'
+  ...
+# Subtest: a wrong saved FunPay id is corrected when the key still opens the same nickname
+ok 29 - a wrong saved FunPay id is corrected when the key still opens the same nickname
+  ---
+  duration_ms: 0.9487
+  type: 'test'
+  ...
+# Subtest: switching suspends the current config, loads the target one and rolls back an expired key
+ok 30 - switching suspends the current config, loads the target one and rolls back an expired key
+  ---
+  duration_ms: 2.7831
+  type: 'test'
+  ...
+# Subtest: a manual login elsewhere is reconciled and sync works by record id
+ok 31 - a manual login elsewhere is reconciled and sync works by record id
+  ---
+  duration_ms: 2.181
+  type: 'test'
+  ...
+# Subtest: notes are trimmed and limited, deleting drops the key but keeps the config
+ok 32 - notes are trimmed and limited, deleting drops the key but keeps the config
+  ---
+  duration_ms: 1.0353
+  type: 'test'
+  ...
+# Subtest: switching before the owner was marked saves the live config first and refuses when the account is unknown
+ok 33 - switching before the owner was marked saves the live config first and refuses when the account is unknown
+  ---
+  duration_ms: 2.7266
+  type: 'test'
+  ...
+# Subtest: daily keepalive refreshes only the current account and never swaps keys
+ok 34 - daily keepalive refreshes only the current account and never swaps keys
+  ---
+  duration_ms: 0.962
+  type: 'test'
+  ...
+# Subtest: daily keepalive marks a dead key as expired instead of failing silently
+ok 35 - daily keepalive marks a dead key as expired instead of failing silently
+  ---
+  duration_ms: 0.7321
+  type: 'test'
+  ...
+# Subtest: auto-delivery page loads stock states, saves per-lot changes, and fits the full popup
+ok 36 - auto-delivery page loads stock states, saves per-lot changes, and fits the full popup
+  ---
+  duration_ms: 18444.4831
+  type: 'test'
+  ...
+# Subtest: auto-delivery shows layout-matched skeleton rows while the first lot list is loading
+ok 37 - auto-delivery shows layout-matched skeleton rows while the first lot list is loading
+  ---
+  duration_ms: 7315.2388
+  type: 'test'
+  ...
+# Auto-delivery previews: C:\\Users\\Usser\\AppData\\Local\\Temp\\funpay-auto-delivery-minimal
+# Subtest: compact auto-delivery supports editing, retry, filters and narrow layouts
+ok 38 - compact auto-delivery supports editing, retry, filters and narrow layouts
+  ---
+  duration_ms: 7693.729
+  type: 'test'
+  ...
+# Subtest: auto-delivery master switch saves the shared flag the background checks
+ok 39 - auto-delivery master switch saves the shared flag the background checks
+  ---
+  duration_ms: 5121.5956
+  type: 'test'
+  ...
+# Subtest: auto-delivery preview splits messages on $sleep and fills template variables like the runtime
+ok 40 - auto-delivery preview splits messages on $sleep and fills template variables like the runtime
+  ---
+  duration_ms: 6.9562
+  type: 'test'
+  ...
+# Subtest: auto-delivery screen keeps stock status, lot cards and sticky save bar without an overview card
+ok 41 - auto-delivery screen keeps stock status, lot cards and sticky save bar without an overview card
+  ---
+  duration_ms: 3.4172
+  type: 'test'
+  ...
+# Subtest: lot parser falls back from description text to category and lot ID
+ok 42 - lot parser falls back from description text to category and lot ID
+  ---
+  duration_ms: 3.5888
+  type: 'test'
+  ...
+# Subtest: lot parser keeps the whole composite id of currency (chips) offers and marks them
+ok 43 - lot parser keeps the whole composite id of currency (chips) offers and marks them
+  ---
+  duration_ms: 1.08
+  type: 'test'
+  ...
+# Subtest: category parser counts currency (chips) offers and marks the category as not raisable
+ok 44 - category parser counts currency (chips) offers and marks the category as not raisable
+  ---
+  duration_ms: 1.8967
+  type: 'test'
+  ...
+# Subtest: profile stock badges use the same default-enabled rule as the settings page
+ok 45 - profile stock badges use the same default-enabled rule as the settings page
+  ---
+  duration_ms: 4.1426
+  type: 'test'
+  ...
+# Subtest: auto-delivery stock utilities count non-empty secret rows and preserve concurrent lot updates
+ok 46 - auto-delivery stock utilities count non-empty secret rows and preserve concurrent lot updates
+  ---
+  duration_ms: 19.2911
+  type: 'test'
+  ...
+# Subtest: auto-delivery lot switch gates new delivery while legacy settings remain allowed
+ok 47 - auto-delivery lot switch gates new delivery while legacy settings remain allowed
+  ---
+  duration_ms: 0.3667
+  type: 'test'
+  ...
+# Subtest: there is no stock sweep any more: no alarm, no toggles, no notice script, retired keys are cleaned
+ok 48 - there is no stock sweep any more: no alarm, no toggles, no notice script, retired keys are cleaned
+  ---
+  duration_ms: 1.9502
+  type: 'test'
+  ...
+# Subtest: auto-delivery templates receive the parsed lot name
+ok 49 - auto-delivery templates receive the parsed lot name
+  ---
+  duration_ms: 22.7622
+  type: 'test'
+  ...
+# Subtest: secret stock refresh follows a successful delivery and respects explicit lot disablement
+ok 50 - secret stock refresh follows a successful delivery and respects explicit lot disablement
+  ---
+  duration_ms: 7.0691
+  type: 'test'
+  ...
+# Subtest: auto_delivery: auto_delivery_ui_contract markup is removed and search metadata remains
+ok 51 - auto_delivery: auto_delivery_ui_contract markup is removed and search metadata remains
+  ---
+  duration_ms: 9.0472
+  type: 'test'
+  ...
+# Subtest: auto_delivery: the category view is mounted into the existing popup shell
+ok 52 - auto_delivery: the category view is mounted into the existing popup shell
+  ---
+  duration_ms: 0.5205
+  type: 'test'
+  ...
+# Subtest: orders and deliveries mount as a separate popup category
+ok 53 - orders and deliveries mount as a separate popup category
+  ---
+  duration_ms: 0.8698
+  type: 'test'
+  ...
+# Subtest: autoresponder: empty settings show collapsed scenarios, an empty rule list and write nothing on open
+ok 54 - autoresponder: empty settings show collapsed scenarios, an empty rule list and write nothing on open
+  ---
+  duration_ms: 7303.7598
+  type: 'test'
+  ...
+# Subtest: autoresponder: scenarios save through the store patch with explicit unsaved state and validation
+ok 55 - autoresponder: scenarios save through the store patch with explicit unsaved state and validation
+  ---
+  duration_ms: 7488.1922
+  type: 'test'
+  ...
+# Subtest: autoresponder: images attach, order is chosen and the saved reply keeps them
+ok 56 - autoresponder: images attach, order is chosen and the saved reply keeps them
+  ---
+  duration_ms: 6333.6968
+  type: 'test'
+  ...
+# Subtest: autoresponder: keyword rules are added, edited and removed with indexed store operations
+ok 57 - autoresponder: keyword rules are added, edited and removed with indexed store operations
+  ---
+  duration_ms: 6231.9105
+  type: 'test'
+  ...
+# Subtest: autoresponder: disabled keyword rules stay visible with an explanation and fit narrow popups
+ok 58 - autoresponder: disabled keyword rules stay visible with an explanation and fit narrow popups
+  ---
+  duration_ms: 6163.4355
+  type: 'test'
+  ...
+# Subtest: auto_reply: auto_reply_pages markup is removed and search metadata remains
+ok 59 - auto_reply: auto_reply_pages markup is removed and search metadata remains
+  ---
+  duration_ms: 5.5915
+  type: 'test'
+  ...
+# Subtest: checked patches reject concurrent scalar and rating changes inside the storage queue
+ok 60 - checked patches reject concurrent scalar and rating changes inside the storage queue
+  ---
+  duration_ms: 3.4625
+  type: 'test'
+  ...
+# Subtest: serializes UI patches and background updates against the latest saved object
+ok 61 - serializes UI patches and background updates against the latest saved object
+  ---
+  duration_ms: 14.0041
+  type: 'test'
+  ...
+# Subtest: patch replaces fields, merges rating maps, and can unset map entries
+ok 62 - patch replaces fields, merges rating maps, and can unset map entries
+  ---
+  duration_ms: 15.37
+  type: 'test'
+  ...
+# Subtest: parallel list additions, edits, and removals preserve every current item
+ok 63 - parallel list additions, edits, and removals preserve every current item
+  ---
+  duration_ms: 41.3387
+  type: 'test'
+  ...
+# Subtest: rejects a stale index edit instead of deleting the item that shifted into its place
+ok 64 - rejects a stale index edit instead of deleting the item that shifted into its place
+  ---
+  duration_ms: 30.5612
+  type: 'test'
+  ...
+# Subtest: imports user preferences while preserving local runtime markers and fields omitted by old backups
+ok 65 - imports user preferences while preserving local runtime markers and fields omitted by old backups
+  ---
+  duration_ms: 17.7964
+  type: 'test'
+  ...
+# Subtest: a failed storage write rejects its caller and does not poison later queue operations
+ok 66 - a failed storage write rejects its caller and does not poison later queue operations
+  ---
+  duration_ms: 19.7386
+  type: 'test'
+  ...
+# Subtest: repository code outside the store does not write fpToolsAutoReplies directly
+ok 67 - repository code outside the store does not write fpToolsAutoReplies directly
+  ---
+  duration_ms: 79.089
+  type: 'test'
+  ...
+# Subtest: content helper waits for the service-worker write and reports storage errors
+ok 68 - content helper waits for the service-worker write and reports storage errors
+  ---
+  duration_ms: 1.3723
+  type: 'test'
+  ...
+# Subtest: rating patches work without any old controls and retain atomic-store semantics
+ok 69 - rating patches work without any old controls and retain atomic-store semantics
+  ---
+  duration_ms: 4.804
+  type: 'test'
+  ...
+# Subtest: auto_reply: static markup stays empty and search metadata remains
+ok 70 - auto_reply: static markup stays empty and search metadata remains
+  ---
+  duration_ms: 6.1403
+  type: 'test'
+  ...
+# Subtest: auto_reply: the category view is mounted into the existing popup shell
+ok 71 - auto_reply: the category view is mounted into the existing popup shell
+  ---
+  duration_ms: 0.9647
+  type: 'test'
+  ...
+# Subtest: auto_reply: the page uses the shared frame, the store patch API and never writes the settings key itself
+ok 72 - auto_reply: the page uses the shared frame, the store patch API and never writes the settings key itself
+  ---
+  duration_ms: 1.9664
+  type: 'test'
+  ...
+# Subtest: auto_reply: page-owned widgets do not reuse class names other pages are tested by
+ok 73 - auto_reply: page-owned widgets do not reuse class names other pages are tested by
+  ---
+  duration_ms: 1.3338
+  type: 'test'
+  ...
+# Subtest: auto_reply: styles are responsive, motion-safe and scoped to the themed popup
+ok 74 - auto_reply: styles are responsive, motion-safe and scoped to the themed popup
+  ---
+  duration_ms: 4.7199
+  type: 'test'
+  ...
+# Subtest: auto_reply: popup metadata keeps the searchable titles of every scenario
+ok 75 - auto_reply: popup metadata keeps the searchable titles of every scenario
+  ---
+  duration_ms: 0.4394
+  type: 'test'
+  ...
+# Subtest: auto_reply: settings are normalized with the engine defaults and malformed data is tolerated
+ok 76 - auto_reply: settings are normalized with the engine defaults and malformed data is tolerated
+  ---
+  duration_ms: 4.0491
+  type: 'test'
+  ...
+# Subtest: auto_reply: keyword rules are built the way the engine reads them
+ok 77 - auto_reply: keyword rules are built the way the engine reads them
+  ---
+  duration_ms: 2.2369
+  type: 'test'
+  ...
+# Subtest: auto_reply: duplicates, filtering and the summary text are computed from the stored rules
+ok 78 - auto_reply: duplicates, filtering and the summary text are computed from the stored rules
+  ---
+  duration_ms: 1.3547
+  type: 'test'
+  ...
+# Subtest: auto_reply: each scenario offers only variables the engine fills for it
+ok 79 - auto_reply: each scenario offers only variables the engine fills for it
+  ---
+  duration_ms: 1.2699
+  type: 'test'
+  ...
+# Subtest: review help follows shared page typography, fits both themes and closes by click or Escape
+ok 80 - review help follows shared page typography, fits both themes and closes by click or Escape
+  ---
+  duration_ms: 13450.4
+  type: 'test'
+  ...
+# Subtest: rating rail sits beside the editor and stars reflect saved answers
+ok 81 - rating rail sits beside the editor and stars reflect saved answers
+  ---
+  duration_ms: 4842.2897
+  type: 'test'
+  ...
+# Subtest: reviews: drafts survive ratings, independent saves preserve runtime and unrelated settings
+ok 82 - reviews: drafts survive ratings, independent saves preserve runtime and unrelated settings
+  ---
+  duration_ms: 6341.0869
+  type: 'test'
+  ...
+# Subtest: reviews: validation, variables, image routing, save error and retry
+ok 83 - reviews: validation, variables, image routing, save error and retry
+  ---
+  duration_ms: 6456.3317
+  type: 'test'
+  ...
+# Subtest: first single bonus save persists the mode required by the background sender
+ok 84 - first single bonus save persists the mode required by the background sender
+  ---
+  duration_ms: 5533.4963
+  type: 'test'
+  ...
+# Subtest: bonuses: local list edits use a single checked patch; mode changes and cancel keep data
+ok 85 - bonuses: local list edits use a single checked patch; mode changes and cancel keep data
+  ---
+  duration_ms: 6472.1873
+  type: 'test'
+  ...
+# Subtest: reviews: external updates refresh clean blocks, preserve dirty drafts and expose conflict recovery
+ok 86 - reviews: external updates refresh clean blocks, preserve dirty drafts and expose conflict recovery
+  ---
+  duration_ms: 5705.0378
+  type: 'test'
+  ...
+# Subtest: bonus dialog survives external list shifts and cannot overwrite a different item
+ok 87 - bonus dialog survives external list shifts and cannot overwrite a different item
+  ---
+  duration_ms: 3220.2031
+  type: 'test'
+  ...
+# Subtest: reviews: both themes, responsive stacking, transparent header and keyboard selection
+ok 88 - reviews: both themes, responsive stacking, transparent header and keyboard selection
+  ---
+  duration_ms: 7068.1449
+  type: 'test'
+  ...
+# Subtest: review save rejects a change made after preflight without losing the draft
+ok 89 - review save rejects a change made after preflight without losing the draft
+  ---
+  duration_ms: 5345.4939
+  type: 'test'
+  ...
+# Subtest: upload completion replays external changes and enables the other save button
+ok 90 - upload completion replays external changes and enables the other save button
+  ---
+  duration_ms: 6095.3168
+  type: 'test'
+  ...
+# Subtest: bonus text opens its editor; removing popup disposes the storage listener
+ok 91 - bonus text opens its editor; removing popup disposes the storage listener
+  ---
+  duration_ms: 9754.8401
+  type: 'test'
+  ...
+# Subtest: failed image upload keeps an actionable error on a clean block
+ok 92 - failed image upload keeps an actionable error on a clean block
+  ---
+  duration_ms: 4675.9195
+  type: 'test'
+  ...
+# Subtest: newer storage events win over a delayed successful save response
+ok 93 - newer storage events win over a delayed successful save response
+  ---
+  duration_ms: 2394.9552
+  type: 'test'
+  ...
+# Subtest: a stale preflight result cannot roll clean bonus settings back
+ok 94 - a stale preflight result cannot roll clean bonus settings back
+  ---
+  duration_ms: 2002.7484
+  type: 'test'
+  ...
+# Subtest: removing popup with an open bonus dialog releases keyboard interception
+ok 95 - removing popup with an open bonus dialog releases keyboard interception
+  ---
+  duration_ms: 1859.5618
+  type: 'test'
+  ...
+# Subtest: loading failure offers retry without enabling defaults or overwriting saved settings
+ok 96 - loading failure offers retry without enabling defaults or overwriting saved settings
+  ---
+  duration_ms: 1883.2706
+  type: 'test'
+  ...
+# Subtest: defaults do not enable automation or invent user content
+ok 97 - defaults do not enable automation or invent user content
+  ---
+  duration_ms: 2.5086
+  type: 'test'
+  ...
+# Subtest: review patch merges only edited ratings and never writes runtime or bonus settings
+ok 98 - review patch merges only edited ratings and never writes runtime or bonus settings
+  ---
+  duration_ms: 0.6057
+  type: 'test'
+  ...
+# Subtest: bonus operations keep indexes and expected values correct after multiple removals
+ok 99 - bonus operations keep indexes and expected values correct after multiple removals
+  ---
+  duration_ms: 1.6343
+  type: 'test'
+  ...
+# Subtest: validation allows skipped ratings but not image-only enabled replies
+ok 100 - validation allows skipped ratings but not image-only enabled replies
+  ---
+  duration_ms: 0.462
+  type: 'test'
+  ...
+# Subtest: preview substitutes supported tokens and leaves arbitrary markup as plain text
+ok 101 - preview substitutes supported tokens and leaves arbitrary markup as plain text
+  ---
+  duration_ms: 0.3511
+  type: 'test'
+  ...
+# Subtest: auto_review: auto_review_ui_contract markup is removed and search metadata remains
+ok 102 - auto_review: auto_review_ui_contract markup is removed and search metadata remains
+  ---
+  duration_ms: 5.3252
+  type: 'test'
+  ...
+# Subtest: autobump page renders status, saves rules with rollback, picks categories and shows the log
+ok 103 - autobump page renders status, saves rules with rollback, picks categories and shows the log
+  ---
+  duration_ms: 21108.521
+  type: 'test'
+  ...
+# [FunPay Funcy AutoBump] [00:10:36] Пропущено: Валюта. FunPay не поднимает предложения валюты.
+# [FunPay Funcy AutoBump] [00:10:36] Не поднято: [Системная ошибка]. Не удалось найти cookie "golden_key". Вы вошли в свой аккаунт FunPay?
+# Subtest: raise-all message uses the imported bump cycle and returns a summary for currency lots and auth failure
+ok 104 - raise-all message uses the imported bump cycle and returns a summary for currency lots and auth failure
+  ---
+  duration_ms: 38.3357
+  type: 'test'
+  ...
+# Subtest: autobump: static markup stays empty and search metadata remains
+ok 105 - autobump: static markup stays empty and search metadata remains
+  ---
+  duration_ms: 6.6505
+  type: 'test'
+  ...
+# Subtest: autobump: the category view is mounted into the existing popup shell
+ok 106 - autobump: the category view is mounted into the existing popup shell
+  ---
+  duration_ms: 0.8126
+  type: 'test'
+  ...
+# Subtest: autobump: the page uses the shared category frame and preserves existing storage keys
+ok 107 - autobump: the page uses the shared category frame and preserves existing storage keys
+  ---
+  duration_ms: 0.5697
+  type: 'test'
+  ...
+# Subtest: autobump: styles are responsive and the toast region covers the page
+ok 108 - autobump: styles are responsive and the toast region covers the page
+  ---
+  duration_ms: 2.4393
+  type: 'test'
+  ...
+# Subtest: autobump: popup actions and background expose the status and raise-now routes
+ok 109 - autobump: popup actions and background expose the status and raise-now routes
+  ---
+  duration_ms: 2.3823
+  type: 'test'
+  ...
+# Subtest: autobump: log entries are classified for display
+ok 110 - autobump: log entries are classified for display
+  ---
+  duration_ms: 2.1116
+  type: 'test'
+  ...
+# Subtest: blacklist page: empty state, adding with flags, duplicates and validation
+ok 111 - blacklist page: empty state, adding with flags, duplicates and validation
+  ---
+  duration_ms: 6952.0079
+  type: 'test'
+  ...
+# Subtest: blacklist page: rows toggle flags, edit notes, search, remove and follow outside changes
+ok 112 - blacklist page: rows toggle flags, edit notes, search, remove and follow outside changes
+  ---
+  duration_ms: 7184.8637
+  type: 'test'
+  ...
+# Subtest: blacklist page: search appears for long lists; dark theme and narrow popup keep the layout
+ok 113 - blacklist page: search appears for long lists; dark theme and narrow popup keep the layout
+  ---
+  duration_ms: 5957.1271
+  type: 'test'
+  ...
+# Subtest: blacklist: static markup stays empty and search metadata remains
+ok 114 - blacklist: static markup stays empty and search metadata remains
+  ---
+  duration_ms: 14.5311
+  type: 'test'
+  ...
+# Subtest: blacklist: the page is loaded by the manifest and mounted by the popup
+ok 115 - blacklist: the page is loaded by the manifest and mounted by the popup
+  ---
+  duration_ms: 0.7793
+  type: 'test'
+  ...
+# Subtest: blacklist: the page uses the shared frame and blacklist popup actions only
+ok 116 - blacklist: the page uses the shared frame and blacklist popup actions only
+  ---
+  duration_ms: 0.9392
+  type: 'test'
+  ...
+# Subtest: blacklist: styles are scoped, responsive and respect reduced motion
+ok 117 - blacklist: styles are scoped, responsive and respect reduced motion
+  ---
+  duration_ms: 3.4609
+  type: 'test'
+  ...
+# Subtest: blacklist: stored entries are normalized with safe defaults
+ok 118 - blacklist: stored entries are normalized with safe defaults
+  ---
+  duration_ms: 5.1643
+  type: 'test'
+  ...
+# Subtest: manifest exposes Funcy without changing extension wiring
+ok 119 - manifest exposes Funcy without changing extension wiring
+  ---
+  duration_ms: 1.3468
+  type: 'test'
+  ...
+# Subtest: primary visible surfaces use the canonical brand and omit old public links
+ok 120 - primary visible surfaces use the canonical brand and omit old public links
+  ---
+  duration_ms: 3.7404
+  type: 'test'
+  ...
+# Subtest: public identifier is excluded while the automation compatibility marker is retained
+ok 121 - public identifier is excluded while the automation compatibility marker is retained
+  ---
+  duration_ms: 0.8798
+  type: 'test'
+  ...
+# Subtest: legacy settings, config protocols, and resource dependencies remain intact
+ok 122 - legacy settings, config protocols, and resource dependencies remain intact
+  ---
+  duration_ms: 2.5897
+  type: 'test'
+  ...
+# Subtest: bulk find/replace matches whole Cyrillic words and keeps alternation inside the word boundary
+ok 123 - bulk find/replace matches whole Cyrillic words and keeps alternation inside the word boundary
+  ---
+  duration_ms: 7.3201
+  type: 'test'
+  ...
+# Subtest: bulk price rules share one calculation with minimum and rounding
+ok 124 - bulk price rules share one calculation with minimum and rounding
+  ---
+  duration_ms: 2.1219
+  type: 'test'
+  ...
+# Subtest: bulk apply saves {current} after find/replace, returns the new title and rejects drops over 100%
+ok 125 - bulk apply saves {current} after find/replace, returns the new title and rejects drops over 100%
+  ---
+  duration_ms: 2.5704
+  type: 'test'
+  ...
+# Subtest: bulk apply rejects explicit chips lots and chips form responses
+ok 126 - bulk apply rejects explicit chips lots and chips form responses
+  ---
+  duration_ms: 1.5558
+  type: 'test'
+  ...
+# Subtest: images use native multipart and image_id; caption is a separate last message
+ok 127 - images use native multipart and image_id; caption is a separate last message
+  ---
+  duration_ms: 51.7798
+  type: 'test'
+  ...
+# Subtest: upload refusals, missing IDs and bad JSON never reach runner
+ok 128 - upload refusals, missing IDs and bad JSON never reach runner
+  ---
+  duration_ms: 8.5925
+  type: 'test'
+  ...
+# Subtest: runner failures are classified without replaying upload or message
+ok 129 - runner failures are classified without replaying upload or message
+  ---
+  duration_ms: 7.8675
+  type: 'test'
+  ...
+# Subtest: timeout also bounds reading response bodies and never resends a message
+ok 130 - timeout also bounds reading response bodies and never resends a message
+  ---
+  duration_ms: 13.0615
+  type: 'test'
+  ...
+# Subtest: invalid payloads cannot fetch arbitrary URLs or start uploads
+ok 131 - invalid payloads cannot fetch arbitrary URLs or start uploads
+  ---
+  duration_ms: 4.104
+  type: 'test'
+  ...
+# Subtest: account change between upload and runner prevents sending to a new account
+ok 132 - account change between upload and runner prevents sending to a new account
+  ---
+  duration_ms: 0.5915
+  type: 'test'
+  ...
+# Subtest: multi-select keeps all photos and posts three images before the caption
+ok 133 - multi-select keeps all photos and posts three images before the caption
+  ---
+  duration_ms: 10111.7608
+  type: 'test'
+  ...
+# Subtest: partial rejection restores only unsent photos with caption and does not send caption early
+ok 134 - partial rejection restores only unsent photos with caption and does not send caption early
+  ---
+  duration_ms: 4688.9235
+  type: 'test'
+  ...
+# Subtest: ambiguous response stops the album without retrying the possibly delivered image
+ok 135 - ambiguous response stops the album without retrying the possibly delivered image
+  ---
+  duration_ms: 3204.9932
+  type: 'test'
+  ...
+# Subtest: switching chat after selecting files blocks sending
+ok 136 - switching chat after selecting files blocks sending
+  ---
+  duration_ms: 2247.5019
+  type: 'test'
+  ...
+# Subtest: caption rejection preserves a caption-only draft; cancellation keeps newly typed text
+ok 137 - caption rejection preserves a caption-only draft; cancellation keeps newly typed text
+  ---
+  duration_ms: 3553.8855
+  type: 'test'
+  ...
+# Subtest: album window renders in light and dark themes
+ok 138 - album window renders in light and dark themes
+  ---
+  duration_ms: 9178.4441
+  type: 'test'
+  ...
+# Subtest: chat buttons: one row, theme radius including zero, light/dark, hover and keyboard filter
+ok 139 - chat buttons: one row, theme radius including zero, light/dark, hover and keyboard filter
+  ---
+  duration_ms: 5431.893
+  type: 'test'
+  ...
+# Subtest: filter restores saved state, applies to added contacts and does not overwrite a click with a late read
+ok 140 - filter restores saved state, applies to added contacts and does not overwrite a click with a late read
+  ---
+  duration_ms: 4736.5218
+  type: 'test'
+  ...
+# Subtest: read-all waits for network completion, prevents repeat requests, reports errors and resets feedback
+ok 141 - read-all waits for network completion, prevents repeat requests, reports errors and resets feedback
+  ---
+  duration_ms: 8889.5888
+  type: 'test'
+  ...
+# Subtest: popup reveal releases its clip after opening, covers the outer shadow and survives resize/reopen/reduced motion
+ok 142 - popup reveal releases its clip after opening, covers the outer shadow and survives resize/reopen/reduced motion
+  ---
+  duration_ms: 8188.5993
+  type: 'test'
+  ...
+# Subtest: modular chat CSS is empty until the switch is on and clamps every number
+ok 143 - modular chat CSS is empty until the switch is on and clamps every number
+  ---
+  duration_ms: 3.6241
+  type: 'test'
+  ...
+# Subtest: modular chat hides the info panel and restores seam borders only in the original look
+ok 144 - modular chat hides the info panel and restores seam borders only in the original look
+  ---
+  duration_ms: 5.25
+  type: 'test'
+  ...
+# Subtest: early copy of the modular chat rules is injected, replaced and removed
+ok 145 - early copy of the modular chat rules is injected, replaced and removed
+  ---
+  duration_ms: 1.3508
+  type: 'test'
+  ...
+# Subtest: theme CSS carries the modular chat in both looks, after the radius rewrite
+ok 146 - theme CSS carries the modular chat in both looks, after the radius rewrite
+  ---
+  duration_ms: 20.9307
+  type: 'test'
+  ...
+# Subtest: theme settings clamp the chat numbers on import and the modules load in order
+ok 147 - theme settings clamp the chat numbers on import and the modules load in order
+  ---
+  duration_ms: 1.121
+  type: 'test'
+  ...
+# Subtest: modular chat: separate rounded modules, drag handles save widths, reset, clamp and hide the panel
+ok 148 - modular chat: separate rounded modules, drag handles save widths, reset, clamp and hide the panel
+  ---
+  duration_ms: 8812.103
+  type: 'test'
+  ...
+# Subtest: modular chat: original look restores seam borders, mobile width keeps FunPay layout
+ok 149 - modular chat: original look restores seam borders, mobile width keeps FunPay layout
+  ---
+  duration_ms: 2329.1312
+  type: 'test'
+  ...
+# Subtest: strict sender posts exactly once and classifies every outcome
+ok 150 - strict sender posts exactly once and classifies every outcome
+  ---
+  duration_ms: 44.7387
+  type: 'test'
+  ...
+# Subtest: account guard bumps the epoch on account or key change and rejects stale effects
+ok 151 - account guard bumps the epoch on account or key change and rejects stale effects
+  ---
+  duration_ms: 4.5643
+  type: 'test'
+  ...
+# FunPay Funcy AR: → чат 77 (accepted)
+# Subtest: bootstrap ignores history; buyer before own last message is processed exactly once
+ok 152 - bootstrap ignores history; buyer before own last message is processed exactly once
+  ---
+  duration_ms: 26.1099
+  type: 'test'
+  ...
+# Subtest: system origin comes only from numeric author; marker-prefixed buyer remains buyer
+ok 153 - system origin comes only from numeric author; marker-prefixed buyer remains buyer
+  ---
+  duration_ms: 1.7309
+  type: 'test'
+  ...
+# Subtest: unknown author blocks cursor before later own messages
+ok 154 - unknown author blocks cursor before later own messages
+  ---
+  duration_ms: 4.1099
+  type: 'test'
+  ...
+# Subtest: interrupted processing survives worker recreation and never replays a reserved reply
+ok 155 - interrupted processing survives worker recreation and never replays a reserved reply
+  ---
+  duration_ms: 8.2873
+  type: 'test'
+  ...
+# Subtest: backfill persists across passes and stops on repeated history without jumping cursor
+ok 156 - backfill persists across passes and stops on repeated history without jumping cursor
+  ---
+  duration_ms: 32.9936
+  type: 'test'
+  ...
+# Subtest: late account change cannot advance cursor or write into the next scope
+ok 157 - late account change cannot advance cursor or write into the next scope
+  ---
+  duration_ms: 1.6155
+  type: 'test'
+  ...
+# Subtest: pending reads coalesce, batches are bounded, and new chat starts after bootstrap boundary
+ok 158 - pending reads coalesce, batches are bounded, and new chat starts after bootstrap boundary
+  ---
+  duration_ms: 18.4202
+  type: 'test'
+  ...
+# Subtest: IDs stay lossless, duplicate conflicts fail closed, and imported cursors are ignored
+ok 159 - IDs stay lossless, duplicate conflicts fail closed, and imported cursors are ignored
+  ---
+  duration_ms: 2.046
+  type: 'test'
+  ...
+# Subtest: runtime cursor writes do not request another engine pass; configuration edits still do
+ok 160 - runtime cursor writes do not request another engine pass; configuration edits still do
+  ---
+  duration_ms: 0.4831
+  type: 'test'
+  ...
+# Subtest: reader serializes batches per account, persists 429 cooldown, and never immediately retries
+ok 161 - reader serializes batches per account, persists 429 cooldown, and never immediately retries
+  ---
+  duration_ms: 4.2216
+  type: 'test'
+  ...
+# Subtest: wired autoresponder handles a buyer payment quotation as ordinary text; only system author registers an order; delivery stays unmarked
+ok 162 - wired autoresponder handles a buyer payment quotation as ordinary text; only system author registers an order; delivery stays unmarked
+  ---
+  duration_ms: 21.8287
+  type: 'test'
+  ...
+# Subtest: chat: quoted replies translate and export their own text without translation markup
+ok 163 - chat: quoted replies translate and export their own text without translation markup
+  ---
+  duration_ms: 3055.248
+  type: 'test'
+  ...
+# Subtest: chat: disabling during consent prevents a request and disabling in flight prevents rendering
+ok 164 - chat: disabling during consent prevents a request and disabling in flight prevents rendering
+  ---
+  duration_ms: 4960.2519
+  type: 'test'
+  ...
+# Subtest: chat: clearing an in-flight translation or changing context invalidates its result
+ok 165 - chat: clearing an in-flight translation or changing context invalidates its result
+  ---
+  duration_ms: 1809.1748
+  type: 'test'
+  ...
+# Subtest: chip offer id maps to its trade form row
+ok 166 - chip offer id maps to its trade form row
+  ---
+  duration_ms: 26.2369
+  type: 'test'
+  ...
+# Subtest: deactivating a chip removes only its active flag and keeps other servers
+ok 167 - deactivating a chip removes only its active flag and keeps other servers
+  ---
+  duration_ms: 3.0454
+  type: 'test'
+  ...
+# Subtest: chip price adjusts from the fresh form and enabling adds the flag
+ok 168 - chip price adjusts from the fresh form and enabling adds the flag
+  ---
+  duration_ms: 5.8841
+  type: 'test'
+  ...
+# Subtest: chip writes refuse foreign accounts, missing rows and delete
+ok 169 - chip writes refuse foreign accounts, missing rows and delete
+  ---
+  duration_ms: 2.1931
+  type: 'test'
+  ...
+# Subtest: main popup disables manual resizing and has a reduced-motion-aware exit state
+ok 170 - main popup disables manual resizing and has a reduced-motion-aware exit state
+  ---
+  duration_ms: 4.9162
+  type: 'test'
+  ...
+# Subtest: main popup omits the close button and closes only for outside clicks
+ok 171 - main popup omits the close button and closes only for outside clicks
+  ---
+  duration_ms: 1.6418
+  type: 'test'
+  ...
+# Subtest: legacy popup geometry is no longer read or written
+ok 172 - legacy popup geometry is no longer read or written
+  ---
+  duration_ms: 5.074
+  type: 'test'
+  ...
+# Subtest: cursor runtime stays absent while disabled and initializes once on either mode
+ok 173 - cursor runtime stays absent while disabled and initializes once on either mode
+  ---
+  duration_ms: 3464.4203
+  type: 'test'
+  ...
+# Subtest: closed popup skips rendering and restores finance and effects on reopening
+ok 174 - closed popup skips rendering and restores finance and effects on reopening
+  ---
+  duration_ms: 7612.4041
+  type: 'test'
+  ...
+# Subtest: effects page: preview draws, particle settings save at once and reset
+ok 175 - effects page: preview draws, particle settings save at once and reset
+  ---
+  duration_ms: 15563.7621
+  type: 'test'
+  ...
+# Subtest: effects page: custom cursor uploads, adjusts, validates and removes the image
+ok 176 - effects page: custom cursor uploads, adjusts, validates and removes the image
+  ---
+  duration_ms: 9717.0889
+  type: 'test'
+  ...
+# Subtest: effects page: dark popup and narrow widths stay inside the frame
+ok 177 - effects page: dark popup and narrow widths stay inside the frame
+  ---
+  duration_ms: 5874.5597
+  type: 'test'
+  ...
+# Subtest: effects: static markup stays empty and search metadata remains
+ok 178 - effects: static markup stays empty and search metadata remains
+  ---
+  duration_ms: 11.0652
+  type: 'test'
+  ...
+# Subtest: effects: the category view is mounted into the existing popup shell
+ok 179 - effects: the category view is mounted into the existing popup shell
+  ---
+  duration_ms: 0.8233
+  type: 'test'
+  ...
+# Subtest: effects: the page uses the shared frame, existing storage keys and popup actions
+ok 180 - effects: the page uses the shared frame, existing storage keys and popup actions
+  ---
+  duration_ms: 0.7846
+  type: 'test'
+  ...
+# Subtest: effects: styles are scoped, responsive and respect reduced motion
+ok 181 - effects: styles are scoped, responsive and respect reduced motion
+  ---
+  duration_ms: 2.9912
+  type: 'test'
+  ...
+# Subtest: effects: settings are normalized with safe defaults
+ok 182 - effects: settings are normalized with safe defaults
+  ---
+  duration_ms: 4.0758
+  type: 'test'
+  ...
+# Subtest: effects: the page and the site effect share one particle model
+ok 183 - effects: the page and the site effect share one particle model
+  ---
+  duration_ms: 4.8176
+  type: 'test'
+  ...
+# Subtest: heartbeat handles a failed automation pass and still runs recovery
+ok 184 - heartbeat handles a failed automation pass and still runs recovery
+  ---
+  duration_ms: 5.5222
+  type: 'test'
+  ...
+# Subtest: page mutations debounce into one wake and allow the next independent signal
+ok 185 - page mutations debounce into one wake and allow the next independent signal
+  ---
+  duration_ms: 3.0157
+  type: 'test'
+  ...
+# Subtest: synchronous context invalidation is contained and detaches stale page listeners
+ok 186 - synchronous context invalidation is contained and detaches stale page listeners
+  ---
+  duration_ms: 1.354
+  type: 'test'
+  ...
+# Subtest: context lost during debounce cancels the send and detaches the observer
+ok 187 - context lost during debounce cancels the send and detaches the observer
+  ---
+  duration_ms: 1.1921
+  type: 'test'
+  ...
+# Subtest: asynchronous context invalidation detaches the observer without an unhandled rejection
+ok 188 - asynchronous context invalidation detaches the observer without an unhandled rejection
+  ---
+  duration_ms: 6.5808
+  type: 'test'
+  ...
+# Subtest: transient worker rejection does not disable future page signals
+ok 189 - transient worker rejection does not disable future page signals
+  ---
+  duration_ms: 2.8203
+  type: 'test'
+  ...
+# FINANCE_CURRENCY_PASS
+# Subtest: tests\\finance_currency.test.js
+ok 43 - tests\\finance_currency.test.js
+  ---
+  duration_ms: 197.6078
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_custom_select_dropdown markup is removed and search metadata remains
+ok 191 - finance_hub: finance_custom_select_dropdown markup is removed and search metadata remains
+  ---
+  duration_ms: 6.5209
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_custom_select_scrollbar_bounds markup is removed and search metadata remains
+ok 192 - finance_hub: finance_custom_select_scrollbar_bounds markup is removed and search metadata remains
+  ---
+  duration_ms: 7.7202
+  type: 'test'
+  ...
+# FINANCE_DB_ATOMIC_PASS
+# Subtest: tests\\finance_db_atomic.test.js
+ok 46 - tests\\finance_db_atomic.test.js
+  ---
+  duration_ms: 351.2922
+  type: 'test'
+  ...
+# Subtest: every Finance dropdown row remains the mouse target while hovered
+ok 194 - every Finance dropdown row remains the mouse target while hovered # SKIP Microsoft Edge is not installed
+  ---
+  duration_ms: 4.6828
+  type: 'test'
+  ...
+# FINANCE_FILTERS_PASS
+# Subtest: tests\\finance_filters.test.js
+ok 48 - tests\\finance_filters.test.js
+  ---
+  duration_ms: 166.762
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_grid_equal_height markup is removed and search metadata remains
+ok 196 - finance_hub: finance_grid_equal_height markup is removed and search metadata remains
+  ---
+  duration_ms: 6.5309
+  type: 'test'
+  ...
+# Subtest: finance hub renders every tab with seeded data and responds to filters
+ok 197 - finance hub renders every tab with seeded data and responds to filters
+  ---
+  duration_ms: 10704.9218
+  type: 'test'
+  ...
+# Subtest: finance controls preserve unrelated cards and contain scrolling inside the popup
+ok 198 - finance controls preserve unrelated cards and contain scrolling inside the popup
+  ---
+  duration_ms: 9578.3199
+  type: 'test'
+  ...
+# Subtest: finance notifications preserve layout and the tab pill tracks responsive tabs
+not ok 199 - finance notifications preserve layout and the tab pill tracks responsive tabs
+  ---
+  duration_ms: 13540.5142
+  type: 'test'
+  location: 'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\finance_hub_browser.test.js:327:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    
+    '' !== 'none'
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'none'
+  actual: ''
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\finance_hub_browser.test.js:391:16)
+    async Test.run (node:internal/test_runner/test:1404:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:969:7)
+  ...
+# Subtest: finance hub refresh reports partial failures and exports CSV
+ok 200 - finance hub refresh reports partial failures and exports CSV
+  ---
+  duration_ms: 7029.3327
+  type: 'test'
+  ...
+# Subtest: finance screenshot layouts align controls and separate coverage and table filters
+ok 201 - finance screenshot layouts align controls and separate coverage and table filters
+  ---
+  duration_ms: 9162.021
+  type: 'test'
+  ...
+# Subtest: zero cost coverage keeps truthful totals and filters only its orders table
+ok 202 - zero cost coverage keeps truthful totals and filters only its orders table
+  ---
+  duration_ms: 7200.5361
+  type: 'test'
+  ...
+# Subtest: finance hub shows onboarding when there is no data and fits a narrow popup
+ok 203 - finance hub shows onboarding when there is no data and fits a narrow popup
+  ---
+  duration_ms: 5241.7318
+  type: 'test'
+  ...
+# Subtest: finance hub is readable at phone width
+ok 204 - finance hub is readable at phone width
+  ---
+  duration_ms: 4301.9508
+  type: 'test'
+  ...
+# Subtest: money and percent formatting keeps a non-breaking symbol and never prints NaN
+ok 205 - money and percent formatting keeps a non-breaking symbol and never prints NaN
+  ---
+  duration_ms: 87.1091
+  type: 'test'
+  ...
+# Subtest: delta is explicit when there is no baseline and never divides by zero
+ok 206 - delta is explicit when there is no baseline and never divides by zero
+  ---
+  duration_ms: 0.3858
+  type: 'test'
+  ...
+# Subtest: sales series fills empty days and sums only closed/paid orders in the chosen currency
+ok 207 - sales series fills empty days and sums only closed/paid orders in the chosen currency
+  ---
+  duration_ms: 9.9622
+  type: 'test'
+  ...
+# Subtest: month and week steps bucket by the MSK calendar
+ok 208 - month and week steps bucket by the MSK calendar
+  ---
+  duration_ms: 0.4632
+  type: 'test'
+  ...
+# Subtest: step selection follows the period and falls back to the data span
+ok 209 - step selection follows the period and falls back to the data span
+  ---
+  duration_ms: 0.2565
+  type: 'test'
+  ...
+# Subtest: rankings group by name, skip refunds and fold the tail into "Прочее"
+ok 210 - rankings group by name, skip refunds and fold the tail into "Прочее"
+  ---
+  duration_ms: 0.6079
+  type: 'test'
+  ...
+# Subtest: currency choice never mixes currencies
+ok 211 - currency choice never mixes currencies
+  ---
+  duration_ms: 0.9267
+  type: 'test'
+  ...
+# Subtest: nice scale returns ascending ticks covering the maximum
+ok 212 - nice scale returns ascending ticks covering the maximum
+  ---
+  duration_ms: 0.2924
+  type: 'test'
+  ...
+# Subtest: finance_hub: static markup stays empty and search metadata remains
+ok 213 - finance_hub: static markup stays empty and search metadata remains
+  ---
+  duration_ms: 9.3639
+  type: 'test'
+  ...
+# Subtest: finance_hub: model, chart and page modules load in order before the content script that mounts them
+ok 214 - finance_hub: model, chart and page modules load in order before the content script that mounts them
+  ---
+  duration_ms: 0.9367
+  type: 'test'
+  ...
+# Subtest: finance_hub: the page uses the shared category frame, builds DOM nodes and talks only to popup actions
+ok 215 - finance_hub: the page uses the shared category frame, builds DOM nodes and talks only to popup actions
+  ---
+  duration_ms: 1.2482
+  type: 'test'
+  ...
+# Subtest: finance_hub: every metadata mode has a tab button and a mode action registered by the popup shell
+ok 216 - finance_hub: every metadata mode has a tab button and a mode action registered by the popup shell
+  ---
+  duration_ms: 1.6744
+  type: 'test'
+  ...
+# Subtest: finance_hub: styles are scoped, responsive and themed through the popup tokens
+ok 217 - finance_hub: styles are scoped, responsive and themed through the popup tokens
+  ---
+  duration_ms: 4.0591
+  type: 'test'
+  ...
+# Subtest: finance_hub: the overview data action also returns profit and the previous period for KPI deltas
+ok 218 - finance_hub: the overview data action also returns profit and the previous period for KPI deltas
+  ---
+  duration_ms: 0.6724
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_ios_subtabs markup is removed and search metadata remains
+ok 219 - finance_hub: finance_ios_subtabs markup is removed and search metadata remains
+  ---
+  duration_ms: 10.001
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_kpi_alignment markup is removed and search metadata remains
+ok 220 - finance_hub: finance_kpi_alignment markup is removed and search metadata remains
+  ---
+  duration_ms: 7.4392
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_operations_breakdown_ui markup is removed and search metadata remains
+ok 221 - finance_hub: finance_operations_breakdown_ui markup is removed and search metadata remains
+  ---
+  duration_ms: 6.9719
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_operations_modal_theme markup is removed and search metadata remains
+ok 222 - finance_hub: finance_operations_modal_theme markup is removed and search metadata remains
+  ---
+  duration_ms: 12.6438
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_overview_layout_cleanup markup is removed and search metadata remains
+ok 223 - finance_hub: finance_overview_layout_cleanup markup is removed and search metadata remains
+  ---
+  duration_ms: 5.4383
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_overview_visual_contract markup is removed and search metadata remains
+ok 224 - finance_hub: finance_overview_visual_contract markup is removed and search metadata remains
+  ---
+  duration_ms: 6.0167
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_profit_missing_cost_ui markup is removed and search metadata remains
+ok 225 - finance_hub: finance_profit_missing_cost_ui markup is removed and search metadata remains
+  ---
+  duration_ms: 9.1059
+  type: 'test'
+  ...
+# FINANCE_REFRESH_PASS
+# Subtest: tests\\finance_refresh.test.js
+ok 60 - tests\\finance_refresh.test.js
+  ---
+  duration_ms: 119.6935
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_subtab_transition markup is removed and search metadata remains
+ok 227 - finance_hub: finance_subtab_transition markup is removed and search metadata remains
+  ---
+  duration_ms: 9.805
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_task08_ui_contract markup is removed and search metadata remains
+ok 228 - finance_hub: finance_task08_ui_contract markup is removed and search metadata remains
+  ---
+  duration_ms: 7.6928
+  type: 'test'
+  ...
+# FINANCE_TIME_PASS
+# Subtest: tests\\finance_time.test.js
+ok 63 - tests\\finance_time.test.js
+  ---
+  duration_ms: 162.8263
+  type: 'test'
+  ...
+# Subtest: finance_hub: finance_uiux_regressions markup is removed and search metadata remains
+ok 230 - finance_hub: finance_uiux_regressions markup is removed and search metadata remains
+  ---
+  duration_ms: 7.8547
+  type: 'test'
+  ...
+# Subtest: chat and reconcile share one delivery; a repeat sends nothing
+ok 231 - chat and reconcile share one delivery; a repeat sends nothing
+  ---
+  duration_ms: 39.7645
+  type: 'test'
+  ...
+# Subtest: unknown quantity, refund, foreign chat or missing binding block delivery
+ok 232 - unknown quantity, refund, foreign chat or missing binding block delivery
+  ---
+  duration_ms: 14.4663
+  type: 'test'
+  ...
+# Subtest: a purchase of my own and an unknown role are skipped without effects
+ok 233 - a purchase of my own and an unknown role are skipped without effects
+  ---
+  duration_ms: 15.5763
+  type: 'test'
+  ...
+# Subtest: an uncertain part stops the delivery and is never repeated automatically
+ok 234 - an uncertain part stops the delivery and is never repeated automatically
+  ---
+  duration_ms: 5.6738
+  type: 'test'
+  ...
+# Subtest: a definite rejection before anything was sent may be retried, sending only unsent parts
+ok 235 - a definite rejection before anything was sent may be retried, sending only unsent parts
+  ---
+  duration_ms: 5.2586
+  type: 'test'
+  ...
+# Subtest: an account switch between parts stops the delivery
+ok 236 - an account switch between parts stops the delivery
+  ---
+  duration_ms: 9.8118
+  type: 'test'
+  ...
+# Subtest: orders delivered by the previous version are not delivered again; not adopted orders only observed
+ok 237 - orders delivered by the previous version are not delivered again; not adopted orders only observed
+  ---
+  duration_ms: 1.3888
+  type: 'test'
+  ...
+# Subtest: fewer FunPay secrets than the quantity is a partial result flagged for attention
+ok 238 - fewer FunPay secrets than the quantity is a partial result flagged for attention
+  ---
+  duration_ms: 3.9102
+  type: 'test'
+  ...
+# Subtest: a long sleep persists pending parts and resumes after a worker restart exactly once
+ok 239 - a long sleep persists pending parts and resumes after a worker restart exactly once
+  ---
+  duration_ms: 6.1004
+  type: 'test'
+  ...
+# Subtest: continuations recheck disable, refund, holds and session epoch before sending
+ok 240 - continuations recheck disable, refund, holds and session epoch before sending
+  ---
+  duration_ms: 4.6826
+  type: 'test'
+  ...
+# Subtest: all lines are validated before the first POST and quantity does not repeat instructions
+ok 241 - all lines are validated before the first POST and quantity does not repeat instructions
+  ---
+  duration_ms: 2.0456
+  type: 'test'
+  ...
+# Subtest: continuation uses frozen parts and stops if verified quantity changed
+ok 242 - continuation uses frozen parts and stops if verified quantity changed
+  ---
+  duration_ms: 10.2372
+  type: 'test'
+  ...
+# HOVER_STABILITY_PASS
+# Subtest: tests\\hover_stability.test.js
+ok 66 - tests\\hover_stability.test.js
+  ---
+  duration_ms: 309.4253
+  type: 'test'
+  ...
+# Subtest: interface elements screen fits both themes and widths without horizontal scroll
+ok 244 - interface elements screen fits both themes and widths without horizontal scroll
+  ---
+  duration_ms: 13670.7294
+  type: 'test'
+  ...
+# Subtest: element and section switches save instantly and keep unrelated ids
+ok 245 - element and section switches save instantly and keep unrelated ids
+  ---
+  duration_ms: 6288.7816
+  type: 'test'
+  ...
+# Subtest: display options are opt-in settings saved under their own keys
+ok 246 - display options are opt-in settings saved under their own keys
+  ---
+  duration_ms: 3624.301
+  type: 'test'
+  ...
+# Subtest: keyboard row explains the hidden font block and search shows the parent as context
+ok 247 - keyboard row explains the hidden font block and search shows the parent as context
+  ---
+  duration_ms: 4842.3454
+  type: 'test'
+  ...
+# Subtest: suspended features and AI helper stay absent after restore and remount
+ok 248 - suspended features and AI helper stay absent after restore and remount
+  ---
+  duration_ms: 4170.9417
+  type: 'test'
+  ...
+# Subtest: catalog load errors are reported with recovery while AI stays absent
+ok 249 - catalog load errors are reported with recovery while AI stays absent
+  ---
+  duration_ms: 3315.3059
+  type: 'test'
+  ...
+# Subtest: external storage changes update the screen
+ok 250 - external storage changes update the screen
+  ---
+  duration_ms: 3334.7532
+  type: 'test'
+  ...
+# Subtest: layout keeps the declared group and chat subgroup order and nests the keyboard under the font block
+ok 251 - layout keeps the declared group and chat subgroup order and nests the keyboard under the font block
+  ---
+  duration_ms: 16.2767
+  type: 'test'
+  ...
+# Subtest: layout appends unknown groups instead of dropping them
+ok 252 - layout appends unknown groups instead of dropping them
+  ---
+  duration_ms: 1.6929
+  type: 'test'
+  ...
+# Subtest: visibility matches labels, descriptions, groups and legacy labels; a matching child keeps its parent as context
+ok 253 - visibility matches labels, descriptions, groups and legacy labels; a matching child keeps its parent as context
+  ---
+  duration_ms: 5.4261
+  type: 'test'
+  ...
+# Subtest: filters split elements into shown and hidden
+ok 254 - filters split elements into shown and hidden
+  ---
+  duration_ms: 1.8663
+  type: 'test'
+  ...
+# Subtest: previews preserve bundled static markup and return empty for unsupported kinds
+ok 255 - previews preserve bundled static markup and return empty for unsupported kinds
+  ---
+  duration_ms: 2.1501
+  type: 'test'
+  ...
+# Subtest: schedule pane saves a draft rule with the chosen zone and shows a preview
+ok 256 - schedule pane saves a draft rule with the chosen zone and shows a preview
+  ---
+  duration_ms: 6185.094
+  type: 'test'
+  ...
+# Subtest: the old standalone schedule and pricing dialogs are gone
+ok 257 - the old standalone schedule and pricing dialogs are gone
+  ---
+  duration_ms: 1156.4169
+  type: 'test'
+  ...
+# Subtest: offscreen lot editor preserves fields and reports pages without an editor through messages
+ok 258 - offscreen lot editor preserves fields and reports pages without an editor through messages
+  ---
+  duration_ms: 3952.2307
+  type: 'test'
+  ...
+# Subtest: export, own-lot import and auto delivery propagate parser errors without successful null data
+ok 259 - export, own-lot import and auto delivery propagate parser errors without successful null data
+  ---
+  duration_ms: 13.4153
+  type: 'test'
+  ...
+# Subtest: successful lot fields keep the existing export, import-preview and stock contracts
+ok 260 - successful lot fields keep the existing export, import-preview and stock contracts
+  ---
+  duration_ms: 1.5845
+  type: 'test'
+  ...
+# Subtest: missing or malformed offscreen responses fail closed
+ok 261 - missing or malformed offscreen responses fail closed
+  ---
+  duration_ms: 4.1123
+  type: 'test'
+  ...
+# Subtest: startLotImport rejects duplicate concurrent and already-active imports
+ok 262 - startLotImport rejects duplicate concurrent and already-active imports
+  ---
+  duration_ms: 61.3915
+  type: 'test'
+  ...
+# Subtest: lot management keeps its help button after the page mounts
+ok 263 - lot management keeps its help button after the page mounts
+  ---
+  duration_ms: 3510.3465
+  type: 'test'
+  ...
+# Subtest: lot management uses a task-card skeleton while checking pending imports
+ok 264 - lot management uses a task-card skeleton while checking pending imports
+  ---
+  duration_ms: 4100.9565
+  type: 'test'
+  ...
+# Subtest: lot management fits 1204, 680, and 420 pixel viewports in light and dark themes
+ok 265 - lot management fits 1204, 680, and 420 pixel viewports in light and dark themes
+  ---
+  duration_ms: 2852.3681
+  type: 'test'
+  ...
+# Subtest: bulk editor shows lots above tabbed changes and validates live
+ok 266 - bulk editor shows lots above tabbed changes and validates live
+  ---
+  duration_ms: 3786.5869
+  type: 'test'
+  ...
+# Subtest: bulk editor selects a category group, previews Cyrillic whole-word replacement and offers a retry for failed lots
+ok 267 - bulk editor selects a category group, previews Cyrillic whole-word replacement and offers a retry for failed lots
+  ---
+  duration_ms: 4577.5852
+  type: 'test'
+  ...
+# Subtest: export shows category and lot totals, disables empty export, and uses a visible progress indicator
+ok 268 - export shows category and lot totals, disables empty export, and uses a visible progress indicator
+  ---
+  duration_ms: 3821.7217
+  type: 'test'
+  ...
+# Subtest: import error reason stays visible and a completion report retains errors and skipped lots
+ok 269 - import error reason stays visible and a completion report retains errors and skipped lots
+  ---
+  duration_ms: 3502.3791
+  type: 'test'
+  ...
+# Subtest: lot import actions use a supported icon glyph
+ok 270 - lot import actions use a supported icon glyph
+  ---
+  duration_ms: 5130.8344
+  type: 'test'
+  ...
+# Subtest: an active import is announced and prevents starting a second import
+ok 271 - an active import is announced and prevents starting a second import
+  ---
+  duration_ms: 3814.2187
+  type: 'test'
+  ...
+# Subtest: primary dialog buttons keep readable contrast while hovered
+ok 272 - primary dialog buttons keep readable contrast while hovered
+  ---
+  duration_ms: 5129.1419
+  type: 'test'
+  ...
+# Subtest: shared popup utilities format russian plurals and create accessible status pills
+ok 273 - shared popup utilities format russian plurals and create accessible status pills
+  ---
+  duration_ms: 2219.7629
+  type: 'test'
+  ...
+# Subtest: shared dialog traps and restores focus and blocks close paths while busy
+ok 274 - shared dialog traps and restores focus and blocks close paths while busy
+  ---
+  duration_ms: 2926.0623
+  type: 'test'
+  ...
+# Subtest: shared toast queue pauses on hover and stays inside an open dialog
+ok 275 - shared toast queue pauses on hover and stays inside an open dialog
+  ---
+  duration_ms: 5804.0487
+  type: 'test'
+  ...
+# Subtest: lot_io mounts its category view and keeps the existing action contracts
+ok 276 - lot_io mounts its category view and keeps the existing action contracts
+  ---
+  duration_ms: 1.3895
+  type: 'test'
+  ...
+# Subtest: lot_io reuses the shell category header and keeps the shared title track
+ok 277 - lot_io reuses the shell category header and keeps the shared title track
+  ---
+  duration_ms: 0.7716
+  type: 'test'
+  ...
+# Subtest: lot management view defines tool tiles, import card, empty state and narrow layouts
+ok 278 - lot management view defines tool tiles, import card, empty state and narrow layouts
+  ---
+  duration_ms: 1.665
+  type: 'test'
+  ...
+# Subtest: lot import accepts a JSON file dropped on the import tile through the same path as the file picker
+ok 279 - lot import accepts a JSON file dropped on the import tile through the same path as the file picker
+  ---
+  duration_ms: 0.3408
+  type: 'test'
+  ...
+# Subtest: category and select-all checkboxes preserve pin button states without promise errors
+ok 280 - category and select-all checkboxes preserve pin button states without promise errors
+  ---
+  duration_ms: 3317.7904
+  type: 'test'
+  ...
+# Subtest: pin and unpin skip a row without href and still process a valid selected lot
+ok 281 - pin and unpin skip a row without href and still process a valid selected lot
+  ---
+  duration_ms: 3802.6824
+  type: 'test'
+  ...
+# Subtest: missing category href does not crash pinning, activation or price editing
+ok 282 - missing category href does not crash pinning, activation or price editing
+  ---
+  duration_ms: 3978.0596
+  type: 'test'
+  ...
+# Subtest: rules are validated: zone, time format, equal bounds are not all day
+ok 283 - rules are validated: zone, time format, equal bounds are not all day
+  ---
+  duration_ms: 54.9709
+  type: 'test'
+  ...
+# Subtest: overnight windows split at midnight, Sunday wraps to Monday, overlaps merge
+ok 284 - overnight windows split at midnight, Sunday wraps to Monday, overlaps merge
+  ---
+  duration_ms: 2.1622
+  type: 'test'
+  ...
+# Subtest: membership uses the saved zone, not the computer clock
+ok 285 - membership uses the saved zone, not the computer clock
+  ---
+  duration_ms: 20.9198
+  type: 'test'
+  ...
+# Subtest: DST gap and fold follow wall-clock semantics
+ok 286 - DST gap and fold follow wall-clock semantics
+  ---
+  duration_ms: 5.4209
+  type: 'test'
+  ...
+# Subtest: the next check is the nearest change within a day, else a control check in 24 hours
+ok 287 - the next check is the nearest change within a day, else a control check in 24 hours
+  ---
+  duration_ms: 22.7615
+  type: 'test'
+  ...
+# Subtest: a saved rule is a draft; enabling it closes the lot and schedules one alarm
+ok 288 - a saved rule is a draft; enabling it closes the lot and schedules one alarm
+  ---
+  duration_ms: 157.4533
+  type: 'test'
+  ...
+# Subtest: after a long sleep only the current state is applied, once
+ok 289 - after a long sleep only the current state is applied, once
+  ---
+  duration_ms: 11.2813
+  type: 'test'
+  ...
+# Subtest: a lot that was already off is not switched on by the schedule; disabling a rule lifts only its blocker
+ok 290 - a lot that was already off is not switched on by the schedule; disabling a rule lifts only its blocker
+  ---
+  duration_ms: 67.7817
+  type: 'test'
+  ...
+# Subtest: invalid rules and foreign revisions are refused
+ok 291 - invalid rules and foreign revisions are refused
+  ---
+  duration_ms: 2.3177
+  type: 'test'
+  ...
+# Subtest: tiny prices are compared exactly
+ok 292 - tiny prices are compared exactly
+  ---
+  duration_ms: 8.1009
+  type: 'test'
+  ...
+# Subtest: price rules are computed exactly from the fresh form
+ok 293 - price rules are computed exactly from the fresh form
+  ---
+  duration_ms: 1.0188
+  type: 'test'
+  ...
+# Subtest: queued operations on one lot run in order against a fresh form
+ok 294 - queued operations on one lot run in order against a fresh form
+  ---
+  duration_ms: 28.187
+  type: 'test'
+  ...
+# Subtest: a stale bulk form cannot reopen a closed lot: only the intended fields are applied
+ok 295 - a stale bulk form cannot reopen a closed lot: only the intended fields are applied
+  ---
+  duration_ms: 37.874
+  type: 'test'
+  ...
+# Subtest: a deleted lot is terminal for later queued updates
+ok 296 - a deleted lot is terminal for later queued updates
+  ---
+  duration_ms: 35.2282
+  type: 'test'
+  ...
+# Subtest: an account switch stops queued writes; a foreign page is refused
+ok 297 - an account switch stops queued writes; a foreign page is refused
+  ---
+  duration_ms: 3.2214
+  type: 'test'
+  ...
+# Subtest: patchLot saves only real changes and verifies them after a re-read
+ok 298 - patchLot saves only real changes and verifies them after a re-read
+  ---
+  duration_ms: 10.1013
+  type: 'test'
+  ...
+# Subtest: patchLot refuses to overwrite a manual edit made after the caller looked at the lot
+ok 299 - patchLot refuses to overwrite a manual edit made after the caller looked at the lot
+  ---
+  duration_ms: 0.5908
+  type: 'test'
+  ...
+# Subtest: setLotActive removes the active field to deactivate and reports unverified saves
+ok 300 - setLotActive removes the active field to deactivate and reports unverified saves
+  ---
+  duration_ms: 0.6799
+  type: 'test'
+  ...
+# Subtest: activity service leaves unmanaged lots alone and never reads or acts on stock
+ok 301 - activity service leaves unmanaged lots alone and never reads or acts on stock
+  ---
+  duration_ms: 11.3339
+  type: 'test'
+  ...
+# Subtest: a manual change by the seller pauses management; manual off is never overridden
+ok 302 - a manual change by the seller pauses management; manual off is never overridden
+  ---
+  duration_ms: 2.3914
+  type: 'test'
+  ...
+# Subtest: traces of the retired stock sweep neither hold a lot off nor let automation switch it on
+ok 303 - traces of the retired stock sweep neither hold a lot off nor let automation switch it on
+  ---
+  duration_ms: 1.5736
+  type: 'test'
+  ...
+# MENU_REFERENCE_CONTRACT_PASS
+# Subtest: tests\\menu_reference_contract.test.js
+ok 80 - tests\\menu_reference_contract.test.js
+  ---
+  duration_ms: 265.1706
+  type: 'test'
+  ...
+# Subtest: decimal arithmetic is exact and keeps tiny prices apart
+ok 305 - decimal arithmetic is exact and keeps tiny prices apart
+  ---
+  duration_ms: 8.7549
+  type: 'test'
+  ...
+# Subtest: rounding follows the quantum of the operation
+ok 306 - rounding follows the quantum of the operation
+  ---
+  duration_ms: 1.0318
+  type: 'test'
+  ...
+# Subtest: allocation splits a batch cost exactly with a deterministic remainder
+ok 307 - allocation splits a batch cost exactly with a deterministic remainder
+  ---
+  duration_ms: 2.9148
+  type: 'test'
+  ...
+# Subtest: order quantity is parsed from the whole raw value with its unit
+ok 308 - order quantity is parsed from the whole raw value with its unit
+  ---
+  duration_ms: 2.8125
+  type: 'test'
+  ...
+# Subtest: order facts keep unknown values unknown and take the order id from the page
+ok 309 - order facts keep unknown values unknown and take the order id from the page
+  ---
+  duration_ms: 4.3417
+  type: 'test'
+  ...
+# Subtest: verifier blocks effects on any unknown or mismatching fact
+ok 310 - verifier blocks effects on any unknown or mismatching fact
+  ---
+  duration_ms: 6.6017
+  type: 'test'
+  ...
+# Subtest: central navigation keeps active aliases and excludes retired financial pages
+ok 311 - central navigation keeps active aliases and excludes retired financial pages
+  ---
+  duration_ms: 1.8485
+  type: 'test'
+  ...
+# NAVIGATION_SEARCH_ROUTES_PASS
+# Subtest: tests\\navigation_search_routes.test.js
+ok 83 - tests\\navigation_search_routes.test.js
+  ---
+  duration_ms: 5615.1011
+  type: 'test'
+  ...
+# Subtest: catalog reads preserve all feature data and never write settings or create previews
+ok 313 - catalog reads preserve all feature data and never write settings or create previews
+  ---
+  duration_ms: 7.6345
+  type: 'test'
+  ...
+# Subtest: search continues to match descriptions, groups and prior feature labels without rendering rows
+ok 314 - search continues to match descriptions, groups and prior feature labels without rendering rows
+  ---
+  duration_ms: 2.7773
+  type: 'test'
+  ...
+# Subtest: removed AI actions are not registered without sending data
+ok 315 - removed AI actions are not registered without sending data
+  ---
+  duration_ms: 4.804
+  type: 'test'
+  ...
+# Subtest: explicit toggles preserve unrelated feature IDs and ignore removed feature IDs
+ok 316 - explicit toggles preserve unrelated feature IDs and ignore removed feature IDs
+  ---
+  duration_ms: 2.8424
+  type: 'test'
+  ...
+# Subtest: public registry preserves available ID-to-selector pairs and excludes suspended features
+ok 317 - public registry preserves available ID-to-selector pairs and excludes suspended features
+  ---
+  duration_ms: 23.5954
+  type: 'test'
+  ...
+# Subtest: renamed font controls retain their prior searchable labels locally
+ok 318 - renamed font controls retain their prior searchable labels locally
+  ---
+  duration_ms: 1.8578
+  type: 'test'
+  ...
+# Subtest: stored disabled IDs still hide the exact original live selectors across the remaining groups
+ok 319 - stored disabled IDs still hide the exact original live selectors across the remaining groups
+  ---
+  duration_ms: 3.5504
+  type: 'test'
+  ...
+# Subtest: sounds page: standard sound remains usable and branded presets are absent
+ok 320 - sounds page: standard sound remains usable and branded presets are absent
+  ---
+  duration_ms: 7590.9434
+  type: 'test'
+  ...
+# Subtest: sounds page: a custom melody is loaded, trimmed on the waveform, saved and removed
+ok 321 - sounds page: a custom melody is loaded, trimmed on the waveform, saved and removed
+  ---
+  duration_ms: 16778.3786
+  type: 'test'
+  ...
+# Subtest: sounds page: dark theme and a narrow popup keep the layout inside the frame
+ok 322 - sounds page: dark theme and a narrow popup keep the layout inside the frame
+  ---
+  duration_ms: 9458.1969
+  type: 'test'
+  ...
+# Subtest: sounds: static markup stays empty and search metadata remains
+ok 323 - sounds: static markup stays empty and search metadata remains
+  ---
+  duration_ms: 10.5027
+  type: 'test'
+  ...
+# Subtest: sounds: the page sits in the customers group and is mounted by the popup
+ok 324 - sounds: the page sits in the customers group and is mounted by the popup
+  ---
+  duration_ms: 1.9229
+  type: 'test'
+  ...
+# Subtest: sounds: every preset file ships with the extension and is web accessible
+ok 325 - sounds: every preset file ships with the extension and is web accessible
+  ---
+  duration_ms: 2.4525
+  type: 'test'
+  ...
+# Subtest: sounds: the page uses the shared frame, the stored keys and popup actions only
+ok 326 - sounds: the page uses the shared frame, the stored keys and popup actions only
+  ---
+  duration_ms: 0.9272
+  type: 'test'
+  ...
+# Subtest: sounds: the playback runtime no longer depends on the original source path
+ok 327 - sounds: the playback runtime no longer depends on the original source path
+  ---
+  duration_ms: 0.6026
+  type: 'test'
+  ...
+# Subtest: sounds: styles are scoped, responsive and respect reduced motion
+ok 328 - sounds: styles are scoped, responsive and respect reduced motion
+  ---
+  duration_ms: 4.723
+  type: 'test'
+  ...
+# Subtest: sounds: stored values are normalized with safe defaults
+ok 329 - sounds: stored values are normalized with safe defaults
+  ---
+  duration_ms: 1.8417
+  type: 'test'
+  ...
+# Subtest: recordOrder merges repeated sightings without erasing known fields or moving purchasedAt
+ok 330 - recordOrder merges repeated sightings without erasing known fields or moving purchasedAt
+  ---
+  duration_ms: 9.7746
+  type: 'test'
+  ...
+# Subtest: beginOp is idempotent and transitions follow the state machine
+ok 331 - beginOp is idempotent and transitions follow the state machine
+  ---
+  duration_ms: 1.332
+  type: 'test'
+  ...
+# Subtest: concurrent beginOp calls for one key create exactly one operation
+ok 332 - concurrent beginOp calls for one key create exactly one operation
+  ---
+  duration_ms: 0.6666
+  type: 'test'
+  ...
+# Subtest: recovery marks only sends of a previous worker as uncertain
+ok 333 - recovery marks only sends of a previous worker as uncertain
+  ---
+  duration_ms: 1.7391
+  type: 'test'
+  ...
+# Subtest: prune drops old finished records and keeps orders with live operations
+ok 334 - prune drops old finished records and keeps orders with live operations
+  ---
+  duration_ms: 1.5431
+  type: 'test'
+  ...
+# Subtest: meta values round-trip
+ok 335 - meta values round-trip
+  ---
+  duration_ms: 2.6275
+  type: 'test'
+  ...
+# Subtest: IndexedDB journal: multi-store transaction is atomic and v1 data survives the upgrade
+ok 336 - IndexedDB journal: multi-store transaction is atomic and v1 data survives the upgrade
+  ---
+  duration_ms: 2348.1091
+  type: 'test'
+  ...
+# Subtest: account orders are keyed by account and order and carry a revision
+ok 337 - account orders are keyed by account and order and carry a revision
+  ---
+  duration_ms: 15.6596
+  type: 'test'
+  ...
+# Subtest: an attempt and its event are written once per opKey
+ok 338 - an attempt and its event are written once per opKey
+  ---
+  duration_ms: 1.7056
+  type: 'test'
+  ...
+# Subtest: prune keeps unfinished attempts and their orders
+ok 339 - prune keeps unfinished attempts and their orders
+  ---
+  duration_ms: 3.0805
+  type: 'test'
+  ...
+# Subtest: recovery marks interrupted delivery parts uncertain
+ok 340 - recovery marks interrupted delivery parts uncertain
+  ---
+  duration_ms: 3.8962
+  type: 'test'
+  ...
+# Subtest: the card offers actions that match the evidence, never a generic retry
+ok 341 - the card offers actions that match the evidence, never a generic retry
+  ---
+  duration_ms: 21.2882
+  type: 'test'
+  ...
+# Subtest: commands check the revision and the capability list
+ok 342 - commands check the revision and the capability list
+  ---
+  duration_ms: 17.5875
+  type: 'test'
+  ...
+# Subtest: the list filters orders that need a decision and masks delivered goods
+ok 343 - the list filters orders that need a decision and masks delivered goods
+  ---
+  duration_ms: 1.3445
+  type: 'test'
+  ...
+# Subtest: lot is resolved from the offer link first, then from a unique title in the same category
+ok 344 - lot is resolved from the offer link first, then from a unique title in the same category
+  ---
+  duration_ms: 8.4384
+  type: 'test'
+  ...
+# Subtest: order loader reads each order once per account window and never invents quantity or binding
+ok 345 - order loader reads each order once per account window and never invents quantity or binding
+  ---
+  duration_ms: 2.5917
+  type: 'test'
+  ...
+# Subtest: scheduler dispatches only its own alarms, keeps a running periodic alarm, and serializes recovery
+ok 346 - scheduler dispatches only its own alarms, keeps a running periodic alarm, and serializes recovery
+  ---
+  duration_ms: 3.911
+  type: 'test'
+  ...
+# Subtest: persisted deadlines survive a worker restart and run once when overdue
+ok 347 - persisted deadlines survive a worker restart and run once when overdue
+  ---
+  duration_ms: 3.1823
+  type: 'test'
+  ...
+# Subtest: order page parser reads lot, category, quantity, status and buyer from real DOM
+ok 348 - order page parser reads lot, category, quantity, status and buyer from real DOM
+  ---
+  duration_ms: 1576.2314
+  type: 'test'
+  ...
+# Subtest: order facts parser returns raw page facts without decisions
+ok 349 - order facts parser returns raw page facts without decisions
+  ---
+  duration_ms: 2472.9696
+  type: 'test'
+  ...
+# Subtest: the first pass only records a baseline and never executes old orders
+ok 350 - the first pass only records a baseline and never executes old orders
+  ---
+  duration_ms: 8.8917
+  type: 'test'
+  ...
+# Subtest: known unfulfilled orders are retried even when they are far beyond the first page
+ok 351 - known unfulfilled orders are retried even when they are far beyond the first page
+  ---
+  duration_ms: 3.4706
+  type: 'test'
+  ...
+# Subtest: pages are followed with continue until the previous border, missed paid orders are adopted
+ok 352 - pages are followed with continue until the previous border, missed paid orders are adopted
+  ---
+  duration_ms: 3.1758
+  type: 'test'
+  ...
+# Subtest: a repeating continue cursor reports failure without advancing the completed border
+ok 353 - a repeating continue cursor reports failure without advancing the completed border
+  ---
+  duration_ms: 4.8705
+  type: 'test'
+  ...
+# Subtest: orders journal lists orders by decision and the card only offers allowed actions
+ok 354 - orders journal lists orders by decision and the card only offers allowed actions
+  ---
+  duration_ms: 7804.8593
+  type: 'test'
+  ...
+# Subtest: release: chat, review and lot AI stay absent after focus and dynamic markup; translations and manual images work
+ok 355 - release: chat, review and lot AI stay absent after focus and dynamic markup; translations and manual images work
+  ---
+  duration_ms: 6637.0055
+  type: 'test'
+  ...
+# Subtest: release: own and other profiles do not use legacy cached data and do not mount server descriptions
+ok 356 - release: own and other profiles do not use legacy cached data and do not mount server descriptions
+  ---
+  duration_ms: 4313.2547
+  type: 'test'
+  ...
+# Subtest: page windows: lot copy uses the menu palette, switches languages and closes like a dialog
+ok 357 - page windows: lot copy uses the menu palette, switches languages and closes like a dialog
+  ---
+  duration_ms: 5312.8026
+  type: 'test'
+  ...
+# Subtest: page windows: stacked windows close one at a time and dark pages get the dark menu palette
+ok 358 - page windows: stacked windows close one at a time and dark pages get the dark menu palette
+  ---
+  duration_ms: 7224.7584
+  type: 'test'
+  ...
+# Subtest: page windows: narrow screens show windows as bottom sheets without horizontal overflow
+ok 359 - page windows: narrow screens show windows as bottom sheets without horizontal overflow
+  ---
+  duration_ms: 4036.1446
+  type: 'test'
+  ...
+# Subtest: page windows: the shell and its stylesheet load with the content scripts
+ok 360 - page windows: the shell and its stylesheet load with the content scripts
+  ---
+  duration_ms: 1.5014
+  type: 'test'
+  ...
+# Subtest: page windows: every window is built with fptWindow.create and keeps its id
+ok 361 - page windows: every window is built with fptWindow.create and keeps its id
+  ---
+  duration_ms: 8.5418
+  type: 'test'
+  ...
+# Subtest: page windows: no window reads its colours from the page any more
+ok 362 - page windows: no window reads its colours from the page any more
+  ---
+  duration_ms: 2.6671
+  type: 'test'
+  ...
+# Subtest: page windows: the stylesheet uses the menu tokens and the violet accent
+ok 363 - page windows: the stylesheet uses the menu tokens and the violet accent
+  ---
+  duration_ms: 0.778
+  type: 'test'
+  ...
+# Subtest: page windows: site theme rules and the popup outside-click leave windows alone
+ok 364 - page windows: site theme rules and the popup outside-click leave windows alone
+  ---
+  duration_ms: 0.6681
+  type: 'test'
+  ...
+# Subtest: page windows: the shell closes on Escape, keeps Tab inside and restores focus
+ok 365 - page windows: the shell closes on Escape, keeps Tab inside and restores focus
+  ---
+  duration_ms: 0.3508
+  type: 'test'
+  ...
+# Subtest: coalescing preserves every mutation batch in order and accepts frame id zero
+ok 366 - coalescing preserves every mutation batch in order and accepts frame id zero
+  ---
+  duration_ms: 4.3383
+  type: 'test'
+  ...
+# Subtest: pending work migrates in both visibility directions without duplicate execution
+ok 367 - pending work migrates in both visibility directions without duplicate execution
+  ---
+  duration_ms: 1.1267
+  type: 'test'
+  ...
+# Subtest: callback failures do not block later work and disposal cancels pending batches
+ok 368 - callback failures do not block later work and disposal cancels pending batches
+  ---
+  duration_ms: 1.1124
+  type: 'test'
+  ...
+# Subtest: URL subscribers share detection, deduplicate events and dispose their sources
+ok 369 - URL subscribers share detection, deduplicate events and dispose their sources
+  ---
+  duration_ms: 1.1174
+  type: 'test'
+  ...
+# Subtest: without Navigation API all URL subscribers use one polling timer
+ok 370 - without Navigation API all URL subscribers use one polling timer
+  ---
+  duration_ms: 0.9934
+  type: 'test'
+  ...
+# Subtest: chat attachment disabling restores the native button without replacing either node
+ok 371 - chat attachment disabling restores the native button without replacing either node
+  ---
+  duration_ms: 3385.5896
+  type: 'test'
+  ...
+# Subtest: order timers share one interval, avoid duplicates and clean removed rows
+ok 372 - order timers share one interval, avoid duplicates and clean removed rows
+  ---
+  duration_ms: 1588.93
+  type: 'test'
+  ...
+# Subtest: stock cache keeps a newer storage event when the initial read resolves late
+ok 373 - stock cache keeps a newer storage event when the initial read resolves late
+  ---
+  duration_ms: 3909.4355
+  type: 'test'
+  ...
+# Subtest: actions persist only explicit settings and never read deleted controls
+ok 374 - actions persist only explicit settings and never read deleted controls
+  ---
+  duration_ms: 8.3119
+  type: 'test'
+  ...
+# Subtest: auto-reply changes use the existing atomic store and propagate storage failures
+ok 375 - auto-reply changes use the existing atomic store and propagate storage failures
+  ---
+  duration_ms: 2.4322
+  type: 'test'
+  ...
+# Subtest: partial nested settings updates retain saved theme fields
+ok 376 - partial nested settings updates retain saved theme fields
+  ---
+  duration_ms: 2.4639
+  type: 'test'
+  ...
+# Subtest: opening data actions never writes settings and invalid actions reject
+ok 377 - opening data actions never writes settings and invalid actions reject
+  ---
+  duration_ms: 3.9701
+  type: 'test'
+  ...
+# Subtest: account actions are proxied to the background service by record id and never carry keys
+ok 378 - account actions are proxied to the background service by record id and never carry keys
+  ---
+  duration_ms: 4.1507
+  type: 'test'
+  ...
+# Subtest: lot exports return data without constructing progress bars or modal controls
+ok 379 - lot exports return data without constructing progress bars or modal controls
+  ---
+  duration_ms: 2.5436
+  type: 'test'
+  ...
+# Subtest: bonus and keyword additions preserve existing atomic-store arrays
+ok 380 - bonus and keyword additions preserve existing atomic-store arrays
+  ---
+  duration_ms: 2.1713
+  type: 'test'
+  ...
+# Subtest: retired financial pages reject popup action registrations
+ok 381 - retired financial pages reject popup action registrations
+  ---
+  duration_ms: 2.5744
+  type: 'test'
+  ...
+# Subtest: delivery updates preserve other lots and saved fields
+ok 382 - delivery updates preserve other lots and saved fields
+  ---
+  duration_ms: 2.4219
+  type: 'test'
+  ...
+# Subtest: manual lot loading asks the background to sync stock and returns counts without secret contents
+ok 383 - manual lot loading asks the background to sync stock and returns counts without secret contents
+  ---
+  duration_ms: 2.3001
+  type: 'test'
+  ...
+# Subtest: theme actions preserve other theme settings and never hydrate removed previews
+ok 384 - theme actions preserve other theme settings and never hydrate removed previews
+  ---
+  duration_ms: 5.7034
+  type: 'test'
+  ...
+# Subtest: real browser: lot management screen, navigation and shell geometry
+ok 385 - real browser: lot management screen, navigation and shell geometry
+  ---
+  duration_ms: 46993.4191
+  type: 'test'
+  ...
+# Subtest: manifest eagerly loads each menu dependency once and every resource exists
+ok 386 - manifest eagerly loads each menu dependency once and every resource exists
+  ---
+  duration_ms: 20.0703
+  type: 'test'
+  ...
+# Subtest: one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu
+not ok 387 - one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu
+  ---
+  duration_ms: 38548.5069
+  type: 'test'
+  location: 'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\popup_eager_load_browser.test.js:26:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    page.waitForSelector: Timeout 30000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('.fp-tools-popup.active') to be visible[22m
+    
+  code: 'ERR_TEST_FAILURE'
+  name: 'TimeoutError'
+  stack: |-
+    TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_eager_load_browser.test.js:49:24)
+  ...
+# Subtest: saved custom theme, page windows and enhanced selects work before opening and preserve their palette
+ok 388 - saved custom theme, page windows and enhanced selects work before opening and preserve their palette
+  ---
+  duration_ms: 3102.0505
+  type: 'test'
+  ...
+# Subtest: sales and operation filters are explicit and do not leak between requests
+ok 389 - sales and operation filters are explicit and do not leak between requests
+  ---
+  duration_ms: 49.7378
+  type: 'test'
+  ...
+# Subtest: potential is a current snapshot and never applies a historical period to inventory
+ok 390 - potential is a current snapshot and never applies a historical period to inventory
+  ---
+  duration_ms: 3.6172
+  type: 'test'
+  ...
+# Subtest: refresh coalesces concurrent calls, exposes partial failures and allows retry
+ok 391 - refresh coalesces concurrent calls, exposes partial failures and allows retry
+  ---
+  duration_ms: 4.4836
+  type: 'test'
+  ...
+# Subtest: custom date range rejects invalid dates and passes inclusive MSK dates to the engine
+ok 392 - custom date range rejects invalid dates and passes inclusive MSK dates to the engine
+  ---
+  duration_ms: 3.8906
+  type: 'test'
+  ...
+# Subtest: finance export uses the existing serializer and returns a file result without a dialog
+ok 393 - finance export uses the existing serializer and returns a file result without a dialog
+  ---
+  duration_ms: 3.5131
+  type: 'test'
+  ...
+# Subtest: profit filters return the aggregate totals and preserve unknown costs for export
+ok 394 - profit filters return the aggregate totals and preserve unknown costs for export
+  ---
+  duration_ms: 2.1502
+  type: 'test'
+  ...
+# Subtest: real finance engines export positive profit and potential totals in the existing file schema
+ok 395 - real finance engines export positive profit and potential totals in the existing file schema
+  ---
+  duration_ms: 13.1393
+  type: 'test'
+  ...
+# Subtest: expanded sidebar gains room while the collapsed rail remains compact
+ok 396 - expanded sidebar gains room while the collapsed rail remains compact
+  ---
+  duration_ms: 1.1046
+  type: 'test'
+  ...
+# Subtest: popup dimensions adapt to the viewport and ignore saved geometry
+ok 397 - popup dimensions adapt to the viewport and ignore saved geometry
+  ---
+  duration_ms: 5.3082
+  type: 'test'
+  ...
+# Subtest: page surface clears the close control and shares the softer panel radius
+ok 398 - page surface clears the close control and shares the softer panel radius
+  ---
+  duration_ms: 0.8912
+  type: 'test'
+  ...
+# Subtest: narrow viewport automatically compacts the sidebar at the agreed breakpoint
+ok 399 - narrow viewport automatically compacts the sidebar at the agreed breakpoint
+  ---
+  duration_ms: 0.437
+  type: 'test'
+  ...
+# Subtest: deleted selection dialogs retain explicit selection and save actions
+ok 400 - deleted selection dialogs retain explicit selection and save actions
+  ---
+  duration_ms: 9.2422
+  type: 'test'
+  ...
+# Subtest: bulk lot edits preserve native fields and accept literal replacements and explicit empty fields
+ok 401 - bulk lot edits preserve native fields and accept literal replacements and explicit empty fields
+  ---
+  duration_ms: 3.5753
+  type: 'test'
+  ...
+# Subtest: lot export reports failed items and rejects when nothing could be exported
+ok 402 - lot export reports failed items and rejects when nothing could be exported
+  ---
+  duration_ms: 4.6033
+  type: 'test'
+  ...
+# Subtest: lot export stops before requesting another lot when its abort signal is set
+ok 403 - lot export stops before requesting another lot when its abort signal is set
+  ---
+  duration_ms: 2.3573
+  type: 'test'
+  ...
+# Subtest: bulk lot updates stop before writing the next selected lot when cancelled
+ok 404 - bulk lot updates stop before writing the next selected lot when cancelled
+  ---
+  duration_ms: 2.5889
+  type: 'test'
+  ...
+# Subtest: settings backup retains its format, exclusions and atomic auto-reply import
+ok 405 - settings backup retains its format, exclusions and atomic auto-reply import
+  ---
+  duration_ms: 5.1021
+  type: 'test'
+  ...
+# Subtest: settings backups cannot export or restore retired piggy-bank data
+ok 406 - settings backups cannot export or restore retired piggy-bank data
+  ---
+  duration_ms: 4.663
+  type: 'test'
+  ...
+# Subtest: concurrent feature mutations and partial settings writes retain both explicit changes
+ok 407 - concurrent feature mutations and partial settings writes retain both explicit changes
+  ---
+  duration_ms: 6.0047
+  type: 'test'
+  ...
+# Subtest: keyword attachments use the real atomic store and support an image-only response
+ok 408 - keyword attachments use the real atomic store and support an image-only response
+  ---
+  duration_ms: 4.3168
+  type: 'test'
+  ...
+# Subtest: ticket submit returns a validated draft and only confirmation sends it
+ok 409 - ticket submit returns a validated draft and only confirmation sends it
+  ---
+  duration_ms: 2.6798
+  type: 'test'
+  ...
+# Subtest: popup controls are normalized at the shared popup boundary
+ok 410 - popup controls are normalized at the shared popup boundary
+  ---
+  duration_ms: 1.5304
+  type: 'test'
+  ...
+# Subtest: shared control styles and normalization stay inside the extension popup
+ok 411 - shared control styles and normalization stay inside the extension popup
+  ---
+  duration_ms: 1.124
+  type: 'test'
+  ...
+# Subtest: checkbox marks are centered beside their native accessible inputs
+ok 412 - checkbox marks are centered beside their native accessible inputs
+  ---
+  duration_ms: 0.6616
+  type: 'test'
+  ...
+# Subtest: popup fields share fixed geometry and price fields use the same control class
+ok 413 - popup fields share fixed geometry and price fields use the same control class
+  ---
+  duration_ms: 0.5439
+  type: 'test'
+  ...
+# Subtest: popup fields and buttons use one focus indicator without stacked outlines and shadows
+ok 414 - popup fields and buttons use one focus indicator without stacked outlines and shadows
+  ---
+  duration_ms: 1.1997
+  type: 'test'
+  ...
+# Subtest: popup buttons and selectable rows have clear press states with reduced motion support
+ok 415 - popup buttons and selectable rows have clear press states with reduced motion support
+  ---
+  duration_ms: 0.5401
+  type: 'test'
+  ...
+# Subtest: popup creation leaves every category empty, retains navigation, and omits the close control
+ok 416 - popup creation leaves every category empty, retains navigation, and omits the close control
+  ---
+  duration_ms: 7.4039
+  type: 'test'
+  ...
+# Subtest: feature search metadata remains available after removing category headings
+ok 417 - feature search metadata remains available after removing category headings
+  ---
+  duration_ms: 3.9174
+  type: 'test'
+  ...
+# Subtest: deleted popup components have no remaining styles while page integrations stay styled
+ok 418 - deleted popup components have no remaining styles while page integrations stay styled
+  ---
+  duration_ms: 1.6334
+  type: 'test'
+  ...
+# Subtest: floor satisfies both the minimum profit and the minimum margin
+ok 419 - floor satisfies both the minimum profit and the minimum margin
+  ---
+  duration_ms: 11.2882
+  type: 'test'
+  ...
+# Subtest: markup and margin are different and named correctly
+ok 420 - markup and margin are different and named correctly
+  ---
+  duration_ms: 1.4207
+  type: 'test'
+  ...
+# Subtest: rounding up to the step is re-checked; tiny prices keep their precision
+ok 421 - rounding up to the step is re-checked; tiny prices keep their precision
+  ---
+  duration_ms: 0.7364
+  type: 'test'
+  ...
+# Subtest: a ceiling below the floor blocks new sales; no raise without permission
+ok 422 - a ceiling below the floor blocks new sales; no raise without permission
+  ---
+  duration_ms: 1.8197
+  type: 'test'
+  ...
+# Subtest: fees reduce the net: the floor accounts for them
+ok 423 - fees reduce the net: the floor accounts for them
+  ---
+  duration_ms: 2.0386
+  type: 'test'
+  ...
+# Subtest: pricing: real scripts preserve conversions and fallback, buyerFirst=false
+ok 424 - pricing: real scripts preserve conversions and fallback, buyerFirst=false
+  ---
+  duration_ms: 1413.7775
+  type: 'test'
+  ...
+# Subtest: pricing: real scripts preserve conversions and fallback, buyerFirst=true
+ok 425 - pricing: real scripts preserve conversions and fallback, buyerFirst=true
+  ---
+  duration_ms: 3186.5162
+  type: 'test'
+  ...
+# Subtest: pricing: initially disabled field and unavailable ruble fees preserve seller input and fallback
+ok 426 - pricing: initially disabled field and unavailable ruble fees preserve seller input and fallback
+  ---
+  duration_ms: 3858.1105
+  type: 'test'
+  ...
+# Subtest: preview reads fresh prices and costs; apply writes only previewed rows with expect
+ok 427 - preview reads fresh prices and costs; apply writes only previewed rows with expect
+  ---
+  duration_ms: 34.8828
+  type: 'test'
+  ...
+# Subtest: a changed cost or rule invalidates the preview
+ok 428 - a changed cost or rule invalidates the preview
+  ---
+  duration_ms: 2.7849
+  type: 'test'
+  ...
+# Subtest: auto pricing is bounded per run and pauses after a manual price edit
+ok 429 - auto pricing is bounded per run and pauses after a manual price edit
+  ---
+  duration_ms: 3.4539
+  type: 'test'
+  ...
+# Subtest: profile toolbar survives both initialization orders, search, filters and selection cancellation
+ok 430 - profile toolbar survives both initialization orders, search, filters and selection cancellation
+  ---
+  duration_ms: 4285.9831
+  type: 'test'
+  ...
+# Subtest: toolbar and selected actions fit narrow and desktop viewports in both palettes
+ok 431 - toolbar and selected actions fit narrow and desktop viewports in both palettes
+  ---
+  duration_ms: 23268.3573
+  type: 'test'
+  ...
+# Subtest: foreign profile keeps its copy action and does not mount raise-all
+ok 432 - foreign profile keeps its copy action and does not mount raise-all
+  ---
+  duration_ms: 3843.77
+  type: 'test'
+  ...
+# Subtest: long write errors and currency warnings stay inside the panel without covering actions
+ok 433 - long write errors and currency warnings stay inside the panel without covering actions
+  ---
+  duration_ms: 10279.7501
+  type: 'test'
+  ...
+# Subtest: real original and custom theme styles update every lot control radius including zero
+ok 434 - real original and custom theme styles update every lot control radius including zero
+  ---
+  duration_ms: 822.7879
+  type: 'test'
+  ...
+# Subtest: final feedback stays readable after the last selected lot succeeds and can be dismissed
+ok 435 - final feedback stays readable after the last selected lot succeeds and can be dismissed
+  ---
+  duration_ms: 2152.1211
+  type: 'test'
+  ...
+# Subtest: native profile tables keep heading gaps, checkbox columns and cell alignment consistent
+ok 436 - native profile tables keep heading gaps, checkbox columns and cell alignment consistent
+  ---
+  duration_ms: 1551.2793
+  type: 'test'
+  ...
+# Subtest: quick replies screen fits both themes and widths without horizontal scroll
+ok 437 - quick replies screen fits both themes and widths without horizontal scroll
+  ---
+  duration_ms: 11824.9585
+  type: 'test'
+  ...
+# Subtest: route modes, tab keyboard navigation and search panes stay in sync
+ok 438 - route modes, tab keyboard navigation and search panes stay in sync
+  ---
+  duration_ms: 4951.7178
+  type: 'test'
+  ...
+# Subtest: templates can be toggled, created with images, edited, reset and deleted
+ok 439 - templates can be toggled, created with images, edited, reset and deleted
+  ---
+  duration_ms: 5166.8676
+  type: 'test'
+  ...
+# Subtest: slash commands validate triggers and save, edit and delete through the store
+ok 440 - slash commands validate triggers and save, edit and delete through the store
+  ---
+  duration_ms: 4786.2193
+  type: 'test'
+  ...
+# Subtest: external changes rerender after the editor closes and load errors offer a retry
+ok 441 - external changes rerender after the editor closes and load errors offer a retry
+  ---
+  duration_ms: 4399.3082
+  type: 'test'
+  ...
+# Subtest: templates: quick_replies_navigation markup is removed and search metadata remains
+ok 442 - templates: quick_replies_navigation markup is removed and search metadata remains
+  ---
+  duration_ms: 7.7309
+  type: 'test'
+  ...
+# Subtest: templates normalize to the chat runtime defaults without inventing custom entries
+ok 443 - templates normalize to the chat runtime defaults without inventing custom entries
+  ---
+  duration_ms: 8.976
+  type: 'test'
+  ...
+# Subtest: stored templates override defaults, keep custom order and drop malformed entries
+ok 444 - stored templates override defaults, keep custom order and drop malformed entries
+  ---
+  duration_ms: 0.8527
+  type: 'test'
+  ...
+# Subtest: commands normalize options and keep legacy entries without ids
+ok 445 - commands normalize options and keep legacy entries without ids
+  ---
+  duration_ms: 0.515
+  type: 'test'
+  ...
+# Subtest: preview fills template variables, picks the first variant and marks removed inserts
+ok 446 - preview fills template variables, picks the first variant and marks removed inserts
+  ---
+  duration_ms: 1.7873
+  type: 'test'
+  ...
+# Subtest: command preview only substitutes variables the slash runtime supports
+ok 447 - command preview only substitutes variables the slash runtime supports
+  ---
+  duration_ms: 1.4534
+  type: 'test'
+  ...
+# Subtest: command validation adds the slash and rejects blanks, spaces, inner slashes and duplicates
+ok 448 - command validation adds the slash and rejects blanks, spaces, inner slashes and duplicates
+  ---
+  duration_ms: 0.6465
+  type: 'test'
+  ...
+# Subtest: templates: quick_replies_ui_contract markup is removed and search metadata remains
+ok 449 - templates: quick_replies_ui_contract markup is removed and search metadata remains
+  ---
+  duration_ms: 7.0162
+  type: 'test'
+  ...
+# Subtest: strict date parsing validates ru/en/uk calendar, MSK day and year rollover
+ok 450 - strict date parsing validates ru/en/uk calendar, MSK day and year rollover
+  ---
+  duration_ms: 8.3385
+  type: 'test'
+  ...
+# Subtest: send receipts require a new numeric ID, our author and the complete normalized body
+ok 451 - send receipts require a new numeric ID, our author and the complete normalized body
+  ---
+  duration_ms: 2.799
+  type: 'test'
+  ...
+# Subtest: reconcile checkpoints span budget exhaustion and worker recreation without moving completed border
+ok 452 - reconcile checkpoints span budget exhaustion and worker recreation without moving completed border
+  ---
+  duration_ms: 15.8196
+  type: 'test'
+  ...
+# Subtest: unknown and minute-boundary dates stay visible without automatic adoption
+ok 453 - unknown and minute-boundary dates stay visible without automatic adoption
+  ---
+  duration_ms: 2.1548
+  type: 'test'
+  ...
+# Subtest: offscreen parser shares creation and waits for every concurrent parser before closing
+ok 454 - offscreen parser shares creation and waits for every concurrent parser before closing
+  ---
+  duration_ms: 6.1643
+  type: 'test'
+  ...
+# Subtest: engine coalesces a signal during a pass and disabled automation clears its alarms
+ok 455 - engine coalesces a signal during a pass and disabled automation clears its alarms
+  ---
+  duration_ms: 3.7624
+  type: 'test'
+  ...
+# Subtest: catalog route validation rejects arbitrary parameters, userinfo and external redirects before another request
+ok 456 - catalog route validation rejects arbitrary parameters, userinfo and external redirects before another request
+  ---
+  duration_ms: 40.851
+  type: 'test'
+  ...
+# Subtest: release migration changes only exact retired defaults, preserving sessions and custom assets
+ok 457 - release migration changes only exact retired defaults, preserving sessions and custom assets
+  ---
+  duration_ms: 6.4627
+  type: 'test'
+  ...
+# Subtest: a failure while preparing parts rolls back the entire attempt and its event
+ok 458 - a failure while preparing parts rolls back the entire attempt and its event
+  ---
+  duration_ms: 1.7308
+  type: 'test'
+  ...
+# Subtest: one continuation alarm keeps the earliest persisted deadline across concurrent orders
+ok 459 - one continuation alarm keeps the earliest persisted deadline across concurrent orders
+  ---
+  duration_ms: 3.7286
+  type: 'test'
+  ...
+# Subtest: real Chrome popup scrollbars follow theme with transparent tracks; site preview stays editable
+ok 460 - real Chrome popup scrollbars follow theme with transparent tracks; site preview stays editable
+  ---
+  duration_ms: 5170.9343
+  type: 'test'
+  ...
+# Subtest: offscreen parses synthetic message IDs/authors/body without preview or author-name inference
+ok 461 - offscreen parses synthetic message IDs/authors/body without preview or author-name inference
+  ---
+  duration_ms: 3160.6408
+  type: 'test'
+  ...
+# Subtest: extension and remote config no longer enable removed financial tools
+ok 462 - extension and remote config no longer enable removed financial tools
+  ---
+  duration_ms: 1.1081
+  type: 'test'
+  ...
+# Subtest: update cleanup deletes piggy data and stale routes while install leaves storage unchanged
+ok 463 - update cleanup deletes piggy data and stale routes while install leaves storage unchanged
+  ---
+  duration_ms: 1.4199
+  type: 'test'
+  ...
+# Subtest: update cleanup retains the active route and removes only retired saved modes
+ok 464 - update cleanup retains the active route and removes only retired saved modes
+  ---
+  duration_ms: 0.3055
+  type: 'test'
+  ...
+# Subtest: worker cleanup cancels only retired alarms, removes secrets and keeps unrelated data
+ok 465 - worker cleanup cancels only retired alarms, removes secrets and keeps unrelated data
+  ---
+  duration_ms: 3.6397
+  type: 'test'
+  ...
+# Subtest: retired rating route resets, active routes and malformed legacy values remain safe
+ok 466 - retired rating route resets, active routes and malformed legacy values remain safe
+  ---
+  duration_ms: 0.3485
+  type: 'test'
+  ...
+# Subtest: old backups cannot export or restore integrations or retired route state; sound choice survives without the heavy clip
+ok 467 - old backups cannot export or restore integrations or retired route state; sound choice survives without the heavy clip
+  ---
+  duration_ms: 28.9134
+  type: 'test'
+  ...
+# Subtest: retired popup pages reject actions and registrations
+ok 468 - retired popup pages reject actions and registrations
+  ---
+  duration_ms: 4.7441
+  type: 'test'
+  ...
+# Subtest: manifest resources exist, notification permissions are removed and bundled sounds are reachable
+ok 469 - manifest resources exist, notification permissions are removed and bundled sounds are reachable
+  ---
+  duration_ms: 10.3748
+  type: 'test'
+  ...
+# Subtest: worker retirement runs on load and install, while shared parsing and support stay available
+ok 470 - worker retirement runs on load and install, while shared parsing and support stay available
+  ---
+  duration_ms: 8.8108
+  type: 'test'
+  ...
+# Subtest: removed supplier module leaves no settings or page behind
+ok 471 - removed supplier module leaves no settings or page behind
+  ---
+  duration_ms: 0.6022
+  type: 'test'
+  ...
+# Subtest: reminder block: variable chips, preview, lot picker, manual send and no overflow
+ok 472 - reminder block: variable chips, preview, lot picker, manual send and no overflow
+  ---
+  duration_ms: 15989.4321
+  type: 'test'
+  ...
+# Subtest: only orders after enabling, with verified fulfillment and confirmation, get one task
+ok 473 - only orders after enabling, with verified fulfillment and confirmation, get one task
+  ---
+  duration_ms: 37.9568
+  type: 'test'
+  ...
+# Subtest: any review cancels, an unknown review defers, refund and problems cancel
+ok 474 - any review cancels, an unknown review defers, refund and problems cancel
+  ---
+  duration_ms: 3.8458
+  type: 'test'
+  ...
+# Subtest: one reminder per chat within the cap; uncertain sends are not repeated and use the cap
+ok 475 - one reminder per chat within the cap; uncertain sends are not repeated and use the cap
+  ---
+  duration_ms: 1.7918
+  type: 'test'
+  ...
+# Subtest: disabling cancels pending tasks; re-enabling starts a new baseline without reviving them
+ok 476 - disabling cancels pending tasks; re-enabling starts a new baseline without reviving them
+  ---
+  duration_ms: 1.3711
+  type: 'test'
+  ...
+# Subtest: candidates: closed orders without a review, checked once and grouped by lot and buyer
+ok 477 - candidates: closed orders without a review, checked once and grouped by lot and buyer
+  ---
+  duration_ms: 15.4718
+  type: 'test'
+  ...
+# Subtest: candidates honours the per-call check limit
+ok 478 - candidates honours the per-call check limit
+  ---
+  duration_ms: 0.8516
+  type: 'test'
+  ...
+# Subtest: manual reminder: old closed order without review, even with automation off
+ok 479 - manual reminder: old closed order without review, even with automation off
+  ---
+  duration_ms: 2.7855
+  type: 'test'
+  ...
+# Subtest: manual reminder re-checks the page and respects reviews, holds and the chat cap
+ok 480 - manual reminder re-checks the page and respects reviews, holds and the chat cap
+  ---
+  duration_ms: 2.0114
+  type: 'test'
+  ...
+# Subtest: theme font style accepts only supported weight and boolean italic
+ok 481 - theme font style accepts only supported weight and boolean italic
+  ---
+  duration_ms: 2.5679
+  type: 'test'
+  ...
+# Subtest: URLs and fonts cannot introduce executable schemes or CSS
+ok 482 - URLs and fonts cannot introduce executable schemes or CSS
+  ---
+  duration_ms: 7.3932
+  type: 'test'
+  ...
+# Subtest: image URLs remain quoted and declarations reject escapes and rule breaks
+ok 483 - image URLs remain quoted and declarations reject escapes and rule breaks
+  ---
+  duration_ms: 2.4283
+  type: 'test'
+  ...
+# Subtest: CSV neutralizes formulas, including arithmetic, while keeping signed amounts
+ok 484 - CSV neutralizes formulas, including arithmetic, while keeping signed amounts
+  ---
+  duration_ms: 1.5901
+  type: 'test'
+  ...
+# Subtest: theme numbers and colors cannot introduce CSS rules through sibling fields
+ok 485 - theme numbers and colors cannot introduce CSS rules through sibling fields
+  ---
+  duration_ms: 0.4025
+  type: 'test'
+  ...
+# Subtest: live CSS supports HTTPS images and shorthands while rejecting URL parser escapes
+ok 486 - live CSS supports HTTPS images and shorthands while rejecting URL parser escapes
+  ---
+  duration_ms: 0.6885
+  type: 'test'
+  ...
+# FunPay Funcy AR: ответ на подтверждение заказа \#ABCD1234
+# FunPay Funcy AR: ответ на новый заказ \#ABCD1234 → чат 44
+# Subtest: auto replies reject wrong order/account/chat and forged confirmation on paid orders
+ok 487 - auto replies reject wrong order/account/chat and forged confirmation on paid orders
+  ---
+  duration_ms: 8.8967
+  type: 'test'
+  ...
+# Subtest: cookie snapshot swaps the whole session and restores it before a queued account switch or logout
+ok 488 - cookie snapshot swaps the whole session and restores it before a queued account switch or logout
+  ---
+  duration_ms: 4.2443
+  type: 'test'
+  ...
+# Subtest: retired profile descriptions module is deleted
+ok 489 - retired profile descriptions module is deleted
+  ---
+  duration_ms: 0.6701
+  type: 'test'
+  ...
+# Subtest: browser: translations, buyer history, pinned migration, and imported CSS stay inert
+ok 490 - browser: translations, buyer history, pinned migration, and imported CSS stay inert
+  ---
+  duration_ms: 4234.3345
+  type: 'test'
+  ...
+# Subtest: tab-like controls use consistent hover and selected-state motion across popup sections
+ok 491 - tab-like controls use consistent hover and selected-state motion across popup sections
+  ---
+  duration_ms: 9.1026
+  type: 'test'
+  ...
+# Subtest: finance header separates title from tabs and segmented updates animate replacement content
+ok 492 - finance header separates title from tabs and segmented updates animate replacement content
+  ---
+  duration_ms: 4.5902
+  type: 'test'
+  ...
+# Subtest: selling editor cells have consistent padding, centered controls and contained mobile scrolling
+ok 493 - selling editor cells have consistent padding, centered controls and contained mobile scrolling
+  ---
+  duration_ms: 4916.0678
+  type: 'test'
+  ...
+# Subtest: removed service files and runtime wiring are absent
+ok 494 - removed service files and runtime wiring are absent
+  ---
+  duration_ms: 8.5242
+  type: 'test'
+  ...
+# Subtest: worker dispatcher keeps ordinary Google translation after AI removal
+ok 495 - worker dispatcher keeps ordinary Google translation after AI removal
+  ---
+  duration_ms: 1050.2581
+  type: 'test'
+  ...
+# Subtest: old templates are blocked atomically before editing drafts or sending either part
+ok 496 - old templates are blocked atomically before editing drafts or sending either part
+  ---
+  duration_ms: 126.7215
+  type: 'test'
+  ...
+# Subtest: ordinary templates keep substitutions and submit exactly once
+ok 497 - ordinary templates keep substitutions and submit exactly once
+  ---
+  duration_ms: 3.1063
+  type: 'test'
+  ...
+# Subtest: startup cleanup removes legacy service settings and IDs without touching templates or FunPay accounts
+ok 498 - startup cleanup removes legacy service settings and IDs without touching templates or FunPay accounts
+  ---
+  duration_ms: 5.836
+  type: 'test'
+  ...
+# Subtest: old backups cannot reimport removed service settings, but templates remain editable
+ok 499 - old backups cannot reimport removed service settings, but templates remain editable
+  ---
+  duration_ms: 20.0278
+  type: 'test'
+  ...
+# Subtest: settings transfer keeps backup age, export and load recovery next to the actions
+ok 500 - settings transfer keeps backup age, export and load recovery next to the actions
+  ---
+  duration_ms: 6978.1234
+  type: 'test'
+  ...
+# Subtest: every prefixed literal has an explicit backup decision, including dynamic key prefixes
+ok 501 - every prefixed literal has an explicit backup decision, including dynamic key prefixes
+  ---
+  duration_ms: 70.81
+  type: 'test'
+  ...
+# Subtest: device sessions and verification queues never leave or enter settings backups
+ok 502 - device sessions and verification queues never leave or enter settings backups
+  ---
+  duration_ms: 7.0425
+  type: 'test'
+  ...
+# Subtest: import normalizes known settings before writing and rejects oversized files before reading
+ok 503 - import normalizes known settings before writing and rejects oversized files before reading
+  ---
+  duration_ms: 5.3438
+  type: 'test'
+  ...
+# Subtest: general: settings_page_recomposition page is retired from the menu, search and actions
+ok 504 - general: settings_page_recomposition page is retired from the menu, search and actions
+  ---
+  duration_ms: 11.4301
+  type: 'test'
+  ...
+# Subtest: sidebar expansion preserves scroll and pending route reveal yields to manual scrolling
+ok 505 - sidebar expansion preserves scroll and pending route reveal yields to manual scrolling
+  ---
+  duration_ms: 8750.7979
+  type: 'test'
+  ...
+# STORE_AUDIT_REMOVAL_RUNTIME_PASS
+# Subtest: tests\\store_audit_removal_runtime.test.js
+ok 132 - tests\\store_audit_removal_runtime.test.js
+  ---
+  duration_ms: 141.0497
+  type: 'test'
+  ...
+# Subtest: support page: tickets load on open, filter, search and sort locally
+ok 507 - support page: tickets load on open, filter, search and sort locally
+  ---
+  duration_ms: 7178.9952
+  type: 'test'
+  ...
+# Subtest: support page: a conversation opens, renders safe HTML, replies and closes the ticket
+ok 508 - support page: a conversation opens, renders safe HTML, replies and closes the ticket
+  ---
+  duration_ms: 7694.4501
+  type: 'test'
+  ...
+# Subtest: support page: a new ticket is built from the site form and sent only after the preview
+ok 509 - support page: a new ticket is built from the site form and sent only after the preview
+  ---
+  duration_ms: 8143.5722
+  type: 'test'
+  ...
+# Subtest: support page: order confirmation collects old orders, remembers limits and confirms before sending
+ok 510 - support page: order confirmation collects old orders, remembers limits and confirms before sending
+  ---
+  duration_ms: 3022.3441
+  type: 'test'
+  ...
+# Subtest: support page: no orders, load errors and the empty list explain themselves
+ok 511 - support page: no orders, load errors and the empty list explain themselves
+  ---
+  duration_ms: 2661.2787
+  type: 'test'
+  ...
+# Subtest: support page: dark popup and narrow widths stay inside the frame
+ok 512 - support page: dark popup and narrow widths stay inside the frame
+  ---
+  duration_ms: 3017.3673
+  type: 'test'
+  ...
+# Subtest: support: static markup stays empty and search metadata remains
+ok 513 - support: static markup stays empty and search metadata remains
+  ---
+  duration_ms: 7.8398
+  type: 'test'
+  ...
+# Subtest: support: the category view is mounted into the existing popup shell
+ok 514 - support: the category view is mounted into the existing popup shell
+  ---
+  duration_ms: 0.8306
+  type: 'test'
+  ...
+# Subtest: support: the page talks to support only through the registered popup actions
+ok 515 - support: the page talks to support only through the registered popup actions
+  ---
+  duration_ms: 1.5224
+  type: 'test'
+  ...
+# Subtest: support: styles are scoped, responsive and respect reduced motion
+ok 516 - support: styles are scoped, responsive and respect reduced motion
+  ---
+  duration_ms: 4.2592
+  type: 'test'
+  ...
+# Subtest: support: statuses are grouped by word stem
+ok 517 - support: statuses are grouped by word stem
+  ---
+  duration_ms: 4.1527
+  type: 'test'
+  ...
+# Subtest: support: tickets are counted, filtered and sorted locally
+ok 518 - support: tickets are counted, filtered and sorted locally
+  ---
+  duration_ms: 5.0638
+  type: 'test'
+  ...
+# Subtest: support: order request limits are clamped with safe defaults
+ok 519 - support: order request limits are clamped with safe defaults
+  ---
+  duration_ms: 1.018
+  type: 'test'
+  ...
+# Subtest: support: form conditions and order ages read as on the site
+ok 520 - support: form conditions and order ages read as on the site
+  ---
+  duration_ms: 0.7939
+  type: 'test'
+  ...
+# Subtest: support: typed text is escaped before it becomes ticket HTML
+ok 521 - support: typed text is escaped before it becomes ticket HTML
+  ---
+  duration_ms: 2.4967
+  type: 'test'
+  ...
+# Subtest: support: unconfirmed orders are filtered by age, oldest first
+ok 522 - support: unconfirmed orders are filtered by age, oldest first
+  ---
+  duration_ms: 1.6511
+  type: 'test'
+  ...
+# T01_FINANCE_ATOMIC_REFRESH_PASS
+# Subtest: tests\\t01_finance_atomic_refresh.test.js
+ok 135 - tests\\t01_finance_atomic_refresh.test.js
+  ---
+  duration_ms: 118.7859
+  type: 'test'
+  ...
+# T02_UPDATE_CONTRACT_PASS
+# Subtest: tests\\t02_update_contract.test.js
+ok 136 - tests\\t02_update_contract.test.js
+  ---
+  duration_ms: 158.5386
+  type: 'test'
+  ...
+# Subtest: tests\\t03_refresh_orchestration.test.js
+ok 137 - tests\\t03_refresh_orchestration.test.js
+  ---
+  duration_ms: 232.5348
+  type: 'test'
+  ...
+# Subtest: tests\\t04_separate_statuses.test.js
+ok 138 - tests\\t04_separate_statuses.test.js
+  ---
+  duration_ms: 172.3021
+  type: 'test'
+  ...
+# Subtest: finance_hub: t05_potential_period_semantics markup is removed and search metadata remains
+ok 527 - finance_hub: t05_potential_period_semantics markup is removed and search metadata remains
+  ---
+  duration_ms: 27.1366
+  type: 'test'
+  ...
+# T06_SINGLE_MSK_CALENDAR_MODEL_PASS
+# Subtest: tests\\t06_msk_calendar_model.test.js
+ok 140 - tests\\t06_msk_calendar_model.test.js
+  ---
+  duration_ms: 231.679
+  type: 'test'
+  ...
+# T07_REMOVE_GUESSED_FX_PASS
+# Subtest: tests\\t07_remove_guessed_fx.test.js
+ok 141 - tests\\t07_remove_guessed_fx.test.js
+  ---
+  duration_ms: 225.645
+  type: 'test'
+  ...
+# Subtest: finance_hub: t08_source_freshness markup is removed and search metadata remains
+ok 530 - finance_hub: t08_source_freshness markup is removed and search metadata remains
+  ---
+  duration_ms: 11.9556
+  type: 'test'
+  ...
+# Subtest: finance_hub: t09_idempotent_lifecycle markup is removed and search metadata remains
+ok 531 - finance_hub: t09_idempotent_lifecycle markup is removed and search metadata remains
+  ---
+  duration_ms: 6.48
+  type: 'test'
+  ...
+# T10_UNIFY_FINANCE_EXPORT_PASS
+# Subtest: tests\\t10_unify_finance_export.test.js
+ok 144 - tests\\t10_unify_finance_export.test.js
+  ---
+  duration_ms: 113.8069
+  type: 'test'
+  ...
+# T11_CUSTOM_DATE_RANGE_PASS
+# Subtest: tests\\t11_custom_date_range.test.js
+ok 145 - tests\\t11_custom_date_range.test.js
+  ---
+  duration_ms: 186.4124
+  type: 'test'
+  ...
+# T11_HARDENING_PASS elapsed_10k_ms=15.35
+# Subtest: tests\\t11_hardening.test.js
+ok 146 - tests\\t11_hardening.test.js
+  ---
+  duration_ms: 174.0847
+  type: 'test'
+  ...
+# T12_PREVIOUS_PERIOD_KPI_COMPARISON_PASS
+# Subtest: tests\\t12_previous_period_kpi_comparison.test.js
+ok 147 - tests\\t12_previous_period_kpi_comparison.test.js
+  ---
+  duration_ms: 358.9472
+  type: 'test'
+  ...
+# Subtest: finance_hub: t14_final_integration_audit markup is removed and search metadata remains
+ok 536 - finance_hub: t14_final_integration_audit markup is removed and search metadata remains
+  ---
+  duration_ms: 6.8966
+  type: 'test'
+  ...
+# Subtest: finance_hub: t15_finance_filter_css_isolation markup is removed and search metadata remains
+ok 537 - finance_hub: t15_finance_filter_css_isolation markup is removed and search metadata remains
+  ---
+  duration_ms: 6.4838
+  type: 'test'
+  ...
+# Subtest: finance_hub: t16_contextual_filter_visibility markup is removed and search metadata remains
+ok 538 - finance_hub: t16_contextual_filter_visibility markup is removed and search metadata remains
+  ---
+  duration_ms: 20.9289
+  type: 'test'
+  ...
+# Subtest: finance_hub: t17_finance_header_information_architecture markup is removed and search metadata remains
+ok 539 - finance_hub: t17_finance_header_information_architecture markup is removed and search metadata remains
+  ---
+  duration_ms: 5.8005
+  type: 'test'
+  ...
+# Subtest: finance_hub: t18_labeled_contextual_filters markup is removed and search metadata remains
+ok 540 - finance_hub: t18_labeled_contextual_filters markup is removed and search metadata remains
+  ---
+  duration_ms: 7.1903
+  type: 'test'
+  ...
+# T18_NAVIGATION_IA_PASS
+# Subtest: tests\\t18_navigation_ia.test.js
+ok 153 - tests\\t18_navigation_ia.test.js
+  ---
+  duration_ms: 107.5487
+  type: 'test'
+  ...
+# Subtest: finance_hub: t19_finance_ui_localization markup is removed and search metadata remains
+ok 542 - finance_hub: t19_finance_ui_localization markup is removed and search metadata remains
+  ---
+  duration_ms: 6.4147
+  type: 'test'
+  ...
+# Subtest: finance_hub: t20_export_modal_theme_integration markup is removed and search metadata remains
+ok 543 - finance_hub: t20_export_modal_theme_integration markup is removed and search metadata remains
+  ---
+  duration_ms: 8.3867
+  type: 'test'
+  ...
+# POTENTIAL_STOCK_SEMANTICS_PASS
+# Subtest: tests\\t21_potential_stock_semantics.test.js
+ok 156 - tests\\t21_potential_stock_semantics.test.js
+  ---
+  duration_ms: 126.0678
+  type: 'test'
+  ...
+# Subtest: finance_hub: t22_profit_missing_cost_onboarding markup is removed and search metadata remains
+ok 545 - finance_hub: t22_profit_missing_cost_onboarding markup is removed and search metadata remains
+  ---
+  duration_ms: 9.8186
+  type: 'test'
+  ...
+# Subtest: finance_hub: t23_scroll_and_empty_state_cleanup markup is removed and search metadata remains
+ok 546 - finance_hub: t23_scroll_and_empty_state_cleanup markup is removed and search metadata remains
+  ---
+  duration_ms: 19.4543
+  type: 'test'
+  ...
+# Subtest: finance_hub: t24_finance_hub_modularization markup is removed and search metadata remains
+ok 547 - finance_hub: t24_finance_hub_modularization markup is removed and search metadata remains
+  ---
+  duration_ms: 9.2918
+  type: 'test'
+  ...
+# Subtest: catalog entries are available, including new entries and offline cache
+ok 548 - catalog entries are available, including new entries and offline cache
+  ---
+  duration_ms: 72.5652
+  type: 'test'
+  ...
+# Subtest: retired themes are excluded from old cached catalogs
+ok 549 - retired themes are excluded from old cached catalogs
+  ---
+  duration_ms: 3.8856
+  type: 'test'
+  ...
+# Subtest: valid wallpapers load and unsafe paths are rejected
+ok 550 - valid wallpapers load and unsafe paths are rejected
+  ---
+  duration_ms: 7.1921
+  type: 'test'
+  ...
+# Subtest: invalid remote catalogue does not replace the last successful catalogue
+ok 551 - invalid remote catalogue does not replace the last successful catalogue
+  ---
+  duration_ms: 3.1203
+  type: 'test'
+  ...
+# Subtest: theme contrast utilities exist and maintain readability standards
+ok 552 - theme contrast utilities exist and maintain readability standards
+  ---
+  duration_ms: 2.9386
+  type: 'test'
+  ...
+# Subtest: contrast calculation algorithm lifts problematic theme colors above WCAG AA standard
+ok 553 - contrast calculation algorithm lifts problematic theme colors above WCAG AA standard
+  ---
+  duration_ms: 1.5209
+  type: 'test'
+  ...
+# Subtest: theme draftOnly actions return values without touching storage or the site
+ok 554 - theme draftOnly actions return values without touching storage or the site
+  ---
+  duration_ms: 6.9783
+  type: 'test'
+  ...
+# Subtest: theme actions keep their original write-through behaviour without the draft flag
+ok 555 - theme actions keep their original write-through behaviour without the draft flag
+  ---
+  duration_ms: 4.6331
+  type: 'test'
+  ...
+# Subtest: theme page metadata keeps searchable labels and only registered button ids
+ok 556 - theme page metadata keeps searchable labels and only registered button ids
+  ---
+  duration_ms: 5.2801
+  type: 'test'
+  ...
+# Subtest: theme page module is wired in order, mounts safely and avoids native dialogs
+ok 557 - theme page module is wired in order, mounts safely and avoids native dialogs
+  ---
+  duration_ms: 1.5154
+  type: 'test'
+  ...
+# Subtest: theme page reads and writes only through popup actions and keeps drafts out of storage
+ok 558 - theme page reads and writes only through popup actions and keeps drafts out of storage
+  ---
+  duration_ms: 0.5537
+  type: 'test'
+  ...
+# Subtest: theme page styles stay inside the popup, use shared tokens and honour reduced motion
+ok 559 - theme page styles stay inside the popup, use shared tokens and honour reduced motion
+  ---
+  duration_ms: 5.4323
+  type: 'test'
+  ...
+# Subtest: original FunPay look: defaults, reset and a light CSS without wallpaper or recolouring
+ok 560 - original FunPay look: defaults, reset and a light CSS without wallpaper or recolouring
+  ---
+  duration_ms: 6.2343
+  type: 'test'
+  ...
+# Subtest: theme page cards avoid bare header elements and keep native file inputs out of sight
+ok 561 - theme page cards avoid bare header elements and keep native file inputs out of sight
+  ---
+  duration_ms: 0.3175
+  type: 'test'
+  ...
+# Subtest: site theme rules are guarded against the popup without changing specificity
+ok 562 - site theme rules are guarded against the popup without changing specificity
+  ---
+  duration_ms: 1.9124
+  type: 'test'
+  ...
+# Subtest: real browser: custom scrollbar applies to site and chat without recolouring the popup
+ok 563 - real browser: custom scrollbar applies to site and chat without recolouring the popup
+  ---
+  duration_ms: 3363.7243
+  type: 'test'
+  ...
+# Subtest: real browser: new fonts are selectable and an old saved font remains intact
+ok 564 - real browser: new fonts are selectable and an old saved font remains intact
+  ---
+  duration_ms: 3339.5879
+  type: 'test'
+  ...
+# Subtest: real browser: catalogue themes can be selected and remain available offline
+ok 565 - real browser: catalogue themes can be selected and remain available offline
+  ---
+  duration_ms: 3598.5885
+  type: 'test'
+  ...
+# Subtest: real browser: theme page builds every section from stored settings and keeps the dock closed
+ok 566 - real browser: theme page builds every section from stored settings and keeps the dock closed
+  ---
+  duration_ms: 2369.7145
+  type: 'test'
+  ...
+# Subtest: real browser: buttons card follows the theme in auto mode and takes an explicit colour
+ok 567 - real browser: buttons card follows the theme in auto mode and takes an explicit colour
+  ---
+  duration_ms: 2237.9814
+  type: 'test'
+  ...
+# Subtest: real browser: edits stay in the draft until Apply, Cancel restores, Apply enables a disabled theme
+ok 568 - real browser: edits stay in the draft until Apply, Cancel restores, Apply enables a disabled theme
+  ---
+  duration_ms: 3283.6346
+  type: 'test'
+  ...
+# Subtest: real browser: original and custom tiles switch the base style in the draft only
+ok 569 - real browser: original and custom tiles switch the base style in the draft only
+  ---
+  duration_ms: 2152.0007
+  type: 'test'
+  ...
+# Subtest: real browser: preset strip has no scrollbar, starts at the first tile and pages exactly one theme
+ok 570 - real browser: preset strip has no scrollbar, starts at the first tile and pages exactly one theme
+  ---
+  duration_ms: 6049.8072
+  type: 'test'
+  ...
+# Subtest: real browser: reset, export and share use page dialogs instead of native prompts
+ok 571 - real browser: reset, export and share use page dialogs instead of native prompts
+  ---
+  duration_ms: 2362.8071
+  type: 'test'
+  ...
+# Subtest: real browser: swatches flag corrected colours and low contrast, previews follow every toggle
+ok 572 - real browser: swatches flag corrected colours and low contrast, previews follow every toggle
+  ---
+  duration_ms: 5505.3099
+  type: 'test'
+  ...
+# Subtest: real browser: dark popup, narrow layouts and reduced motion keep the page inside its frame
+ok 573 - real browser: dark popup, narrow layouts and reduced motion keep the page inside its frame
+  ---
+  duration_ms: 3581.2454
+  type: 'test'
+  ...
+# Subtest: real browser: background upload, palette from image, size limit and theme import stay in the draft
+ok 574 - real browser: background upload, palette from image, size limit and theme import stay in the draft
+  ---
+  duration_ms: 15818.4822
+  type: 'test'
+  ...
+# Subtest: real browser: tools card has no stray backdrop or native file input, original look keeps shape settings
+ok 575 - real browser: tools card has no stray backdrop or native file input, original look keeps shape settings
+  ---
+  duration_ms: 3085.1067
+  type: 'test'
+  ...
+# Subtest: real browser: the site theme does not leak into the popup and turns it dark
+ok 576 - real browser: the site theme does not leak into the popup and turns it dark
+  ---
+  duration_ms: 3161.2887
+  type: 'test'
+  ...
+# Subtest: early theme loading preserves original, empty and legacy custom themes
+ok 577 - early theme loading preserves original, empty and legacy custom themes
+  ---
+  duration_ms: 20.3378
+  type: 'test'
+  ...
+# Subtest: translation queue serializes different requests, deduplicates and preserves chat/lot contracts
+ok 578 - translation queue serializes different requests, deduplicates and preserves chat/lot contracts
+  ---
+  duration_ms: 10.4068
+  type: 'test'
+  ...
+# Subtest: 429 and network retries use bounded attempts and backoff; HTTP 400 is not retried
+ok 579 - 429 and network retries use bounded attempts and backoff; HTTP 400 is not retried
+  ---
+  duration_ms: 4.6807
+  type: 'test'
+  ...
+# Subtest: long Retry-After seconds and HTTP dates pause the entire queue without early network calls
+ok 580 - long Retry-After seconds and HTTP dates pause the entire queue without early network calls
+  ---
+  duration_ms: 5.1506
+  type: 'test'
+  ...
+# Subtest: a terminal 429 also delays the next queued request
+ok 581 - a terminal 429 also delays the next queued request
+  ---
+  duration_ms: 3.4452
+  type: 'test'
+  ...
+# Subtest: timeout covers response bodies, clears attempts and releases the queue
+ok 582 - timeout covers response bodies, clears attempts and releases the queue
+  ---
+  duration_ms: 4.4339
+  type: 'test'
+  ...
+# Subtest: invalid responses and failed lot fields are errors, not unchanged successful translations
+ok 583 - invalid responses and failed lot fields are errors, not unchanged successful translations
+  ---
+  duration_ms: 3.449
+  type: 'test'
+  ...
+# Subtest: nothing is sent to Google Translate until the user has allowed it
+ok 584 - nothing is sent to Google Translate until the user has allowed it
+  ---
+  duration_ms: 1.7901
+  type: 'test'
+  ...
+# Subtest: general: ui_foundation_contract page is retired from the menu, search and actions
+ok 585 - general: ui_foundation_contract page is retired from the menu, search and actions
+  ---
+  duration_ms: 7.3987
+  type: 'test'
+  ...
+1..585
+# tests 585
+# suites 0
+# pass 582
+# fail 2
+# cancelled 0
+# skipped 1
+# todo 0
+# duration_ms 146084.0436

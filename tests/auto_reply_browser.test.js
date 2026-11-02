@@ -83,7 +83,7 @@ async function openAutoReply(browser, autoReplies) {
     await page.evaluate(() => window.fptOpenPopupPage('auto_reply'));
     await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'auto_reply');
     await page.locator('.fpt-auto-reply').waitFor();
-    await page.waitForFunction(() => document.querySelector('.fpt-ar-pill')?.textContent !== 'Загрузка…');
+    await page.waitForFunction(() => document.querySelector('#fpt-ar-greeting-enabled') && !document.querySelector('#fpt-ar-greeting-enabled').disabled);
     return { page, errors };
 }
 
@@ -98,7 +98,7 @@ test('autoresponder: empty settings show collapsed scenarios, an empty rule list
     const browser = await launch();
     try {
         const { page, errors } = await openAutoReply(browser, {});
-        assert.equal(await page.locator('.fpt-ar-pill').innerText(), 'Выключен');
+        assert.equal(await page.locator('.fpt-ar-hero').count(), 0);
         assert.deepEqual(await page.locator('.fpt-ar-card[data-scenario]').evaluateAll(cards => cards.map(card => card.dataset.state)), ['off', 'off', 'off']);
         assert.equal(await page.locator('.fpt-ar-card[data-scenario] .fpt-ar-collapse').evaluateAll(nodes => nodes.every(node => node.inert)), true,
             'collapsed scenario editors are not reachable by keyboard');
@@ -121,7 +121,7 @@ test('autoresponder: scenarios save through the store patch with explicit unsave
         await settle(page);
         assert.deepEqual(await page.evaluate(() => window.qaPatches), [{ set: { greetingEnabled: true } }], 'a switch saves immediately and only its own field');
         assert.equal(await greeting.locator('textarea').inputValue(), 'Здравствуйте! Чем могу помочь?');
-        assert.equal(await page.locator('.fpt-ar-pill').innerText(), 'Работает');
+        assert.equal(await greeting.locator('#fpt-ar-greeting-enabled').isChecked(), true);
         assert.equal(await greeting.locator('.fpt-ar-save').isDisabled(), true, 'nothing to save yet');
 
         await greeting.locator('textarea').fill('Привет, {buyername}!');
@@ -136,7 +136,7 @@ test('autoresponder: scenarios save through the store patch with explicit unsave
             greetingText: 'Привет, {buyername}!{welcome}', greetingImages: [], greetingSendOrder: 'text_first', greetingCooldownDays: 2
         } });
         await page.waitForFunction(() => document.querySelector('.fpt-ar-card[data-scenario="greeting"] .fpt-ar-unsaved')?.hidden);
-        assert.equal(await page.locator('.fpt-ar-metric-value').nth(2).innerText(), 'Через 2 дня');
+        assert.equal(await page.locator('#fpt-ar-greeting-cooldown').inputValue(), '2');
 
         const order = page.locator('.fpt-ar-card[data-scenario="newOrder"]');
         await order.locator('#fpt-ar-newOrder-enabled').evaluate(input => input.click());
@@ -163,8 +163,25 @@ test('autoresponder: images attach, order is chosen and the saved reply keeps th
     try {
         const { page, errors } = await openAutoReply(browser, { newOrderReplyEnabled: true, newOrderReplyText: 'Спасибо!' });
         const card = page.locator('.fpt-ar-card[data-scenario="newOrder"]');
+        await page.addStyleTag({ content: 'input[type="file"] { display: block; }' });
+        assert.equal(await card.locator('.fpt-ar-file').evaluate(el => getComputedStyle(el).display), 'none', 'site styles cannot expose the native file input');
+        const fileVisibility = await page.evaluate(() => {
+            const popup = document.querySelector('.fp-tools-popup');
+            const hidden = document.createElement('input');
+            hidden.type = 'file'; hidden.hidden = true;
+            const visible = document.createElement('input');
+            visible.type = 'file';
+            popup.append(hidden, visible);
+            const result = [getComputedStyle(hidden).display, getComputedStyle(visible).display];
+            hidden.remove(); visible.remove();
+            return result;
+        });
+        assert.deepEqual(fileVisibility, ['none', 'block'], 'the shared rule protects hidden file inputs without hiding visible ones');
         assert.equal(await card.locator('.fpt-ar-order-row').isHidden(), true, 'send order is meaningless without a picture');
-        await card.locator('.fpt-ar-file').setInputFiles({ name: 'pixel.png', mimeType: 'image/png', buffer: PIXEL });
+        const chooserPromise = page.waitForEvent('filechooser');
+        await card.locator('.fpt-ar-attach').click();
+        const chooser = await chooserPromise;
+        await chooser.setFiles({ name: 'pixel.png', mimeType: 'image/png', buffer: PIXEL });
         await card.locator('.fpt-ar-thumb').waitFor();
         assert.equal(await card.locator('.fpt-ar-order-row').isVisible(), true);
         await card.locator('.fpt-ar-seg-button[data-value="image_first"]').click();

@@ -88,16 +88,12 @@ test('autobump page renders status, saves rules with rollback, picks categories 
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));
         await page.evaluate(() => window.fptOpenPopupPage('autobump'));
         await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'autobump');
-        await page.locator('.fpt-auto-bump .fpt-ab-hero').waitFor();
+        await page.locator('.fpt-auto-bump .fpt-ab-controls').waitFor();
 
-        // Hero reflects the saved state and the scheduled alarm.
-        assert.equal(await page.locator('.fpt-ab-hero').getAttribute('data-state'), 'on');
+        // The master control and scheduled alarm remain available without the overview card.
+        assert.equal(await page.locator('.fpt-ab-hero').count(), 0);
         assert.equal(await page.locator('#autoBumpEnabled').isChecked(), true);
-        assert.equal((await page.locator('.fpt-ab-hero .fpt-ab-pill').textContent()).trim(), 'Работает');
-        await page.waitForFunction(() => /через 3 ч 1\d мин|через 3 ч 12 мин/.test(document.querySelector('.fpt-ab-metric-value')?.textContent || ''));
-        const values = await page.locator('.fpt-ab-metric-value').allTextContents();
-        assert.equal(values[1], 'Все категории');
-        assert.match(values[2], /Следующее поднятие примерно/);
+        await page.waitForFunction(() => /через 3 ч 1\d мин|через 3 ч 12 мин/.test(document.querySelector('.fpt-auto-bump .fpt-ab-schedule')?.textContent || ''));
 
         // Log: newest first with classified rows.
         assert.deepEqual(await page.locator('.fpt-ab-log-item').evaluateAll(items => items.map(item => item.dataset.kind)),
@@ -140,15 +136,16 @@ test('autobump page renders status, saves rules with rollback, picks categories 
         // Raise now writes to the log through the existing background route.
         await page.locator('#fpt-ab-raise-now').click();
         await page.waitForFunction(() => /Поднято: 2 категории/.test(document.querySelector('.fpt-popup-toast-text')?.textContent || ''));
-        assert.equal(await page.locator('.fpt-ab-hero-status').textContent(), '');
+        assert.equal(await page.locator('.fpt-auto-bump .fpt-ab-hero-status').textContent(), '');
         assert.equal(await page.locator('.fpt-ab-log-item').count(), 6);
         assert.ok((await page.evaluate(() => window.qaMessages)).some(message => message.action === 'fptRaiseAllNow'));
 
-        // Master switch off stops the background alarm and updates the hero.
+        // Master switch off stops the background alarm and updates the schedule.
         await page.locator('#autoBumpEnabled').evaluate(input => input.click());
-        await page.waitForFunction(() => document.querySelector('.fpt-ab-hero')?.dataset.state === 'off');
+        await page.waitForFunction(() => document.querySelector('.fpt-auto-bump .fpt-ab-schedule')?.textContent === 'Выключено');
         assert.ok((await page.evaluate(() => window.qaMessages)).some(message => message.action === 'stopAutoBump'));
-        assert.equal((await page.locator('.fpt-ab-hero .fpt-ab-pill').textContent()).trim(), 'Выключено');
+        assert.equal(await page.locator('#autoBumpEnabled').isChecked(), false);
+        assert.equal(await page.locator('.fpt-auto-bump .fpt-ab-schedule').isHidden(), true);
 
         // Clearing the log shows the empty state.
         await page.getByRole('button', { name: 'Очистить' }).click();

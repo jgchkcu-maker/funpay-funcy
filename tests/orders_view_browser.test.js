@@ -22,7 +22,7 @@ test('orders journal lists orders by decision and the card only offers allowed a
         await page.addScriptTag({ path: path.join(root, 'content/ui/popup_components.js') });
         await page.evaluate(() => {
             window.qaCalls = [];
-            const order = { key: '100:ABCD1234', orderId: 'ABCD1234', revision: 4, buyerName: 'QA', lotName: 'Ключ Steam', quantity: 2, fpStatus: 'paid',
+            const order = { key: '100:ABCD1234', orderId: 'ABCD1234', revision: 4, buyerName: 'QA', lotName: 'Очень длинное название лота '.repeat(80), quantity: 2, fpStatus: 'paid',
                 deliveryState: 'uncertain', resultCoverage: 'full', holds: [], blockReasons: [], adopted: true, source: 'funpay_secrets', updatedAt: Date.now() };
             window.chrome = { runtime: { sendMessage: async message => {
                 window.qaCalls.push(message);
@@ -44,8 +44,16 @@ test('orders journal lists orders by decision and the card only offers allowed a
         await page.evaluate(() => window.FPTAutoOrdersPage.mount(document.querySelector('.fp-tools-popup')));
         assert.equal(await page.locator('#host > .fpt-category-header .fpt-category-title').textContent(), 'Заказы и выдачи');
         await page.locator('.fpt-auto-card').waitFor();
+        await page.waitForTimeout(450);
+        const overflow = await page.locator('#host').evaluate(host => {
+            const bounds = host.getBoundingClientRect();
+            return [...host.querySelectorAll('.fpt-ord-hero, .fpt-ord-toolbar, .fpt-ord-list, .fpt-auto-card, .fpt-ord-refresh')]
+                .map(el => ({ name: el.className, right: el.getBoundingClientRect().right - bounds.right }))
+                .filter(item => item.right > 1);
+        });
+        assert.deepEqual(overflow, [], 'a long lot name must not push the journal outside its page');
         assert.match(await page.locator('.fpt-auto-card').innerText(), /Исход неясен/);
-        // Header, hero and filters follow the «Быстрые ответы» layout and motion.
+        // Header and filters follow the «Быстрые ответы» layout and motion.
         assert.equal(await page.locator('#host > .fpt-category-header .fpt-category-help').count(), 1, 'the header has the shared help button');
         await page.locator('#host .fpt-category-help').click();
         assert.equal(await page.locator('#fpt-ord-help').isVisible(), true);
@@ -56,11 +64,9 @@ test('orders journal lists orders by decision and the card only offers allowed a
             const css = getComputedStyle(view);
             return { marginTop: css.marginTop, gap: css.rowGap, display: css.display, first: view.firstElementChild.className };
         });
-        assert.deepEqual(layout, { marginTop: '8px', gap: '18px', display: 'grid', first: 'fpt-qr-hero fpt-ord-hero' }, 'same rhythm as .fpt-quick-replies');
-        assert.equal(await page.locator('.fpt-ord-hero').getAttribute('data-state'), 'on');
-        assert.equal(await page.locator('.fpt-ord-hero-pill').textContent(), 'Нужно ваше решение');
-        assert.deepEqual(await page.locator('.fpt-ord-metrics .fpt-qr-metric-value').allTextContents(), ['1', '1', '0']);
-        assert.equal(await page.locator('.fpt-ord-metric').first().getAttribute('data-tone'), 'warning');
+        assert.deepEqual(layout, { marginTop: '8px', gap: '18px', display: 'grid', first: 'fpt-ord-toolbar' }, 'same rhythm as .fpt-quick-replies');
+        assert.equal(await page.locator('.fpt-ord-hero').count(), 0);
+        assert.deepEqual(await page.locator('.fpt-ord-tab .fpt-qr-tab-count').allTextContents(), ['1', '1', '0', '1']);
         assert.equal(await page.locator('.fpt-ord-tabs .fpt-qr-tab').count(), 4);
         assert.equal(await page.locator('.fpt-ord-tabs .fpt-qr-tabs-pill').evaluate(el => getComputedStyle(el).transitionProperty), 'transform');
         assert.equal(await page.locator('.fpt-ord-list').evaluate(el => getComputedStyle(el).animationName), 'fpt-ad-panel-in', 'the list enters like a quick replies pane');
@@ -96,8 +102,12 @@ test('orders journal lists orders by decision and the card only offers allowed a
         assert.equal(call.partId, 'p#1');
         assert.equal(call.expectedRevision, 4);
         await page.keyboard.press('Escape');
-        await page.locator('.fpt-lot-dialog-backdrop').evaluate(el => el.remove()).catch(() => {});
+        await page.locator('.fpt-lot-dialog-backdrop').evaluateAll(elements => elements.forEach(el => el.remove()));
         await page.locator('#host').evaluate(el => { el.style.setProperty('width', '400px', 'important'); });
+        await page.locator('.fpt-ord-list .fpt-auto-card').evaluate(card => {
+            card.querySelector('p.fpt-auto-card-meta').textContent = 'buyer'.repeat(100);
+            card.querySelector('.fpt-auto-pill').textContent = 'reason'.repeat(100);
+        });
         await page.waitForTimeout(450);
         const narrow = await page.locator('#host').evaluate(host => {
             const tabs = host.querySelector('.fpt-ord-tabs');
@@ -105,11 +115,12 @@ test('orders journal lists orders by decision and the card only offers allowed a
             const selected = tabs.querySelector('[aria-selected="true"]').getBoundingClientRect();
             return {
                 overflow: host.scrollWidth - host.clientWidth,
-                metricsColumns: getComputedStyle(host.querySelector('.fpt-ord-metrics')).gridTemplateColumns.split(' ').length,
-                pillOnSelected: Math.abs(pill.left - selected.left) < 2 && Math.abs(pill.top - selected.top) < 2
+                pillOnSelected: Math.abs(pill.left - selected.left) < 2 && Math.abs(pill.top - selected.top) < 2,
+                overflowingText: [...host.querySelectorAll('p.fpt-auto-card-meta, .fpt-auto-pill')]
+                    .some(el => el.scrollWidth > el.clientWidth + 1)
             };
         });
-        assert.deepEqual(narrow, { overflow: 0, metricsColumns: 1, pillOnSelected: true }, 'narrow layout stacks metrics and keeps the thumb on the selected filter');
+        assert.deepEqual(narrow, { overflow: 0, pillOnSelected: true, overflowingText: false }, 'narrow layout contains long order data and keeps the thumb on the selected filter');
         if (process.env.FPT_SHOTS) await page.screenshot({ path: path.join(process.env.FPT_SHOTS, 'orders-narrow.png') });
     } finally {
         await browser.close();

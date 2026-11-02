@@ -6,7 +6,6 @@
     // A child element lives inside its parent on FunPay, so it is listed under it.
     const PARENT_BY_CHILD = Object.freeze({ lot_keyboard_btn: 'lot_font_controls' });
     const GROUP_ICONS = Object.freeze({
-        'Верхняя панель': 'web_asset',
         'Чат': 'forum',
         'Создание и оформление лота': 'edit_note',
         'Копирование и импорт лотов': 'content_copy',
@@ -17,10 +16,12 @@
     const FILTERS = Object.freeze([
         { value: 'all', label: 'Все' }, { value: 'shown', label: 'Показаны' }, { value: 'hidden', label: 'Скрыты' }
     ]);
-    const AI_EXAMPLES = Object.freeze([
-        'Убери лишнее из чата', 'Не копирую чужие лоты', 'Скрой всё про ИИ', 'Не нужны кнопки в редакторе лота'
+    // Opt-in display options: unlike catalog entries they are off until the seller turns them on.
+    const DISPLAY_OPTIONS = Object.freeze([
+        { key: 'hideBalance', label: 'Скрыть баланс', desc: 'Баланс в шапке FunPay заменяется маской.' },
+        { key: 'fptShowCommission', label: 'Комиссия раздела', desc: 'На странице раздела показывается процент комиссии FunPay.' },
+        { key: 'fptShowRealPrices', label: 'Реальные цены лотов', desc: 'Рядом с ценой лота показывается сумма, которую получит продавец.' }
     ]);
-
     const normalize = value => String(value ?? '').toLowerCase().replace(/ё/g, 'е').trim();
     const pluralize = (count, forms) => root.FPTPopupUI?.pluralize
         ? root.FPTPopupUI.pluralize(count, forms)
@@ -86,11 +87,7 @@
     }
 
     function previewHtml(entry) {
-        const html = entry.preview?.kind === 'html' ? String(entry.preview.html || '') : '';
-        if (!html.includes('{{MAGIC_ICON}}')) return html;
-        let url = 'icons/magic.png';
-        try { url = root.chrome?.runtime?.getURL?.('icons/magic.png') || url; } catch (_) {}
-        return html.split('{{MAGIC_ICON}}').join(url);
+        return entry.preview?.kind === 'html' ? String(entry.preview.html || '') : '';
     }
 
     function node(tag, className, content) {
@@ -120,17 +117,6 @@
         wrap.append(input, node('span', 'fpt-qr-switch-track'));
         return { element: wrap, input };
     }
-    function metric(iconName, label) {
-        const element = node('div', 'fpt-qr-metric');
-        const badge = node('span', 'fpt-qr-metric-icon');
-        badge.append(icon(iconName));
-        const copy = node('div', 'fpt-qr-metric-copy');
-        const value = node('strong', 'fpt-qr-metric-value', '—');
-        copy.append(node('span', 'fpt-qr-metric-label', label), value);
-        element.append(badge, copy);
-        return { element, value };
-    }
-
     async function mount(popup) {
         const page = popup?.querySelector(`.fp-tools-page-content[data-page="${PAGE_ID}"]`);
         if (!page || page._fptInterfaceElementsMount) return page?._fptInterfaceElementsMount;
@@ -142,7 +128,7 @@
         const groups = layout(entries);
         const state = {
             disabled: new Set(), loaded: false, query: '', filter: 'all', pending: 0,
-            suggestions: [], aiBusy: false, activeDialog: null
+            activeDialog: null
         };
         const rows = new Map();
         const groupViews = [];
@@ -161,8 +147,6 @@
             'Выключенный элемент сразу пропадает со страницы — без перезагрузки. Сама функция и её настройки не удаляются.',
             'Значок глаза показывает, как элемент выглядит на сайте, чтобы его было проще узнать.',
             'Кнопка «Клавиатура» живёт внутри блока шрифта: если скрыть блок, пропадёт и она.',
-            ...(globalThis.FPTFeatureAvailability?.isAvailable('ai') === true
-                ? ['Опишите словами, что мешает, — ИИ подберёт элементы, а скрыты будут только те, что вы отметите.'] : [])
         ].forEach(item => helpList.append(node('li', '', item)));
         helpPanel.append(helpList);
         const header = ui.ensureCategoryHeader(page, 'Элементы интерфейса', {
@@ -189,43 +173,6 @@
         page.append(screen);
 
         // --- Hero --------------------------------------------------------------------------------
-        const hero = node('section', 'fpt-qr-hero fpt-ie-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-ie-hero-title');
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.append(icon('dashboard_customize'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Только нужное на FunPay');
-        heroTitle.id = 'fpt-ie-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill', 'Загрузка…');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Funcy добавляет на страницы FunPay кнопки, поля и пункты меню. Скройте лишние — сайт обновится сразу.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricShown = metric('visibility', 'Показано');
-        const metricHidden = metric('visibility_off', 'Скрыто');
-        const metricGroups = metric('dashboard', 'Где появляются');
-        const metrics = node('div', 'fpt-qr-metrics');
-        metrics.append(metricShown.element, metricHidden.element, metricGroups.element);
-        // Element map: one tick per element, grouped by section of the site.
-        const map = node('div', 'fpt-ie-map');
-        map.setAttribute('aria-hidden', 'true');
-        const ticks = new Map();
-        groups.forEach(group => {
-            const segment = node('div', 'fpt-ie-map-group');
-            segment.style.flexGrow = String(group.entries.length);
-            segment.title = group.name;
-            group.entries.forEach(entry => {
-                const tick = node('span', 'fpt-ie-map-tick');
-                tick.title = entry.label;
-                ticks.set(entry.id, tick);
-                segment.append(tick);
-            });
-            map.append(segment);
-        });
-        hero.append(heroMain, metrics, map);
-
         const banner = node('div', 'fpt-qr-banner');
         banner.setAttribute('role', 'alert');
         banner.hidden = true;
@@ -233,165 +180,6 @@
         const retry = button('Повторить', 'fpt-qr-banner-action', 'refresh');
         banner.append(icon('error'), bannerText, retry);
         retry.addEventListener('click', () => load());
-
-        // --- AI assistant ------------------------------------------------------------------------
-        function createAISection() {
-        const aiCard = node('section', 'fpt-qr-card fpt-ie-ai');
-        aiCard.setAttribute('aria-labelledby', 'fpt-ie-ai-title');
-        const aiHead = node('div', 'fpt-qr-card-head');
-        const aiEmblem = node('span', 'fpt-qr-emblem fpt-ie-ai-emblem');
-        aiEmblem.append(icon('auto_awesome'));
-        const aiCopy = node('div', 'fpt-qr-card-copy');
-        const aiTitle = node('h3', '', 'Скрыть с помощью ИИ');
-        aiTitle.id = 'fpt-ie-ai-title';
-        aiCopy.append(aiTitle, node('p', '', 'Опишите словами, что мешает, — ИИ найдёт подходящие элементы, а вы решите, что скрыть.'));
-        aiHead.append(aiEmblem, aiCopy);
-        const aiBody = node('div', 'fpt-ie-ai-body');
-        const aiLabel = node('label', 'fpt-ie-visually-hidden', 'Что хотите скрыть');
-        aiLabel.htmlFor = 'fptNeedsInput';
-        const aiInput = node('textarea', 'fpt-qr-textarea fpt-control-field fpt-ie-ai-input');
-        aiInput.id = 'fptNeedsInput';
-        aiInput.rows = 2;
-        aiInput.placeholder = 'Например: «не пользуюсь переводом и экспортом чатов»';
-        const aiControls = node('div', 'fpt-ie-ai-controls');
-        const examples = node('div', 'fpt-ie-ai-examples');
-        examples.setAttribute('role', 'group');
-        examples.setAttribute('aria-label', 'Примеры запросов');
-        AI_EXAMPLES.forEach(example => {
-            const chip = button(example, 'fpt-qr-chip');
-            chip.addEventListener('click', () => {
-                aiInput.value = example;
-                aiInput.focus();
-                syncAiButton();
-            });
-            examples.append(chip);
-        });
-        const askButton = button('Подобрать', 'fpt-qr-primary fpt-ie-ai-ask', 'auto_awesome');
-        askButton.id = 'fptNeedsAskBtn';
-        aiControls.append(examples, askButton);
-        const aiResult = node('div', 'fpt-ie-ai-result');
-        aiResult.setAttribute('aria-live', 'polite');
-        aiResult.hidden = true;
-        aiBody.append(aiLabel, aiInput, aiControls, aiResult);
-        aiCard.append(aiHead, aiBody);
-
-        function syncAiButton() { askButton.disabled = state.aiBusy || !state.loaded || !aiInput.value.trim(); }
-        aiInput.addEventListener('input', syncAiButton);
-        aiInput.addEventListener('keydown', event => {
-            if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !askButton.disabled) { event.preventDefault(); ask(); }
-        });
-        askButton.addEventListener('click', () => ask());
-
-        function aiMessage(kind, iconName, message) {
-            aiResult.replaceChildren();
-            aiResult.hidden = false;
-            aiResult.dataset.kind = kind;
-            const line = node('p', 'fpt-ie-ai-message');
-            const glyph = icon(iconName);
-            if (kind === 'loading') glyph.classList.add('fpt-ie-spin');
-            line.append(glyph, node('span', '', message));
-            aiResult.append(line);
-            return line;
-        }
-        async function ask() {
-            const text = aiInput.value.trim();
-            if (!text || state.aiBusy) return;
-            state.aiBusy = true;
-            syncAiButton();
-            aiMessage('loading', 'progress_activity', 'ИИ подбирает элементы…');
-            try {
-                const matches = await run('fptNeedsAskBtn', { text });
-                state.suggestions = matches.map(match => ({
-                    id: match.id,
-                    reason: typeof match.reason === 'string' && match.reason.trim() ? match.reason.trim() : byId.get(match.id)?.desc || '',
-                    confidence: Number.isFinite(Number(match.confidence)) ? Math.max(0, Math.min(1, Number(match.confidence))) : null
-                })).filter((item, index, list) => byId.has(item.id) && list.findIndex(other => other.id === item.id) === index);
-                renderSuggestions();
-            } catch (error) {
-                state.suggestions = [];
-                aiMessage('error', 'error', error.message || 'Не удалось подобрать элементы.');
-            } finally {
-                state.aiBusy = false;
-                syncAiButton();
-            }
-        }
-        function renderSuggestions() {
-            if (!state.suggestions.length) {
-                aiMessage('empty', 'search_off', 'Подходящих элементов не нашлось. Переформулируйте запрос или выберите элементы в списке ниже.');
-                return;
-            }
-            aiResult.replaceChildren();
-            aiResult.hidden = false;
-            aiResult.dataset.kind = 'results';
-            const head = node('p', 'fpt-ie-ai-message');
-            head.append(icon('auto_awesome'), node('span', '', 'ИИ предлагает скрыть. Снимите галочки с того, что оставить:'));
-            const list = node('div', 'fpt-ie-suggestions');
-            list.setAttribute('role', 'group');
-            list.setAttribute('aria-label', 'Предложения ИИ');
-            const picks = [];
-            state.suggestions.forEach(suggestion => {
-                const entry = byId.get(suggestion.id);
-                const hidden = state.disabled.has(entry.id);
-                const item = node('label', 'fpt-ie-suggestion');
-                item.dataset.id = entry.id;
-                const input = node('input', 'fpt-ie-suggestion-pick');
-                input.type = 'checkbox';
-                input.checked = !hidden;
-                input.disabled = hidden;
-                input.dataset.id = entry.id;
-                const copy = node('span', 'fpt-ie-suggestion-copy');
-                const title = node('span', 'fpt-ie-suggestion-title');
-                title.append(node('strong', '', entry.label));
-                if (hidden) title.append(node('span', 'fpt-qr-badge fpt-qr-badge--muted', 'Уже скрыт'));
-                copy.append(title, node('span', 'fpt-ie-suggestion-reason', suggestion.reason));
-                item.append(input, copy);
-                if (suggestion.confidence !== null) {
-                    const confidence = node('span', 'fpt-ie-confidence', `${Math.round(suggestion.confidence * 100)}%`);
-                    confidence.title = 'Уверенность ИИ';
-                    confidence.style.setProperty('--ie-confidence', String(suggestion.confidence));
-                    item.append(confidence);
-                }
-                list.append(item);
-                if (!hidden) picks.push(input);
-            });
-            const footer = node('div', 'fpt-ie-ai-footer');
-            const cancel = button('Отмена', 'fpt-qr-ghost');
-            const confirm = button('', 'fpt-qr-primary', 'visibility_off');
-            confirm.id = 'fptNeedsAiConfirm';
-            const confirmLabel = node('span', '');
-            confirm.append(confirmLabel);
-            const syncConfirm = () => {
-                const count = picks.filter(input => input.checked).length;
-                confirmLabel.textContent = count ? `Скрыть ${count} ${pluralize(count, ['элемент', 'элемента', 'элементов'])}` : 'Ничего не выбрано';
-                confirm.disabled = !count;
-            };
-            picks.forEach(input => input.addEventListener('change', syncConfirm));
-            syncConfirm();
-            cancel.addEventListener('click', () => { state.suggestions = []; aiResult.hidden = true; aiResult.replaceChildren(); aiInput.focus(); });
-            confirm.addEventListener('click', async () => {
-                const ids = picks.filter(input => input.checked).map(input => input.dataset.id);
-                if (!ids.length) return;
-                confirm.disabled = true;
-                cancel.disabled = true;
-                const ok = await write(Object.fromEntries(ids.map(id => [id, false])),
-                    `Скрыто ${ids.length} ${pluralize(ids.length, ['элемент', 'элемента', 'элементов'])}`, 'fptNeedsAiConfirm', { ids });
-                if (ok) {
-                    state.suggestions = [];
-                    aiInput.value = '';
-                    syncAiButton();
-                    aiMessage('success', 'check_circle', 'Готово. Вернуть элементы можно переключателями в списке ниже.');
-                } else {
-                    cancel.disabled = false;
-                    syncConfirm();
-                }
-            });
-            footer.append(cancel, confirm);
-            aiResult.append(head, list, footer);
-        }
-
-        return { element: aiCard, sync: syncAiButton };
-        }
-        const aiSection = globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? createAISection() : null;
 
         // --- Toolbar -----------------------------------------------------------------------------
         const catalog = node('section', 'fpt-ie-catalog');
@@ -542,7 +330,7 @@
                 previewButton.setAttribute('aria-expanded', String(open));
             });
             row.append(main, actions, preview);
-            const view = { entry, row, toggle, hiddenBadge, contextBadge, note, tick: ticks.get(entry.id) };
+            const view = { entry, row, toggle, hiddenBadge, contextBadge, note };
             rows.set(entry.id, view);
             return row;
         }
@@ -618,20 +406,61 @@
             groupViews.push({ group, card, status, toggle: unlocked.length ? groupToggle : null, unlocked, sections, navButton, navCount });
         });
 
-        screen.append(hero, banner, ...(aiSection ? [aiSection.element] : []), catalog);
+        // --- Display options ----------------------------------------------------------------------
+        const display = node('section', 'fpt-qr-card fpt-ie-display');
+        display.setAttribute('aria-labelledby', 'fpt-ie-display-title');
+        const displayHead = node('div', 'fpt-qr-card-head fpt-ie-group-head');
+        const displayEmblem = node('span', 'fpt-qr-emblem');
+        displayEmblem.append(icon('tune'));
+        const displayCopy = node('div', 'fpt-qr-card-copy');
+        const displayTitle = node('h3', '', 'Отображение FunPay');
+        displayTitle.id = 'fpt-ie-display-title';
+        displayCopy.append(displayTitle, node('p', '', 'Дополнительные сведения на страницах сайта'));
+        displayHead.append(displayEmblem, displayCopy);
+        const displayRows = node('div', 'fpt-ie-group-body fpt-ie-rows');
+        displayRows.setAttribute('role', 'list');
+        const displaySwitches = new Map();
+        DISPLAY_OPTIONS.forEach(option => {
+            const row = node('div', 'fpt-ie-row');
+            row.setAttribute('role', 'listitem');
+            const main = node('div', 'fpt-ie-row-main');
+            const title = node('div', 'fpt-ie-row-title');
+            title.append(node('strong', 'fpt-ie-row-name', option.label));
+            main.append(title, node('p', 'fpt-ie-row-desc', option.desc));
+            const actions = node('div', 'fpt-ie-row-actions');
+            const toggle = makeSwitch(option.label);
+            toggle.input.dataset.setting = option.key;
+            toggle.input.disabled = true;
+            toggle.input.addEventListener('change', async () => {
+                const enabled = toggle.input.checked;
+                toggle.input.disabled = true;
+                try {
+                    await run('saveSettings', { settings: { [option.key]: enabled } });
+                    toast(enabled ? `«${option.label}» включено` : `«${option.label}» выключено`, 'success');
+                } catch (error) {
+                    toggle.input.checked = !enabled;
+                    toast(error.message || 'Не удалось сохранить. Попробуйте ещё раз.', 'error');
+                } finally {
+                    toggle.input.disabled = false;
+                }
+            });
+            actions.append(toggle.element);
+            row.append(main, actions);
+            displayRows.append(row);
+            displaySwitches.set(option.key, toggle.input);
+        });
+        display.append(displayHead, displayRows);
+        run('getSettings', { keys: DISPLAY_OPTIONS.map(option => option.key) }).then(stored => {
+            displaySwitches.forEach((input, key) => { input.checked = stored?.[key] === true; });
+        }).catch(() => {}).finally(() => {
+            displaySwitches.forEach(input => { input.disabled = false; });
+        });
+
+        screen.append(banner, display, catalog);
 
         // --- State → DOM -------------------------------------------------------------------------
         function sync() {
             const summary = summarize(entries, state.disabled);
-            heroPill.textContent = !state.loaded ? (state.loadError ? 'Нет данных' : 'Загрузка…')
-                : summary.hidden ? `Скрыто ${summary.hidden}` : 'Всё на месте';
-            heroPill.dataset.kind = state.loaded && !summary.hidden ? 'success' : '';
-            hero.dataset.state = state.loaded && !summary.hidden ? 'on' : 'off';
-            metricShown.value.textContent = state.loaded ? `${summary.shown} из ${summary.total}` : '—';
-            metricHidden.value.textContent = state.loaded
-                ? summary.hidden ? `${summary.hidden} ${pluralize(summary.hidden, ['элемент', 'элемента', 'элементов'])}` : 'Ничего'
-                : '—';
-            metricGroups.value.textContent = `${summary.groups} ${pluralize(summary.groups, ['раздел', 'раздела', 'разделов'])} сайта`;
             showAll.disabled = !state.loaded || !summary.hidden;
             filterButtons.forEach(el => {
                 const value = el.dataset.value;
@@ -644,7 +473,6 @@
                     view.toggle.input.checked = !off;
                     view.toggle.input.disabled = !state.loaded || view.row.dataset.context === 'true';
                 }
-                if (view.tick) view.tick.dataset.state = off ? 'off' : 'on';
                 const parentId = PARENT_BY_CHILD[view.entry.id];
                 const blocked = Boolean(parentId && state.disabled.has(parentId));
                 view.row.dataset.blocked = String(blocked);
@@ -710,11 +538,10 @@
         function renderAll() {
             applyVisibility();
             sync();
-            aiSection?.sync();
         }
 
         // --- Writes ------------------------------------------------------------------------------
-        async function write(changes, message, action = 'fptApplyNeedsSelection', payload = { enabled: changes }) {
+        async function write(changes, message) {
             const previous = new Map(Object.keys(changes).map(id => [id, state.disabled.has(id)]));
             for (const [id, enabled] of Object.entries(changes)) {
                 if (enabled) state.disabled.delete(id); else state.disabled.add(id);
@@ -723,7 +550,7 @@
             sync();
             let ok = true;
             try {
-                const ids = await run(action, payload);
+                const ids = await run('fptApplyNeedsSelection', { enabled: changes });
                 if (state.pending === 1 && Array.isArray(ids)) state.disabled = new Set(ids);
                 if (message) toast(message, 'success');
             } catch (error) {

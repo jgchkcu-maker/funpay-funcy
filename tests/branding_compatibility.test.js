@@ -70,7 +70,7 @@ test('legacy settings, config protocols, and resource dependencies remain intact
     assert.doesNotMatch(settingsIO, /\b(?:FP Tools|FunPay Tools)\b/);
     assert.match(autoResponder, /fpToolsAutoReplies/);
     assert.match(headerStyler, /const STORAGE_KEY\s*=\s*['"]fpToolsHeaderButtonStyles['"]/);
-    assert.equal(config.profileDesc.verifyTitle, 'FPT Verify');
+    assert.equal(config.profileDesc, undefined);
     assert.equal(config.themeGallery.baseUrl, 'https://raw.githubusercontent.com/XaviersDev/fpt-themes/main/');
     assert.doesNotMatch(background, /fptools-ai-server\.vercel\.app/);
     assert.match(readme, /Funcy/);

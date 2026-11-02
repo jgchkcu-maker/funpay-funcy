@@ -117,7 +117,7 @@ async function openSupportPage(browser, { dark = false, viewport = { width: 1204
     }
     await page.evaluate(() => window.fptOpenPopupPage('tickets'));
     await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'tickets');
-    await page.locator('.fpt-sp .fpt-sp-hero').waitFor();
+    await page.locator('.fpt-category-header .fpt-sp-hero-actions').waitFor();
     return { page, errors };
 }
 
@@ -137,17 +137,29 @@ test('support page: tickets load on open, filter, search and sort locally', asyn
         const { page, errors } = await openSupportPage(browser, { mode: { slow: 200 } });
         // Loading state first, then the list.
         await page.locator('.fpt-sp-skeleton').waitFor();
-        assert.equal((await page.locator('.fpt-sp-hero .fpt-sp-pill').textContent()).trim(), 'Загрузка…');
+        assert.equal(await page.locator('.fpt-sp-hero').count(), 0);
         await page.locator('.fpt-sp-ticket').first().waitFor();
         assert.equal((await sent(page, 'supportGetTickets')).length, 1, 'the list loads once when the page opens');
         assert.equal(await page.locator('.fpt-sp-metric').count(), 0, 'the hero has no metric tiles');
         assert.deepEqual(await page.locator('.fpt-sp-seg-count').allTextContents(), ['4', '2', '2']);
-        assert.equal((await page.locator('.fpt-sp-hero .fpt-sp-pill').textContent()).trim(), '2 актуальные');
+        assert.equal(await page.locator('.fpt-sp-seg-button[data-value="active"] .fpt-sp-seg-count').textContent(), '2');
         assert.deepEqual(await rowIds(page), ['120045', '119870', '118511', '117004']);
         assert.deepEqual(await page.locator('.fpt-sp-ticket .fpt-sp-status').evaluateAll(items => items.map(item => item.dataset.kind)), ['open', 'pending', 'solved', 'closed']);
         assert.equal(await page.locator('.fpt-sp-ticket[data-kind="open"] .fpt-sp-row-action').count(), 1, 'only active tickets offer closing');
         const heights = await page.locator('.fpt-sp-hero-actions :is(.fpt-sp-button, .fpt-toolbar-button)').evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().height)));
         assert.deepEqual(heights, [40, 40], 'hero buttons share one height');
+        const headerLayout = await page.locator('.fp-tools-page-content[data-page="tickets"] > .fpt-category-header').evaluate(header => {
+            const title = header.querySelector('.fpt-category-title').getBoundingClientRect();
+            const actions = header.querySelector('.fpt-sp-hero-actions').getBoundingClientRect();
+            const help = header.querySelector('.fpt-category-help').getBoundingClientRect();
+            return { sameRow: Math.abs((actions.top + actions.height / 2) - (help.top + help.height / 2)) < 1,
+                ordered: title.right <= actions.left && actions.right <= help.left,
+                titleOnOneLine: title.height <= parseFloat(getComputedStyle(header.querySelector('.fpt-category-title')).lineHeight) + 1 };
+        });
+        assert.deepEqual(headerLayout, { sameRow: true, ordered: true, titleOnOneLine: true });
+        await page.locator('[data-page="tickets"] > .fpt-category-header .fpt-category-help').click();
+        assert.equal(await page.locator('.fpt-sp-help').isVisible(), true);
+        await page.locator('[data-page="tickets"] > .fpt-category-header .fpt-category-help').click();
         if (shotDir) {
             await settle(page);
             await page.screenshot({ path: path.join(shotDir, 'support-light.png') });
@@ -189,6 +201,7 @@ test('support page: a conversation opens, renders safe HTML, replies and closes 
         await page.locator('.fpt-sp-ticket-open').first().click();
         await page.locator('.fpt-sp-msg').first().waitFor();
         assert.equal(await page.locator('.fpt-sp-home').isHidden(), true);
+        assert.equal(await page.locator('.fpt-sp-hero-actions').isHidden(), true);
         assert.equal((await page.locator('#fp-ticket-detail-title').textContent()).trim(), 'Покупатель не подтверждает заказ');
         assert.equal(await page.locator('.fpt-sp-thread-meta .fpt-sp-status').getAttribute('data-kind'), 'open');
         assert.deepEqual(await page.locator('.fpt-sp-msg').evaluateAll(rows => rows.map(row => row.dataset.side)), ['me', 'them']);
@@ -339,7 +352,7 @@ test('support page: no orders, load errors and the empty list explain themselves
         await page.evaluate(() => { window.qaMode = { noTickets: true }; });
         await page.locator('.fpt-sp-empty .fpt-sp-button').click();
         await page.locator('.fpt-sp-empty-title', { hasText: 'Заявок пока нет' }).waitFor();
-        assert.equal((await page.locator('.fpt-sp-hero .fpt-sp-pill').textContent()).trim(), 'Открытых заявок нет');
+        assert.equal(await page.locator('.fpt-sp-ticket').count(), 0);
         assert.deepEqual(errors, []);
     } finally {
         await browser.close();
@@ -359,7 +372,14 @@ test('support page: dark popup and narrow widths stay inside the frame', async (
                 const limit = view.getBoundingClientRect().right + 1;
                 const wide = Array.from(view.querySelectorAll('*')).filter(el => el.getClientRects().length && el.getBoundingClientRect().right > limit)
                     .slice(0, 5).map(el => `${el.className} ${Math.round(el.getBoundingClientRect().right - limit)}`);
-                return { ok: view.scrollWidth <= view.clientWidth + 1 && !wide.length, wide };
+                const header = document.querySelector('.fp-tools-page-content[data-page="tickets"] > .fpt-category-header');
+                const actions = header.querySelector('.fpt-sp-hero-actions');
+                const help = header.querySelector('.fpt-category-help');
+                const actionBounds = actions.getBoundingClientRect();
+                const helpBounds = help.getBoundingClientRect();
+                const headerFits = header.scrollWidth <= header.clientWidth + 1 && (actions.hidden
+                    || (actionBounds.right <= helpBounds.left && Math.abs(actionBounds.top + actionBounds.height / 2 - helpBounds.top - helpBounds.height / 2) < 1));
+                return { ok: view.scrollWidth <= view.clientWidth + 1 && !wide.length && headerFits, wide, headerFits };
             });
             assert.equal(overflow.ok, true, `the screen must not overflow horizontally at ${width}px: ${JSON.stringify(overflow)}`);
         };

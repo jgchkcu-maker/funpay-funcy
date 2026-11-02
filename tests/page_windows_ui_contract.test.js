@@ -10,7 +10,6 @@ const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 const WINDOWS = {
     'content/features/lot_cloning.js': ['fp-clone-wizard-overlay', 'fp-import-wizard-overlay', 'fp-clone-menu', 'fp-category-clone'],
     'content/features/lot_management.js': ['fp-reactivate-popup-overlay', 'fp-price-editor-overlay'],
-    'content/features/ai_lot_creator.js': ['fp-tools-ai-gen-modal'],
     'content/features/image_generator.js': ['fpToolsImageGeneratorModal'],
     'content/features/templates.js': ['fp-tools-empty-template'],
     'content/features/user_notes.js': ['fp-tools-label-manager'],
@@ -30,7 +29,7 @@ test('page windows: the shell and its stylesheet load with the content scripts',
     for (const file of Object.keys(WINDOWS)) {
         assert.ok(shell < content.js.indexOf(file), `${file} loads after the shell`);
     }
-    assert.equal(content.css[content.css.length - 1], 'css/page_windows.css', 'window styles load last and win over legacy rules');
+    assert.equal(content.css.filter(file => file !== 'css/scrollbars.css').at(-1), 'css/page_windows.css', 'window styles load after legacy rules; shared scrollbars may follow');
 });
 
 test('page windows: every window is built with fptWindow.create and keeps its id', () => {
@@ -44,7 +43,7 @@ test('page windows: every window is built with fptWindow.create and keeps its id
 test('page windows: no window reads its colours from the page any more', () => {
     const clone = read('content/features/lot_cloning.js');
     assert.doesNotMatch(clone, /applyWizardTheme|cloneSurfaceColors|--cw-/, 'the clone and import wizards use the menu palette');
-    for (const file of ['css/content_styles.css', 'css/ai_creator.css', 'css/image_generator.css']) {
+    for (const file of ['css/content_styles.css', 'css/image_generator.css']) {
         const css = read(file);
         assert.doesNotMatch(css, /--cw-|--ig-|fp-wizard-container|#fp-clone-wizard\b|\.fp-tools-ai-gen-modal|#fpToolsImageGeneratorModal|\.fp-tools-label-modal|\.fp-tools-empty-template-modal|#fp-price-editor-popup|\.fp-reactivate-popup|#fp-tools-ad-manager-popup|\.fpt-tg-modal|\.fpt-ed-overlay/,
             `${file} has no styles left from the old windows`);

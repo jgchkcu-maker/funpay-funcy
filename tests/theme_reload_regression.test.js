@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 test('early theme loading preserves original, empty and legacy custom themes', async () => {
-    for (const [saved, custom] of [[{ baseStyle: 'original' }, false], [{}, false], [{ bgColor1: '#123456' }, true]]) {
+    for (const [saved, custom] of [[{ baseStyle: 'original' }, false], [{}, false], [{ bgColor1: '#123456' }, true], [{ bgColor1: '#123456', borderRadius: 0 }, true], [{ bgColor1: '#123456', borderRadius: 28 }, true]]) {
         const styles = new Map();
         const classes = new Set();
         const document = {
@@ -20,5 +20,6 @@ test('early theme loading preserves original, empty and legacy custom themes', a
         });
         assert.equal(styles.has('fp-tools-custom-theme'), custom, JSON.stringify(saved));
         assert.equal(classes.has('fpt-custom-theme-on'), custom);
+        if (custom) assert.ok(styles.get('fp-tools-custom-theme').textContent.includes(`--fpt-chat-action-radius: ${saved.borderRadius ?? 16}px`));
     }
 });

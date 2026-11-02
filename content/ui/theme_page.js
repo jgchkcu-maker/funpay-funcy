@@ -8,17 +8,6 @@
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     const SHARE_BOT_URL = 'https://t.me/FunPayThemesBot';
     const PREVIEW_FONTS_ID = 'fpt-th-preview-fonts';
-    const FOREST_WALLPAPER = 'themes/wallpapers/fog-pines.webp';
-    const FOREST_THEME = Object.freeze({
-        baseStyle: 'custom', bgColor1: '#55616b', bgColor2: '#c3ccd1',
-        containerBgColor: '#171b1d', containerBgOpacity: 0.94,
-        textColor: '#eeeeee', linkColor: '#a5c5d0', buttonColor: '', buttonActiveColor: '',
-        font: 'Manrope', fontWeight: '400', fontItalic: false,
-        bgBlur: 0, bgBrightness: 100, borderRadius: 14,
-        enableGlassmorphism: false, enableCustomScrollbar: true,
-        scrollbarTrackColor: '#1a1d1f', scrollbarThumbColor: '#697377', scrollbarWidth: 8,
-        bgVideo: null
-    });
     const FONT_OPTIONS = Object.freeze([
         ['Helvetica Neue', 'Системный (Helvetica Neue)'],
         ['Montserrat', 'Montserrat'],
@@ -409,12 +398,12 @@
         // FunPay's "..." button; the bundled icon font has no horizontal dots glyph.
         const chatMore = node('span', 'fpt-th-site-btn fpt-th-site-btn--icon', '•••');
         chatBar.append(chatName, chatSearch, chatNotice, chatMore);
-        main.append(chatBar, node('p', 'fpt-th-site-game', 'Genshin Impact'));
+        main.append(chatBar, node('p', 'fpt-th-site-game', 'Ролевые онлайн-игры'));
         const list = node('div', 'fpt-th-site-card');
         [
-            ['Аккаунт, AR 58, все персонажи', '1 490 ₽'],
-            ['Кристаллы Сотворения, 6480 шт.', '5 200 ₽'],
-            ['Прохождение Бездны, 36 звёзд', '350 ₽'],
+            ['Аккаунт 58 уровня, все персонажи', '1 490 ₽'],
+            ['Кристаллы, 6480 шт.', '5 200 ₽'],
+            ['Прохождение подземелья, 36 звёзд', '350 ₽'],
             ['Помощь с событиями и боссами', '220 ₽']
         ].forEach(([title, price]) => {
             const item = node('div', 'fpt-th-site-row');
@@ -424,12 +413,12 @@
         const foot = node('div', 'fpt-th-site-foot');
         foot.append(node('span', 'fpt-th-site-text', 'Гарантия сделки'), node('span', 'fpt-th-site-link', 'Подробнее'), node('span', 'fpt-th-site-button', 'Купить'));
         const secondList = node('div', 'fpt-th-site-card');
-        [['Золото, 100 000 шт.', '480 ₽'], ['Подписка Brawl Pass', '690 ₽']].forEach(([title, price]) => {
+        [['Золото, 100 000 шт.', '480 ₽'], ['Боевой пропуск сезона', '690 ₽']].forEach(([title, price]) => {
             const item = node('div', 'fpt-th-site-row');
             item.append(node('span', 'fpt-th-site-row-title', title), node('span', 'fpt-th-site-row-price', price));
             secondList.appendChild(item);
         });
-        main.append(list, foot, node('p', 'fpt-th-site-game', 'Brawl Stars'), secondList,
+        main.append(list, foot, node('p', 'fpt-th-site-game', 'Мобильные игры'), secondList,
             node('p', 'fpt-th-site-text fpt-th-site-text--muted', 'Отзывы покупателей, чат с продавцом и гарантия сделки.'));
         site.append(header, main);
         stage.append(bg, scrim, circles, site);
@@ -596,19 +585,7 @@
             scheduleRender();
         });
 
-        // --- Hero ----------------------------------------------------------------------------
-        const hero = node('section', 'fpt-th-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-th-hero-title');
-        const heroIcon = node('span', 'fpt-th-hero-icon');
-        heroIcon.appendChild(icon('palette'));
-        const heroCopy = node('div', 'fpt-th-hero-copy');
-        const heroTitleRow = node('div', 'fpt-th-hero-title-row');
-        const heroTitle = node('h2', 'fpt-th-hero-title', 'Своя тема FunPay');
-        heroTitle.id = 'fpt-th-hero-title';
-        const heroPill = node('span', 'fpt-th-pill', 'Выключена');
-        heroTitleRow.append(heroTitle, heroPill);
-        const heroDescription = node('p', 'fpt-th-hero-description', '');
-        heroCopy.append(heroTitleRow, heroDescription);
+        const themeControls = node('div', 'fpt-th-controls');
         const masterSwitch = makeSwitch('Включить кастомную тему', state.enabled, async (checked, input) => {
             input.disabled = true;
             try {
@@ -621,13 +598,10 @@
                 toast(error.message || 'Не удалось изменить состояние темы.', 'error');
             } finally {
                 input.disabled = false;
-                renderHero();
                 renderDock();
             }
         }, { master: true });
-        const heroMain = node('div', 'fpt-th-hero-main');
-        heroMain.append(heroIcon, heroCopy, masterSwitch.element);
-        hero.appendChild(heroMain);
+        themeControls.append(node('span', '', 'Своя тема'), masterSwitch.element);
 
         // --- Layout --------------------------------------------------------------------------
         const layout = node('div', 'fpt-th-layout');
@@ -759,8 +733,8 @@
                 const catalog = await run('getThemeCatalog', { refresh });
                 themePresets = catalog.themes;
                 renderStrip();
-                catalogStatus.textContent = !themePresets.length ? 'Темы каталога временно скрыты до проверки прав на изображения. Можно настроить цвета и загрузить свой фон.' : catalog.stale ? 'Показаны сохранённые темы. Каталог временно недоступен.' : '';
-                catalogStatus.hidden = !catalog.stale;
+                catalogStatus.textContent = !themePresets.length ? 'В каталоге пока нет тем. Можно настроить цвета и загрузить свой фон.' : catalog.stale ? 'Показаны сохранённые темы. Каталог временно недоступен.' : '';
+                catalogStatus.hidden = !!themePresets.length && !catalog.stale;
                 view.dataset.catalogState = 'ready';
             } catch (error) {
                 catalogStatus.textContent = error.message;
@@ -794,27 +768,6 @@
                     state.draft = { ...state.draft, baseStyle: 'custom' };
                     state.presetId = null;
                     syncAll();
-                }
-            }));
-            const forestArt = iconArt('forest', 'preset');
-            forestArt.replaceChildren();
-            const forestThumbnail = node('img');
-            forestThumbnail.src = chrome.runtime.getURL(FOREST_WALLPAPER);
-            forestThumbnail.alt = '';
-            forestThumbnail.loading = 'lazy';
-            forestArt.appendChild(forestThumbnail);
-            strip.appendChild(presetTile({
-                id: 'builtin:fog-forest', name: 'Туманный лес', meta: 'Чёрно-белая тема', art: forestArt,
-                onPick: async () => {
-                    const version = ++draftVersion;
-                    const response = await fetch(chrome.runtime.getURL(FOREST_WALLPAPER));
-                    if (!response.ok) throw new Error('Не удалось загрузить обои темы.');
-                    const blob = await response.blob();
-                    if (!blob.size || blob.size > MAX_IMAGE_BYTES || blob.type !== 'image/webp') throw new Error('Не удалось прочитать обои темы.');
-                    const bgImage = await readFileAsDataUrl(blob);
-                    if (!root.FPTSafe.cssImageUrl(bgImage)) throw new Error('Не удалось прочитать обои темы.');
-                    if (version !== draftVersion) return;
-                    loadIntoDraft({ ...FOREST_THEME, bgImage }, 'builtin:fog-forest');
                 }
             }));
             themePresets.forEach(preset => {
@@ -1313,15 +1266,8 @@
 
         // --- Render --------------------------------------------------------------------------
         settings.append(gallery.card, background.card, colors.card, buttonsCard.card, shape.card, blocks.card, chat.card, details.card, tools.card);
-        view.append(hero, layout, dockSlot);
+        view.append(themeControls, layout, dockSlot);
         view.setAttribute('data-ready', 'true');
-
-        function renderHero() {
-            const dirty = !sameTheme(state.draft, state.committed);
-            hero.dataset.state = state.enabled ? 'on' : 'off';
-            heroPill.textContent = dirty ? 'Есть неприменённые изменения' : state.enabled ? 'Включена' : 'Выключена';
-            heroPill.dataset.kind = dirty ? 'warning' : state.enabled ? 'success' : 'neutral';
-        }
 
         function renderDock() {
             const dirty = !sameTheme(state.draft, state.committed);
@@ -1358,9 +1304,6 @@
                 body.inert = original;
                 body.setAttribute('aria-hidden', original ? 'true' : 'false');
             });
-            heroDescription.textContent = original
-                ? 'Оригинальный вид FunPay: свои шрифт, закругления и детали без обоев и перекраски.'
-                : 'Цвета, фон, шрифт и форма блоков. Настройте тему в предпросмотре и примените её на сайте одним нажатием.';
         }
 
         function syncAll() {
@@ -1369,7 +1312,6 @@
             preview.update(state.draft, { active: state.active && page.classList.contains('active') && popup.classList.contains('active') });
             renderBackgroundControls();
             renderPresetSelection();
-            renderHero();
             renderDock();
         }
 

@@ -307,8 +307,10 @@ test('real browser: lot management screen, navigation and shell geometry', async
         for (const [id, signature] of headerSignatures) {
             assert.deepEqual(signature.geometry, referenceHeader.geometry, `${id} header width and position should match «Быстрые ответы»`);
             assert.deepEqual(signature.screen, referenceHeader.screen, `${id} page padding and entry animation should match «Быстрые ответы»`);
-            // «Интерфейс» keeps its search field inside the header, so only its column template differs.
-            const headerStyle = id === 'needs' ? { ...signature.header, gridTemplateColumns: referenceHeader.header.gridTemplateColumns } : signature.header;
+            // «Интерфейс» keeps its search field and «Поддержка» its thread actions inside the header,
+            // so only their column layout differs.
+            const ownColumns = { needs: ['gridTemplateColumns'], tickets: ['gridTemplateColumns', 'alignItems', 'gap'] }[id] || [];
+            const headerStyle = { ...signature.header, ...Object.fromEntries(ownColumns.map(key => [key, referenceHeader.header[key]])) };
             assert.deepEqual(headerStyle, referenceHeader.header, `${id} header layout and animation should match «Быстрые ответы»`);
             assert.deepEqual(signature.title, referenceHeader.title, `${id} header title design and animation should match «Быстрые ответы»`);
             assert.deepEqual(signature.help, referenceHeader.help, `${id} help button design and animation should match «Быстрые ответы»`);
@@ -507,7 +509,8 @@ test('real browser: lot management screen, navigation and shell geometry', async
         assert.equal(bulkControlMetrics.minimumPriceHeight, '40px');
         assert.deepEqual(bulkControlMetrics.checkboxSize, ['19px', '19px']);
         assert.equal(bulkControlMetrics.checkboxGap, '8px');
-        assert.equal(bulkControlMetrics.groupRadius, '14px');
+        // Category groups are flat rows inside the rounded lot list, divided by a top border.
+        assert.equal(bulkControlMetrics.groupRadius, '0px');
         assert.deepEqual(bulkControlMetrics.special, [false, false, false]);
         const bulkTextField = page.locator('#fptBulkName');
         await bulkTextField.focus();
@@ -524,6 +527,8 @@ test('real browser: lot management screen, navigation and shell geometry', async
         assert.equal(fieldFocusStyle.visible, true);
         assert.equal(fieldFocusStyle.outline, 'none');
         assert.equal(fieldFocusStyle.borderColor, 'rgb(118, 99, 246)');
+        // Search options live on the «Найти и заменить» tab.
+        await page.locator('.fpt-bulk-tab[data-pane="find"]').click();
         const bulkCheck = page.locator('#fptBulkFindName');
         await bulkCheck.focus();
         await page.keyboard.press('Space');
@@ -550,17 +555,19 @@ test('real browser: lot management screen, navigation and shell geometry', async
             const compactDialog = await page.locator('.fpt-lot-dialog--bulk').evaluate(dialog => {
                 const body = dialog.querySelector('.fpt-lot-dialog-body');
                 const form = dialog.querySelector('.fpt-bulk-form');
-                const fields = Array.from(form.querySelectorAll('.fpt-bulk-field'));
+                const fields = Array.from(form.querySelectorAll('.fpt-bulk-pane:not([hidden]) .fpt-bulk-field'));
                 return {
                     dialogWidth: dialog.getBoundingClientRect().width,
-                    columns: Array.from(form.querySelectorAll('.fpt-bulk-dialog-grid')).map(grid => getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length),
-                    formOverflow: form.scrollWidth > form.clientWidth + 1,
+                    // Only the open tab's grid is laid out; hidden panes report their declared template.
+                    columns: Array.from(form.querySelectorAll('.fpt-bulk-pane:not([hidden]) .fpt-bulk-dialog-grid')).map(grid => getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/).length),
+                    // The tab panes bleed 2px on each side so focus rings are not clipped.
+                    formOverflow: form.scrollWidth > form.clientWidth + 2,
                     secondFieldBelow: fields[1].getBoundingClientRect().top > fields[0].getBoundingClientRect().top,
                     bodyOverflow: body.scrollWidth > body.clientWidth + 1
                 };
             });
             const shouldStackFields = viewport.width <= 520;
-            assert.deepEqual(compactDialog.columns, shouldStackFields ? [1, 1] : [2, 2], `compact ${viewport.width}px dialog layout: ${JSON.stringify(compactDialog)}`);
+            assert.deepEqual(compactDialog.columns, shouldStackFields ? [1] : [2], `compact ${viewport.width}px dialog layout: ${JSON.stringify(compactDialog)}`);
             assert.equal(compactDialog.formOverflow, false);
             assert.equal(compactDialog.secondFieldBelow, shouldStackFields);
             assert.equal(compactDialog.bodyOverflow, false);
@@ -582,16 +589,26 @@ test('real browser: lot management screen, navigation and shell geometry', async
         assert.ok(await page.locator('.fpt-nav-search-result .fpt-nsr-page').filter({ hasText: 'Автоответчик' }).count() > 0);
         await page.locator('.fpt-nav-search-result').first().click();
         assert.equal(await page.locator('.fp-tools-page-content.active').getAttribute('data-page'), 'auto_reply');
+        const startState = () => page.evaluate(() => document.querySelector('.fp-tools-content').classList.contains('fpt-start-state-active'));
+        assert.equal(await startState(), false, 'a search result opens its page, not the start screen');
         await page.locator('#fptNavCollapse').click();
         await page.waitForFunction(() => document.querySelector('.fp-tools-nav').classList.contains('is-nav-collapsed'));
         await page.locator('#fptNavCollapse').click();
         await page.waitForFunction(() => !document.querySelector('.fp-tools-nav').classList.contains('is-nav-collapsed'));
+        // Expanding the menu folds every category and shows the start screen until a section is picked.
+        assert.equal(await startState(), true, 'expanding the menu asks to pick a category');
+        await page.evaluate(() => window.fptOpenPopupPage('auto_reply'));
+        assert.equal(await startState(), false, 'opening a page leaves the start screen');
+        // Let the page entry animation (fadeIn, 1s) finish before measuring.
+        await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active').getAnimations().every(animation => animation.playState === 'finished'));
         const coverage = await page.evaluate(() => Object.entries(FPTPopupMetadata.pages).flatMap(([id, data]) => data.buttons.filter(button => !fptPopupActions.list(id).includes(button)).map(button => `${id}:${button}`)));
         assert.deepEqual(coverage, [], 'Every removed static button retains an action');
         const geometry = await page.evaluate(() => {
             const popup = document.querySelector('.fp-tools-popup'), nav = popup.querySelector('.fp-tools-nav');
             const p = popup.getBoundingClientRect();
             const pageSurface = popup.querySelector('.fp-tools-page-content.active');
+            // The search result above scrolled to the matching setting; measure the page from its top.
+            for (const scroller of [popup.querySelector('.fp-tools-content'), pageSurface]) if (scroller) scroller.scrollTop = 0;
             return { radius: getComputedStyle(popup).borderRadius, navRadius: getComputedStyle(nav).borderRadius,
                 pageRadius: getComputedStyle(pageSurface).borderRadius, pageMarginTop: getComputedStyle(pageSurface).marginTop,
                 pageTop: pageSurface.getBoundingClientRect().top-p.top,
@@ -600,7 +617,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         });
         assert.equal(geometry.radius, '24px'); assert.equal(geometry.navRadius, '24px');
         assert.equal(geometry.pageRadius, '24px'); assert.equal(geometry.pageMarginTop, '16px');
-        assert.ok(Math.abs(geometry.pageTop - 17) <= 1);
+        assert.ok(Math.abs(geometry.pageTop - 17) <= 1, JSON.stringify(geometry));
         assert.equal(geometry.hasClose, false); assert.equal(geometry.resize, 'none'); assert.equal(geometry.centered, true);
         assert.equal(geometry.width, 1320); assert.equal(geometry.height, 780);
         assert.equal(await page.evaluate(() => document.querySelector('.fp-tools-popup').classList.contains('no-transform')), false);
@@ -641,6 +658,9 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.waitForFunction(() => document.querySelector('.fp-tools-nav').classList.contains('is-nav-collapsed'));
         await page.locator('#fptNavCollapse').click();
         await page.waitForFunction(() => !document.querySelector('.fp-tools-nav').classList.contains('is-nav-collapsed'));
+        // Expanding the menu shows the start screen; reopen the page to measure it.
+        await page.evaluate(() => window.fptOpenPopupPage('auto_reply'));
+        await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active').getAnimations().every(animation => animation.playState === 'finished'));
         for (const dark of [false, true]) {
             await page.evaluate(dark => {
                 document.body.style.backgroundColor = dark ? '#15171a' : '#ffffff';
@@ -654,7 +674,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
                 pageTop: popup.querySelector('.fp-tools-page-content.active').getBoundingClientRect().top-popup.getBoundingClientRect().top
             }));
             assert.equal(small.radius, '24px'); assert.equal(small.nav, '24px');
-            assert.ok(Math.abs(small.pageTop - 17) <= 1);
+            assert.ok(Math.abs(small.pageTop - 17) <= 1, JSON.stringify(small));
         }
         const screenshotDir = path.join(require('node:os').tmpdir(), 'funpay-popup-reset-20261002');
         fs.mkdirSync(screenshotDir, { recursive: true });
@@ -662,7 +682,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.setViewportSize({ width: 1204, height: 789 });
         await page.evaluate(() => window.fptOpenPopupPage('settings_io'));
         await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'settings_io');
-        await page.waitForTimeout(380);
+        await page.waitForTimeout(900); // the sidebar reveals the route 700 ms after the group expands
         const settingsNavigation = await page.evaluate(() => {
             const scroll = document.querySelector('.fpt-nav-scroll');
             const row = document.querySelector('.fpt-nav-child[data-page="settings_io"]');
@@ -723,7 +743,7 @@ test('real browser: lot management screen, navigation and shell geometry', async
         await page.locator('#fpToolsButton').click();
         await page.waitForFunction(() => document.querySelector('.fp-tools-popup.active'));
         assert.equal(await page.locator('.fp-tools-popup').count(), 1);
-        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="auto_orders"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]):not([data-page="tickets"]):not([data-page="sounds"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
+        assert.equal(await page.locator('.fp-tools-page-content:not([data-page="lot_io"]):not([data-page="auto_delivery"]):not([data-page="auto_orders"]):not([data-page="autobump"]):not([data-page="finance_hub"]):not([data-page="theme"]):not([data-page="auto_reply"]):not([data-page="needs"]):not([data-page="templates"]):not([data-page="auto_review"]):not([data-page="accounts"]):not([data-page="effects"]):not([data-page="tickets"]):not([data-page="sounds"]):not([data-page="settings_io"]):not([data-page="blacklist"]) > *:not(.fpt-category-header):not(.fpt-popup-toast-region)').count(), 0);
         assert.equal(await page.locator('.fp-tools-page-content > .fpt-category-header').count(), 16);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="lot_io"] > .fpt-lot-io').count(), 1);
         assert.equal(await page.locator('.fp-tools-page-content[data-page="auto_delivery"] > .fpt-category-header').count(), 1);

@@ -84,17 +84,6 @@
         el.title = label;
         return el;
     }
-    function metric(iconName, label, kind) {
-        const element = node('div', 'fpt-qr-metric fpt-bl-metric');
-        if (kind) element.dataset.kind = kind;
-        const badge = node('span', 'fpt-qr-metric-icon');
-        badge.append(icon(iconName));
-        const copy = node('div', 'fpt-qr-metric-copy');
-        const value = node('strong', 'fpt-qr-metric-value', '—');
-        copy.append(node('span', 'fpt-qr-metric-label', label), value);
-        element.append(badge, copy);
-        return { element, value };
-    }
     // Toggle chip: pressed = this automation is blocked for the buyer.
     function flagChip(flag, pressed, compact = false) {
         const chip = node('button', `fpt-bl-chip${compact ? ' fpt-bl-chip--sm' : ''}`);
@@ -165,28 +154,6 @@
 
         const screen = node('div', 'fpt-bl');
         page.append(screen);
-
-        // --- Hero --------------------------------------------------------------------------------
-        const hero = node('section', 'fpt-qr-hero fpt-bl-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-bl-hero-title');
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.append(icon('block'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Чёрный список покупателей');
-        heroTitle.id = 'fpt-bl-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill', 'Загрузка…');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Покупатели, которым Funcy не выдаёт товар и не отвечает автоматически. Для каждого можно выбрать, что именно отключить.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricTotal = metric('person_off', 'В списке');
-        const metricDelivery = metric('local_shipping', 'Без автовыдачи', 'danger');
-        const metricResponse = metric('smart_toy', 'Без автоответов', 'danger');
-        const metrics = node('div', 'fpt-qr-metrics');
-        metrics.append(metricTotal.element, metricDelivery.element, metricResponse.element);
-        hero.append(heroMain, metrics);
 
         const banner = node('div', 'fpt-qr-banner');
         banner.setAttribute('role', 'alert');
@@ -286,32 +253,12 @@
         listSection.append(listHead, list, empty);
         search.addEventListener('input', () => { state.query = normalize(search.value); renderList(); });
 
-        screen.append(hero, banner, addCard, listSection);
+        screen.append(banner, addCard, listSection);
 
         // --- Rendering ---------------------------------------------------------------------------
         const findEntry = username => state.entries.find(entry => entry.username.toLowerCase() === String(username).trim().toLowerCase());
         const ordered = () => state.entries.slice().sort((a, b) => b.addedAt - a.addedAt);
         const matches = entry => !state.query || normalize(`${entry.username} ${entry.note}`).includes(state.query);
-
-        function renderHero() {
-            const total = state.entries.length;
-            const delivery = state.entries.filter(entry => entry.blockDelivery).length;
-            const response = state.entries.filter(entry => entry.blockResponse).length;
-            metricTotal.value.textContent = state.loaded ? String(total) : '—';
-            metricDelivery.value.textContent = state.loaded ? String(delivery) : '—';
-            metricResponse.value.textContent = state.loaded ? String(response) : '—';
-            hero.dataset.state = state.loaded && total ? 'on' : 'off';
-            if (!state.loaded) {
-                heroPill.dataset.kind = state.loadError ? 'error' : 'neutral';
-                heroPill.textContent = state.loadError ? 'Ошибка загрузки' : 'Загрузка…';
-            } else if (total) {
-                heroPill.dataset.kind = 'error';
-                heroPill.textContent = `${total} ${pluralize(total, ['покупатель', 'покупателя', 'покупателей'])}`;
-            } else {
-                heroPill.dataset.kind = 'success';
-                heroPill.textContent = 'Список пуст';
-            }
-        }
 
         function renderEmpty(visible) {
             empty.hidden = !visible;
@@ -439,7 +386,6 @@
         }
 
         function renderAll() {
-            renderHero();
             renderList();
         }
 

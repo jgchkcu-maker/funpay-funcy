@@ -774,7 +774,7 @@
             pane.appendChild(kpiRow(
                 kpi({ label: isSales ? 'Выручка от продаж' : 'Расходы на покупки', iconName: isSales ? 'payments' : 'shopping_bag', tone: isSales ? 'violet' : 'amber',
                     value: model.formatMoney(current.revenue, currency), hint: periodHint(), spark: spark(b => b.revenue) }),
-                kpi({ label: isSales ? 'Оплачено заказов' : 'Куплено товаров', iconName: isSales ? 'task_alt' : 'inventory', tone: 'blue',
+                kpi({ label: isSales ? 'Оплачено заказов' : 'Куплено товаров', iconName: isSales ? 'check_circle' : 'inventory', tone: 'blue',
                     value: current.count.toLocaleString('ru-RU'), hint: isSales && current.paidCount ? `ожидают закрытия: ${current.paidCount}` : model.countLabel(current.count, ['заказ', 'заказа', 'заказов']), spark: spark(b => b.count) }),
                 kpi({ label: isSales ? 'Средний чек продажи' : 'Средний чек покупки', iconName: 'receipt_long', tone: 'cyan',
                     value: current.avg === null ? '—' : model.formatMoney(current.avg, currency), muted: current.avg === null, hint: current.count ? periodHint() : '' }),

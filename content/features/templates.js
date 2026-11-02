@@ -6,10 +6,10 @@ let templateSettings = {
 };
 
 const DEFAULT_STANDARD_TEMPLATES = {
-    greeting: { enabled: true, label: 'Приветствие', text: '{welcome}, {buyername}! Чем могу помочь?' },
+    greeting: { enabled: true, label: 'Приветствие', text: '{welcome} {buyername}, чем могу помочь?' },
     completed: { enabled: true, label: 'Заказ выполнен', text: 'Заказ выполнен. Пожалуйста, зайдите в раздел «Покупки», выберите его в списке и нажмите кнопку «Подтвердить выполнение заказа».' },
     review: { enabled: true, label: 'Попросить отзыв', text: 'Спасибо за покупку! Буду очень благодарен, если вы оставите отзыв о сделке.' },
-    thanks: { enabled: true, label: 'Спасибо за заказ', text: 'Спасибо за заказ, {buyername}! Обращайтесь еще. {date}' }
+    thanks: { enabled: true, label: 'Спасибо за заказ', text: 'Спасибо за заказ, {buyername}! Обращайтесь ещё. {date}' }
 };
 
 function withoutTemplateColor(config) {
@@ -79,54 +79,13 @@ async function replaceTemplateVariables(template) {
     // remain available only in the autoresponder (new-order / order-confirm), where a
     // concrete order id exists.
 
-    const aiRegex = /\{ai:([^}]+)\}/g;
-    let match;
-    const aiPromises = [];
-    const aiPlaceholders = [];
-
-    let tempResult = result;
-    let placeholderIndex = 0;
-    while ((match = aiRegex.exec(result)) !== null) {
-        const aiPrompt = match[1];
-        const placeholder = `__AI_PLACEHOLDER_${placeholderIndex++}__`;
-        aiPlaceholders.push({ placeholder: placeholder, originalMatch: match[0] });
-        aiPromises.push(getAIProcessedText(aiPrompt, "generate"));
-        tempResult = tempResult.replace(match[0], placeholder);
-    }
-
-    result = tempResult;
-
-    if (aiPromises.length > 0) {
-        const chatInputForLoading = document.querySelector('.chat-form-input .form-control');
-        if (chatInputForLoading) {
-             chatInputForLoading.classList.add('ai-loading-textarea');
-             chatInputForLoading.disabled = true;
-        }
-        try {
-            const aiResults = await Promise.all(aiPromises);
-            aiPlaceholders.forEach((ph, index) => {
-                result = result.replace(ph.placeholder, aiResults[index] || "");
-            });
-        } catch (error) {
-            console.error("Error processing one or more AI variables:", error);
-            showNotification("Ошибка при обработке одной или нескольких AI переменных.", true);
-            aiPlaceholders.forEach(ph => {
-                result = result.replace(ph.placeholder, ph.originalMatch);
-            });
-        } finally {
-             if (chatInputForLoading) {
-                chatInputForLoading.classList.remove('ai-loading-textarea');
-                chatInputForLoading.disabled = false;
-             }
-        }
-    }
     return result;
 }
 
 async function applyTemplateToInput(chatInput, templateContent, images, sendOrder) {
     // Check the original before variables, draft edits, uploads or automatic submit.
-    if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true && /\{ai:[^}]*\}/i.test(String(templateContent ?? ''))) {
-        showNotification('Этот шаблон использует временно недоступную функцию. Отредактируйте его перед отправкой', true);
+    if (/\{ai:[^}]*\}/i.test(String(templateContent ?? ''))) {
+        showNotification('Этот шаблон использует удалённую функцию. Удалите вставку {ai:…} перед отправкой', true);
         return { handledInBackground: false, blocked: true };
     }
     if (!chatInput || templateContent === undefined) return { handledInBackground: false };
@@ -426,7 +385,8 @@ async function openTemplateSettings() {
     if (!popup) return;
     if (typeof window.fptOpenPopupPage !== 'function') return;
     await window.fptOpenPopupPage('templates', { mode: 'templates' });
-    popup.classList.add('active');
+    if (typeof popup._fptOpen === 'function') popup._fptOpen();
+    else popup.classList.add('active');
 }
 
 if (typeof window !== 'undefined' && window.fptPopupActions) {

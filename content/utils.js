@@ -545,6 +545,16 @@ async function fptLotWrite({ offerId, nodeId, op, source = 'page' }) {
 }
 window.fptLotWrite = fptLotWrite;
 
+// Валютное предложение (составной ID chips/offer?id=a-b-c-d): только цена и активность.
+async function fptChipWrite({ offerId, op }) {
+    const response = await chrome.runtime.sendMessage({
+        action: 'fptChipWrite', offerId: String(offerId), op, expectedAccountId: fptPageUserId()
+    });
+    if (!response?.success) throw new Error(response?.error || 'Предложение не сохранено.');
+    return response;
+}
+window.fptChipWrite = fptChipWrite;
+
 // DOM scheduling helpers: preserve mutation batches and migrate pending work on visibility changes.
 (function installPerfHelpers(root) {
     function report(name, error) { console.error(`Funcy [${name}]`, error); }

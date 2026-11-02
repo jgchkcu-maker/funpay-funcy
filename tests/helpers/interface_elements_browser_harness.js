@@ -5,8 +5,8 @@ let chromium;
 try { ({ chromium } = require(process.env.FPT_PLAYWRIGHT || 'playwright')); }
 catch { ({ chromium } = require('C:/Users/Usser/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright')); }
 
-// Opens the popup on the interface elements page with in-page chrome.storage and AI mocks.
-async function openInterfaceElements(browser, initial = {}, { dark = true, width = 1480, height = 930, failFirstRead = false, ai } = {}) {
+// Opens the popup on the interface elements page with in-page chrome.storage mocks.
+async function openInterfaceElements(browser, initial = {}, { dark = true, width = 1480, height = 930, failFirstRead = false } = {}) {
     const page = await browser.newPage({ viewport: { width, height } });
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
@@ -17,7 +17,7 @@ async function openInterfaceElements(browser, initial = {}, { dark = true, width
     });
     await page.goto('https://funpay.com/');
     await page.setContent(`<html${dark ? ' class="fpt-theme-dark"' : ''}><head></head><body style="background:${dark ? '#18191d' : '#f2f3f5'}"></body></html>`);
-    await page.evaluate(({ initial, failFirstRead, ai }) => {
+    await page.evaluate(({ initial, failFirstRead }) => {
         let stored = structuredClone(initial);
         let failRead = failFirstRead;
         const listeners = [];
@@ -65,16 +65,13 @@ async function openInterfaceElements(browser, initial = {}, { dark = true, width
                 id: 'qa', getURL: file => `https://funpay.com/${file}`,
                 async sendMessage(message) {
                     (window.qaMessages ||= []).push(message);
-                    const reply = window.qaAiReply;
-                    if (reply && reply.delay) await new Promise(resolve => setTimeout(resolve, reply.delay));
-                    return reply ? reply.response : { success: true, data: '[]' };
+                    return { success: true, data: [] };
                 }
             }
         };
-        window.qaAiReply = ai || null;
-    }, { initial, failFirstRead, ai });
+    }, { initial, failFirstRead });
     for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
-    for (const file of ['background/feature_availability.js', 'content/ui/popup_metadata.js', 'content/ui/popup_actions.js', 'content/ui/popup_attachments.js',
+    for (const file of ['content/ui/popup_metadata.js', 'content/ui/popup_actions.js', 'content/ui/popup_attachments.js',
         'content/ui/popup_components.js', 'content/ui/main_popup.js', 'content/features/feature_registry.js',
         'content/features/feature_disabler.js', 'content/features/needs_tab.js', 'content/ui/interface_elements_page.js']) {
         await page.addScriptTag({ path: path.join(root, file) });

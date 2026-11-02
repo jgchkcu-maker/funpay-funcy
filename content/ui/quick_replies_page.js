@@ -21,10 +21,10 @@
     ];
     // Mirrors DEFAULT_STANDARD_TEMPLATES from templates.js for isolated contexts (tests).
     const FALLBACK_STANDARD = {
-        greeting: { enabled: true, label: 'Приветствие', text: '{welcome}, {buyername}! Чем могу помочь?' },
+        greeting: { enabled: true, label: 'Приветствие', text: '{welcome} {buyername}, чем могу помочь?' },
         completed: { enabled: true, label: 'Заказ выполнен', text: 'Заказ выполнен. Пожалуйста, зайдите в раздел «Покупки», выберите его в списке и нажмите кнопку «Подтвердить выполнение заказа».' },
         review: { enabled: true, label: 'Попросить отзыв', text: 'Спасибо за покупку! Буду очень благодарен, если вы оставите отзыв о сделке.' },
-        thanks: { enabled: true, label: 'Спасибо за заказ', text: 'Спасибо за заказ, {buyername}! Обращайтесь еще. {date}' }
+        thanks: { enabled: true, label: 'Спасибо за заказ', text: 'Спасибо за заказ, {buyername}! Обращайтесь ещё. {date}' }
     };
     const DEMO = {
         welcome: 'Добрый день!', buyername: 'Алексей', username: 'Алексей', lotname: 'Игровой аккаунт',
@@ -93,8 +93,7 @@
             result = result.replace(/\{(welcome|date|buyername|bal|activesells|lotname)\}/g, (_, key) => DEMO[key]);
         }
         result = result.replace(/\{([^{}|]*\|[^{}]*)\}/g, (full, inner) => /^ai:/i.test(inner) ? full : inner.split('|')[0]);
-        if (kind !== 'command') result = result.replace(/\{ai:([^}]+)\}/gi, (_, prompt) =>
-            globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? `[ИИ: ${prompt.trim()}]` : '[Временно недоступная вставка]');
+        if (kind !== 'command') result = result.replace(/\{ai:[^}]*\}/gi, '[Удалённая вставка — отредактируйте шаблон]');
         return result;
     }
 
@@ -212,16 +211,6 @@
         row.append(copy, control);
         return row;
     }
-    function metric(iconName, label) {
-        const element = node('div', 'fpt-qr-metric');
-        const badge = node('span', 'fpt-qr-metric-icon');
-        badge.append(icon(iconName));
-        const copy = node('div', 'fpt-qr-metric-copy');
-        const value = node('strong', 'fpt-qr-metric-value', '—');
-        copy.append(node('span', 'fpt-qr-metric-label', label), value);
-        element.append(badge, copy);
-        return { element, value };
-    }
     function emptyState(iconName, title, hint) {
         const el = node('div', 'fpt-qr-empty');
         el.setAttribute('role', 'status');
@@ -276,7 +265,6 @@
             'Слэш-команды: напечатайте «/» и начало триггера, затем Tab или Enter — триггер превратится в готовый ответ.',
             'Переменные подставляются при отправке: {welcome}, {buyername}, {lotname}, {date}, {bal}, {activesells}. В командах — {buyername}, {date}, {time}.',
             '{вариант1|вариант2} — при каждой отправке выбирается один случайный вариант.',
-            '{ai:запрос} в шаблоне — текст, который ИИ сгенерирует по вашему запросу.',
             'К шаблону можно прикрепить до 5 изображений до 1 МБ: они отправятся до или после текста.'
         ].forEach(item => helpList.append(node('li', '', item)));
         helpPanel.append(helpList);
@@ -304,27 +292,6 @@
         page.append(screen);
 
         // --- Hero --------------------------------------------------------------------------------
-        const hero = node('section', 'fpt-qr-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-qr-hero-title');
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.append(icon('bolt'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Ответы в один клик');
-        heroTitle.id = 'fpt-qr-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill', 'Загрузка…');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Готовые сообщения у скрепки и слэш-команды, которые разворачиваются прямо в поле ввода.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricTemplates = metric('description', 'Активных шаблонов');
-        const metricCommands = metric('terminal', 'Слэш-команд');
-        const metricSend = metric('send', 'Отправка шаблона');
-        const metrics = node('div', 'fpt-qr-metrics');
-        metrics.append(metricTemplates.element, metricCommands.element, metricSend.element);
-        hero.append(heroMain, metrics);
-
         const banner = node('div', 'fpt-qr-banner');
         banner.setAttribute('role', 'alert');
         banner.hidden = true;
@@ -375,7 +342,7 @@
             pane.setAttribute('aria-labelledby', mode === 'templates' ? 'fptQuickRepliesTemplatesTab' : 'fptQuickRepliesCommandsTab');
             panes[mode] = pane;
         }
-        screen.append(hero, banner, tabs, panes.templates, panes.commands);
+        screen.append(banner, tabs, panes.templates, panes.commands);
 
         function setMode(mode) {
             if (!MODES.includes(mode)) return false;
@@ -700,20 +667,6 @@
         }
         function renderSummary() {
             const active = state.templates.items.filter(item => item.enabled).length;
-            const on = state.loaded && (state.templates.enabled || state.commands.enabled);
-            hero.dataset.state = on ? 'on' : 'off';
-            if (!state.loaded) {
-                heroPill.textContent = state.loadError ? 'Нет данных' : 'Загрузка…';
-                heroPill.dataset.kind = state.loadError ? 'error' : 'neutral';
-                [metricTemplates, metricCommands, metricSend].forEach(item => { item.value.textContent = '—'; });
-                return;
-            }
-            heroPill.textContent = on ? 'Работает' : 'Выключено';
-            heroPill.dataset.kind = on ? 'success' : 'neutral';
-            metricTemplates.value.textContent = state.templates.enabled
-                ? `${active} из ${state.templates.items.length}` : 'Выключены';
-            metricCommands.value.textContent = state.commands.enabled ? String(state.commands.commands.length) : 'Выключены';
-            metricSend.value.textContent = state.templates.sendTemplatesImmediately ? 'Сразу' : 'В поле ввода';
             tabButtons[0]._count.textContent = String(active);
             tabButtons[1]._count.textContent = String(state.commands.commands.length);
         }
@@ -913,7 +866,7 @@
                 const name = node('div', 'fpt-qr-preview-label');
                 name.append(icon('description'), node('span', '', draft.label.trim() || 'Без названия'));
                 previewBody.replaceChildren(name, previewMessage(messages),
-                    node('p', 'fpt-qr-preview-hint', 'Переменные показаны на примере. {ai:…} заполнит ИИ при отправке.'));
+                    node('p', 'fpt-qr-preview-hint', 'Переменные показаны на примере.'));
             }
             renderImages();
 

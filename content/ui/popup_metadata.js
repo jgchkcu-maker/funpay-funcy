@@ -25,7 +25,6 @@ window.FPTPopupMetadata = Object.freeze({
         {
           "text": "Элементы, которые можно отключить"
         },
-        ...(globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? [{ "text": "Скрыть элементы с помощью ИИ" }] : []),
         {
           "text": "Предпросмотр элемента на FunPay"
         },
@@ -36,7 +35,6 @@ window.FPTPopupMetadata = Object.freeze({
       "modes": [],
       "defaultMode": null,
       "buttons": [
-        ...(globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? ["fptNeedsAskBtn"] : [])
       ]
     },
     "templates": {

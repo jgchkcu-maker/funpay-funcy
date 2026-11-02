@@ -190,46 +190,58 @@
         rpBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); startReplyGroup(item); });
         tools.appendChild(rpBtn);
 
-        if (interlocutorIsEnglish()) {
-            const trBtn = document.createElement('button');
-            trBtn.type = 'button';
-            trBtn.className = 'fpt-msg-tool';
-            trBtn.title = 'Перевести сообщение';
-            trBtn.innerHTML = '<span class="material-symbols-rounded">translate</span>';
-            trBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); translateGroup(item); });
-            tools.appendChild(trBtn);
-        }
+        const trBtn = document.createElement('button');
+        trBtn.type = 'button';
+        trBtn.className = 'fpt-msg-tool';
+        trBtn.title = 'Перевести сообщение';
+        trBtn.innerHTML = '<span class="material-symbols-rounded">translate</span>';
+        trBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); translateGroup(item); });
+        tools.appendChild(trBtn);
 
         // Вставляем СЛЕВА от даты.
         dateEl.parentNode.insertBefore(tools, dateEl);
     }
 
-    // Перевод одного сообщения (низкоуровневый помощник).
+    // Перевод одного сообщения через единый сервис переводчика.
     async function translateInto(item) {
         const textEl = item.querySelector('.chat-msg-text');
         if (!textEl) return false;
         if (textEl.querySelector('.fp-trans-wrap')) {
-            textEl.querySelectorAll('.fp-trans-wrap').forEach(n => n.remove());
-            return null; // означает «сняли перевод»
+            if (window.FPTChatTranslate) {
+                window.FPTChatTranslate.clearMessageTranslation(textEl);
+            } else {
+                textEl.querySelectorAll('.fp-trans-wrap').forEach(n => n.remove());
+                delete textEl.dataset.fpTransState;
+            }
+            return null; // сняли перевод
+        }
+        if (window.FPTChatTranslate) {
+            return await window.FPTChatTranslate.translateMessageElement(textEl, { force: true });
         }
         const orig = messageText(item);
         if (!orig) return false;
-        let translated = null;
-        if (typeof translateText === 'function') translated = await translateText(orig);
-        else {
-            try {
-                const r = await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=ru&dt=t&q=' + encodeURIComponent(orig));
-                const j = await r.json();
-                translated = j[0].map(s => s[0]).join('');
-                if (translated === orig) translated = null;
-            } catch (_) {}
+        try {
+            const resp = await chrome.runtime.sendMessage({
+                action: 'translateChatText',
+                text: orig,
+                target: 'ru'
+            });
+            if (resp && resp.success && resp.text && resp.text.trim() !== orig.trim()) {
+                const wrap = document.createElement('div');
+                wrap.className = 'fp-trans-wrap';
+                const divider = document.createElement('div');
+                divider.className = 'fp-trans-divider';
+                const textDiv = document.createElement('div');
+                textDiv.className = 'fp-trans-text';
+                textDiv.textContent = resp.text;
+                wrap.appendChild(divider);
+                wrap.appendChild(textDiv);
+                textEl.appendChild(wrap);
+            }
+            return true;
+        } catch (_) {
+            return false;
         }
-        if (!translated) translated = '(перевод недоступен)';
-        const wrap = document.createElement('div');
-        wrap.className = 'fp-trans-wrap';
-        wrap.innerHTML = '<div class="fp-trans-divider"></div><div class="fp-trans-text">' + esc(translated) + '</div>';
-        textEl.appendChild(wrap);
-        return true;
     }
 
     // Перевод ВСЕЙ склеенной группы. Если хоть у одного уже есть перевод - снимаем у всех.
@@ -237,7 +249,17 @@
         const items = groupItems(headItem);
         const anyTranslated = items.some(it => it.querySelector('.chat-msg-text .fp-trans-wrap'));
         if (anyTranslated) {
-            items.forEach(it => it.querySelectorAll('.fp-trans-wrap').forEach(n => n.remove()));
+            items.forEach(it => {
+                const t = it.querySelector('.chat-msg-text');
+                if (t) {
+                    if (window.FPTChatTranslate) {
+                        window.FPTChatTranslate.clearMessageTranslation(t);
+                    } else {
+                        t.querySelectorAll('.fp-trans-wrap').forEach(n => n.remove());
+                        delete t.dataset.fpTransState;
+                    }
+                }
+            });
             return;
         }
         for (const it of items) { await translateInto(it); }

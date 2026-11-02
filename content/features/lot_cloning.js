@@ -281,6 +281,7 @@ function renderCloneReview() {
                 showNotification('Нечего переводить — русские поля пусты.', true);
                 return;
             }
+            if (!(await window.FPTTranslateConsent?.ensure())) return;
             const label = translateBtn.lastChild;
             const origLabel = label.textContent;
             label.textContent = 'Перевожу...';

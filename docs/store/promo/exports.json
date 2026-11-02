@@ -1,0 +1,84 @@
+{
+  "generatedAt": "2026-11-01T17:28:53.971Z",
+  "method": "Built-in ImageGen background; deterministic HTML composition and Chrome export",
+  "sourceArtwork": "docs/store/promo/source-background.png",
+  "sourceLogo": "icons/funcy-logo.png",
+  "sourceScreenshot": "docs/store/screenshots/raw/finance.png",
+  "descriptionCharacters": 2144,
+  "files": [
+    {
+      "file": "00-store-icon-128x128.png",
+      "bytes": 26593,
+      "sha256": "32f11ed79ac15db2575cf513d088b85160e67e2d15dc0df119bb066f4498fb25",
+      "width": 128,
+      "height": 128,
+      "pngColorType": 6
+    },
+    {
+      "file": "01-analytics.png",
+      "bytes": 395069,
+      "sha256": "14dde9889c6a8a5f9dbb56efb9e1a33f56aeff69886f5c2b3c0826bf732e6103",
+      "width": 1280,
+      "height": 800,
+      "pngColorType": 2
+    },
+    {
+      "file": "02-auto-delivery.png",
+      "bytes": 369830,
+      "sha256": "980d7269bb927e7e8d3aae938cb363dcf0c12a198dcaf5adf66ad8aedd063f8b",
+      "width": 1280,
+      "height": 800,
+      "pngColorType": 2
+    },
+    {
+      "file": "03-bulk-editor.png",
+      "bytes": 323970,
+      "sha256": "3e02877644734a7d917bfda6f3dbcee4922361d2c3dd75618e8634d20efdf56e",
+      "width": 1280,
+      "height": 800,
+      "pngColorType": 2
+    },
+    {
+      "file": "04-auto-reply.png",
+      "bytes": 333222,
+      "sha256": "9b173242e8fa38402e2d813b3b88779d41a36ec1251ab3b9e13e4aad8b3674fb",
+      "width": 1280,
+      "height": 800,
+      "pngColorType": 2
+    },
+    {
+      "file": "05-themes.png",
+      "bytes": 367305,
+      "sha256": "9a7a46ba0bc587e2cd38732a35feaf101463c8cc6cec1ba184186c9c508c72ae",
+      "width": 1280,
+      "height": 800,
+      "pngColorType": 2
+    },
+    {
+      "file": "06-small-promo-440x280.png",
+      "bytes": 141552,
+      "sha256": "4ae29112d5f9ef805ca55548308b8e78ae4f7acb64598bf1265adec1ad19cea8",
+      "width": 440,
+      "height": 280,
+      "pngColorType": 2
+    },
+    {
+      "file": "07-marquee-1400x560.png",
+      "bytes": 619828,
+      "sha256": "ea9cb29a1aeb2450b74ce22b9a82c4fc3bd72532c1c2bc1e26a63a15d1a4f571",
+      "width": 1400,
+      "height": 560,
+      "pngColorType": 2
+    },
+    {
+      "file": "description.txt",
+      "bytes": 3804,
+      "sha256": "de8bd9a1a57da5502f5ace7fd1ec3ca24111792fd8d2a0321da8d5dc5ed89de2"
+    },
+    {
+      "file": "fields.txt",
+      "bytes": 1576,
+      "sha256": "957c5d0a97a30e6f017a897c83fb6db975f76bb3b17e532b0da5443e19ec9b13"
+    }
+  ]
+}

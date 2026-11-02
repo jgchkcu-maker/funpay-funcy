@@ -14,15 +14,18 @@ test('tab-like controls use consistent hover and selected-state motion across po
     for (const [source, selector] of [
         [categories, '.fpt-fin-tab'],
         [categories, '.fpt-fin-seg-btn'],
-        [categories, '.fpt-ad-summary-chip'],
         [windows, '.fpt-win-seg-btn'],
         [imageGenerator, '.fp-tools-ig-tab'],
         [salesModes, '.fp-sm-ctab'],
     ]) {
-        const rule = source.match(new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\s*\\{([^}]+)\\}`));
-        assert.ok(rule, `${selector} has a base rule`);
-        assert.match(rule[1], /transition\s*:/, `${selector} transitions its visual state`);
+        // Size variants (for example the filter tabs) may restate dimensions without motion;
+        // one of the selector's own rules has to carry the transition.
+        const rules = [...source.matchAll(new RegExp(`${selector.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\s*\\{([^}]+)\\}`, 'g'))];
+        assert.ok(rules.length, `${selector} has a base rule`);
+        assert.ok(rules.some(rule => /transition\s*:/.test(rule[1])), `${selector} transitions its visual state`);
     }
+    // Auto-delivery summary chips are rendered as finance tabs and share their motion.
+    assert.match(read('content/ui/auto_delivery_page.js'), /'fpt-fin-tab fpt-ad-summary-chip'/);
 });
 
 test('finance header separates title from tabs and segmented updates animate replacement content', () => {

@@ -40,13 +40,11 @@ test('accounts screen fits both themes and widths and never renders or stores se
     } finally { await browser.close(); }
 });
 
-test('hero, active row, unread badge and expired session reflect stored data', async () => {
+test('active row, unread badge and expired session reflect stored data without an overview card', async () => {
     const browser = await launch();
     try {
         const { page, snapshotCalls, external, errors } = await openAccounts(browser, { fpToolsAccounts: ACCOUNTS }, main());
-        assert.match(await page.locator('.fpt-am-hero .fpt-qr-pill').textContent(), /Вы в аккаунте Outlik/);
-        const metrics = await page.locator('.fpt-am-hero .fpt-qr-metric-value').allTextContents();
-        assert.deepEqual(metrics.map(value => value.replace(/\s/g, ' ')), ['3', '13 730,50 ₽', '3']);
+        assert.equal(await page.locator('.fpt-am-hero').count(), 0);
         assert.equal(await page.locator('.fpt-am-current').isVisible(), false, 'current account is already saved');
         const active = page.locator('.fpt-am-row[data-active="true"]');
         assert.equal(await active.count(), 1);
@@ -64,7 +62,7 @@ test('hero, active row, unread badge and expired session reflect stored data', a
         accounts[2].balance = 'Финансы';
         await external({ fpToolsAccounts: accounts });
         await page.waitForFunction(() => document.querySelector('.fpt-am-row[data-expired="true"] .fpt-am-balance')?.textContent.includes('неизвестен'));
-        assert.equal((await page.locator('.fpt-am-metric-sub:not([hidden])').textContent()).replace(/\s/g, ' '), '+3 200 ₽ в ожидании');
+        assert.match((await active.locator('.fpt-am-pending').textContent()).replace(/\s/g, ' '), /В ожидании 3 200 ₽ · 4 заказа/);
         assert.equal(await snapshotCalls(), 0, 'fresh data is not refetched');
         assert.equal(await page.locator('.fpt-am-search').isVisible(), false, 'search appears from four accounts');
         assert.deepEqual(errors, []);
@@ -76,7 +74,7 @@ test('empty list offers the current account and adding it saves the session with
     try {
         const { page, state, errors } = await openAccounts(browser, {}, { session: 'key-new', userName: 'NewSeller', users: { 'key-new': { id: '77', name: 'NewSeller' } } });
         assert.equal(await page.locator('.fpt-am-empty').isVisible(), true);
-        assert.match(await page.locator('.fpt-am-hero .fpt-qr-pill').textContent(), /NewSeller не сохранён/);
+        assert.match(await page.locator('.fpt-am-current').textContent(), /Вы вошли как NewSeller/);
         assert.equal(await page.locator('#fptRefreshAccountsBtn').isVisible(), false);
         await page.locator('#addCurrentAccountBtn').click();
         await page.waitForFunction(() => window.qaStorage.read().fpToolsAccounts?.length === 1);
@@ -87,7 +85,7 @@ test('empty list offers the current account and adding it saves the session with
         await page.waitForFunction(() => document.querySelectorAll('.fpt-am-row').length === 1);
         assert.equal(await page.locator('.fpt-am-current').isVisible(), false);
         assert.equal(await page.locator('.fpt-am-row').getAttribute('data-active'), 'true');
-        assert.match(await page.locator('.fpt-am-hero .fpt-qr-pill').textContent(), /Вы в аккаунте NewSeller/);
+        assert.match(await page.locator('.fpt-am-row[data-active="true"]').textContent(), /NewSeller/);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });
@@ -98,7 +96,7 @@ test('signed-out visitors see a hint instead of the add button', async () => {
         const { page } = await openAccounts(browser, {}, { session: '', userName: '' });
         assert.equal(await page.locator('#fpt-am-current-title').textContent(), 'Вы не вошли в FunPay');
         assert.equal(await page.locator('#addCurrentAccountBtn').isVisible(), false);
-        assert.match(await page.locator('.fpt-am-hero .fpt-qr-pill').textContent(), /Вход не выполнен/);
+        assert.equal(await page.locator('.fpt-am-hero').count(), 0);
     } finally { await browser.close(); }
 });
 
@@ -368,7 +366,7 @@ test('external storage changes re-render and a failed read can be retried', asyn
             { id: 'acc_b', name: 'Склад ключей', balance: '1 250,50 ₽' }, { id: 'acc_c', name: 'Старый аккаунт' }, { id: 'acc_d', name: 'Четвёртый', balance: '1 $' }] });
         await page.waitForFunction(() => document.querySelectorAll('.fpt-am-row').length === 4);
         assert.equal(await page.locator('.fpt-am-search').isVisible(), true);
-        assert.equal(await page.locator('.fpt-am-hero .fpt-qr-metric-value').nth(1).textContent(), 'разные валюты');
+        assert.match(await page.locator('.fpt-am-row').last().locator('.fpt-am-balance').textContent(), /1\s*\$/);
         await page.locator('.fpt-am-search').fill('склад');
         assert.deepEqual(await names(page), ['Склад ключей']);
         await page.locator('.fpt-am-search').fill('нет такого');

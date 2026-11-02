@@ -388,6 +388,7 @@ h3 .material-symbols-rounded {
 #fp-tools-filter-marked-btn:focus-visible::after { transform: translateY(0); }
 @keyframes fptChatActionSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
+    .fpt-nav-group-collapse, .fpt-nav-group-chevron { transition: none; }
     #fp-tools-read-all-btn, #fp-tools-filter-marked-btn { transition: none; }
     #fp-tools-read-all-btn:active, #fp-tools-filter-marked-btn:active { transform: none; }
     #fp-tools-read-all-btn[data-state="loading"] .material-icons { animation: none; }
@@ -1141,25 +1142,12 @@ button.add-image-btn .material-symbols-rounded {
 
 /* stage background neutral; replicas bring their own real colors */
 
-/* RMTHub search - simple chip: "Продавец" + person emoji */
-.fp-tools-popup .fpt-pv-rmthub {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: #fff; color: #555; border: 1px solid #ccc; border-radius: 4px;
-    padding: 7px 12px; font-size: 13px;
-}
-.fp-tools-popup .fpt-pv-rmthub-ico { font-size: 14px; line-height: 1; }
-
-/* AI chat button - 36px round transparent, real magic.png icon (gray, like inactive) */
-.fp-tools-popup .fpt-pv-aibtn {
+/* Compact attachment button preview. */
+.fp-tools-popup .fpt-pv-iconbtn {
     width: 36px; height: 36px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     background: rgba(27,117,187,0.06);
 }
-.fp-tools-popup .fpt-pv-aibtn img {
-    width: 20px; height: 20px; display: block;
-    filter: brightness(0) saturate(100%) invert(55%) sepia(8%) saturate(400%) hue-rotate(200deg) brightness(90%);
-}
-
 /* char counter - small muted number at the corner of the input */
 .fp-tools-popup .fpt-pv-charcount-field {
     position: relative; background: #fff; color: #999;
@@ -1169,14 +1157,6 @@ button.add-image-btn .material-symbols-rounded {
 .fp-tools-popup .fpt-pv-charcount {
     position: absolute; right: 8px; bottom: 5px;
     font-size: 10px; color: #4a5070; font-variant-numeric: tabular-nums;
-}
-
-/* profanity warning - red gradient bar with white bold text */
-.fp-tools-popup .fpt-pv-profanity {
-    background: linear-gradient(45deg, #ff416c, #ff4b2b); color: #fff;
-    border: 1px solid rgba(255,255,255,0.3); border-radius: 8px;
-    padding: 8px 12px; font-size: 12px; font-weight: 700; text-align: center;
-    line-height: 1.3;
 }
 
 /* Interface-element previews mirror the real compact header buttons. */
@@ -1216,14 +1196,6 @@ button.add-image-btn .material-symbols-rounded {
     background: #5cb85c; color: #fff; border: 1px solid #4cae4c;
     border-radius: 4px; padding: 6px 18px; font-size: 13px;
 }
-
-/* AI-generation button (dark pill with sparkle svg + label) */
-.fp-tools-popup .fpt-pv-aigen {
-    display: inline-flex; align-items: center; gap: 7px;
-    background: var(--fptm-surface, #15151c); color: #e3e3e3; border: 1px solid #2a2a3a;
-    border-radius: 8px; padding: 7px 13px; font-size: 13px;
-}
-.fp-tools-popup .fpt-pv-aigen svg { display: block; }
 
 /* font block (label Шрифт + select + Клавиатура button) */
 .fp-tools-popup .fpt-pv-fontblock { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

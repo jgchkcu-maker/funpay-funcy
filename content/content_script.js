@@ -115,89 +115,11 @@
         return true;
     }
 
-    async function handleAIReviewReply(event) {
-        if (globalThis.FPTFeatureAvailability?.isAvailable('ai') !== true) return;
-        const button = event.currentTarget;
-    
-        if (!document.querySelector('style[data-fp-tools-btn-loader]')) {
-            const style = document.createElement('style');
-            style.dataset.fpToolsBtnLoader = 'true';
-            style.textContent = `
-                .fp-tools-btn-loader {
-                    display: inline-block;
-                    width: 16px; height: 16px;
-                    border: 2px solid rgba(255,255,255,0.3);
-                    border-top-color: #fff;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                }
-                @keyframes spin { to { transform: rotate(360deg); } }
-            `;
-            document.head.appendChild(style);
-        }
-    
-        const originalText = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = `<span class="fp-tools-btn-loader"></span><span style="margin-left:8px;">Генерация…</span>`;
-        
-        const replyTextarea = document.querySelector('.review-item-answer-form textarea[name="text"], .review-editor-reply textarea[name="text"]');
-        if (!replyTextarea) {
-            showNotification('Не найдено поле для ответа.', true);
-            button.disabled = false;
-            button.innerHTML = originalText;
-            return;
-        }
-        
-        try {
-            const myUsername = document.querySelector('.user-link-name')?.textContent.trim() || 'Продавец';
-
-            // Parse the lot name from the order page. Prefer «Краткое описание»; fall back
-            // to «Игра», the order-secrets title, or the review detail line.
-            const headers = Array.from(document.querySelectorAll('.param-item h5'));
-            const findParam = (label) => {
-                const h = headers.find(x => x.textContent.trim() === label);
-                return h && h.nextElementSibling ? h.nextElementSibling.textContent.trim() : '';
-            };
-            let lotName = findParam('Краткое описание') || findParam('Игра') || '';
-            if (!lotName) {
-                lotName = document.querySelector('.review-item-detail')?.textContent.trim()
-                       || 'ваш товар';
-            }
-
-            const reviewText = document.querySelector('.review-item-text')?.textContent.trim() || 'положительный отзыв';
-    
-            const response = await chrome.runtime.sendMessage({
-                action: "getAIProcessedText",
-                text: lotName,
-                context: reviewText,
-                myUsername: myUsername,
-                type: "review_reply"
-            });
-    
-            if (response && response.success) {
-                replyTextarea.value = response.data;
-                replyTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-            } else {
-                throw new Error(response.error || 'Неизвестная ошибка ИИ.');
-            }
-    
-        } catch (error) {
-            showNotification(`Ошибка ИИ: ${error.message}`, true);
-            console.error('Funcy AI Review Reply Error:', error);
-        } finally {
-            button.disabled = false;
-            button.innerHTML = originalText;
-        }
-    }
-
     function initializeDynamicFeatures() {
         document.body.addEventListener('focusin', (event) => {
             if (event.target.matches('.chat-form-input .form-control')) {
                 if (!document.getElementById('fpt-tpl-popover-btn')) {
                     addChatTemplateButtons();
-                }
-                if (!document.getElementById('aiModeToggleBtn')) {
-                    setupAIChatFeature();
                 }
             }
             if (event.target.matches('textarea.textarea-lot-secrets')) {
@@ -212,28 +134,8 @@
             if (!document.getElementById('fpToolsGenerateImageBtn') && document.querySelector('.attachments-box')) {
                 initializeImageGenerator();
             }
-            if (!document.getElementById('fp-tools-ai-gen-btn')) {
-                const header = document.querySelector('h1.page-header, h1.page-header.page-header-no-hr');
-                if (header && (header.textContent.includes('Добавление предложения') || header.textContent.includes('Редактирование предложения'))) {
-                    createAIGeneratorUI();
-                }
-            }
             if (!document.getElementById('fp-tools-read-all-btn') && document.querySelector('.chat-full-header')) {
                 initializeMarkAllAsRead();
-            }
-            // --- ИИ-ОТВЕТ НА ОТЗЫВ: кнопка-клон «Опубликовать» со звёздочкой ---
-            const reviewPublishBtn = document.querySelector('.review-item-answer-form .btn[data-action="save"], .review-editor-reply .btn[data-action="save"]');
-            if (globalThis.FPTFeatureAvailability?.isAvailable('ai') === true && reviewPublishBtn && !document.getElementById('fp-tools-ai-review-reply-btn')) {
-                const aiBtn = createElement('button', {
-                    type: 'button',
-                    class: reviewPublishBtn.className.trim(),
-                    id: 'fp-tools-ai-review-reply-btn'
-                });
-                aiBtn.innerHTML = `<span class="fp-ai-reply-star">✦</span><span class="fp-ai-reply-label">Ответить</span>`;
-                aiBtn.style.marginLeft = '10px';
-                reviewPublishBtn.style.marginLeft = '';
-                reviewPublishBtn.after(aiBtn);
-                aiBtn.addEventListener('click', handleAIReviewReply);
             }
             if (window.location.pathname.includes('/lots/offer') && !document.getElementById('fp-tools-public-clone-btn')) {
                 const buyButtonForm = document.querySelector('form[action$="/orders/new"]');
@@ -467,7 +369,6 @@
         // FIX 2.8.4 (№9): применяем кастомные стили редактора сразу, не дожидаясь
         // открытия меню Funcy.
         if (typeof injectMagicStickStylesEarly === 'function') injectMagicStickStylesEarly();
-        setupAIChatFeature();
         initializeFontTools();
         applyHeaderPosition();
         initializeUserNotes();

@@ -17,12 +17,7 @@
     function fontName(value) {
         return typeof value === 'string' && /^[\p{L}\p{N} _-]{1,60}$/u.test(value) ? value : '';
     }
-    // Existing settings/exports may still point to files removed from the extension package.
-    function resolveWallpaper(value) {
-        if (typeof value !== 'string') return value;
-        const match = value.match(/^chrome-extension:\/\/[a-z0-9]+\/themes\/wallpapers\/(ghoul-ink|white-ghoul)\.webp$/i);
-        return match ? 'https://raw.githubusercontent.com/jgchkcu-maker/funcy-assets/main/wallpapers/' + match[1].toLowerCase() + '.webp' : value;
-    }
+    function resolveWallpaper(value) { return value; }
     function cssImageUrl(value) {
         value = resolveWallpaper(value);
         if (typeof value !== 'string' || /[\x00-\x1f\x7f<>]/.test(value)) return '';

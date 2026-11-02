@@ -26,7 +26,9 @@
         const offersHeader = Array.from(container.querySelectorAll('h5.mb10.text-bold'))
             .find(h => Array.from(h.childNodes).some(node => node.nodeType === Node.TEXT_NODE &&
                 /^(Предложения|Отзывы)$/.test(node.textContent.trim())));
-        if (offersHeader) offersHeader.insertAdjacentElement('afterend', bar);
+        const toolbar = typeof ensureProfileOffersToolbar === 'function' ? ensureProfileOffersToolbar(container) : null;
+        if (toolbar) toolbar.querySelector('.fpt-offers-toolbar-tools').prepend(bar);
+        else if (offersHeader) offersHeader.insertAdjacentElement('afterend', bar);
 
         _searchInput = bar.querySelector('#fp-lot-search-input');
         const countEl = bar.querySelector('#fp-lot-search-count');

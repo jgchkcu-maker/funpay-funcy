@@ -78,11 +78,6 @@ test('cookie snapshot swaps the whole session and restores it before a queued ac
     assert.match(source, /cookieLock: withCookieLock/);
 });
 
-test('retired profile descriptions cannot create, verify, delete lots or contact their server', () => {
-    const forbidden = () => assert.fail('retired profile service ran');
-    vm.runInNewContext(read('content/features/profile_descriptions.js'), {
-        fetch: forbidden, setTimeout: forbidden, setInterval: forbidden,
-        document: new Proxy({}, { get: forbidden }), chrome: new Proxy({}, { get: forbidden })
-    });
-    assert.doesNotMatch(read('content/features/profile_descriptions.js'), /SHARED_KEY|workers\.dev|createVerificationLot|sweepPendingLots/);
+test('retired profile descriptions module is deleted', () => {
+    assert.equal(fs.existsSync(path.join(__dirname, '../content/features/profile_descriptions.js')), false);
 });

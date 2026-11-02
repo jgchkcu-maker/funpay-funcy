@@ -312,6 +312,27 @@ function parseLotEditPage(html, detailed = false) {
     }
 }
 
+// Форма валютного раздела (chips/<node>/trade): пары [name, value] так, как их
+// отправил бы браузер — невыбранные галочки не попадают.
+function parseChipTradeForm(html) {
+    try {
+        const doc = window.__fptParseHTML(html);
+        const form = Array.from(doc.querySelectorAll('form')).find(f => f.querySelector('[name^="offers["]'));
+        if (!form) return { ok: false, error: fptLotEditPageError(doc) };
+        const fields = [];
+        form.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+            const name = el.getAttribute('name');
+            const type = (el.getAttribute('type') || '').toLowerCase();
+            if (name === 'query' || el.disabled || ['submit', 'button', 'file'].includes(type)) return;
+            if ((type === 'checkbox' || type === 'radio') && !el.checked) return;
+            fields.push([name, (type === 'checkbox' || type === 'radio') ? (el.getAttribute('value') ?? 'on') : (el.value ?? '')]);
+        });
+        return { ok: true, fields };
+    } catch (e) {
+        return { ok: false, error: { code: 'parse_failed', message: 'Не удалось разобрать форму валюты.' } };
+    }
+}
+
 // =====================================================================================
 // SERVER-SIDE LOT CLONING
 //   1) parsePublicLotForClone  - читает ПУБЛИЧНУЮ страницу чужого лота (lots/offer?id=)
@@ -1616,6 +1637,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case 'parseLotEditPage':
             sendResponse(parseLotEditPage(message.html, message.detailed === true));
+            break;
+        case 'parseChipTradeForm':
+            sendResponse(parseChipTradeForm(message.html));
             break;
         case 'parsePublicLotForClone':
             sendResponse(parsePublicLotForClone(message.html));

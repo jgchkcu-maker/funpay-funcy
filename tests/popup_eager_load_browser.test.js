@@ -43,9 +43,16 @@ test('one, two and five rapid clicks build once; closing, reopening and template
             assert.equal(await page.locator('.fp-tools-popup.active').count(), 0);
             await page.evaluate(() => { for (let i = 0; i < 5; i++) document.querySelector('#fpToolsButton').click(); });
             await page.waitForSelector('.fp-tools-popup.active');
-            await page.evaluate(() => document.querySelector('.fp-tools-popup')._fptClose());
-            await page.waitForTimeout(300);
-            await page.evaluate(() => openTemplateSettings());
+            await page.evaluate(async () => {
+                document.querySelector('.fp-tools-popup')._fptClose();
+                await openTemplateSettings();
+            });
+            assert.deepEqual(await page.evaluate(() => {
+                const popup = document.querySelector('.fp-tools-popup');
+                return { closing: popup.classList.contains('is-closing'), timer: popup._fptCloseTimer };
+            }), { closing: false, timer: null }, 'opening template settings cancels the pending close');
+            // Let the original close deadline pass: the reopened menu must stay open.
+            await page.waitForTimeout(400);
             await page.waitForSelector('.fp-tools-popup.active');
             assert.equal(await page.locator('.fp-tools-page-content.active').getAttribute('data-page'), 'templates');
             assert.equal(await page.locator('.fp-tools-popup').count(), 1);

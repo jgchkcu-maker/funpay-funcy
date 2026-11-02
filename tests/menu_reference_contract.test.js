@@ -67,7 +67,7 @@ function testHeaderAndSearchMatchReference() {
     const navStart = source.indexOf('<nav class="fp-tools-nav">');
     const navEnd = source.indexOf('</nav>', navStart);
     const navMarkup = source.slice(navStart, navEnd);
-    assert.match(navMarkup, /<div class="fpt-nav-brand">[\s\S]*?<img class="fp-tools-brand-logo"[^>]+data-icon="funcy-logo"[\s\S]*?<span class="fpt-nav-brand-title">FunPay Funcy<\/span>[\s\S]*?<button[^>]+id="fptNavCollapse"/, 'brand, title, and collapse control must live in the reference sidebar header');
+    assert.match(navMarkup, /<div class="fpt-nav-brand">[\s\S]*?<img class="fp-tools-brand-logo"[^>]+data-icon="funcy-logo"[\s\S]*?<span class="fpt-nav-brand-title">Funcy<\/span>[\s\S]*?<button[^>]+id="fptNavCollapse"/, 'brand, title, and collapse control must live in the reference sidebar header');
     assert.doesNotMatch(navMarkup, /fpt-nav-footer|fpt-nav-quick-actions/);
     assert.doesNotMatch(navMarkup, /fptAccentBtn|fptAccentInput/, 'the sidebar must not expose a button-color picker');
     assert.match(source, /const accent = '#7663f6'/, 'the menu accent must use the fixed lavender color');
@@ -265,14 +265,17 @@ function testCollapseSearchAndMotionContract() {
 
 function testPopupEntranceDoesNotScale() {
     const popupActive = extractRule(popupCss, '.fp-tools-popup.active {');
-    assert.match(popupActive, /animation:\s*fptMenuPopIn/, 'the main popup must use its own entrance animation');
-    const start = popupCss.indexOf('@keyframes fptMenuPopIn');
-    const end = popupCss.indexOf('\n}', start);
-    assert.ok(start >= 0 && end > start, 'menu-specific popup entrance keyframes must exist');
-    const keyframes = popupCss.slice(start, end + 2);
-    assert.match(keyframes, /translate\(-50%,\s*-48%\)/, 'popup entrance may use a subtle vertical offset');
-    assert.match(keyframes, /translate\(-50%,\s*-50%\)/, 'popup must finish centered');
-    assert.doesNotMatch(keyframes, /scale\s*\(/, 'popup entrance must not shrink or enlarge the interface');
+    // The menu grows out of the header logo button with a circular clip-path reveal.
+    assert.match(popupActive, /animation:\s*fptMenuRevealIn/, 'the main popup must use its own entrance animation');
+    for (const name of ['fptMenuRevealIn', 'fptMenuRevealOut']) {
+        const start = popupCss.indexOf('@keyframes ' + name);
+        const end = popupCss.indexOf('\n}', start);
+        assert.ok(start >= 0 && end > start, name + ' keyframes must exist');
+        const keyframes = popupCss.slice(start, end + 2);
+        assert.match(keyframes, /clip-path:\s*circle\([^)]*var\(--fpt-reveal-x/, name + ' must reveal from the header button');
+        assert.doesNotMatch(keyframes, /scale\s*\(|transform\s*:/, name + ' must not move, shrink or enlarge the interface');
+    }
+    assert.match(popupCss, /\.fp-tools-popup\.is-closing\s*\{[^}]*animation:\s*fptMenuRevealOut/, 'closing collapses back into the button');
 
     const sharedPopInStart = popupCss.indexOf('@keyframes popIn');
     const sharedPopInEnd = popupCss.indexOf('\n}', sharedPopInStart);

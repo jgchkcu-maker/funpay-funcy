@@ -126,17 +126,6 @@
         return state;
     }
 
-    function createMetric(iconName, label) {
-        const metric = node('div', 'fpt-ab-metric');
-        const iconWrap = node('span', 'fpt-ab-metric-icon');
-        iconWrap.appendChild(icon(iconName));
-        const copy = node('div', 'fpt-ab-metric-copy');
-        const value = node('strong', 'fpt-ab-metric-value', '—');
-        copy.append(node('span', 'fpt-ab-metric-label', label), value);
-        metric.append(iconWrap, copy);
-        return { element: metric, value };
-    }
-
     function createButton(className, iconName, label) {
         const button = node('button', className);
         button.type = 'button';
@@ -187,39 +176,18 @@
             view.appendChild(helpPanel);
         }
 
-        // --- Hero: master switch, schedule, quick action -------------------------------------
-        const hero = node('section', 'fpt-ab-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-ab-hero-title');
-        const heroMain = node('div', 'fpt-ab-hero-main');
-        const heroIcon = node('span', 'fpt-ab-hero-icon');
-        heroIcon.appendChild(icon('rocket_launch'));
-        const heroCopy = node('div', 'fpt-ab-hero-copy');
-        const heroTitleRow = node('div', 'fpt-ab-hero-title-row');
-        const heroTitle = node('h2', 'fpt-ab-hero-title', 'Автоподнятие лотов');
-        heroTitle.id = 'fpt-ab-hero-title';
-        const heroPill = node('span', 'fpt-ab-pill', 'Выключено');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(
-            heroTitleRow,
-            node('p', 'fpt-ab-hero-description', 'Расширение само поднимает подходящие категории и планирует следующую попытку.')
-        );
+        // Controls and the next scheduled run stay available without an overview card.
+        const controls = node('div', 'fpt-ab-controls');
         const masterSwitch = makeSwitch('autoBumpEnabled', 'Включить автоподнятие', state.enabled);
-        masterSwitch.element.classList.add('fpt-ab-master-switch');
-        heroMain.append(heroIcon, heroCopy, masterSwitch.element);
-
-        const metricNext = createMetric('schedule', 'Следующее поднятие');
-        const metricScope = createMetric('filter_alt', 'Что поднимаем');
-        const metricLast = createMetric('history', 'Последнее событие');
-        const metrics = node('div', 'fpt-ab-metrics');
-        metrics.append(metricNext.element, metricScope.element, metricLast.element);
-
-        const heroActions = node('div', 'fpt-ab-hero-actions');
+        const masterControl = node('div', 'fpt-ab-master-control');
+        masterControl.append(node('span', '', 'Включить'), masterSwitch.element);
+        const scheduleStatus = node('span', 'fpt-ab-schedule');
+        scheduleStatus.setAttribute('role', 'status');
         const raiseButton = createButton('fpt-ad-load-button fpt-ab-raise-button', 'bolt', 'Поднять сейчас');
         raiseButton.id = 'fpt-ab-raise-now';
         const heroStatus = node('p', 'fpt-ad-rules-status fpt-ab-hero-status');
         heroStatus.setAttribute('aria-live', 'polite');
-        heroActions.append(raiseButton, heroStatus);
-        hero.append(heroMain, metrics, heroActions);
+        controls.append(masterControl, scheduleStatus, raiseButton, heroStatus);
 
         // --- Scope rules ---------------------------------------------------------------------
         const rules = node('section', 'fpt-ad-rules fpt-ab-rules');
@@ -271,38 +239,22 @@
         logList.setAttribute('aria-label', 'Журнал автоподнятия');
         logSection.append(logHeading, logList);
 
-        view.append(hero, rules, logSection);
+        view.append(controls, rules, logSection);
         page.appendChild(view);
 
         // --- Rendering -----------------------------------------------------------------------
-        function scopeText() {
-            const count = state.selectedIds.length;
-            if (state.selective && state.onlyAutoDelivery) return `Выбранные с автовыдачей (${count})`;
-            if (state.selective) return count ? `Выбранные: ${count} ${pluralCategories(count)}` : 'Ничего не выбрано';
-            if (state.onlyAutoDelivery) return 'Только с автовыдачей';
-            return 'Все категории';
-        }
-
         function renderMetrics() {
+            scheduleStatus.hidden = !state.enabled;
             if (!state.enabled) {
-                metricNext.value.textContent = 'Выключено';
+                scheduleStatus.textContent = 'Выключено';
             } else if (state.nextRunAt) {
                 const remaining = state.nextRunAt - Date.now();
-                metricNext.value.textContent = remaining > 0 ? `через ${formatDuration(remaining)}` : 'совсем скоро';
+                scheduleStatus.textContent = remaining > 0
+                    ? `Следующее поднятие через ${formatDuration(remaining)}`
+                    : 'Следующее поднятие совсем скоро';
             } else {
-                metricNext.value.textContent = 'Планируем…';
+                scheduleStatus.textContent = 'Планируем следующее поднятие…';
             }
-            metricScope.value.textContent = scopeText();
-            const last = state.logs.length ? parseLogEntry(state.logs[0]) : null;
-            metricLast.value.textContent = last ? last.message : 'Событий пока нет';
-            metricLast.value.title = last ? `${last.time} ${last.message}`.trim() : '';
-        }
-
-        function renderHero() {
-            hero.dataset.state = state.enabled ? 'on' : 'off';
-            heroPill.textContent = state.enabled ? 'Работает' : 'Выключено';
-            heroPill.dataset.kind = state.enabled ? 'success' : 'neutral';
-            renderMetrics();
         }
 
         function renderSelection() {
@@ -337,7 +289,7 @@
         }
 
         function renderAll() {
-            renderHero();
+            renderMetrics();
             renderSelection();
             renderLogs();
         }
@@ -366,7 +318,7 @@
             const next = masterSwitch.input.checked;
             const previous = state.enabled;
             masterSwitch.input.disabled = true;
-            hero.setAttribute('aria-busy', 'true');
+            controls.setAttribute('aria-busy', 'true');
             setStatus(heroStatus, next ? 'Запускаем автоподнятие…' : 'Останавливаем автоподнятие…', 'loading');
             try {
                 await run('saveSettings', { settings: { [KEYS.enabled]: next } });
@@ -377,8 +329,8 @@
                 setStatus(heroStatus, error.message || 'Не удалось изменить автоподнятие.', 'error');
             } finally {
                 masterSwitch.input.disabled = false;
-                hero.removeAttribute('aria-busy');
-                renderHero();
+                controls.removeAttribute('aria-busy');
+                renderMetrics();
                 await Promise.all([refreshStatus(), refreshLogs()]);
             }
         });
@@ -389,7 +341,7 @@
                 const previous = state[stateKey];
                 control.input.disabled = true;
                 state[stateKey] = next;
-                renderHero();
+                renderMetrics();
                 renderSelection();
                 try {
                     await run('saveSettings', { settings: { [settingKey]: next } });
@@ -398,7 +350,7 @@
                     state[stateKey] = previous;
                     control.setChecked(previous);
                     setStatus(rulesStatus, error.message || 'Не удалось сохранить настройку.', 'error');
-                    renderHero();
+                    renderMetrics();
                     renderSelection();
                 } finally {
                     control.input.disabled = false;

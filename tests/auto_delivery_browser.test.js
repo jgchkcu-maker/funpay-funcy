@@ -123,7 +123,9 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         await page.waitForFunction(() => document.querySelector('.fp-tools-page-content.active')?.dataset.page === 'auto_delivery');
         await page.locator('.fpt-ad-lot-row[data-lot-id="504"]').waitFor();
         assert.equal(await page.locator('.fpt-ad-lot-row').count(), 3, 'cached settings should render as soon as the page opens');
-        assert.equal(await page.locator('.fpt-ad-cache-status').textContent(), 'Показаны сохранённые настройки. Обновите список, чтобы проверить остатки.');
+        // Cached rows carry no separate notice; the stock line says when stock was last checked.
+        assert.equal(await page.locator('.fpt-ad-cache-status').textContent(), '');
+        assert.match(await page.locator('.fpt-ad-stock-status').textContent(), /^На складе: \d+ шт\. · Остатки проверены: /);
         await page.locator('#fp-load-delivery-lots-btn').click();
         await page.waitForFunction(() => document.querySelectorAll('.fpt-ad-lot-row').length === 40);
         assert.equal(await page.locator('.fpt-ad-lot-row').count(), 40, 'refresh should replace cached rows with the current lot list');
@@ -139,27 +141,25 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         assert.ok(problemRows.length && problemRows.every(kind => kind === 'empty' || kind === 'error'));
         await page.locator('.fpt-ad-summary-chip[data-filter="all"]').click();
 
-        // Lot row controls share one baseline: the «Автовыдача» label, the source label and the save slot sit at the same top,
-        // and the switch, source select and save button share the same top and height.
+        // Compact lot rows: the switch has no caption (its title names it), the source label is for screen
+        // readers only, and the per-row save slot stays collapsed until it has a status to show.
+        // The switch and the source select share one top line.
         const rowAlignment = await page.locator('.fpt-ad-lot-row:not([hidden])').first().evaluate(row => {
             const rect = selector => row.querySelector(selector).getBoundingClientRect();
+            const label = row.querySelector('.fpt-ad-lot-source .fpt-ad-field-label');
             return {
-                deliveryLabel: rect('.fpt-ad-lot-delivery .fpt-ad-field-label').top,
-                sourceLabel: rect('.fpt-ad-lot-source .fpt-ad-field-label').top,
-                saveSlot: rect('.fpt-ad-lot-save-slot').top,
                 switchLine: rect('.fpt-ad-lot-delivery .fpt-ad-switch-line').top,
                 select: rect('.fpt-ad-source-select').top,
-                save: rect('.fpt-ad-save-button').top,
-                selectHeight: rect('.fpt-ad-source-select').height,
-                saveHeight: rect('.fpt-ad-save-button').height
+                labelWidth: label.getBoundingClientRect().width,
+                labelFor: label.htmlFor === row.querySelector('.fpt-ad-source-select').id,
+                saveSlotShown: getComputedStyle(row.querySelector('.fpt-ad-lot-save-slot')).display !== 'none'
             };
         });
         const near = (a, b) => Math.abs(a - b) <= 1;
-        assert.ok(near(rowAlignment.deliveryLabel, rowAlignment.sourceLabel) && near(rowAlignment.sourceLabel, rowAlignment.saveSlot),
-            `row labels should share one top: ${JSON.stringify(rowAlignment)}`);
-        assert.ok(near(rowAlignment.switchLine, rowAlignment.select) && near(rowAlignment.select, rowAlignment.save),
-            `switch, source select and save button should share one top: ${JSON.stringify(rowAlignment)}`);
-        assert.ok(near(rowAlignment.selectHeight, rowAlignment.saveHeight), `select and save button should have the same height: ${JSON.stringify(rowAlignment)}`);
+        assert.equal(await page.locator('.fpt-ad-lot-delivery .fpt-ad-field-label').count(), 0, 'the switch has no caption');
+        assert.ok(near(rowAlignment.switchLine, rowAlignment.select), `switch and source select should share one top: ${JSON.stringify(rowAlignment)}`);
+        assert.ok(rowAlignment.labelWidth <= 1 && rowAlignment.labelFor, 'the source select keeps an accessible label');
+        assert.equal(rowAlignment.saveSlotShown, false, 'an unchanged row shows no save status');
 
         const inventoryLabels =await page.locator('.fpt-ad-lot-stock').evaluateAll(nodes => nodes.map(element => ({
             state: element.dataset.stockState, text: element.textContent
@@ -184,7 +184,7 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         assert.equal(await stockSnapshotRow.locator('.fpt-ad-lot-stock').textContent(), 'На складе: 6 шт.',
             'switching back to secrets must restore the last known stock');
 
-        assert.equal(await page.locator('#fpToolsAutoRestoreEnabled, #fpToolsAutoDisableEnabled, .fpt-ad-rules').count(), 0,
+        assert.equal(await page.locator('#fpToolsAutoRestoreEnabled, #fpToolsAutoDisableEnabled, [data-page="auto_delivery"] .fpt-ad-rules').count(), 0,
             'stock automation toggles are gone: the page only shows the stock');
         const disabledRow = page.locator('.fpt-ad-lot-row[data-lot-id="502"]');
         assert.equal(await page.locator('.fpt-ad-disabled-badge, .fpt-ad-switch-state').count(), 0,
@@ -208,8 +208,9 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="504"] .fpt-ad-lot-title').textContent(), 'Лот #504');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="504"] .fpt-ad-lot-category').textContent(), 'Подарочные карты');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] .fpt-ad-lot-stock').getAttribute('title'), 'Склад FunPay временно недоступен.');
+        // Per-lot stock errors are shown on the rows and in «Проблемы»; the load line stays empty.
         assert.equal(await page.locator('.fpt-ad-load-status').textContent(), '');
-        assert.equal(await page.locator('.fpt-ad-load-status .material-symbols-rounded').textContent(), 'warning');
+        assert.equal(await page.locator('.fpt-ad-load-status .material-symbols-rounded').count(), 0);
         assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить');
         assert.equal(await page.locator('#fp-load-delivery-lots-btn .material-symbols-rounded').textContent(), 'refresh');
         assert.equal(await page.locator('#fp-load-delivery-lots-btn').evaluate(element => element.getBoundingClientRect().height), 40);
@@ -225,9 +226,10 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         assert.ok(helpGeometry.top >= helpGeometry.buttonBottom, `help should open below its button: ${JSON.stringify(helpGeometry)}`);
         assert.ok(Math.abs(helpGeometry.right - helpGeometry.buttonRight) <= 1, `help should align to the right edge of its button: ${JSON.stringify(helpGeometry)}`);
         assert.ok(helpGeometry.left >= 0 && helpGeometry.width >= 220 && helpGeometry.width <= 340, `help should remain readable inside the viewport: ${JSON.stringify(helpGeometry)}`);
-        await page.locator('#fpt-ad-hero-title').click();
+        await helpButton.click();
 
-        await page.locator('.fpt-auto-delivery .fpt-ad-rule-row .fpt-ad-global-switch').first().evaluate(input => input.click());
+        // The master switch sits in the page controls, like on «Автоподнятие».
+        await page.locator('.fpt-ad-controls .fpt-ad-global-switch').evaluate(input => input.click());
         await page.locator('.fpt-popup-toast[data-kind="success"]').waitFor();
         assert.equal(await page.locator('.fpt-auto-delivery .fpt-ad-rules-status').textContent(), '');
         assert.equal(await page.locator('.fpt-ad-load-status').textContent(), '');
@@ -340,8 +342,11 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
 
         await page.locator('.fpt-ad-lot-row[data-lot-id="501"] .fpt-ad-source-select').selectOption('template');
         await page.locator('.fpt-ad-lot-row[data-lot-id="501"] .fpt-ad-template-input').fill('Ваш заказ: готово');
-        assert.match(await page.locator('.fpt-ad-save-all').textContent(), /Сохранить все \(1\)/);
-        assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="501"] .fpt-ad-unsaved-badge').textContent(), 'Не сохранено');
+        // The count lives in the sticky save bar text; the button keeps a short label.
+        assert.equal(await page.locator('.fpt-ad-save-all').textContent(), 'Сохранить все');
+        assert.equal(await page.locator('.fpt-ad-savebar-text').textContent(), '1 лот не сохранён');
+        // A changed row reveals its own save area instead of a «Не сохранено» badge.
+        assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="501"] .fpt-ad-lot-save-area').isVisible(), true);
         const dirtySaveStyle = await page.locator('.fpt-ad-lot-row[data-lot-id="501"] .fpt-ad-save-button').evaluate(element => ({
             disabled: element.disabled,
             backgroundColor: getComputedStyle(element).backgroundColor
@@ -361,7 +366,7 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         await pendingSave;
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="501"] .fpt-ad-template-input').isDisabled(), false);
         assert.equal(await windowState(page, '501', 'mode'), 'template');
-        assert.equal(await page.locator('.fpt-ad-save-all').textContent(), 'Сохранить все (0)');
+        assert.equal(await page.locator('.fpt-ad-save-all').textContent(), 'Сохранить все');
         assert.equal(await page.locator('.fpt-ad-save-all').isDisabled(), true, 'save-all should disable when every draft is saved');
 
         await page.evaluate(() => { window.qaFailures.saveAutoDeliveryLot = true; });
@@ -399,7 +404,7 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         await page.locator('#fp-load-delivery-lots-btn').click();
         await page.waitForFunction(() => document.querySelectorAll('.fpt-ad-lot-row').length === 40);
         assert.equal(await page.locator('.fpt-ad-load-status').textContent(), '');
-        assert.equal(await page.locator('.fpt-ad-load-status .material-symbols-rounded').textContent(), 'check_circle');
+        assert.equal(await page.locator('.fpt-ad-load-status .material-symbols-rounded').count(), 0, 'a successful refresh leaves the status line empty');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] .fpt-ad-lot-stock').textContent(), 'На складе: 5 шт.');
         assert.equal(await page.locator('#fp-load-delivery-lots-btn .fpt-ad-load-label').textContent(), 'Обновить');
 
@@ -423,7 +428,7 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
             'a clean row should adopt the newest saved settings');
         assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] [data-lot-control="enabled"]').isChecked(), true,
             'a refresh should preserve the user’s unsaved change');
-        assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] .fpt-ad-unsaved-badge').isVisible(), true);
+        assert.equal(await page.locator('.fpt-ad-lot-row[data-lot-id="502"] .fpt-ad-lot-save-area').isVisible(), true);
 
         const rowLayout = await page.locator('.fpt-ad-lot-row[data-lot-id="501"]').evaluate(row => ({
             width: row.clientWidth,
@@ -443,7 +448,8 @@ test('auto-delivery page loads stock states, saves per-lot changes, and fits the
         }));
         assert.ok(narrowRowLayout.scrollWidth <= narrowRowLayout.width + 1, `lot row overflows at 680px: ${JSON.stringify(narrowRowLayout)}`);
         assert.equal(narrowRowLayout.columns.split(' ').length, 1, `lot controls should stack on narrow content: ${JSON.stringify(narrowRowLayout)}`);
-        const narrowSaveLayout = await page.locator('.fpt-ad-lot-row[data-lot-id="501"]').evaluate(row => {
+        // Only a changed row shows its save button; lot 502 still has the unsaved switch change.
+        const narrowSaveLayout = await page.locator('.fpt-ad-lot-row[data-lot-id="502"]').evaluate(row => {
             const bounds = row.getBoundingClientRect();
             const save = row.querySelector('.fpt-ad-save-button').getBoundingClientRect();
             return { rowRight: bounds.right, saveRight: save.right, saveWidth: save.width };

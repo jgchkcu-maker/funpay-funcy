@@ -93,18 +93,6 @@
         return `${pad(date.getDate())}.${pad(date.getMonth() + 1)}, ${time}`;
     }
 
-    function metric(iconName, label, tone = '') {
-        const element = node('div', 'fpt-qr-metric fpt-ad-metric');
-        if (tone) element.dataset.tone = tone;
-        const badge = node('span', 'fpt-qr-metric-icon');
-        badge.appendChild(icon(iconName));
-        const copy = node('div', 'fpt-qr-metric-copy');
-        const value = node('strong', 'fpt-qr-metric-value', '—');
-        copy.append(node('span', 'fpt-qr-metric-label', label), value);
-        element.append(badge, copy);
-        return { element, value };
-    }
-
     function setStatus(element, text, kind) {
         element.replaceChildren();
         delete element.dataset.kind;
@@ -150,6 +138,7 @@
         const list = node('ul');
         [
             'После оплаты расширение отправляет покупателю в чат товар со склада FunPay или ваш шаблон.',
+            'Выдача идёт, только когда включены общий переключатель «Включить» и переключатель самого лота.',
             'В шаблоне работают переменные {buyername}, {lotname}, {orderid}, {quantity}, {orderlink}, {welcome}, {date}; $sleep=5 делит текст на сообщения с паузой.',
             'Остатки обновляются кнопкой «Обновить лоты» и после каждой успешной выдачи.'
         ].forEach(text => list.appendChild(node('li', '', text)));
@@ -479,34 +468,23 @@
             view.appendChild(helpPanel);
         }
 
-        // Hero: overall state and the numbers a seller checks first.
-        const hero = node('section', 'fpt-qr-hero fpt-ad-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-ad-hero-title');
-        hero.dataset.state = 'off';
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.appendChild(icon('bolt'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Выдача сразу после оплаты');
-        heroTitle.id = 'fpt-ad-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill fpt-ad-hero-pill', 'Лоты не загружены');
-        heroPill.setAttribute('role', 'status');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Покупатель получает товар со склада FunPay или ваш шаблон в чате, даже когда вас нет онлайн.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricStock = metric('inventory_2', 'Товаров на складе');
-        const metricChecked = metric('schedule', 'Остатки проверены');
-        const metrics = node('div', 'fpt-qr-metrics fpt-ad-metrics');
-        metrics.append(metricStock.element, metricChecked.element);
-        hero.append(heroMain, metrics);
-
-        const storageKeys = ['fpToolsAutoDeliveryLots', 'fpToolsAutoDeliveryLotsCache'];
+        const storageKeys = ['fpToolsAutoDeliveryLots', 'fpToolsAutoDeliveryLotsCache', 'fpToolsAutoReplies'];
         let initialSettings = {};
         try {
             initialSettings = await root.fptPopupActions.run(PAGE_ID, 'getSettings', { keys: storageKeys });
         } catch (_) {}
+
+        // Общий выключатель: фон выдаёт заказы, только когда включены и он, и сам лот.
+        let deliveryEnabled = initialSettings.fpToolsAutoReplies?.autoDeliveryEnabled === true;
+        const controls = node('div', 'fpt-ab-controls fpt-ad-controls');
+        const masterSwitch = makeSwitch('autoDeliveryEnabled', 'Включить автовыдачу', deliveryEnabled, 'fpt-ad-global-switch');
+        const masterControl = node('div', 'fpt-ab-master-control');
+        masterControl.append(node('span', '', 'Включить'), makeSwitchLine(masterSwitch).element);
+        const masterHint = node('span', 'fpt-ab-schedule fpt-ad-master-hint');
+        masterHint.setAttribute('role', 'status');
+        const masterStatus = node('p', 'fpt-ad-rules-status fpt-ab-hero-status');
+        masterStatus.setAttribute('aria-live', 'polite');
+        controls.append(masterControl, masterHint, masterStatus);
 
         const lotsSection = node('section', 'fpt-ad-lots');
         lotsSection.setAttribute('aria-label', 'Лоты для автовыдачи');
@@ -578,6 +556,9 @@
         if (typeof root.FPTPopupUI.enhanceSelect === 'function') root.FPTPopupUI.enhanceSelect(sort, sortLabel);
         toolbar.append(searchWrap, sortLabel);
 
+        const stockStatus = node('p', 'fpt-ad-stock-status');
+        stockStatus.setAttribute('role', 'status');
+        stockStatus.hidden = true;
         const cacheStatus = node('p', 'fpt-ad-cache-status');
         cacheStatus.setAttribute('role', 'status');
         const progressWrap = node('div', 'fpt-ad-load-progress');
@@ -613,8 +594,8 @@
         const lotsHeader = node('div', 'fpt-finance fpt-ad-lots-header');
         lotsHeader.append(toolbar);
         lotsHeading.insertBefore(progressWrap, loadButton);
-        lotsSection.append(lotsHeader, cacheStatus, loadStatus, list, saveBar);
-        view.append(hero, lotsHeading, lotsSection);
+        lotsSection.append(lotsHeader, stockStatus, cacheStatus, loadStatus, list, saveBar);
+        view.append(controls, lotsHeading, lotsSection);
 
         page.appendChild(view);
 
@@ -634,7 +615,7 @@
         };
 
         const stockKind = draft => formatLotStock(draft).kind;
-        const updateHero = counts => {
+        const updateStockStatus = counts => {
             let stockTotal = 0;
             let tracked = 0;
             for (const lot of currentLots) {
@@ -643,23 +624,9 @@
                 stockTotal += draft.productCount;
                 tracked += 1;
             }
-            const attention = counts.empty + counts.errors;
-            metricStock.value.textContent = tracked ? `${stockTotal} шт.` : '—';
-            metricChecked.value.textContent = formatCheckedAt(checkedAt);
-            hero.dataset.state = counts.active ? 'on' : 'off';
-            if (!counts.all) {
-                heroPill.textContent = 'Лоты не загружены';
-                delete heroPill.dataset.kind;
-            } else if (!counts.active) {
-                heroPill.textContent = 'Выключена';
-                delete heroPill.dataset.kind;
-            } else if (attention) {
-                heroPill.textContent = 'Проверьте остатки';
-                heroPill.dataset.kind = 'warning';
-            } else {
-                heroPill.textContent = 'Работает';
-                heroPill.dataset.kind = 'success';
-            }
+            stockStatus.hidden = !counts.all;
+            const stock = tracked ? `${stockTotal} шт.` : '—';
+            stockStatus.textContent = `На складе: ${stock} · Остатки проверены: ${formatCheckedAt(checkedAt).toLowerCase()}`;
         };
         const updateListView = () => {
             const counts = {
@@ -679,6 +646,10 @@
                 if (draft.dirty) counts.unsaved += 1;
             }
             counts.problems = counts.empty + counts.errors;
+            masterHint.textContent = deliveryEnabled
+                ? 'Выдаются лоты, у которых включена автовыдача'
+                : counts.active ? 'Выключено — заказы не выдаются, даже по включённым лотам' : 'Выключено';
+            masterHint.dataset.tone = !deliveryEnabled && counts.active ? 'warning' : '';
             for (const [filter, chip] of summaryChips) {
                 chip.querySelector('strong').textContent = String(counts[filter] || 0);
                 chip.setAttribute('aria-pressed', String(currentFilter === filter));
@@ -697,7 +668,7 @@
             searchWrap.hidden = counts.all < 2 && !currentSearch;
             sortLabel.hidden = counts.all < 2;
             toolbar.dataset.compact = String(searchWrap.hidden && sortLabel.hidden);
-            updateHero(counts);
+            updateStockStatus(counts);
 
             const search = currentSearch.trim().toLocaleLowerCase('ru');
             for (const [id, row] of rowsById) {
@@ -964,6 +935,23 @@
             }
         };
         loadButton.addEventListener('click', reloadLots);
+        masterSwitch.input.addEventListener('change', async () => {
+            const next = masterSwitch.input.checked;
+            masterSwitch.input.disabled = true;
+            controls.setAttribute('aria-busy', 'true');
+            try {
+                await root.fptPopupActions.run(PAGE_ID, 'saveSettings', { patch: { set: { autoDeliveryEnabled: next } } });
+                deliveryEnabled = next;
+                setStatus(masterStatus, next ? 'Автовыдача включена.' : 'Автовыдача выключена.', 'success');
+            } catch (error) {
+                masterSwitch.input.checked = deliveryEnabled;
+                setStatus(masterStatus, error.message || 'Не удалось изменить автовыдачу.', 'error');
+            } finally {
+                masterSwitch.input.disabled = false;
+                controls.removeAttribute('aria-busy');
+                updateListView();
+            }
+        });
 
         const maybeAutoRefresh = () => {
             if (reloading || !page.isConnected || !page.classList.contains('active')) return;

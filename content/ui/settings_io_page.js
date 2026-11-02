@@ -26,7 +26,7 @@
             keys: ['fpToolsCostBasis', 'fpToolsSalesChartPeriod', 'fpToolsPurchasesFilters', 'fpToolsShowUnconfirmed', 'showFinanceStats'],
             prefixes: ['fpToolsStats', 'fptFinance', 'fptLegacyFinance'] },
         { id: 'interface', label: 'Интерфейс и навигация', icon: 'apps',
-            keys: ['fpToolsDisabledFeatures', 'showSalesStats', 'hideBalance', 'viewSellersPromo', 'fpToolsPageModes', 'fpToolsPinnedChats', 'fpToolsPinnedLots', 'fpToolsCtxPinnedLots', 'fpToolsQuickGames'],
+            keys: ['fpToolsDisabledFeatures', 'showSalesStats', 'hideBalance', 'fptShowCommission', 'fptShowRealPrices', 'viewSellersPromo', 'fpToolsPageModes', 'fpToolsPinnedChats', 'fpToolsPinnedLots', 'fpToolsCtxPinnedLots', 'fpToolsQuickGames'],
             prefixes: ['fpToolsNav'] },
         { id: 'support', label: 'Поддержка', icon: 'confirmation_number', keys: ['fpToolsSupportAutoTicket'] },
         { id: 'other', label: 'Прочее', icon: 'more_horiz' }
@@ -148,16 +148,6 @@
         const span = el.querySelector(':scope > span:not(.material-symbols-rounded)');
         if (span) span.textContent = label;
     }
-    function metric(iconName, label) {
-        const element = node('div', 'fpt-qr-metric fpt-sio-metric');
-        const badge = node('span', 'fpt-qr-metric-icon');
-        badge.append(icon(iconName));
-        const copy = node('div', 'fpt-qr-metric-copy');
-        const value = node('strong', 'fpt-qr-metric-value', '—');
-        copy.append(node('span', 'fpt-qr-metric-label', label), value);
-        element.append(badge, copy);
-        return { element, value };
-    }
     function cardHead(iconName, title, description, titleId) {
         const head = node('div', 'fpt-qr-card-head');
         const emblem = node('span', 'fpt-qr-emblem');
@@ -229,29 +219,6 @@
         const screen = node('div', 'fpt-sio');
         page.append(screen);
 
-        // --- Hero --------------------------------------------------------------------------------
-        const hero = node('section', 'fpt-qr-hero fpt-sio-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-sio-hero-title');
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.append(icon('sync_alt'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Резервная копия настроек');
-        heroTitle.id = 'fpt-sio-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill', 'Загрузка…');
-        heroPill.setAttribute('role', 'status');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Все настройки Funcy в одном файле .fpconfig: сохраните копию или перенесите их на другой компьютер за пару кликов.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricCount = metric('tune', 'Настроек в копии');
-        const metricSize = metric('save', 'Размер файла');
-        const metricLast = metric('history', 'Последняя копия');
-        const metrics = node('div', 'fpt-qr-metrics');
-        metrics.append(metricCount.element, metricSize.element, metricLast.element);
-        hero.append(heroMain, metrics);
-
         const banner = node('div', 'fpt-qr-banner');
         banner.setAttribute('role', 'alert');
         banner.hidden = true;
@@ -265,7 +232,7 @@
         result.setAttribute('role', 'status');
         result.hidden = true;
         const resultIcon = node('span', 'fpt-sio-result-icon');
-        resultIcon.append(icon('task_alt'));
+        resultIcon.append(icon('check_circle'));
         const resultCopy = node('div', 'fpt-sio-result-copy');
         const resultTitle = node('strong', '', '');
         const resultText = node('p', '', '');
@@ -289,10 +256,12 @@
         const chips = node('div', 'fpt-sio-chips');
         chips.setAttribute('role', 'list');
         chips.setAttribute('aria-label', 'Разделы в файле');
+        const lastExport = node('p', 'fpt-sio-last-import fpt-sio-last-export');
+        lastExport.setAttribute('role', 'status');
         const exportButton = button('Скачать .fpconfig', 'fpt-qr-primary fpt-sio-main-button', 'download');
         exportButton.id = 'fp-settings-export-btn';
         exportCard.append(cardHead('cloud_download', 'Сохранить в файл', 'Скачает копию всех настроек — её можно хранить или открыть на другом компьютере.', 'fpt-sio-export-title'),
-            chipsHead, chips, exportButton);
+            chipsHead, chips, lastExport, exportButton);
 
         const importCard = node('article', 'fpt-sio-tool fpt-sio-tool--import');
         importCard.setAttribute('aria-labelledby', 'fpt-sio-import-title');
@@ -355,44 +324,20 @@
         });
         danger.append(cardHead('restart_alt', 'Сброс данных', 'Очищает служебные списки Funcy. Настройки и файлы копий это не затрагивает.', 'fpt-sio-danger-title'), dangerList);
 
-        screen.append(hero, banner, result, actions, privateCard, danger);
+        screen.append(banner, result, actions, privateCard, danger);
 
         // --- Rendering ---------------------------------------------------------------------------
         const settingsOf = summary => summary?.backup?.settings || {};
-        const capitalize = text => text ? text[0].toUpperCase() + text.slice(1) : text;
-
-        function renderHero() {
-            const summary = state.summary;
-            const history = summary?.history || {};
-            const lastExportAt = Number(history.lastExportAt) || 0;
+        function renderLastExport() {
+            const lastExportAt = Number(state.summary?.history?.lastExportAt) || 0;
+            lastExport.hidden = !state.summary;
+            if (!state.summary) return;
             const fresh = lastExportAt && Date.now() - lastExportAt <= STALE_DAYS * DAY;
-            hero.dataset.state = summary && fresh ? 'on' : 'off';
-            if (!summary) {
-                heroPill.dataset.kind = state.loadError ? 'error' : 'neutral';
-                heroPill.textContent = state.loadError ? 'Ошибка загрузки' : 'Загрузка…';
-                [metricCount, metricSize, metricLast].forEach(item => { item.value.textContent = '—'; item.value.title = ''; });
-                return;
-            }
-            if (state.imported) {
-                heroPill.dataset.kind = 'success';
-                heroPill.textContent = 'Импорт выполнен';
-            } else if (!lastExportAt) {
-                heroPill.dataset.kind = 'warning';
-                heroPill.textContent = 'Копий ещё не было';
-            } else {
-                heroPill.dataset.kind = fresh ? 'success' : 'warning';
-                heroPill.textContent = fresh ? 'Копия актуальна' : 'Пора обновить копию';
-            }
-            const settings = settingsOf(summary);
-            const total = Object.keys(settings).length;
-            const sections = classifySettings(settings).length;
-            metricCount.value.textContent = String(total);
-            metricCount.value.title = `${total} ${settingsWord(total)} в ${sections} ${pluralize(sections, ['разделе', 'разделах', 'разделах'])}`;
-            const bytes = new Blob([JSON.stringify(summary.backup, null, 2)]).size;
-            metricSize.value.textContent = formatBytes(bytes);
-            metricSize.value.title = `${bytes.toLocaleString('ru-RU')} байт`;
-            metricLast.value.textContent = lastExportAt ? capitalize(formatAgo(lastExportAt)) : 'Не было';
-            metricLast.value.title = lastExportAt ? new Date(lastExportAt).toLocaleString('ru-RU') : '';
+            lastExport.dataset.kind = fresh ? 'success' : 'warning';
+            lastExport.replaceChildren(icon('history'), node('span', '', lastExportAt
+                ? `Последняя копия: ${formatAgo(lastExportAt)}${fresh ? '' : ' · пора обновить'}`
+                : 'Копий ещё не было'));
+            lastExport.title = lastExportAt ? new Date(lastExportAt).toLocaleString('ru-RU') : '';
         }
 
         function renderChips() {
@@ -443,7 +388,7 @@
         function renderAll() {
             banner.hidden = !state.loadError;
             bannerText.textContent = state.loadError;
-            renderHero();
+            renderLastExport();
             renderChips();
             renderLastImport();
             renderResets();

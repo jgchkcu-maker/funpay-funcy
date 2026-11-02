@@ -7,7 +7,7 @@ const runtimeFiles = [
     'manifest.json',
     'content/content_script.js',
     'content/ui/main_popup.js',
-    'background/ai.js'
+    'background/background.js'
 ];
 
 const banned = [

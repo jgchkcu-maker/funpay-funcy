@@ -15,6 +15,9 @@
     --fpt-seg-motion: .36s cubic-bezier(.22, 1, .36, 1);
 }
 
+/* FunPay can override the browser's default display rule for hidden file inputs. */
+.fp-tools-popup.fptm-themed input[type="file"][hidden] { display: none !important; }
+
 /* Reviews and bonuses: hero summary, then two independent editors stacked like the other customer screens. */
 .fp-tools-popup.fptm-themed .fpt-reviews {
     --rv-field: var(--fptm-nav-field);
@@ -1035,7 +1038,9 @@
 .fp-tools-popup.fptm-themed .fpt-bulk-form > * { flex: 0 0 auto; }
 /* Only the tab area scrolls: on a short popup the lot list gives up height first, so the dialog body
    does not get a second scrollbar (it still scrolls as a last resort on a tiny popup). */
-.fp-tools-popup.fptm-themed .fpt-bulk-form > .fpt-bulk-lots { flex: 0 1 auto; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+/* min-content keeps the tools row and the list's own minimum: without it a long result log squeezed the
+   section to zero height and the list was drawn over the tabs. */
+.fp-tools-popup.fptm-themed .fpt-bulk-form > .fpt-bulk-lots { flex: 0 1 auto; min-width: 0; min-height: min-content; display: flex; flex-direction: column; gap: 10px; }
 .fp-tools-popup.fptm-themed .fpt-bulk-lot-tools {
     display: grid;
     grid-template-columns: auto minmax(140px, 1fr) auto auto;
@@ -1788,6 +1793,7 @@
 }
 .fp-tools-popup.fptm-themed .fpt-finance .fpt-ad-sort-control { width: 168px; min-width: 168px; }
 .fp-tools-popup.fptm-themed .fpt-ad-sort-control .fpt-select-menu { width: max-content; max-width: min(260px, calc(100vw - 48px)); }
+.fp-tools-popup.fptm-themed .fpt-ad-stock-status,
 .fp-tools-popup.fptm-themed .fpt-ad-cache-status {
     margin: 0 0 10px;
     display: flex;
@@ -1799,6 +1805,7 @@
 }
 .fp-tools-popup.fptm-themed .fpt-ad-cache-status::before { font-family: 'Material Symbols Rounded'; font-size: 16px; line-height: 1; content: 'history'; }
 .fp-tools-popup.fptm-themed .fpt-ad-cache-status:empty { display: none; }
+.fp-tools-popup.fptm-themed .fpt-ad-stock-status[hidden] { display: none; }
 /* Sits in the heading row between the filter tabs and the refresh button while lots load. */
 .fp-tools-popup.fptm-themed .fpt-ad-load-progress { flex: 1 1 auto; min-width: 0; margin: 0; display: grid; grid-template-columns: minmax(40px, 1fr) auto; align-items: center; gap: 10px; color: var(--fptm-muted); font-size: 12px; }
 .fp-tools-popup.fptm-themed .fpt-ad-load-progress[hidden] { display: none; }
@@ -2144,7 +2151,8 @@
     .fp-tools-popup.fptm-themed .fpt-ad-lot-category,
     .fp-tools-popup.fptm-themed .fpt-ad-lot-stock { max-width: 100%; }
     .fp-tools-popup.fptm-themed .fpt-ad-lot-delivery { align-items: center; justify-content: center; }
-    .fp-tools-popup.fptm-themed .fpt-ad-lot-save-area { width: auto; flex-direction: row; justify-content: flex-end; align-items: center; gap: 8px; }
+    /* Controls start on the left on narrow cards; the save area keeps to the right edge. */
+    .fp-tools-popup.fptm-themed .fpt-ad-lot-save-area { width: auto; margin-left: auto; flex-direction: row; justify-content: flex-end; align-items: center; gap: 8px; }
     .fp-tools-popup.fptm-themed .fpt-ad-lot-save-status { width: auto; max-width: 100%; flex: 1 1 auto; justify-content: flex-end; text-align: right; }
     .fp-tools-popup.fptm-themed .fpt-ad-save-button { width: 112px; flex: 0 0 112px; }
     .fp-tools-popup.fptm-themed .fpt-ad-skeleton-row { grid-template-columns: minmax(0, 1fr); }
@@ -2233,6 +2241,13 @@
 }
 .fp-tools-popup.fptm-themed .fpt-auto-bump .material-symbols-rounded { width: 1em; overflow: hidden; text-align: center; }
 .fp-tools-popup.fptm-themed .fpt-ab-help:not([hidden]) { animation: fpt-ad-panel-in .42s cubic-bezier(.2, 1.35, .4, 1) both; transform-origin: top center; }
+.fp-tools-popup.fptm-themed .fpt-ab-controls { position: relative; display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; min-width: 0; }
+.fp-tools-popup.fptm-themed .fpt-ab-master-control { display: inline-flex; align-items: center; gap: 10px; color: var(--fptm-text); font-weight: 650; }
+.fp-tools-popup.fptm-themed .fpt-ab-schedule { flex: 1 1 180px; color: var(--fptm-muted); font-size: 13px; line-height: 1.4; }
+.fp-tools-popup.fptm-themed .fpt-ab-schedule[hidden] { display: none; }
+.fp-tools-popup.fptm-themed .fpt-ab-controls .fpt-ab-hero-status { position: absolute; z-index: 2; top: 100%; right: 0; margin: 0; background: var(--fptm-nav-field); }
+.fp-tools-popup.fptm-themed .fpt-ab-controls .fpt-ab-hero-status:empty { display: none; }
+.fp-tools-popup.fptm-themed .fpt-ad-master-hint[data-tone="warning"] { color: var(--fptm-warning); }
 .fp-tools-popup.fptm-themed .fpt-ab-hero {
     box-sizing: border-box;
     min-width: 0;
@@ -3137,6 +3152,7 @@
 .fp-tools-popup.fptm-themed .fpt-th[data-dirty="true"] { padding-bottom: 84px; }
 .fp-tools-popup.fptm-themed .fpt-th .material-symbols-rounded { width: 1em; overflow: hidden; text-align: center; }
 .fp-tools-popup.fptm-themed .fpt-th-hero[data-state="off"] .fpt-th-hero-icon .material-symbols-rounded { font-variation-settings: 'FILL' 0; }
+.fp-tools-popup.fptm-themed .fpt-th-controls { display: flex; align-items: center; gap: 10px; color: var(--fptm-text); font-weight: 650; }
 .fp-tools-popup.fptm-themed .fpt-th-pill[data-kind="warning"] { color: var(--fptm-warning); border-color: var(--fptm-warning-border); background: var(--fptm-warning-soft); }
 .fp-tools-popup.fptm-themed .fpt-th-failure {
     padding: 36px 20px;
@@ -5353,7 +5369,7 @@
     .fp-tools-popup.fptm-themed .fpt-finance .fpt-fin-segmented.is-ready .fpt-fin-seg-pill { transition: none !important; }
 }
 
-/* Interface elements («Элементы интерфейса»): hero with an element map, AI helper, searchable catalog by site section.
+/* Interface elements («Элементы интерфейса»): hero with an element map, searchable catalog by site section.
    Buttons, switches, pills, metrics and the hero shell reuse the quick replies primitives (.fpt-qr-*). */
 .fp-tools-popup.fptm-themed .fpt-interface-elements {
     position: relative;
@@ -5396,83 +5412,6 @@
     transition: background .3s ease, opacity .3s ease, transform .48s cubic-bezier(.2, 1.45, .4, 1);
 }
 .fp-tools-popup.fptm-themed .fpt-ie-map-tick[data-state="off"] { background: color-mix(in srgb, var(--fptm-muted) 26%, transparent); transform: scaleY(.6); }
-
-/* AI helper */
-.fp-tools-popup.fptm-themed .fpt-ie-ai-emblem {
-    color: var(--fptm-on-accent);
-    background: linear-gradient(135deg, var(--fptm-accent), color-mix(in srgb, var(--fptm-accent) 55%, #c06cff));
-}
-.fp-tools-popup.fptm-themed .fpt-ie-ai-body { min-width: 0; padding: 0 16px 16px; display: grid; gap: 10px; }
-.fp-tools-popup.fptm-themed .fpt-qr-textarea.fpt-control-field.fpt-ie-ai-input,
-.fp-tools-popup.fptm-themed .fpt-qr-textarea.fpt-control-field.fpt-ie-ai-input[data-control-kind="textarea"] {
-    min-height: 68px !important;
-    max-height: 200px !important;
-    background: var(--fptm-bg) !important;
-}
-.fp-tools-popup.fptm-themed .fpt-ie-ai-input:focus { outline: 2px solid var(--fptm-accent-border); outline-offset: 1px; }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-input::placeholder { color: var(--fptm-muted); opacity: .85; }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-controls { min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-examples { min-width: 0; flex: 1 1 320px; display: flex; flex-wrap: wrap; gap: 6px; }
-.fp-tools-popup.fptm-themed .fpt-qr-button.fpt-ie-ai-ask { margin-left: auto; }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-result {
-    min-width: 0;
-    padding: 12px;
-    display: grid;
-    gap: 10px;
-    border: 1px solid var(--fptm-nav-border);
-    border-radius: 14px;
-    background: var(--fptm-bg);
-    animation: fpt-ad-panel-in .42s cubic-bezier(.2, 1.35, .4, 1) both;
-    transform-origin: top center;
-}
-.fp-tools-popup.fptm-themed .fpt-ie-ai-result[data-kind="error"] { border-color: var(--fptm-danger-border); color: var(--fptm-danger); background: var(--fptm-danger-soft); }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-result[data-kind="success"] { border-color: var(--fptm-success-border); color: var(--fptm-success); background: var(--fptm-success-soft); }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-message { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; line-height: 1.45; }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-message > .material-symbols-rounded { flex: 0 0 auto; font-size: 19px; line-height: 1; }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-result[data-kind="loading"] .fpt-ie-ai-message,
-.fp-tools-popup.fptm-themed .fpt-ie-ai-result[data-kind="empty"] .fpt-ie-ai-message { color: var(--fptm-muted); }
-.fp-tools-popup.fptm-themed .fpt-ie-ai-result[data-kind="results"] .fpt-ie-ai-message > .material-symbols-rounded,
-.fp-tools-popup.fptm-themed .fpt-ie-ai-result[data-kind="loading"] .fpt-ie-ai-message > .material-symbols-rounded { color: var(--fptm-accent); }
-.fp-tools-popup.fptm-themed .fpt-ie-spin { animation: fptSpin .9s linear infinite; }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestions { min-width: 0; display: grid; gap: 6px; }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion {
-    box-sizing: border-box;
-    min-width: 0;
-    margin: 0;
-    padding: 10px 12px;
-    display: grid !important;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    align-items: center !important;
-    gap: 12px;
-    border: 1px solid var(--fptm-nav-border);
-    border-radius: 12px;
-    background: var(--fptm-nav-field);
-    cursor: pointer;
-    transition: border-color .16s ease, background .16s ease;
-}
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion:hover { border-color: var(--fptm-accent-border); }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion:has(input:checked) { border-color: var(--fptm-accent-border); background: color-mix(in srgb, var(--fptm-accent) 6%, var(--fptm-nav-field)); }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion:has(input:disabled) { cursor: default; opacity: .7; }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion-copy { min-width: 0; display: grid; gap: 2px; }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion-title { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion-title strong { color: var(--fptm-text); font-size: 13.5px; font-weight: 650; line-height: 1.35; }
-.fp-tools-popup.fptm-themed .fpt-ie-suggestion-reason { color: var(--fptm-muted); font-size: 12.5px; line-height: 1.4; overflow-wrap: anywhere; }
-.fp-tools-popup.fptm-themed .fpt-ie-confidence {
-    --ie-confidence: 0;
-    min-width: 46px;
-    padding: 2px 8px;
-    box-sizing: border-box;
-    border: 1px solid var(--fptm-accent-border);
-    border-radius: 999px;
-    color: var(--fptm-accent);
-    background: linear-gradient(90deg, var(--fptm-accent-soft) calc(var(--ie-confidence) * 100%), transparent 0);
-    font-size: 11.5px;
-    font-weight: 700;
-    line-height: 1.5;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-}
-.fp-tools-popup.fptm-themed .fpt-ie-ai-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 
 /* Catalog header and toolbar */
 .fp-tools-popup.fptm-themed .fpt-ie-catalog { min-width: 0; display: grid; gap: 12px; }
@@ -5677,22 +5616,17 @@
 }
 @container fpt-interface-elements (max-width: 520px) {
     .fp-tools-popup.fptm-themed .fpt-ie-hero .fpt-qr-hero-title { font-size: 18px; }
-    .fp-tools-popup.fptm-themed .fpt-qr-button.fpt-ie-ai-ask { width: 100%; }
     .fp-tools-popup.fptm-themed .fpt-ie-preview { grid-template-columns: minmax(0, 1fr); }
     .fp-tools-popup.fptm-themed .fpt-ie-row { gap: 8px 10px; }
     .fp-tools-popup.fptm-themed .fpt-ie-row-actions { gap: 8px; }
 }
 @container fpt-interface-elements (max-width: 420px) {
     .fp-tools-popup.fptm-themed .fpt-ie-hero .fpt-qr-metrics { grid-template-columns: minmax(0, 1fr); }
-    .fp-tools-popup.fptm-themed .fpt-ie-suggestion { grid-template-columns: auto minmax(0, 1fr); }
-    .fp-tools-popup.fptm-themed .fpt-ie-confidence { grid-column: 2; justify-self: start; }
 }
 @media (prefers-reduced-motion: reduce) {
     .fp-tools-popup.fptm-themed .fpt-ie-map-tick,
-    .fp-tools-popup.fptm-themed .fpt-ie-ai-result,
     .fp-tools-popup.fptm-themed .fpt-ie-preview,
     .fp-tools-popup.fptm-themed .fpt-ie-group.fpt-ie-flash { animation: none !important; transition: none !important; }
-    .fp-tools-popup.fptm-themed .fpt-ie-spin { animation-duration: 2.4s; }
 }
 
 /* Accounts: saved FunPay sessions with avatars, balances and one-click switching. */
@@ -7262,6 +7196,7 @@
 }
 .fp-tools-popup.fptm-themed .fpt-sio-last-import > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fp-tools-popup.fptm-themed .fpt-sio-last-import .material-symbols-rounded { flex: 0 0 auto; font-size: 15px; line-height: 1; }
+.fp-tools-popup.fptm-themed .fpt-sio-last-export[data-kind="warning"] { color: var(--fptm-warning); }
 
 /* What stays in this browser */
 .fp-tools-popup.fptm-themed .fpt-sio-private-list { min-width: 0; margin: 0; padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; list-style: none; }
@@ -7419,6 +7354,31 @@
     color: var(--fptm-text);
 }
 .fp-tools-popup.fptm-themed .fpt-sp-home { min-width: 0; display: grid; gap: 20px; }
+.fp-tools-popup.fptm-themed .fp-tools-page-content[data-page="tickets"] > .fpt-category-header {
+    grid-template-columns: minmax(0, 1fr) auto 36px;
+    align-items: center;
+    gap: 8px;
+}
+.fp-tools-popup.fptm-themed .fp-tools-page-content[data-page="tickets"] > .fpt-category-header > .fpt-category-header-spacer { display: none; }
+.fp-tools-popup.fptm-themed .fp-tools-page-content[data-page="tickets"] > .fpt-category-header > .fpt-sp-hero-actions { grid-column: 2; grid-row: 1; flex-wrap: nowrap; gap: 6px; }
+.fp-tools-popup.fptm-themed .fp-tools-page-content[data-page="tickets"] > .fpt-category-header > .fpt-sp-hero-actions[hidden] { display: none; }
+.fp-tools-popup.fptm-themed .fp-tools-page-content[data-page="tickets"] > .fpt-category-header > .fpt-ad-help-anchor { grid-column: 3; grid-row: 1; }
+.fp-tools-popup.fptm-themed .fpt-sp-hero-actions .material-symbols-rounded { width: 1em; overflow: hidden; text-align: center; }
+.fp-tools-popup.fptm-themed .fpt-sp-hero-actions #fp-create-ticket-btn { padding-inline: 12px !important; }
+.fp-tools-popup.fptm-themed .fpt-sp-hero-actions .fpt-sp-link { padding-inline: 0; }
+@container fpt-category (max-width: 700px) {
+    .fp-tools-popup.fptm-themed .fpt-sp-hero-actions .fpt-sp-link { width: 40px; justify-content: center; padding: 0; }
+    .fp-tools-popup.fptm-themed .fpt-sp-hero-actions .fpt-sp-link > span:first-child { display: none; }
+}
+@container fpt-category (max-width: 600px) {
+    .fp-tools-popup.fptm-themed .fpt-sp-hero-actions #fp-ticket-refresh-btn { width: 40px; min-width: 40px; padding: 0 !important; }
+    .fp-tools-popup.fptm-themed .fpt-sp-hero-actions #fp-ticket-refresh-btn .fpt-sp-button-label { display: none; }
+}
+@container fpt-category (max-width: 450px) {
+    .fp-tools-popup.fptm-themed .fpt-sp-hero-actions #fp-create-ticket-btn { width: 40px; min-width: 40px; padding: 0 !important; }
+    .fp-tools-popup.fptm-themed .fpt-sp-hero-actions #fp-create-ticket-btn .fpt-sp-button-label { display: none; }
+    .fp-tools-popup.fptm-themed .fp-tools-page-content[data-page="tickets"] > .fpt-category-header { gap: 6px; grid-template-columns: minmax(0, 1fr) auto 32px; }
+}
 .fp-tools-popup.fptm-themed .fpt-sp-home[hidden],
 .fp-tools-popup.fptm-themed .fpt-sp-thread[hidden],
 .fp-tools-popup.fptm-themed .fpt-sp [hidden],

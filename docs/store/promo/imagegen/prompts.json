@@ -1,0 +1,17 @@
+{
+  "method": "Built-in ImageGen for the complete artwork, including all typography and icons; only resizing and RGB PNG export afterward",
+  "small": {
+    "prompt": "Edit the supplied generated Funcy promotional tile. Preserve the complete left typography exactly as shown: 'Funcy', 'Ваш магазин.', 'Под контролем.', 'Инструменты для FunPay', 'Автовыдача · Автоответы · Аналитика'. Preserve the recognizable cyan-violet F icon and the polished blue-violet glass ribbon background. Required targeted change: REMOVE the entire software window on the right, including all its interface text, menus, charts and numbers. Replace it with an elegant dimensional group of three floating translucent rounded glass squares arranged diagonally in the rightmost 28%: one with a simple lightning bolt symbol, one with a simple speech-bubble symbol, one with a simple bar-chart symbol. These are abstract feature symbols only, no labels, letters or numbers. Make the group clearly separated from the left headline; do not overlap any text. Do not recreate any software screenshot, app interface, browser window, dates, metrics or labels anywhere. The final output is a complete finished advertising tile, 11:7 landscape aspect ratio for Chrome Web Store 440x280 delivery, all typography included, opaque background. Everything should remain crisp and readable at the small size. No watermark.",
+    "source": "small-source.png",
+    "references": [
+      "First ImageGen draft based on existing small promotional tile and Funcy icon"
+    ]
+  },
+  "marquee": {
+    "prompt": "Use the supplied completed Funcy promotional image as the EDIT TARGET and brand/style source. Create the matching finished WIDE MARQUEE advertising banner for Chrome Web Store. Entire final artwork including all lettering must be rendered by ImageGen. Target EXACT landscape ratio 5:2 (1400x560 pixels, or 2800x1120). Recompose for this wide layout with comfortable margins; do not crop or stretch the old banner. Deep midnight indigo background, flowing translucent polished cyan/violet glass ribbons, crisp luxurious 3D style. Upper left: the recognizable glossy cyan-violet rounded-square F icon, unchanged white F and sparkle, with a large bold white wordmark 'Funcy'. Below it a small spaced uppercase line exactly 'ДЛЯ ПРОДАВЦОВ FUNPAY'. The left 55% holds a strong bold white headline, exactly two lines: 'Магазин' then 'под контролем.' Supporting copy below exactly two lines: 'Автовыдача, автоответы' then 'и аналитика — прямо в браузере.' Lower left small line exactly 'Лоты · Заказы · Оформление'. All Cyrillic text accurately spelled, perfectly legible. Right 40%: three dimensional floating translucent cyan-violet rounded glass squares with simple white symbols only: lightning bolt, speech bubble, ascending bar chart. Arrange the symbols elegantly with subtle varied rotations and clean separation, balancing the text. No icon or ribbon may obscure the copy. No website screenshots, app windows, UI labels, fake charts with numbers, metrics, additional text, watermarks, store badges, download buttons or third-party logos. This is the final publish-ready artwork, opaque background, polished and readable.",
+    "source": "marquee-source.png",
+    "references": [
+      "small-source.png"
+    ]
+  }
+}

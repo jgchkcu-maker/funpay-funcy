@@ -1,4 +1,4 @@
-// Former ui_foundation_contract view was retired for the empty category shell.
+// The «general» settings page was retired completely: no shell, no search metadata, no actions.
 const test = require('node:test');
-const { assertEmptyCategory } = require('./helpers/empty_category_contract');
-test('general: ui_foundation_contract markup is removed and search metadata remains', () => assertEmptyCategory('general'));
+const { assertRetiredCategory } = require('./helpers/empty_category_contract');
+test('general: ui_foundation_contract page is retired from the menu, search and actions', () => assertRetiredCategory('general'));

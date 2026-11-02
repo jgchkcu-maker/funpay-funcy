@@ -212,30 +212,34 @@ test('lot management fits 1204, 680, and 420 pixel viewports in light and dark t
     }
 });
 
-test('bulk editor guides lot selection, changes, and review with live validation', async () => {
+test('bulk editor shows lots above tabbed changes and validates live', async () => {
     const { browser, page } = await createLotIoPage();
     try {
         await page.locator('#fp-bulk-edit-btn').click();
         await page.locator('.fpt-bulk-form').waitFor();
-        assert.deepEqual(await page.locator('.fpt-bulk-step > h3').allTextContents(), [
-            '1. Выберите лоты', '2. Что изменить', '3. Проверьте изменения'
-        ]);
+        // Lots on top, the changes split into tabs below, the summary and apply button in the footer.
+        assert.deepEqual(await page.locator('.fpt-bulk-tab').allTextContents(), ['Тексты', 'Цена', 'Найти и заменить', 'Расписание']);
+        assert.equal(await page.locator('.fpt-bulk-tab[aria-selected="true"]').textContent(), 'Тексты');
         const activate = page.locator('[data-activate-selected]');
         assert.equal(await activate.evaluate(button => button.closest('.fpt-bulk-lot-tools') !== null), true);
         assert.equal(await page.locator('.fpt-lot-dialog-footer .fpt-bulk-activate').count(), 0);
         assert.equal(await activate.isDisabled(), true);
+        assert.equal(await page.locator('.fpt-bulk-review-summary').textContent(), 'Выберите лоты');
 
         const filter = page.locator('.fpt-bulk-lot-filter');
         await filter.fill('нет такого лота');
         assert.equal(await page.locator('.fpt-bulk-filter-empty').isVisible(), true);
         await filter.fill('');
 
-        await page.locator('.fpt-bulk-lot-check').first().check();
+        await page.locator('.fpt-bulk-group[data-category="Аккаунты"] .fpt-bulk-group-check').check();
         assert.equal(await activate.isDisabled(), false);
+        assert.equal(await page.locator('.fpt-bulk-review-summary').textContent(), 'Выбрано 1 лот · укажите изменения');
         await page.locator('#fptBulkName').fill('VIP {current}');
         assert.match(await page.locator('.fpt-bulk-review-summary').textContent(), /Будет изменено 1 лот · название/);
         assert.equal(await page.locator('.fpt-bulk-preview-after').textContent(), 'После: VIP Аккаунт Premium');
+        await page.locator('#fptBulkName').fill('');
 
+        await page.locator('.fpt-bulk-tab[data-pane="find"]').click();
         await page.locator('#fptBulkFind').fill('[');
         await page.locator('#fptBulkRegex').check();
         assert.equal(await page.locator('.fpt-bulk-validation-error').isVisible(), true);
@@ -250,7 +254,7 @@ test('bulk editor guides lot selection, changes, and review with live validation
     }
 });
 
-test('bulk editor selects by category, previews Cyrillic whole-word replacement and offers a retry for failed lots', async () => {
+test('bulk editor selects a category group, previews Cyrillic whole-word replacement and offers a retry for failed lots', async () => {
     const { browser, page } = await createLotIoPage();
     try {
         await page.evaluate(() => {
@@ -259,12 +263,13 @@ test('bulk editor selects by category, previews Cyrillic whole-word replacement 
         });
         await page.locator('#fp-bulk-edit-btn').click();
         await page.locator('.fpt-bulk-form').waitFor();
-        const accounts = page.locator('.fpt-bulk-category-chip[data-category="Аккаунты"]');
-        assert.match(await accounts.textContent(), /Аккаунты\s*2/);
-        await accounts.click();
-        assert.equal(await accounts.getAttribute('aria-pressed'), 'true');
+        const accounts = page.locator('.fpt-bulk-group[data-category="Аккаунты"]');
+        assert.equal(await accounts.locator('.fpt-bulk-group-count').textContent(), '2');
+        await accounts.locator('.fpt-bulk-group-check').check();
+        assert.equal(await accounts.locator('.fpt-bulk-group-count').textContent(), '2 из 2');
         assert.equal(await page.locator('[data-lot-selected]').textContent(), '2');
 
+        await page.locator('.fpt-bulk-tab[data-pane="find"]').click();
         await page.locator('#fptBulkFind').fill('premium');
         await page.locator('#fptBulkReplace').fill('VIP');
         await page.locator('#fptBulkWholeWord').check();
@@ -274,10 +279,17 @@ test('bulk editor selects by category, previews Cyrillic whole-word replacement 
             'whole-word search must not match «кот» inside «котик»');
         await page.locator('#fptBulkFind').fill('premium');
 
-        await page.locator('#fptBulkPriceMode').selectOption('pct_up');
+        await page.locator('.fpt-bulk-tab[data-pane="price"]').click();
+        // The custom select dispatches change on the original <select>.
+        await page.evaluate(() => {
+            const mode = document.querySelector('#fptBulkPriceMode');
+            mode.value = 'pct_up';
+            mode.dispatchEvent(new Event('change', { bubbles: true }));
+        });
         await page.locator('#fptBulkPriceValue').fill('10');
         assert.equal(await page.locator('.fpt-bulk-price-unit').textContent(), '%');
         assert.match(await page.locator('.fpt-bulk-price-hint').textContent(), /1\s000 ₽ → 1\s100 ₽/);
+        assert.equal(await page.locator('.fpt-bulk-review-summary').textContent(), 'Будет изменено 2 лота · цена +10%, поиск и замена');
 
         await page.locator('.fpt-bulk-apply').click();
         await page.locator('.fpt-bulk-retry').waitFor();

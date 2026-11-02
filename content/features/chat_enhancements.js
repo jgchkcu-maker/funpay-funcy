@@ -79,7 +79,7 @@
 
                 input.addEventListener('input', () => {
                     // Ignore input events that WE triggered (templates, autoresponder,
-                    // AI rewrite, draft restore). Those must never be persisted as drafts,
+                    // template insertion, draft restore). Those must never be persisted as drafts,
                     // which was causing drafts to appear "out of nowhere".
                     if (window.__fptProgrammaticInput) return;
 

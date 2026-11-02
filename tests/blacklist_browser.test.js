@@ -103,7 +103,8 @@ test('blacklist page: empty state, adding with flags, duplicates and validation'
     try {
         const { page, errors } = await openBlacklistPage(browser);
         await page.locator('.fpt-bl-empty').waitFor();
-        assert.match(await page.locator('.fpt-bl-hero .fpt-qr-pill').textContent(), /Список пуст/);
+        assert.equal(await page.locator('.fpt-bl-hero').count(), 0);
+        assert.match(await page.locator('.fpt-bl-empty').textContent(), /Список пуст/);
         if (shotDir) { await settle(page); await page.screenshot({ path: path.join(shotDir, 'blacklist-empty.png') }); }
 
         await page.locator('#fp-bl-add-btn').click();
@@ -139,7 +140,8 @@ test('blacklist page: rows toggle flags, edit notes, search, remove and follow o
         const { page, errors } = await openBlacklistPage(browser, { seed: { fpToolsBlacklist: seedEntries() } });
         await page.locator('.fpt-bl-row').nth(2).waitFor();
         assert.deepEqual(await names(page), ['RudeBuyer', 'scammer_777', 'quiet'], 'newest first');
-        assert.deepEqual(await page.locator('.fpt-bl-hero .fpt-qr-metric-value').allTextContents(), ['3', '1', '2']);
+        assert.equal(await page.locator('.fpt-bl-hero').count(), 0);
+        assert.equal(await page.locator('.fpt-bl-list-section .fpt-qr-pill').textContent(), '3');
         assert.equal(await page.locator('.fpt-bl-row[data-user="quiet"] .fpt-bl-tag--idle').count(), 1);
         if (shotDir) { await settle(page); await page.screenshot({ path: path.join(shotDir, 'blacklist-list.png') }); }
 

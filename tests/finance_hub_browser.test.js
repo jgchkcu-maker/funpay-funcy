@@ -173,37 +173,37 @@ const shot = async (page, name) => {
 test('finance hub renders every tab with seeded data and responds to filters', async () => {
     const { browser, page, errors } = await boot();
     try {
-        await page.locator('.fpt-finance .fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-finance .fpt-fin-kpi').first().waitFor();
         const icons = new Set();
-        const collectIcons = async () => (await page.locator('.fpt-finance .material-symbols-rounded').allTextContents()).forEach(name => icons.add(name.trim()));
+        const collectIcons = async () => (await page.locator('[data-page="finance_hub"] .fpt-finance .material-symbols-rounded').allTextContents()).forEach(name => icons.add(name.trim()));
         await collectIcons();
-        assert.equal(await page.locator('.fpt-fin-tab').count(), 6);
-        assert.equal(await page.locator('.fpt-fin-tab.is-active').getAttribute('data-mode'), 'overview');
-        assert.equal(await page.locator('.fpt-fin-tab-pane[data-subtab="overview"]').count(), 1);
-        assert.equal(await page.locator('.fpt-fin-kpi').count(), 8, 'overview has eight KPI cards');
-        await page.locator('.fpt-fin-line').first().waitFor();
-        assert.ok(await page.locator('.fpt-fin-line').count() >= 1, 'the dynamics chart is drawn');
+        assert.equal(await page.locator('[data-page="finance_hub"] .fpt-fin-tab').count(), 6);
+        assert.equal(await page.locator('[data-page="finance_hub"] .fpt-fin-tab.is-active').getAttribute('data-mode'), 'overview');
+        assert.equal(await page.locator('[data-page="finance_hub"] .fpt-fin-tab-pane[data-subtab="overview"]').count(), 1);
+        assert.equal(await page.locator('[data-page="finance_hub"] .fpt-fin-kpi').count(), 8, 'overview has eight KPI cards');
+        await page.locator('[data-page="finance_hub"] .fpt-fin-line').first().waitFor();
+        assert.ok(await page.locator('[data-page="finance_hub"] .fpt-fin-line').count() >= 1, 'the dynamics chart is drawn');
         await page.waitForSelector('.fpt-fin-statusline span');
         await page.locator('.fp-tools-page-content.active').evaluate(element =>
             Promise.all(element.getAnimations({ subtree: true }).map(animation => animation.finished.catch(() => undefined))));
-        assert.match(await page.locator('.fpt-fin-statusline').textContent(), /Данные обновлены/);
+        assert.match(await page.locator('[data-page="finance_hub"] .fpt-fin-statusline').textContent(), /Данные обновлены/);
         await shot(page, 'overview-light');
         await applyTheme(page, true);
         await shot(page, 'overview-dark');
         await applyTheme(page, false);
 
         // Chart hover shows a tooltip.
-        const hit = page.locator('.fpt-fin-chart--line .fpt-fin-hit').first();
+        const hit = page.locator('[data-page="finance_hub"] .fpt-fin-chart--line .fpt-fin-hit').first();
         await page.waitForTimeout(500); // the chart redraws once when the layout settles
         await hit.scrollIntoViewIfNeeded();
         const box = await hit.boundingBox();
         await page.mouse.move(box.x + box.width * 0.6, box.y + box.height / 2);
-        await page.locator('.fpt-fin-tip:not([hidden])').waitFor();
-        assert.match(await page.locator('.fpt-fin-tip:not([hidden])').textContent(), /₽/);
+        await page.locator('[data-page="finance_hub"] .fpt-fin-tip:not([hidden])').waitFor();
+        assert.match(await page.locator('[data-page="finance_hub"] .fpt-fin-tip:not([hidden])').textContent(), /₽/);
 
         // Metric switch redraws the chart.
         await page.getByRole('button', { name: 'Заказы', exact: true }).first().click();
-        await page.waitForFunction(() => /Заказы/.test(document.querySelector('.fpt-fin-card--chart .fpt-fin-card-sub')?.textContent || ''));
+        await page.waitForFunction(() => /Заказы/.test(document.querySelector('[data-page="finance_hub"] .fpt-fin-card--chart .fpt-fin-card-sub')?.textContent || ''));
 
         for (const [tabId, selector] of [['sales', '.fpt-fin-table'], ['purchases', '.fpt-fin-hbars'], ['profit', '.fpt-fin-meter'], ['potential', '.fpt-fin-table'], ['operations', '.fpt-fin-donut']]) {
             await page.locator(`#fptFinTab${tabId[0].toUpperCase()}${tabId.slice(1)}`).click();
@@ -235,26 +235,26 @@ test('finance hub renders every tab with seeded data and responds to filters', a
 
         // Filters: the 7-day period shows fewer sales than the 90-day one.
         await page.locator('#fptFinTabSales').click();
-        await page.waitForFunction(() => document.querySelector('.fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-table'));
+        await page.waitForFunction(() => document.querySelector('[data-page="finance_hub"] .fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-table'));
         const countFor = async period => {
             await page.locator('[data-field="period"] select').selectOption(period);
             await page.waitForTimeout(400);
-            await page.waitForFunction(() => !document.querySelector('.fpt-fin-statusline[data-kind="loading"]'));
-            return Number((await page.locator('.fpt-fin-table-count').first().textContent()).match(/из (\d+)/)?.[1] ?? 0);
+            await page.waitForFunction(() => !document.querySelector('[data-page="finance_hub"] .fpt-fin-statusline[data-kind="loading"]'));
+            return Number((await page.locator('[data-page="finance_hub"] .fpt-fin-table-count').first().textContent()).match(/из (\d+)/)?.[1] ?? 0);
         };
         const week = await countFor('7d');
         const quarter = await countFor('90d');
         assert.ok(week > 0 && quarter > week, `week ${week} < quarter ${quarter}`);
 
         // Paging: "show more" adds rows.
-        const before = await page.locator('.fpt-fin-table tbody tr').count();
+        const before = await page.locator('[data-page="finance_hub"] .fpt-fin-table tbody tr').count();
         await page.getByRole('button', { name: 'Показать ещё' }).click();
-        assert.ok(await page.locator('.fpt-fin-table tbody tr').count() > before);
+        assert.ok(await page.locator('[data-page="finance_hub"] .fpt-fin-table tbody tr').count() > before);
 
         // Custom range validation.
         await page.locator('[data-field="period"] select').selectOption('custom');
         await page.locator('#fptFinCustomApplyBtn').click();
-        assert.match(await page.locator('.fpt-fin-range-error').textContent(), /корректный диапазон/);
+        assert.match(await page.locator('[data-page="finance_hub"] .fpt-fin-range-error').textContent(), /корректный диапазон/);
 
         assert.deepEqual(errors, []);
     } finally {
@@ -265,29 +265,29 @@ test('finance hub renders every tab with seeded data and responds to filters', a
 test('finance controls preserve unrelated cards and contain scrolling inside the popup', async () => {
     const { browser, page, errors } = await boot({ width: 1600 });
     try {
-        await page.locator('.fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-kpi').first().waitFor();
         await page.locator('#fptFinTabPotential').click();
-        await page.locator('.fpt-fin-tab-pane[data-subtab="potential"] .fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-tab-pane[data-subtab="potential"] .fpt-fin-kpi').first().waitFor();
         await page.evaluate(() => {
-            window.qaKpi = document.querySelector('.fpt-fin-kpi');
+            window.qaKpi = document.querySelector('[data-page="finance_hub"] .fpt-fin-kpi');
             document.body.style.minHeight = '4000px';
         });
         await page.getByRole('button', { name: 'Без себестоимости', exact: true }).click();
-        await page.waitForFunction(() => document.querySelector('.fpt-fin-chips [aria-pressed="true"]')?.textContent === 'Без себестоимости');
-        assert.equal(await page.evaluate(() => window.qaKpi === document.querySelector('.fpt-fin-kpi')), true, 'table filtering preserves KPI DOM');
+        await page.waitForFunction(() => document.querySelector('[data-page="finance_hub"] .fpt-fin-chips [aria-pressed="true"]')?.textContent === 'Без себестоимости');
+        assert.equal(await page.evaluate(() => window.qaKpi === document.querySelector('[data-page="finance_hub"] .fpt-fin-kpi')), true, 'table filtering preserves KPI DOM');
         await page.locator('#fptFinTabSales').click();
-        await page.locator('.fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-kpi').first().waitFor();
         await page.evaluate(() => {
-            window.qaKpi = document.querySelector('.fpt-fin-kpi');
-            window.qaTable = document.querySelector('.fpt-fin-card--table');
-            window.qaChartCard = document.querySelector('.fpt-fin-card--chart');
-            window.qaMetricControl = document.querySelector('.fpt-fin-card-controls .fpt-fin-segmented');
-            window.qaMetricPill = window.qaMetricControl.querySelector('.fpt-fin-seg-pill');
+            window.qaKpi = document.querySelector('[data-page="finance_hub"] .fpt-fin-kpi');
+            window.qaTable = document.querySelector('[data-page="finance_hub"] .fpt-fin-card--table');
+            window.qaChartCard = document.querySelector('[data-page="finance_hub"] .fpt-fin-card--chart');
+            window.qaMetricControl = document.querySelector('[data-page="finance_hub"] .fpt-fin-card-controls .fpt-fin-segmented');
+            window.qaMetricPill = window.qaMetricControl.querySelector('[data-page="finance_hub"] .fpt-fin-seg-pill');
         });
         await page.getByRole('button', { name: 'Заказы', exact: true }).click();
-        await page.waitForFunction(() => /Заказы/.test(document.querySelector('.fpt-fin-card--chart .fpt-fin-card-sub')?.textContent || ''));
-        assert.equal(await page.evaluate(() => window.qaKpi === document.querySelector('.fpt-fin-kpi') && window.qaTable === document.querySelector('.fpt-fin-card--table')), true, 'chart switching preserves KPI and table DOM');
-        assert.equal(await page.evaluate(() => window.qaChartCard === document.querySelector('.fpt-fin-card--chart') && window.qaMetricControl.isConnected && window.qaMetricPill === document.querySelector('.fpt-fin-card-controls .fpt-fin-seg-pill')), true, 'switching keeps the live card, controls and animating pill');
+        await page.waitForFunction(() => /Заказы/.test(document.querySelector('[data-page="finance_hub"] .fpt-fin-card--chart .fpt-fin-card-sub')?.textContent || ''));
+        assert.equal(await page.evaluate(() => window.qaKpi === document.querySelector('[data-page="finance_hub"] .fpt-fin-kpi') && window.qaTable === document.querySelector('[data-page="finance_hub"] .fpt-fin-card--table')), true, 'chart switching preserves KPI and table DOM');
+        assert.equal(await page.evaluate(() => window.qaChartCard === document.querySelector('[data-page="finance_hub"] .fpt-fin-card--chart') && window.qaMetricControl.isConnected && window.qaMetricPill === document.querySelector('[data-page="finance_hub"] .fpt-fin-card-controls .fpt-fin-seg-pill')), true, 'switching keeps the live card, controls and animating pill');
         assert.equal(await page.getByRole('button', { name: 'Заказы', exact: true }).evaluate(button => document.activeElement === button), true, 'switching preserves keyboard focus');
         await page.evaluate(() => Promise.all(window.qaMetricPill.getAnimations().map(animation => animation.finished.catch(() => undefined))));
         assert.ok(await page.evaluate(() => {
@@ -298,25 +298,25 @@ test('finance controls preserve unrelated cards and contain scrolling inside the
         await page.evaluate(() => {
             window.qaBlankFrames = 0;
             window.qaBodyObserver = new MutationObserver(() => {
-                if (!document.querySelector('.fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-kpi')) window.qaBlankFrames++;
+                if (!document.querySelector('[data-page="finance_hub"] .fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-kpi')) window.qaBlankFrames++;
             });
-            window.qaBodyObserver.observe(document.querySelector('.fpt-fin-body'), { childList: true, subtree: true });
+            window.qaBodyObserver.observe(document.querySelector('[data-page="finance_hub"] .fpt-fin-body'), { childList: true, subtree: true });
         });
         await page.locator('[data-field="period"] select').selectOption('90d');
-        await page.waitForFunction(() => !document.querySelector('.fpt-fin-statusline[data-kind="loading"]'));
+        await page.waitForFunction(() => !document.querySelector('[data-page="finance_hub"] .fpt-fin-statusline[data-kind="loading"]'));
         assert.equal(await page.evaluate(() => { window.qaBodyObserver.disconnect(); return window.qaBlankFrames; }), 0, 'global filters keep content visible while loading');
         const title = page.locator('.fp-tools-page-content.active .fpt-category-header');
         await title.hover();
         await page.mouse.wheel(0, 500);
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => window.scrollY), 0, 'wheel over popup header never scrolls FunPay');
-        await page.locator('.fpt-fin-kpi').first().hover();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-kpi').first().hover();
         await page.mouse.wheel(0, 500);
         await page.waitForTimeout(200);
         assert.ok(await page.evaluate(() => document.querySelector('.fp-tools-content').scrollTop) > 0, 'popup content still scrolls');
         assert.equal(await page.evaluate(() => window.scrollY), 0);
         await page.evaluate(() => { const content = document.querySelector('.fp-tools-content'); content.scrollTop = content.scrollHeight; });
-        await page.locator('.fpt-fin-table').last().hover();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-table').last().hover();
         await page.mouse.wheel(0, 1500);
         await page.waitForTimeout(200);
         assert.equal(await page.evaluate(() => window.scrollY), 0, 'bottom boundary does not chain scroll to FunPay');
@@ -332,42 +332,60 @@ test('finance notifications preserve layout and the tab pill tracks responsive t
             .filter(animation => animation.effect.getTiming().iterations !== Infinity)
             .map(animation => animation.finished.catch(() => undefined)));
     });
-    const geometry = () => page.locator('.fpt-finance').evaluate(view => {
+    const geometry = () => page.locator('[data-page="finance_hub"] .fpt-finance').evaluate(view => {
         const rect = el => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; };
-        return [rect(view), rect(view.querySelector('.fpt-fin-tabs')), rect(view.querySelector('.fpt-fin-body'))];
+        return [rect(view), rect(view.querySelector('[data-page="finance_hub"] .fpt-fin-tabs')), rect(view.querySelector('[data-page="finance_hub"] .fpt-fin-body'))];
     });
     const checkPill = async () => {
         await settle();
-        const positions = await page.locator('.fpt-fin-tabs').evaluate(tabs => {
-            const pill = tabs.querySelector('.fpt-fin-tab-pill').getBoundingClientRect();
+        const positions = await page.locator('[data-page="finance_hub"] .fpt-fin-tabs').evaluate(tabs => {
+            const pill = tabs.querySelector('[data-page="finance_hub"] .fpt-fin-tab-pill').getBoundingClientRect();
             const active = tabs.querySelector('[aria-selected="true"]').getBoundingClientRect();
-            return { count: tabs.querySelectorAll('.fpt-fin-tab-pill').length, x: pill.x - active.x, width: pill.width - active.width };
+            return { count: tabs.querySelectorAll('[data-page="finance_hub"] .fpt-fin-tab-pill').length, x: pill.x - active.x, width: pill.width - active.width };
         });
         assert.equal(positions.count, 1);
         assert.ok(Math.abs(positions.x) <= 1 && Math.abs(positions.width) <= 1, JSON.stringify(positions));
     };
     try {
-        await page.locator('.fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-kpi').first().waitFor();
         await settle();
         const before = await geometry();
-        await page.evaluate(() => {
+        const toastEntry = await page.evaluate(() => {
             const popup = document.querySelector('.fp-tools-popup');
+            const view = document.querySelector('[data-page="finance_hub"] .fpt-finance');
+            const rect = el => { const r = el.getBoundingClientRect(); return [r.x, r.y, r.width, r.height]; };
+            const geometry = () => [rect(view), rect(view.querySelector('.fpt-fin-tabs')), rect(view.querySelector('.fpt-fin-body'))];
+            // Capture the short exit phase in the browser; external polling can miss it under load.
+            window.qaToastExit = null;
+            const observer = new MutationObserver(() => {
+                if (!document.querySelector('.fpt-popup-toast.is-leaving')) return;
+                window.qaToastExit = geometry();
+                observer.disconnect();
+            });
+            observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class'] });
+            window.qaToastMessages = [];
+            const queueObserver = new MutationObserver(() => {
+                const text = document.querySelector('.fpt-popup-toast-text')?.textContent;
+                if (text) window.qaToastMessages.push(text);
+                if (text === 'Overlay two') queueObserver.disconnect();
+            });
+            queueObserver.observe(document.body, { subtree: true, childList: true });
             window.FPTPopupUI.showToast(popup, 'Overlay one', 'success', { durationMs: 650 });
             window.FPTPopupUI.showToast(popup, 'Overlay two', 'error', { durationMs: 650 });
+            return { geometry: geometry(), position: getComputedStyle(document.querySelector('.fpt-popup-toast-region--page')).position };
         });
-        await page.locator('.fpt-popup-toast').waitFor();
-        assert.deepEqual(await geometry(), before, 'toast entry does not move page content');
-        assert.equal(await page.locator('.fpt-popup-toast-region--page').evaluate(el => getComputedStyle(el).position), 'fixed');
-        await page.locator('.fpt-popup-toast.is-leaving').waitFor();
-        assert.deepEqual(await geometry(), before, 'toast exit does not move page content');
-        await page.waitForFunction(() => document.querySelector('.fpt-popup-toast-text')?.textContent === 'Overlay two');
+        assert.deepEqual(toastEntry.geometry, before, 'toast entry does not move page content');
+        assert.equal(toastEntry.position, 'fixed');
+        await page.waitForFunction(() => window.qaToastExit !== null);
+        assert.deepEqual(await page.evaluate(() => window.qaToastExit), before, 'toast exit does not move page content');
+        await page.waitForFunction(() => window.qaToastMessages.includes('Overlay two'));
         await page.locator('.fpt-popup-toast').waitFor({ state: 'detached' });
         assert.deepEqual(await geometry(), before, 'the queue drains without moving content');
         await page.locator('#fptFinRefreshBtn').click();
-        await page.waitForFunction(() => document.querySelector('.fpt-popup-toast-text')?.textContent === 'Данные обновлены');
+        await page.waitForFunction(() => document.querySelector('.fpt-popup-toast-text')?.textContent === 'Обновление завершено');
         await settle();
         assert.deepEqual(await geometry(), before, 'refresh feedback does not move page content');
-        const caption = page.locator('.fpt-fin-statusline');
+        const caption = page.locator('[data-page="finance_hub"] .fpt-fin-statusline');
         const captionHeight = (await caption.boundingBox()).height;
         await caption.evaluate(el => el.replaceChildren());
         assert.equal((await caption.boundingBox()).height, captionHeight, 'empty freshness caption retains its height');
@@ -380,17 +398,22 @@ test('finance notifications preserve layout and the tab pill tracks responsive t
         }
         await page.setViewportSize({ width: 520, height: 880 });
         await checkPill();
-        assert.equal(await page.locator('.fpt-fin-tab-label:visible').count(), 1);
-        await page.locator('.fpt-fin-tab[data-mode="sales"]').click();
+        assert.equal(await page.locator('[data-page="finance_hub"] .fpt-fin-tab-label:visible').count(), 1);
+        await page.locator('[data-page="finance_hub"] .fpt-fin-tab[data-mode="sales"]').click();
         await page.mouse.move(0, 0);
         await checkPill();
         await applyTheme(page, true);
         await checkPill();
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        await page.evaluate(() => window.FPTPopupUI.showToast(document.querySelector('.fp-tools-popup'), 'Reduced motion', 'success', { durationMs: 50 }));
-        assert.equal(await page.locator('.fpt-popup-toast').evaluate(el => getComputedStyle(el).animationName), 'none');
         await page.locator('.fpt-popup-toast').waitFor({ state: 'detached' });
-        assert.equal(await page.locator('.fpt-fin-tab-pill').evaluate(el => getComputedStyle(el).transitionDuration), '0s');
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        const reducedToast = await page.evaluate(() => {
+            const toast = window.FPTPopupUI.showToast(document.querySelector('.fp-tools-popup'), 'Reduced motion', 'success', { durationMs: 50 });
+            return { text: toast.textContent, animation: getComputedStyle(toast).animationName };
+        });
+        assert.match(reducedToast.text, /Reduced motion/);
+        assert.equal(reducedToast.animation, 'none');
+        await page.locator('.fpt-popup-toast').waitFor({ state: 'detached' });
+        assert.equal(await page.locator('[data-page="finance_hub"] .fpt-fin-tab-pill').evaluate(el => getComputedStyle(el).transitionDuration), '0s');
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });
@@ -398,15 +421,15 @@ test('finance notifications preserve layout and the tab pill tracks responsive t
 test('finance hub refresh reports partial failures and exports CSV', async () => {
     const { browser, page, errors } = await boot();
     try {
-        await page.locator('.fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-kpi').first().waitFor();
         await page.evaluate(() => { window.qaFailRefresh = true; });
         await page.locator('#fptFinRefreshBtn').click();
-        await page.waitForFunction(() => /Не удалось обновить: покупки/.test(document.querySelector('.fpt-fin-statusline')?.textContent || ''));
+        await page.waitForFunction(() => /Не удалось обновить: покупки/.test(document.querySelector('[data-page="finance_hub"] .fpt-fin-statusline')?.textContent || ''));
         const actions = (await page.evaluate(() => window.qaMessages)).map(message => message.action);
         for (const action of ['updateSales', 'updatePurchases', 'updateFinance']) assert.ok(actions.includes(action), action);
 
         await page.locator('#fptFinTabSales').click();
-        await page.waitForFunction(() => document.querySelector('.fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-table'));
+        await page.waitForFunction(() => document.querySelector('[data-page="finance_hub"] .fpt-fin-tab-pane[data-subtab="sales"] .fpt-fin-table'));
         await page.locator('#fptFinExportBtn').click();
         const [download] = await Promise.all([page.waitForEvent('download'), page.locator('#fptFinExportDownloadCsv').click()]);
         assert.match(download.suggestedFilename(), /^funpay-sales-\d{4}-\d{2}-\d{2}\.csv$/);
@@ -437,38 +460,38 @@ test('finance screenshot layouts align controls and separate coverage and table 
         // FunPay uses Bootstrap's global label spacing. Load that baseline too.
         await page.addStyleTag({ content: 'label { display:inline-block; max-width:100%; margin-bottom:5px; font-weight:700; }' });
         await page.locator('#fptFinTabOperations').click();
-        await page.locator('.fpt-fin-tab-pane[data-subtab="operations"] .fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-tab-pane[data-subtab="operations"] .fpt-fin-kpi').first().waitFor();
         await capture('operations-toolbar');
         const toolbar = await page.evaluate(() => {
             const rect = el => { const r = el.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: r.height }; };
-            return [...document.querySelectorAll('.fpt-fin-field:not([hidden]) select, .fpt-fin-actions > button, .fpt-fin-actions .fpt-fin-export > button')].map(rect);
+            return [...document.querySelectorAll('[data-page="finance_hub"] .fpt-fin-field:not([hidden]) select, .fpt-fin-actions > button, .fpt-fin-actions .fpt-fin-export > button')].map(rect);
         });
         check(Math.max(...toolbar.map(r => r.bottom)) - Math.min(...toolbar.map(r => r.bottom)) <= 1, 'filters and action buttons share a bottom edge with FunPay styles');
         check(Math.max(...toolbar.map(r => r.height)) - Math.min(...toolbar.map(r => r.height)) <= 1, 'filters and actions share a height');
 
         await page.locator('#fptFinTabPotential').click();
-        await page.locator('.fpt-fin-chips').waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-chips').waitFor();
         await capture('potential-filters');
         check(await page.evaluate(() => {
-            const chips = document.querySelector('.fpt-fin-chips');
-            const copy = chips.closest('.fpt-fin-card-head').querySelector('.fpt-fin-card-copy');
+            const chips = document.querySelector('[data-page="finance_hub"] .fpt-fin-chips');
+            const copy = chips.closest('.fpt-fin-card-head').querySelector('[data-page="finance_hub"] .fpt-fin-card-copy');
             return chips.getBoundingClientRect().top >= copy.getBoundingClientRect().bottom + 8 && chips.scrollWidth <= chips.clientWidth + 1;
         }), 'table filters have a separate row clear of the title and subtitle');
         for (const width of [900, 420]) {
             await page.setViewportSize({ width, height: 900 });
             await settleLayout();
             await capture(`potential-filters-${width}`);
-            check(await page.locator('.fpt-fin-chips').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `table filters fit ${width}px screens`);
+            check(await page.locator('[data-page="finance_hub"] .fpt-fin-chips').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `table filters fit ${width}px screens`);
         }
         await page.setViewportSize({ width: 1440, height: 900 });
 
         await page.locator('#fptFinTabProfit').click();
-        await page.locator('.fpt-fin-coverage').waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-coverage').waitFor();
         await capture('profit-coverage');
         check(await page.evaluate(() => {
-            const meter = document.querySelector('.fpt-fin-meter').getBoundingClientRect();
-            const warning = document.querySelector('.fpt-fin-warning').getBoundingClientRect();
-            const copy = document.querySelector('.fpt-fin-warning-copy').getBoundingClientRect();
+            const meter = document.querySelector('[data-page="finance_hub"] .fpt-fin-meter').getBoundingClientRect();
+            const warning = document.querySelector('[data-page="finance_hub"] .fpt-fin-warning').getBoundingClientRect();
+            const copy = document.querySelector('[data-page="finance_hub"] .fpt-fin-warning-copy').getBoundingClientRect();
             const button = document.querySelector('#fptFinProfitCostWarningAction').getBoundingClientRect();
             return warning.top >= meter.bottom + 10 && button.top >= copy.bottom + 8;
         }), 'coverage meter, explanation and action have separate spacing');
@@ -479,7 +502,7 @@ test('finance screenshot layouts align controls and separate coverage and table 
             await page.setViewportSize({ width, height: 900 });
             await settleLayout();
             await capture(`profit-coverage-${width}`);
-            check(await page.locator('.fpt-fin-coverage').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `coverage fits ${width}px screens`);
+            check(await page.locator('[data-page="finance_hub"] .fpt-fin-coverage').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `coverage fits ${width}px screens`);
             check(await page.locator('#fptFinProfitCostWarningAction').evaluate(el => el.scrollWidth <= el.clientWidth + 1), `full action label fits ${width}px screens`);
         }
         assert.deepEqual(errors, []);
@@ -497,18 +520,18 @@ test('zero cost coverage keeps truthful totals and filters only its orders table
     try {
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.locator('#fptFinTabProfit').click();
-        await page.locator('.fpt-fin-coverage').waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-coverage').waitFor();
         await page.locator('[data-field="period"] select').selectOption('all');
-        await page.waitForFunction(() => document.querySelector('.fpt-fin-coverage-text')?.textContent.includes('0 из 282'));
-        assert.equal(await page.locator('.fpt-fin-coverage-value').textContent(), '0%');
+        await page.waitForFunction(() => document.querySelector('[data-page="finance_hub"] .fpt-fin-coverage-text')?.textContent.includes('0 из 282'));
+        assert.equal(await page.locator('[data-page="finance_hub"] .fpt-fin-coverage-value').textContent(), '0%');
         if (shotDir) {
             fs.mkdirSync(shotDir, { recursive: true });
-            await page.locator('.fpt-fin-coverage').screenshot({ path: path.join(shotDir, 'after-profit-zero-coverage.png') });
+            await page.locator('[data-page="finance_hub"] .fpt-fin-coverage').screenshot({ path: path.join(shotDir, 'after-profit-zero-coverage.png') });
         }
-        await page.evaluate(() => { window.qaCoverage = document.querySelector('.fpt-fin-coverage'); window.qaKpi = document.querySelector('.fpt-fin-kpi'); });
+        await page.evaluate(() => { window.qaCoverage = document.querySelector('[data-page="finance_hub"] .fpt-fin-coverage'); window.qaKpi = document.querySelector('[data-page="finance_hub"] .fpt-fin-kpi'); });
         await page.locator('#fptFinProfitCostWarningAction').click();
-        await page.waitForFunction(() => document.querySelector('.fpt-fin-chips [aria-pressed="true"]')?.textContent === 'Без себестоимости');
-        assert.equal(await page.evaluate(() => window.qaCoverage === document.querySelector('.fpt-fin-coverage') && window.qaKpi === document.querySelector('.fpt-fin-kpi')), true);
+        await page.waitForFunction(() => document.querySelector('[data-page="finance_hub"] .fpt-fin-chips [aria-pressed="true"]')?.textContent === 'Без себестоимости');
+        assert.equal(await page.evaluate(() => window.qaCoverage === document.querySelector('[data-page="finance_hub"] .fpt-fin-coverage') && window.qaKpi === document.querySelector('[data-page="finance_hub"] .fpt-fin-kpi')), true);
         assert.match(await page.locator('[data-table-key="profit"] .fpt-fin-table-count').textContent(), /из 282/);
         assert.deepEqual(errors, []);
     } finally { await browser.close(); }
@@ -517,11 +540,11 @@ test('zero cost coverage keeps truthful totals and filters only its orders table
 test('finance hub shows onboarding when there is no data and fits a narrow popup', async () => {
     const { browser, page, errors } = await boot({ width: 520, data: { orders: [], purchases: [], operations: [], lots: [] } });
     try {
-        await page.locator('.fpt-fin-state').waitFor();
-        assert.match(await page.locator('.fpt-fin-state').textContent(), /Данных пока нет/);
+        await page.locator('[data-page="finance_hub"] .fpt-fin-state').waitFor();
+        assert.match(await page.locator('[data-page="finance_hub"] .fpt-fin-state').textContent(), /Данных пока нет/);
         await shot(page, 'empty-narrow');
         assert.equal(await page.evaluate(() => {
-            const view = document.querySelector('.fpt-finance');
+            const view = document.querySelector('[data-page="finance_hub"] .fpt-finance');
             return view.scrollWidth <= view.clientWidth + 1;
         }), true, 'no horizontal overflow');
         assert.deepEqual(errors, []);
@@ -533,11 +556,11 @@ test('finance hub shows onboarding when there is no data and fits a narrow popup
 test('finance hub is readable at phone width', async () => {
     const { browser, page } = await boot({ width: 420, height: 900 });
     try {
-        await page.locator('.fpt-fin-kpi').first().waitFor();
+        await page.locator('[data-page="finance_hub"] .fpt-fin-kpi').first().waitFor();
         await page.waitForSelector('.fpt-fin-chart--line svg');
         await shot(page, 'overview-narrow');
         assert.equal(await page.evaluate(() => {
-            const view = document.querySelector('.fpt-finance');
+            const view = document.querySelector('[data-page="finance_hub"] .fpt-finance');
             return view.scrollWidth <= view.clientWidth + 1;
         }), true, 'no horizontal overflow');
     } finally {

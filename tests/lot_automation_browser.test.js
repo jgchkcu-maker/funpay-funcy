@@ -50,50 +50,55 @@ async function createPage(width = 1204) {
     return { browser, page };
 }
 
-test('schedule dialog saves a draft rule with the saved zone and shows a preview', async () => {
+// The schedule and pricing dialogs were replaced by the schedule pane of the bulk lot editor;
+// pricing now runs through the editor's price modes (tests/lot_io_browser.test.js).
+async function mountPane(page) {
+    await page.evaluate(() => {
+        const host = document.createElement('div');
+        host.className = 'fpt-qa-schedule';
+        document.querySelector('[data-page="lot_io"]').appendChild(host);
+        window.qaPane = window.FPTLotAutomationPage.mountSchedulePane(host, {
+            getSelectedLots: () => [{ offerId: '501', nodeId: '42', title: 'Аккаунт Premium' }]
+        });
+        return window.qaPane.ready;
+    });
+}
+
+test('schedule pane saves a draft rule with the chosen zone and shows a preview', async () => {
     const { browser, page } = await createPage();
     try {
-        await page.evaluate(() => window.FPTLotAutomationPage.openScheduleDialog(document.querySelector('.fp-tools-popup')));
-        await page.locator('.fpt-auto-lot-row').first().waitFor();
-        await page.locator('.fpt-auto-section input[maxlength="60"]').fill('Вечер');
-        await page.locator('input[list="fpt-auto-zones"]').fill('Asia/Krasnoyarsk');
-        await page.getByRole('button', { name: 'Каждый вечер 18–02' }).click();
-        assert.equal(await page.locator('.fpt-auto-window-row').count(), 7);
-        await page.getByRole('button', { name: 'Сохранить черновик' }).click();
-        await page.locator('.fpt-auto-card').waitFor();
+        await mountPane(page);
+        const pane = page.locator('.fpt-qa-schedule');
+        await pane.locator('input[maxlength="60"]').fill('Вечер');
+        await page.evaluate(() => {
+            const zone = document.querySelector('.fpt-sched-zone select');
+            if (![...zone.options].some(option => option.value === 'Asia/Krasnoyarsk')) zone.add(new Option('Asia/Krasnoyarsk', 'Asia/Krasnoyarsk'));
+            zone.value = 'Asia/Krasnoyarsk';
+            zone.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        await pane.getByRole('button', { name: 'Каждый вечер 18–02' }).click();
+        await pane.getByRole('button', { name: 'Сохранить черновик' }).click();
+        await page.waitForFunction(() => window.qaCalls.some(call => call.command === 'saveRule'));
         const saved = await page.evaluate(() => window.qaCalls.find(call => call.command === 'saveRule').rule);
+        assert.equal(saved.name, 'Вечер');
         assert.equal(saved.timezone, 'Asia/Krasnoyarsk');
         assert.deepEqual(saved.windows[0], { day: 'mon', start: '18:00', end: '02:00' });
-        assert.match(await page.locator('.fpt-auto-card').innerText(), /Черновик/);
-        await page.locator('.fpt-auto-card').getByRole('button', { name: 'Предпросмотр' }).click();
-        await page.locator('.fpt-auto-table').first().waitFor();
-        assert.match(await page.locator('.fpt-auto-table').first().innerText(), /UTC\+7/);
-        const overflow = await page.evaluate(() => document.querySelector('.fpt-lot-dialog').scrollWidth - document.querySelector('.fpt-lot-dialog').clientWidth);
-        assert.ok(overflow <= 1, 'the dialog does not scroll sideways');
+        assert.equal(saved.windows.length, 7);
+        await pane.locator('.fpt-sched-editor').getByRole('button', { name: 'Предпросмотр' }).click();
+        await pane.locator('.fpt-sched-preview:not([hidden])').waitFor();
+        assert.match(await pane.locator('.fpt-sched-preview').innerText(), /UTC\+7/);
+        const overflow = await page.evaluate(() => { const el = document.querySelector('.fpt-qa-schedule'); return el.scrollWidth - el.clientWidth; });
+        assert.ok(overflow <= 1, 'the pane does not scroll sideways');
         if (process.env.FPT_SHOTS) await page.screenshot({ path: path.join(process.env.FPT_SHOTS, 'schedule.png'), fullPage: true });
     } finally {
         await browser.close();
     }
 });
 
-test('pricing dialog previews selected lots and applies only checked rows', async () => {
+test('the old standalone schedule and pricing dialogs are gone', async () => {
     const { browser, page } = await createPage();
     try {
-        await page.evaluate(() => window.FPTLotAutomationPage.openPricingDialog(document.querySelector('.fp-tools-popup')));
-        await page.locator('.fpt-auto-lot-row').first().waitFor();
-        assert.match(await page.locator('.fpt-auto-lead').first().innerText(), /маржу 20/);
-        await page.locator('.fpt-auto-lot-row input').first().check();
-        await page.getByRole('button', { name: 'Предпросмотр отмеченных' }).click();
-        await page.locator('.fpt-auto-table').waitFor();
-        assert.match(await page.locator('.fpt-auto-table').innerText(), /Повысить/);
-        assert.equal(await page.locator('.fpt-auto-table input[type="checkbox"]').count(), 1, 'only actionable rows can be applied');
-        page.on('dialog', dialog => dialog.accept());
-        await page.getByRole('button', { name: 'Применить отмеченные' }).click();
-        await page.locator('.fpt-auto-notice[data-tone="success"]').waitFor();
-        const apply = await page.evaluate(() => window.qaCalls.find(call => call.command === 'apply'));
-        assert.deepEqual(apply.offerIds, ['501']);
-        assert.equal(apply.previewId, 'pv1');
-        if (process.env.FPT_SHOTS) await page.screenshot({ path: path.join(process.env.FPT_SHOTS, 'pricing.png'), fullPage: true });
+        assert.deepEqual(await page.evaluate(() => Object.keys(window.FPTLotAutomationPage)), ['mountSchedulePane']);
     } finally {
         await browser.close();
     }

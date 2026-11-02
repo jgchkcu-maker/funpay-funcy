@@ -1,0 +1,13 @@
+{
+  "url": "https://jgchkcu-maker.github.io/funpay-funcy/privacy-policy.html",
+  "status": 200,
+  "livePageMatchesLocal": true,
+  "commit": "98641c75f0bce1576b9f6a3b5f6bdbd8005bafbf",
+  "files": [
+    "docs/.nojekyll",
+    "docs/index.html",
+    "docs/privacy-policy.html",
+    "docs/store/privacy-policy.md"
+  ],
+  "workflowRun": 41333662377
+}

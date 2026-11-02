@@ -131,15 +131,6 @@
         }
         return wrap;
     }
-    function metric(iconName, label) {
-        const element = node('div', 'fpt-qr-metric fpt-rv-metric');
-        const badge = node('span', 'fpt-qr-metric-icon'); badge.append(icon(iconName));
-        const copy = node('div', 'fpt-qr-metric-copy');
-        const value = node('strong', 'fpt-qr-metric-value', '—');
-        copy.append(node('span', 'fpt-qr-metric-label', label), value);
-        element.append(badge, copy);
-        return { element, value };
-    }
     function field(label, id, rows, placeholder) {
         const wrap = node('div', 'fpt-rv-field');
         const caption = node('label', 'fpt-rv-label', label);
@@ -163,26 +154,8 @@
             latest: null, storageVersion: 0,
             conflict: { reviews: false, bonuses: false } };
         const screen = node('div', 'fpt-reviews');
-        const hero = node('section', 'fpt-qr-hero fpt-rv-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-rv-hero-title');
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon'); heroIcon.append(icon('reviews'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Благодарность за каждый отзыв'); heroTitle.id = 'fpt-rv-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill', 'Загрузка…');
-        heroTitleRow.append(heroTitle, heroPill);
-        const intro = node('p', 'fpt-qr-hero-description fpt-rv-intro', 'Отвечайте на отзывы своим тоном и благодарите покупателей за высокую оценку.');
-        heroCopy.append(heroTitleRow, intro);
-        heroMain.append(heroIcon, heroCopy);
-        const metricAnswers = metric('rate_review', 'Ответов настроено');
-        const metricImages = metric('image', 'Изображений в ответах');
-        const metricBonus = metric('redeem', 'Бонус за 5★');
-        const metrics = node('div', 'fpt-qr-metrics');
-        metrics.append(metricAnswers.element, metricImages.element, metricBonus.element);
-        hero.append(heroMain, metrics);
         const grid = node('div', 'fpt-rv-grid');
-        screen.append(hero, grid);
+        screen.append(grid);
         const helpPanel = node('aside', 'fpt-rv-help fpt-ad-help fpt-lot-help-popover');
         helpPanel.hidden = true;
         helpPanel.id = 'fpt-rv-help';
@@ -399,28 +372,6 @@
             block.card.dataset.state = state.draft[block.enabledKey] ? 'on' : 'off';
             attach.disabled = state.uploading || state.draft.reviewTemplateImages[state.rating].length >= 5;
         }
-        function renderHero(error) {
-            const base = state.base;
-            const answers = RATINGS.filter(rating => base.reviewTemplates[rating].trim()).length;
-            const photos = RATINGS.reduce((sum, rating) => sum + base.reviewTemplateImages[rating].length, 0);
-            const on = base.autoReviewEnabled || base.bonusForReviewEnabled;
-            metricAnswers.value.textContent = state.loaded ? `${answers} из 5` : '—';
-            metricImages.value.textContent = state.loaded ? String(photos) : '—';
-            if (!state.loaded) metricBonus.value.textContent = '—';
-            else if (!base.bonusForReviewEnabled) metricBonus.value.textContent = 'Выключен';
-            else {
-                const variants = base.bonusMode === 'random' ? ` · ${base.randomBonuses.length} ${ui.pluralize(base.randomBonuses.length, ['вариант', 'варианта', 'вариантов'])}` : '';
-                metricBonus.value.textContent = `Через ${Number(base.bonusForReviewDelaySec) || 0} сек${variants}`;
-            }
-            hero.dataset.state = state.loaded && on ? 'on' : 'off';
-            if (!state.loaded) {
-                heroPill.dataset.kind = error ? 'error' : 'neutral';
-                heroPill.textContent = error ? 'Ошибка загрузки' : 'Загрузка…';
-            } else {
-                heroPill.dataset.kind = on ? 'success' : 'neutral';
-                heroPill.textContent = on ? 'Работает' : 'Выключено';
-            }
-        }
         function changed(kind) {
             status(kind, dirty(kind) ? 'Есть несохранённые изменения' : '', dirty(kind) ? 'dirty' : '');
             update(kind);
@@ -559,7 +510,6 @@
             if (kind === 'bonuses') state.rows = settings.randomBonuses.map((text, originalIndex) => ({ originalIndex, text: typeof text === 'string' ? text : '' }));
             state.conflict[kind] = false;
             render(kind);
-            renderHero();
         }
         function reset(kind) {
             assign(kind, clone(state.base)); changed(kind);
@@ -662,7 +612,6 @@
                 status('reviews', ''); status('bonuses', '');
             } catch (error) {
                 for (const kind of ['reviews', 'bonuses']) status(kind, error.message || 'Не удалось загрузить настройки.', 'error');
-                renderHero(true);
                 const retry = button('Повторить загрузку', 'fpt-rv-primary', 'refresh');
                 retry.addEventListener('click', async () => {
                     retry.disabled = true;

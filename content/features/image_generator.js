@@ -71,16 +71,6 @@ class ImageGenerator {
                     <div class="fp-tools-ig-preview">
                         <canvas id="fpToolsImageCanvas" width="320" height="320"></canvas>
                     </div>
-                    ${globalThis.FPTFeatureAvailability?.isAvailable('ai') === true ? `<section class="fpt-win-card fp-tools-ig-ai-generator">
-                        <div class="fpt-win-card-head">
-                            <span class="fpt-win-card-icon"><span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span></span>
-                            <h3 class="fpt-win-card-title">Создать с помощью ИИ</h3>
-                        </div>
-                        <textarea id="igAiPrompt" class="fpt-win-input" rows="3" placeholder="Пример: огненный значок для клана, текст 'FIRE SQUAD'" aria-label="Описание картинки для ИИ"></textarea>
-                        <button type="button" id="igAiGenerateBtn" class="fpt-win-btn fpt-win-btn--block" style="margin-top:10px;">
-                            <span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>Сгенерировать
-                        </button>
-                    </section>` : ''}
                 </div>
                 <div class="fp-tools-ig-controls">
                     <div class="fpt-win-seg fpt-win-seg--fill fp-tools-ig-tabs" role="tablist" aria-label="Настройки картинки">
@@ -226,34 +216,6 @@ class ImageGenerator {
             }
         });
         
-        modal.querySelector('#igAiGenerateBtn')?.addEventListener('click', async () => {
-            const btn = modal.querySelector('#igAiGenerateBtn');
-            const promptInput = modal.querySelector('#igAiPrompt');
-            const prompt = promptInput.value.trim();
-
-            if (!prompt) {
-                showNotification('Введите описание для ИИ', true);
-                return;
-            }
-
-            btn.classList.add('is-loading');
-            btn.disabled = true;
-
-            try {
-                const response = await chrome.runtime.sendMessage({ action: "getAIImageSettings", prompt: prompt });
-                if (response && response.success) {
-                    this.applyTheme(response.data);
-                    showNotification('Изображение сгенерировано ИИ!');
-                } else {
-                    throw new Error(response.error || 'Неизвестная ошибка ИИ.');
-                }
-            } catch (error) {
-                showNotification(`Ошибка ИИ: ${error.message}`, true);
-            } finally {
-                btn.classList.remove('is-loading');
-                btn.disabled = false;
-            }
-        });
     }
 
     draw() {

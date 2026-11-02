@@ -120,22 +120,21 @@
         return { game, category: categoryName, nodeId, server, summary, description, secrets, rawPrice, priceCurrency, sellerName, sellerId };
     }
 
-    // ── Google-перевод (бесплатный эндпойнт translate_a, как в chat_reply) ──
-    async function gTranslate(text, sl, tl) {
-        text = String(text || '').trim();
-        if (!text) return '';
+    // ── Перевод RU→EN через общую очередь background (translateLotText) ──
+    // Только с согласием пользователя; без него лот копируется без английского текста.
+    // Товар из выдачи (secrets) на перевод не отправляется.
+    async function translateToEn(summary, description) {
+        if (!String(summary || '').trim() && !String(description || '').trim()) return ['', ''];
+        if (!(await window.FPTTranslateConsent?.ensure())) return ['', ''];
         try {
-            const url = 'https://translate.googleapis.com/translate_a/single?client=gtx'
-                + '&sl=' + encodeURIComponent(sl || 'ru')
-                + '&tl=' + encodeURIComponent(tl || 'en')
-                + '&dt=t&q=' + encodeURIComponent(text);
-            const r = await fetch(url);
-            if (!r.ok) return '';
-            const j = await r.json();
-            // j[0] — массив сегментов [ [translated, original, ...], ... ]
-            const out = (j && j[0]) ? j[0].map(s => s[0]).join('') : '';
-            return (out && out !== text) ? out : '';
-        } catch (_) { return ''; }
+            const res = await chrome.runtime.sendMessage({
+                action: 'translateLotText',
+                data: { title: summary || '', description: description || '', buyerMessage: '' }
+            });
+            if (!res || !res.success) return ['', ''];
+            const pick = (out, src) => (out && out !== src ? out : '');
+            return [pick(res.data.title, summary), pick(res.data.description, description)];
+        } catch (_) { return ['', '']; }
     }
 
     // ── UI: кнопка под блоком «Оплаченный товар», на всю его ширину ──
@@ -181,10 +180,7 @@
         btn.innerHTML = '<span class="fpt-olc-spin"></span> Перевод EN…';
 
         // Автоперевод RU→EN (страница заказа — только RU)
-        const [summaryEn, descEn] = await Promise.all([
-            gTranslate(data.summary, 'ru', 'en'),
-            gTranslate(data.description, 'ru', 'en')
-        ]);
+        const [summaryEn, descEn] = await translateToEn(data.summary, data.description);
 
         // запускаем ТОТ ЖЕ визард создания лота, что и при копировании со страницы
         // лота — он построит форму категории по nodeId и даст кнопку «Создать лот».

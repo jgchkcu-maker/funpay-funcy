@@ -8,7 +8,6 @@ const ROOT = path.resolve(__dirname, '..');
 const HIDDEN_IDS = new Set(['rmthub_seller_search', 'chat_ai_rewrite_btn', 'profanity_warning', 'lot_ai_gen_btn']);
 const availableIds = ids => ids.filter(id => !HIDDEN_IDS.has(id));
 const EXPECTED_GROUP_ORDER = [
-    'Верхняя панель',
     'Чат',
     'Создание и оформление лота',
     'Копирование и импорт лотов',
@@ -89,7 +88,6 @@ const EXPECTED_GROUP_IDS = {
 };
 
 const EXPECTED_GROUP_COUNTS = {
-    'Верхняя панель': 0,
     'Чат': 9,
     'Создание и оформление лота': 4,
     'Копирование и импорт лотов': 5,
@@ -112,7 +110,7 @@ const EXPECTED_CHAT_SUBGROUP_IDS = {
 function loadRegistrySource() {
     const source = fs.readFileSync(path.join(ROOT, 'content/features/feature_registry.js'), 'utf8');
     const result = vm.runInNewContext(
-        `${fs.readFileSync(path.join(ROOT, 'background/feature_availability.js'), 'utf8')}\n${source}\n({ registry: FPT_FEATURE_REGISTRY, groupOrder: typeof FPT_NEEDS_GROUP_ORDER === 'undefined' ? null : FPT_NEEDS_GROUP_ORDER, chatSubgroupOrder: typeof FPT_NEEDS_CHAT_SUBGROUP_ORDER === 'undefined' ? null : FPT_NEEDS_CHAT_SUBGROUP_ORDER })`,
+        `${source}\n({ registry: FPT_FEATURE_REGISTRY, groupOrder: typeof FPT_NEEDS_GROUP_ORDER === 'undefined' ? null : FPT_NEEDS_GROUP_ORDER, chatSubgroupOrder: typeof FPT_NEEDS_CHAT_SUBGROUP_ORDER === 'undefined' ? null : FPT_NEEDS_CHAT_SUBGROUP_ORDER })`,
         { window: {} }
     );
 
@@ -160,8 +158,8 @@ test('public registry preserves available ID-to-selector pairs and excludes susp
 
     assert.deepEqual(
         sortIds([...new Set(registry.map(({ group }) => group))]),
-        sortIds(EXPECTED_GROUP_ORDER.slice(1)),
-        'entries use only the six allowed groups and none are missing a group'
+        sortIds(EXPECTED_GROUP_ORDER),
+        'entries use only the five allowed groups and none are missing a group'
     );
 
     const chatEntries = registry.filter(({ group }) => group === 'Чат');
@@ -195,7 +193,7 @@ test('renamed font controls retain their prior searchable labels locally', () =>
     assert.equal(registry.filter((entry) => Object.hasOwn(entry, 'legacyLabels')).length, 2);
 });
 
-test('stored disabled IDs still hide the exact original live selectors across all six groups', async () => {
+test('stored disabled IDs still hide the exact original live selectors across the remaining groups', async () => {
     const disabledIds = [
         'rmthub_seller_search',
         'lot_font_controls',
@@ -220,7 +218,6 @@ test('stored disabled IDs still hide the exact original live selectors across al
         console,
         Event
     });
-    vm.runInContext(fs.readFileSync(path.join(ROOT, 'background/feature_availability.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_registry.js'), 'utf8'), context);
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'content/features/feature_disabler.js'), 'utf8'), context);
 

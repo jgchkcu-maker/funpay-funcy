@@ -24,13 +24,16 @@
   function run(btn) {
     if (btn.getAttribute('data-busy') === '1') return;
     btn.setAttribute('data-busy', '1');
-    const orig = btn.textContent;
-    btn.textContent = 'Поднимаю…';
+    const label = btn.querySelector('.fpt-raise-label');
+    const orig = label.textContent;
+    label.textContent = 'Поднимаю…';
+    btn.disabled = true;
     btn.classList.add('disabled');
     chrome.runtime.sendMessage({ action: 'fptRaiseAllNow' }, (res) => {
       btn.removeAttribute('data-busy');
       btn.classList.remove('disabled');
-      btn.textContent = orig;
+      label.textContent = orig;
+      btn.disabled = false;
       let msg;
       if (chrome.runtime.lastError) msg = 'Ошибка связи с расширением';
       else if (!res || !res.ok) msg = 'Не удалось: ' + ((res && res.error) || 'ошибка');
@@ -64,8 +67,7 @@
     btn.type = 'button';
     btn.id = 'fpt-raise-all-btn';
     btn.className = selectBtn.className; // тот же вид
-    btn.textContent = 'Поднять все лоты';
-    btn.style.marginRight = '6px';
+    btn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">vertical_align_top</span><span class="fpt-raise-label">Поднять все лоты</span>';
     btn.addEventListener('click', () => run(btn));
 
     // Вставляем ПЕРЕД «Выбрать», не трогая саму кнопку.

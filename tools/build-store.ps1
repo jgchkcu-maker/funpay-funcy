@@ -1,7 +1,7 @@
 param([string]$Node = 'node')
 $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$manifest = Get-Content -LiteralPath (Join-Path $projectRoot 'manifest.json') -Raw | ConvertFrom-Json
+$manifest = Get-Content -LiteralPath (Join-Path $projectRoot 'manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $version = $manifest.version
 if ($version -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') { throw 'Invalid manifest version' }
 $distRoot = Join-Path $projectRoot 'dist'
@@ -16,7 +16,21 @@ New-Item -ItemType Directory -Path $resolvedStage | Out-Null
 $runtimeDirectories = @('background', 'content', 'css', 'fonts', 'icons', 'offscreen', 'popup', 'licenses', 'themes')
 $runtimeFiles = @('manifest.json', 'LICENSE', 'THIRD_PARTY_NOTICES.md')
 foreach ($name in @($runtimeDirectories) + @($runtimeFiles)) {
-    Copy-Item -LiteralPath (Join-Path $projectRoot $name) -Destination (Join-Path $resolvedStage $name) -Recurse
+    $source = Join-Path $projectRoot $name
+    # A runtime directory without files (themes/ after the bundled wallpapers were dropped) is skipped:
+    # an empty folder becomes a ZIP entry of its own and adds nothing to the package.
+    if ((Test-Path -LiteralPath $source -PathType Container) -and -not (Get-ChildItem -LiteralPath $source -Recurse -File | Select-Object -First 1)) { continue }
+    Copy-Item -LiteralPath $source -Destination (Join-Path $resolvedStage $name) -Recurse
+}
+# Empty subfolders inside copied directories would add ZIP entries without files too.
+Get-ChildItem -LiteralPath $resolvedStage -Recurse -Directory | Sort-Object { $_.FullName.Length } -Descending |
+    Where-Object { -not (Get-ChildItem -LiteralPath $_.FullName -Force | Select-Object -First 1) } |
+    ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
+$stageManifestPath = Join-Path $resolvedStage 'manifest.json'
+$stageManifest = Get-Content -LiteralPath $stageManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+if ($stageManifest.PSObject.Properties['update_url']) {
+    $stageManifest.PSObject.Properties.Remove('update_url')
+    [IO.File]::WriteAllText($stageManifestPath, ($stageManifest | ConvertTo-Json -Depth 10), [Text.UTF8Encoding]::new($false))
 }
 & $Node (Join-Path $PSScriptRoot 'validate-store.cjs') $resolvedStage
 if ($LASTEXITCODE -ne 0) { throw 'Staged package validation failed' }

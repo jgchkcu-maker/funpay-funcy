@@ -7,7 +7,6 @@
     const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
     let catalogRequest = null;
     const images = new Map();
-    const APPROVED_WALLPAPERS = new Set([]); // See docs/store/assets.md.
 
 
     function assetUrl(path) {
@@ -36,7 +35,7 @@
             delete theme.bgVideo;
             return { id: item.id, name: item.name, meta: String(item.meta || '').slice(0, 200),
                 wallpaper: item.wallpaper, video: item.video || null, theme };
-        }).filter(item => APPROVED_WALLPAPERS.has(item.wallpaper));
+        }).filter(item => !['ghoul-ink', 'white-ghoul'].includes(item.id) && !['wallpapers/ghoul-ink.webp', 'wallpapers/white-ghoul.webp'].includes(item.wallpaper.toLowerCase()));
     }
 
     async function fetchWithTimeout(url) {
@@ -82,7 +81,6 @@
     async function getWallpaper({ path } = {}) {
         const url = assetUrl(path);
         if (!url) throw new Error('Неверный адрес обоев.');
-        if (!APPROVED_WALLPAPERS.has(path)) throw new Error('Обои не прошли проверку прав для этого выпуска.');
         if (images.has(url)) return images.get(url);
         const blob = await fetchWithTimeout(url);
         if (!blob.size || blob.size > MAX_IMAGE_BYTES) throw new Error('Обои должны быть не больше 5 МБ.');

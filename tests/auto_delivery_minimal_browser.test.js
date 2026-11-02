@@ -72,6 +72,8 @@ test('compact auto-delivery supports editing, retry, filters and narrow layouts'
         });
         await page.addScriptTag({ path: path.join(root, 'content/ui/auto_delivery_page.js') });
         await page.evaluate(() => window.FPTAutoDeliveryPage.mount(document.querySelector('.fp-tools-popup')));
+        assert.equal(await page.locator('.fpt-ad-hero').count(), 0);
+        assert.match(await page.locator('.fpt-ad-stock-status').textContent(), /На складе: — · Остатки проверены:/);
         assert.equal(await page.getByRole('heading', { name: 'Лоты', exact: true }).count(), 0,
             'filters replace the redundant lot heading');
         assert.equal(await page.locator('.fpt-ad-lots-heading > .fpt-ad-filter-tabs').count(), 1);
@@ -140,6 +142,7 @@ test('compact auto-delivery supports editing, retry, filters and narrow layouts'
         await page.locator('.fpt-ad-search').fill('');
         const second = page.locator('.fpt-ad-lot-row[data-lot-id="502"]');
         await second.locator('[data-lot-control="enabled"]').check();
+        assert.match(await page.locator('.fpt-ad-stock-status').textContent(), /На складе: 4 шт\. · Остатки проверены:/);
         await page.locator('.fpt-ad-save-all').click();
         await page.waitForFunction(() => window.qaSaved.length === 2);
         assert.equal(await second.locator('.fpt-ad-save-button').isVisible(), false);
@@ -161,4 +164,43 @@ test('compact auto-delivery supports editing, retry, filters and narrow layouts'
     } finally {
         await browser.close();
     }
+});
+
+test('auto-delivery master switch saves the shared flag the background checks', async () => {
+    const browser = await chromium.launch({ executablePath: process.env.FPT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+    try {
+        const page = await browser.newPage({ viewport: { width: 1000, height: 760 }, reducedMotion: 'reduce' });
+        const errors = [];
+        page.on('pageerror', error => errors.push(error.message));
+        await page.route('**/*', route => route.fulfill({ contentType: 'text/html', body: '<html><body></body></html>' }));
+        await page.goto('https://funpay.com/');
+        await page.setContent('<div class="fp-tools-popup fptm-themed active"><main class="fp-tools-content"><div class="fp-tools-page-content active" data-page="auto_delivery"></div></main></div>');
+        for (const file of ['css/content_styles.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
+        await page.addScriptTag({ path: path.join(root, 'content/ui/popup_components.js') });
+        await page.evaluate(() => {
+            window.qaPatches = [];
+            window.fptPopupActions = { async run(_page, action, payload = {}) {
+                if (action === 'getSettings') return {
+                    fpToolsAutoReplies: { greetingEnabled: true },
+                    fpToolsAutoDeliveryLots: { '501': { enabled: true, mode: 'secrets', productCount: 3 } },
+                    fpToolsAutoDeliveryLotsCache: { updatedAt: Date.now(), lots: [{ id: '501', title: 'Ключ', categoryName: 'Ключи' }] }
+                };
+                if (action === 'saveSettings') { qaPatches.push(structuredClone(payload)); return {}; }
+                return { success: true };
+            } };
+        });
+        await page.addScriptTag({ path: path.join(root, 'content/ui/auto_delivery_page.js') });
+        await page.evaluate(() => window.FPTAutoDeliveryPage.mount(document.querySelector('.fp-tools-popup')));
+        const master = page.getByRole('switch', { name: 'Включить автовыдачу' });
+        const hint = page.locator('.fpt-ad-master-hint');
+        assert.equal(await master.isChecked(), false, 'a new account starts with auto-delivery off');
+        assert.equal(await hint.getAttribute('data-tone'), 'warning', 'an enabled lot warns that nothing is delivered yet');
+
+        await master.click();
+        await page.waitForFunction(() => window.qaPatches.length === 1);
+        assert.deepEqual(await page.evaluate(() => window.qaPatches), [{ patch: { set: { autoDeliveryEnabled: true } } }]);
+        assert.equal(await master.isChecked(), true);
+        assert.equal(await hint.getAttribute('data-tone'), '');
+        assert.deepEqual(errors, []);
+    } finally { await browser.close(); }
 });

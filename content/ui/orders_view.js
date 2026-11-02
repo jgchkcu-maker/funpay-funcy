@@ -29,41 +29,7 @@
             element.setAttribute('aria-hidden', 'true');
             return element;
         };
-        const metric = (iconName, label) => {
-            const element = node('div', 'fpt-qr-metric fpt-ord-metric');
-            const badge = node('span', 'fpt-qr-metric-icon');
-            badge.appendChild(icon(iconName));
-            const copy = node('div', 'fpt-qr-metric-copy');
-            const value = node('strong', 'fpt-qr-metric-value', '—');
-            copy.append(node('span', 'fpt-qr-metric-label', label), value);
-            element.append(badge, copy);
-            return { element, value };
-        };
         const root$ = node('div', 'fpt-auto-orders');
-
-        // Hero: journal state and the numbers a seller checks first, like the other categories.
-        const hero = node('section', 'fpt-qr-hero fpt-ord-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-ord-hero-title');
-        hero.dataset.state = 'off';
-        const heroMain = node('div', 'fpt-qr-hero-main');
-        const heroIcon = node('span', 'fpt-qr-hero-icon');
-        heroIcon.appendChild(icon('local_shipping'));
-        const heroCopy = node('div', 'fpt-qr-hero-copy');
-        const heroTitleRow = node('div', 'fpt-qr-hero-title-row');
-        const heroTitle = node('h2', 'fpt-qr-hero-title', 'Каждая выдача под контролем');
-        heroTitle.id = 'fpt-ord-hero-title';
-        const heroPill = node('span', 'fpt-qr-pill fpt-ord-hero-pill', 'Загрузка…');
-        heroPill.setAttribute('role', 'status');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-qr-hero-description',
-            'Заказы, которые обработала автовыдача: что уже выдано, что ещё в пути и где нужно ваше решение.'));
-        heroMain.append(heroIcon, heroCopy);
-        const metricAttention = metric('priority_high', 'Требуют решения');
-        const metricDelivery = metric('local_shipping', 'В выдаче');
-        const metricDone = metric('task_alt', 'Завершены');
-        const metrics = node('div', 'fpt-qr-metrics fpt-ord-metrics');
-        metrics.append(metricAttention.element, metricDelivery.element, metricDone.element);
-        hero.append(heroMain, metrics);
 
         // Filters reuse the quick replies segmented strip: one track and a sliding thumb.
         const tabs = node('div', 'fpt-qr-tabs fpt-ord-tabs');
@@ -80,7 +46,7 @@
         refresh.title = 'Обновить список заказов';
         const head = node('div', 'fpt-ord-toolbar');
         head.append(tabs, refresh);
-        root$.append(hero, head, status, list);
+        root$.append(head, status, list);
         container.appendChild(root$);
 
         let filter = 'attention';
@@ -130,31 +96,13 @@
 
         const renderCounts = counts => {
             tabButtons.forEach(tab => { tab._count.textContent = String(counts?.[tab.dataset.filter] ?? 0); });
-            const value = key => (Number.isFinite(counts?.[key]) ? String(counts[key]) : '—');
-            metricAttention.value.textContent = value('attention');
-            metricDelivery.value.textContent = value('delivery');
-            metricDone.value.textContent = value('done');
-            const attention = Number(counts?.attention) || 0;
-            const all = Number(counts?.all) || 0;
-            metricAttention.element.dataset.tone = attention ? 'warning' : '';
-            hero.dataset.state = all ? 'on' : 'off';
-            if (attention) {
-                heroPill.textContent = 'Нужно ваше решение';
-                heroPill.dataset.kind = 'warning';
-            } else if (all) {
-                heroPill.textContent = 'Всё под контролем';
-                heroPill.dataset.kind = 'success';
-            } else {
-                heroPill.textContent = 'Заказов пока нет';
-                delete heroPill.dataset.kind;
-            }
         };
 
         const emptyState = () => {
             const attentionFilter = filter === 'attention';
             const element = node('div', 'fpt-qr-empty fpt-ord-empty');
             element.setAttribute('role', 'status');
-            element.append(icon(attentionFilter ? 'task_alt' : 'inbox'),
+            element.append(icon(attentionFilter ? 'check_circle' : 'inbox'),
                 node('strong', '', attentionFilter ? 'Нет заказов, которые требуют решения' : 'Заказов нет'),
                 node('span', '', attentionFilter
                     ? 'Когда выдача остановится или её исход будет неясен, заказ появится здесь.'

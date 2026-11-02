@@ -1,23 +1,26 @@
-# Разрешения Funcy 0.9.11
+# Разрешения Funcy 0.9.12
 
 | Разрешение | Назначение |
 | --- | --- |
-| storage | Локальные настройки, конфиги аккаунтов, отметки обработки и сроки заданий |
-| cookies | Работа с действующей сессией FunPay, ручное добавление, проверка и переключение аккаунтов |
+| storage | Локальные настройки, конфиги аккаунтов, кэш каталога, отметки обработки и сроки заданий |
+| cookies | Работа с действующей сессией FunPay (`golden_key`, `PHPSESSID`), ручное добавление, проверка и переключение аккаунтов |
 | alarms | Фоновые проверки и сохранённые сроки автоматики |
 | offscreen | Разбор HTML через DOM_PARSER; документ закрывается после завершения текущих разборов |
 
-Разрешения `tabs` и `background` удалены. Секция `manifest.background` с service worker сохранена. Используются tabs.query/create/update/reload/sendMessage; специальных возможностей tabs, требующих этого разрешения, не применяется. Доступ к адресам вкладок FunPay покрывает host permission.
+Разрешения `tabs` и `background` отсутствуют. Секция `manifest.background` с service worker сохранена. Используются `chrome.tabs.query/create/update/reload/sendMessage`; специальных возможностей `tabs`, требующих отдельного разрешения, не применяется. Доступ к адресам вкладок FunPay покрывает host permission.
 
 | Host | Использование |
 | --- | --- |
 | funpay.com и *.funpay.com | Страницы, чат, лоты, заказы, финансы, cookies с разными доменными областями, поддержка |
-| sfunpay.com и *.sfunpay.com | Совместимость доменов cookies и ресурсов FunPay; wildcard оставлен до живой проверки областей cookies |
-| support.funpay.com | Оформление и работа с поддержкой FunPay |
-| translate.googleapis.com | Перевод выбранных полей |
-| raw.githubusercontent.com | Данные каталога тем; content script использует обычный CORS-запрос с credentials: omit |
-| fonts.googleapis.com и fonts.gstatic.com | Выбранные пользователем шрифты |
+| sfunpay.com и *.sfunpay.com | Совместимость доменов cookies и статических ресурсов FunPay |
+| support.funpay.com | Оформление и работа со страницами поддержки FunPay |
+| translate.googleapis.com | Перевод текста в чатах и полей лотов через единую очередь service worker; работает только после согласия пользователя (`fpToolsTranslateConsentAt`), проверка есть и в окне, и в service worker |
 
-CDN jsDelivr исключён. Каталог не перенесён в background. Реальный CORS-запрос из FunPay в этой задаче не выполнялся; его необходимо проверить по ручной инструкции. Внешние картинки, CSS и JSON не являются удалённым JS/WASM. Статическая проверка пакета ищет конкретные отключённые endpoints и исполняемые импорты; совпадение домена в миграции само по себе не блокирует сборку.
+### Изменения в версии 0.9.12:
+- Удалены избыточные `host_permissions` для `fonts.googleapis.com` и `fonts.gstatic.com`: шрифты подключаются браузером через стандартный CSS (`@import` / `<link>`), для которого не требуются права на сетевой доступ расширения.
+- Удалено разрешение `raw.githubusercontent.com`: каталог тем загружается контентным скриптом через стандартный веб-CORS запрос с `credentials: omit`.
+- Хост `translate.googleapis.com` сохранён для обслуживания фоновой очереди перевода сообщений и лотов из service worker.
 
-Основания для MV3: [alarms](https://developer.chrome.com/docs/extensions/reference/api/alarms), [offscreen](https://developer.chrome.com/docs/extensions/reference/api/offscreen). Сверено 26 октября 2026 года. Не используются параметры, появившиеся после Chrome 120, например persistAcrossSessions.
+### Изменения после сборки 0.9.12 (1 ноября 2026)
+- Перевод требует явного согласия: окно «Перевод через Google Translate» с кнопками «Разрешить» и «Отмена». Service worker отказывает в переводе без отметки согласия.
+- Копирование лота со страницы заказа больше не обращается к `translate.googleapis.com` напрямую из контентного скрипта: оно идёт через общую очередь и общее согласие.

@@ -36,7 +36,8 @@ test('reminder block: variable chips, preview, lot picker, manual send and no ov
                 await settings.waitFor();
                 assert.equal(await settings.locator('.fpt-rv-variable').count(), 4, 'only the variables the reminder supports');
                 await page.waitForFunction(() => !document.querySelector('.fpt-rv-card--reminders .fpt-rv-controls').disabled);
-                assert.match(await settings.locator('.fpt-qr-bubble').textContent(), /funpay\.com\/orders\/DEMO123/);
+                // The reminder editor has no live chat preview; the variable chips document {order_link} etc.
+                assert.equal(await settings.locator('.fpt-qr-bubble').count(), 0);
 
                 const orders = page.locator('.fpt-rv-card--reminder-orders');
                 await orders.scrollIntoViewIfNeeded();

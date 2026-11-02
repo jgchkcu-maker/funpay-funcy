@@ -1,0 +1,34 @@
+✖ one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu (1354.0334ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1629.3249
+
+✖ failing tests:
+
+test at tests\popup_eager_load_browser.test.js:26:1
+✖ one, two and five rapid clicks build once; closing, reopening and template settings reuse the menu (1354.0334ms)
+  AssertionError [ERR_ASSERTION]: opening template settings cancels the pending close
+  + actual - expected
+  
+    {
+  +   closing: true,
+  +   timer: 28
+  -   closing: false,
+  -   timer: null
+    }
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_eager_load_browser.test.js:50:20)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { closing: true, timer: 28 },
+    expected: { closing: false, timer: null },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

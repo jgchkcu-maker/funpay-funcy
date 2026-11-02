@@ -63,7 +63,9 @@ async function openPage(browser, { dark = false, viewport = { width: 1280, heigh
                     window.qaMessages.push(structuredClone(message));
                     const result = message?.action === 'translateLotText'
                         ? { success: true, data: Object.fromEntries(Object.entries(message.data).map(([key, text]) => [key, 'EN:' + text])) }
-                        : replies[message?.action] || { success: true, ok: true, data: [] };
+                        : message?.action === 'translateChatText'
+                            ? { success: true, text: 'RU:' + message.text }
+                            : replies[message?.action] || { success: true, ok: true, data: [] };
                     callback?.(result);
                     return Promise.resolve(result);
                 },
@@ -105,7 +107,7 @@ test('release: chat, review and lot AI stay absent after focus and dynamic marku
             </form>
             <div class="review-item-answer-form"><textarea name="text"></textarea><button class="btn" data-action="save">Опубликовать</button></div>`;
         const { page, errors, requests } = await openPage(browser, { body, initial: {
-            aiModeActive: true,
+            aiModeActive: true, fpToolsTranslateConsentAt: 1,
             fpToolsSlashCommands: { enabled: true, autocomplete: false, expandKey: 'tab', commands: [{ id: '1', trigger: '/ready', response: 'Обычный ответ' }] }
         }, url: 'https://funpay.com/lots/offerEdit?node=1234' });
         const hidden = '#aiModeToggleBtn, #fpToolsProfanityWarning, #fp-tools-ai-gen-btn, #fp-tools-ai-gen-modal, #fp-tools-ai-review-reply-btn, #fp-rmthub-form';
@@ -118,7 +120,7 @@ test('release: chat, review and lot AI stay absent after focus and dynamic marku
         await page.locator('.chat-form-input textarea').fill('message');
         assert.equal(await page.locator('#fp-chat-char-count').textContent(), '7');
         assert.equal(await page.locator(hidden).count(), 0);
-        assert.equal(await page.evaluate(() => aiModeActive), false);
+        assert.equal(await page.evaluate(() => typeof aiModeActive), 'undefined');
         assert.equal(await page.evaluate(() => window.qaStorage.aiModeActive), true);
         const enterPrevented = await page.evaluate(() => {
             const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
@@ -160,7 +162,7 @@ test('release: chat, review and lot AI stay absent after focus and dynamic marku
     } finally { await browser.close(); }
 });
 
-test('release: own and other profiles keep cached data and do not mount server descriptions', async () => {
+test('release: own and other profiles do not use legacy cached data and do not mount server descriptions', async () => {
     const browser = await launch();
     try {
         for (const id of ['1', '2']) {

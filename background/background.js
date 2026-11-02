@@ -4,14 +4,12 @@ import { parseHtmlViaOffscreen } from './offscreen_parser.js';
 import { createChatAttachmentSender } from './chat_attachments.js';
 // background/background.js - FunPay Funcy 2.8
 
-import './feature_availability.js';
 import './sales_db.js'; // FunPay Funcy: IndexedDB-хранилище заказов (self.FPTSalesDB)
 import './purchases_db.js'; // FunPay Funcy: IndexedDB-хранилище покупок (self.FPTPurchasesDB)
 import './finance_db.js'; // FunPay Funcy: IndexedDB-хранилище финансов (self.FPTFinanceDB)
-import { fetchAIResponse, fetchAILotGeneration, fetchAIImageGeneration } from './ai.js';
-import { fetchAITranslation } from './translate.js';
+import { translateLotFields, translateChatText } from './translate.js';
 import { cleanupRetiredFinancialToolData } from './retired_financial_tools.mjs';
-import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runScheduledBump } from './autobump.js';
+import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runBumpCycle, runScheduledBump } from './autobump.js';
 import {
     runAutoResponderCycle, resetAutoResponderState, configureOrderAutomation, runOrderReconcile,
     getStrictChatSender, getDeliveryChatSender, applyVariables, isBlacklisted
@@ -26,6 +24,7 @@ import { createOrderCommands, orderNeedsAttention } from './order_commands.js';
 import { createReviewReminders, REMINDER_ALARM } from './review_reminders.js';
 import { createOpsJournal, createIndexedDbBackend } from './ops_db.js';
 import { createLotWriter, createLotWriteQueue } from './lot_writer.js';
+import { createChipWriter } from './chip_writer.js';
 import { createLotActivityService } from './lot_availability.js';
 import { createLotScheduleService, LOT_SCHEDULES_ALARM, LOT_SCHEDULES_KEY } from './lot_schedule_service.js';
 import { createPricingService, PRICING_ALARM, PRICING_KEY } from './pricing_service.js';
@@ -1002,6 +1001,44 @@ const lotWriteQueue = createLotWriteQueue({
     storage: chrome.storage.local
 });
 
+async function readChipTradeForm(nodeId) {
+    if (!/^\d+$/.test(String(nodeId))) throw new Error('Некорректный раздел валюты.');
+    const { response, seal } = await fptFetchWithSeal(`https://funpay.com/chips/${nodeId}/trade`, {});
+    if (!response.ok) {
+        if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
+        throw new Error(`Ошибка загрузки раздела валюты: ${response.status}`);
+    }
+    const result = await parseHtmlViaOffscreen(await response.text(), 'parseChipTradeForm');
+    if (!result?.ok || !Array.isArray(result.fields)) throw new Error(result?.error?.message || 'Не удалось разобрать форму валюты.');
+    return result.fields;
+}
+
+async function saveChipTradeForm(fields) {
+    const body = new URLSearchParams(fields);
+    if (!body.get('csrf_token')) {
+        const token = (await getAuthDetailsForBackground()).csrf_token;
+        if (!token) throw new Error('Нет CSRF токена');
+        body.set('csrf_token', token);
+    }
+    const { response, seal } = await fptFetchWithSeal('https://funpay.com/chips/saveOffers', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body
+    });
+    if (!response.ok) {
+        if (seal.present && !seal.valid) throw new Error(GOLDEN_SEAL_ERROR);
+        throw new Error(`HTTP ${response.status}`);
+    }
+    const result = await response.json().catch(() => null);
+    const errors = result?.errors && (Array.isArray(result.errors) ? result.errors : Object.values(result.errors));
+    if (!result || result.error === 1 || result.error === true || typeof result.error === 'string' || errors?.length) {
+        const detail = errors?.map(e => Array.isArray(e) ? e[1] : e).filter(Boolean).join('; ');
+        throw new Error(result?.msg || detail || (typeof result?.error === 'string' ? result.error : 'FunPay не сохранил валютное предложение.'));
+    }
+}
+
+const chipWriter = createChipWriter({ guard: accountGuard, readTrade: readChipTradeForm, saveTrade: saveChipTradeForm });
+
 function lotWriteStatusMessage(result) {
     if (result?.status === 'conflict') {
         return `Лот изменился на FunPay после загрузки (${result.conflicts.map(c => c.field).join(', ')}). Обновите данные и повторите.`;
@@ -1566,11 +1603,6 @@ accountsService?.migrate()
 
 // --- Главный обработчик сообщений ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    const unavailable = globalThis.FPTFeatureAvailability.unavailableResponse(request?.action);
-    if (unavailable) {
-        sendResponse(unavailable);
-        return false;
-    }
     if (request?.action === 'fptPatchAutoReplies') {
         patchAutoReplies(request.patch)
             .then(autoReplies => sendResponse({ ok: true, autoReplies }))
@@ -1665,24 +1697,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return true;
     }
 
-    // AI HANDLERS
-    if (request.action === "getAIProcessedText") {
-        fetchAIResponse(request.text, request.context, request.myUsername, request.type).then(sendResponse);
-        return true;
-    }
-    if (request.action === "generateAILot") {
-        fetchAILotGeneration(request.data).then(sendResponse);
-        return true;
-    }
     if (request.action === "translateLotText") {
-        fetchAITranslation(request.data).then(sendResponse);
+        translateLotFields(request.data).then(sendResponse);
         return true;
     }
-    if (request.action === "getAIImageSettings") {
-        fetchAIImageGeneration(request.prompt).then(sendResponse);
+    if (request.action === "translateChatText") {
+        translateChatText(request.text, request.target).then(sendResponse);
         return true;
     }
-
     // AUTOBUMP HANDLERS
     if (request.action === 'startAutoBump') {
         startAutoBump().then(() => sendResponse({ success: true }));
@@ -2231,6 +2253,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse({ success: false, status: 'error', error: e.message, code: e.code });
             }
         })();
+        return true;
+    }
+
+    // Валютные предложения: цена и включение/отключение через форму раздела.
+    if (request.action === 'fptChipWrite') {
+        chipWriter.write({ offerId: request.offerId, op: request.op || {}, expectedAccountId: request.expectedAccountId })
+            .then(result => sendResponse({ success: true, ...result }))
+            .catch(e => sendResponse({ success: false, status: 'error', error: e.message, code: e.code }));
         return true;
     }
 
@@ -2839,18 +2869,24 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // --- Обработчики будильников ---
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-    if (await jobScheduler.handleAlarm(alarm)) return;
-    if (alarm.name === BUMP_ALARM_NAME) {
-        await runScheduledBump();
-    }
-    // <-- НОВЫЙ ОБРАБОТЧИК -->
-    if (alarm.name === AUTO_RESPONDER_ALARM_NAME) {
-        await runAutomationPass();
-    }
-    // 3.0: engine heartbeat - resurrects the active polling loop after the worker is killed
-    if (alarm.name === ENGINE_HEARTBEAT_ALARM || alarm.name === ENGINE_CONTINUE_ALARM) {
-        await onHeartbeat();
-        await jobScheduler.runRecovery();
+    try {
+        if (await jobScheduler.handleAlarm(alarm)) return;
+        if (alarm.name === BUMP_ALARM_NAME) {
+            await runScheduledBump();
+        }
+        if (alarm.name === AUTO_RESPONDER_ALARM_NAME) {
+            await runAutomationPass();
+        }
+        // Heartbeat остаётся запланированным и повторит проход после сбоя FunPay.
+        if (alarm.name === ENGINE_HEARTBEAT_ALARM || alarm.name === ENGINE_CONTINUE_ALARM) {
+            try {
+                await onHeartbeat();
+            } finally {
+                await jobScheduler.runRecovery();
+            }
+        }
+    } catch (error) {
+        console.warn(`FunPay Funcy: ошибка фонового задания ${alarm.name}:`, error?.message || error);
     }
 });
 
@@ -2878,7 +2914,7 @@ function setupInitialAlarms() {
             autoReplies.autoDeliveryEnabled || autoReplies.reviewReminderEnabled;
         if (arAnyEnabled) {
             // 3.0: start the MV3-safe active loop instead of the broken 0.25-min alarm.
-            startEngine();
+            startEngine().catch(error => console.warn('FunPay Funcy: запуск автоматизации не удался:', error?.message || error));
         }
         syncOrderReconcileAlarm(Boolean(arAnyEnabled));
     });
@@ -2937,7 +2973,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
         if (configurationChanged) {
             syncOrderReconcileAlarm(Boolean(isEnabled));
             if (isEnabled) {
-                startEngine();
+                startEngine().catch(error => console.warn('FunPay Funcy: запуск автоматизации не удался:', error?.message || error));
             } else {
                 stopEngine();
                 jobScheduler.clearDue('fpToolsDeliveryContinue').catch(() => {});

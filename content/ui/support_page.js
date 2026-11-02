@@ -24,7 +24,7 @@
     const STATUS_META = Object.freeze({
         open: { label: 'Открыта', icon: 'mark_chat_unread' },
         pending: { label: 'В ожидании', icon: 'schedule' },
-        solved: { label: 'Решена', icon: 'task_alt' },
+        solved: { label: 'Решена', icon: 'check_circle' },
         closed: { label: 'Закрыта', icon: 'lock' },
         unknown: { label: 'Статус неизвестен', icon: 'help' }
     });
@@ -389,29 +389,20 @@
         const threadView = node('section', 'fpt-sp-thread');
         threadView.hidden = true;
 
-        // --- Hero ----------------------------------------------------------------------------
-        const hero = node('section', 'fpt-sp-hero');
-        hero.setAttribute('aria-labelledby', 'fpt-sp-hero-title');
-        const heroMain = node('div', 'fpt-sp-hero-main');
-        const heroIcon = node('span', 'fpt-sp-hero-icon');
-        heroIcon.appendChild(icon('support_agent'));
-        const heroCopy = node('div', 'fpt-sp-hero-copy');
-        const heroTitleRow = node('div', 'fpt-sp-hero-title-row');
-        const heroTitle = node('h2', 'fpt-sp-hero-title', 'Заявки в техподдержку');
-        heroTitle.id = 'fpt-sp-hero-title';
-        const heroPill = node('span', 'fpt-sp-pill');
-        heroTitleRow.append(heroTitle, heroPill);
-        heroCopy.append(heroTitleRow, node('p', 'fpt-sp-hero-description',
-            'Создавайте обращения, отвечайте поддержке и следите за статусом — не уходя с FunPay.'));
-        heroMain.append(heroIcon, heroCopy);
         const heroActions = node('div', 'fpt-sp-hero-actions');
         const createButtonEl = createButton('fpt-sp-button fpt-sp-button--primary', 'add', 'Новая заявка');
         createButtonEl.id = 'fp-create-ticket-btn';
+        createButtonEl.setAttribute('aria-label', 'Новая заявка');
+        createButtonEl.title = 'Новая заявка';
         const refreshButton = createButton('fpt-toolbar-button', 'refresh', 'Обновить');
         refreshButton.id = 'fp-ticket-refresh-btn';
+        refreshButton.setAttribute('aria-label', 'Обновить');
+        refreshButton.title = 'Обновить';
         const siteLink = externalLink('fpt-sp-link', `${SUPPORT_URL}/tickets`, 'Открыть сайт поддержки');
+        siteLink.setAttribute('aria-label', 'Открыть сайт поддержки');
+        siteLink.title = 'Открыть сайт поддержки';
         heroActions.append(createButtonEl, refreshButton, siteLink);
-        hero.append(heroMain, heroActions);
+        header.element.insertBefore(heroActions, header.helpButton ? helpAnchor : null);
 
         // --- Order confirmation --------------------------------------------------------------
         const auto = createCard({
@@ -479,7 +470,7 @@
         listBody.setAttribute('aria-live', 'polite');
         list.body.append(toolbar, listBody);
 
-        home.append(hero, auto.card, list.card);
+        home.append(auto.card, list.card);
 
         // --- Thread view ---------------------------------------------------------------------
         const threadHead = node('div', 'fpt-sp-thread-head');
@@ -532,21 +523,7 @@
         ui.enhanceSelect?.(sortSelect, sortHost);
 
         // --- Rendering -----------------------------------------------------------------------
-        function renderHero() {
-            const counts = countTickets(state.tickets);
-            if (state.loading && !state.loaded) {
-                heroPill.dataset.kind = 'neutral';
-                heroPill.textContent = 'Загрузка…';
-            } else if (state.error) {
-                heroPill.dataset.kind = 'error';
-                heroPill.textContent = 'Нет связи с поддержкой';
-            } else if (counts.active) {
-                heroPill.dataset.kind = 'info';
-                heroPill.textContent = `${counts.active} ${ui.pluralize(counts.active, ['актуальная', 'актуальные', 'актуальных'])}`;
-            } else {
-                heroPill.dataset.kind = 'success';
-                heroPill.textContent = 'Открытых заявок нет';
-            }
+        function renderControls() {
             refreshButton.disabled = state.loading;
             refreshButton.setAttribute('aria-busy', state.loading ? 'true' : 'false');
         }
@@ -665,7 +642,7 @@
         }
 
         function render() {
-            renderHero();
+            renderControls();
             renderToolbar();
             renderList();
             renderAuto();
@@ -1213,6 +1190,7 @@
             resizeComposer();
             view.dataset.view = 'thread';
             home.hidden = true;
+            heroActions.hidden = true;
             threadView.hidden = false;
             page.closest('.fp-tools-content')?.scrollTo?.({ top: 0 });
             backButton.focus({ preventScroll: true });
@@ -1225,6 +1203,7 @@
             view.dataset.view = 'home';
             threadView.hidden = true;
             home.hidden = false;
+            heroActions.hidden = false;
             const row = id != null ? listBody.querySelector(`[data-ticket-id="${CSS.escape(String(id))}"] .fpt-sp-ticket-open`) : null;
             (row || refreshButton).focus({ preventScroll: true });
             row?.scrollIntoView?.({ block: 'nearest' });

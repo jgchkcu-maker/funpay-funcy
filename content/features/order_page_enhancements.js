@@ -234,7 +234,7 @@ function initOfferListFilter() {
 
     const filters = [
         { label: 'Все',          fn: () => true },
-        { label: '⚡ Автовыдача', fn: b => b.querySelectorAll('a.tc-item .auto-dlv-icon, a.tc-item i.auto-dlv-icon').length > 0 },
+        { label: 'Автовыдача', icon: 'bolt', fn: b => b.querySelectorAll('a.tc-item .auto-dlv-icon, a.tc-item i.auto-dlv-icon').length > 0 },
     ];
 
     let active = 0;
@@ -244,10 +244,18 @@ function initOfferListFilter() {
     const clearActive = (btn) => {
         btn.setAttribute('aria-pressed', 'false');
     };
-    filters.forEach(({ label, fn }, i) => {
+    filters.forEach(({ label, icon, fn }, i) => {
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'btn btn-default';
         btn.textContent = label;
+        if (icon) {
+            const glyph = document.createElement('span');
+            glyph.className = 'material-symbols-rounded';
+            glyph.setAttribute('aria-hidden', 'true');
+            glyph.textContent = icon;
+            btn.prepend(glyph);
+        }
         if (i === 0) setActive(btn); else clearActive(btn);
         btn.addEventListener('click', () => {
             bar.querySelectorAll('button').forEach(b => clearActive(b));
@@ -259,7 +267,9 @@ function initOfferListFilter() {
     });
     
     const parent = offerBlocks[0].parentElement;
-    parent?.insertBefore(bar, offerBlocks[0]);
+    const toolbar = typeof ensureProfileOffersToolbar === 'function' ? ensureProfileOffersToolbar() : null;
+    if (toolbar) toolbar.querySelector('.fpt-offers-toolbar-tools').append(bar);
+    else parent?.insertBefore(bar, offerBlocks[0]);
 }
 
 function initAllOrderEnhancements() {

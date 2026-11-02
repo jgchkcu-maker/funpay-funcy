@@ -2,7 +2,7 @@
   "update_url": "https://clients2.google.com/service/update2/crx",
   "manifest_version": 3,
   "name": "Funcy",
-  "version": "0.9.11",
+  "version": "0.9.12",
   "description": "Неофициальное расширение для FunPay: автоответы, выдача, заказы, аналитика и управление лотами.",
   "permissions": [
     "storage",
@@ -15,10 +15,7 @@
     "https://*.funpay.com/*",
     "https://sfunpay.com/*",
     "https://*.sfunpay.com/*",
-    "https://raw.githubusercontent.com/*",
-    "https://fonts.googleapis.com/*",
     "https://translate.googleapis.com/*",
-    "https://fonts.gstatic.com/*",
     "https://support.funpay.com/*"
   ],
   "action": {
@@ -87,7 +84,6 @@
         "https://funpay.com/*"
       ],
       "js": [
-        "background/feature_availability.js",
         "content/sales_db.js",
         "content/purchases_db.js",
         "content/finance_db.js",
@@ -100,6 +96,7 @@
         "content/scripts/jquery.js",
         "content/utils.js",
         "content/ui/page_windows.js",
+        "content/features/translate_consent.js",
         "content/features/feature_registry.js",
         "content/features/feature_disabler.js",
         "content/features/cursor_fx.js",
@@ -109,7 +106,6 @@
         "content/ui/popup_attachments.js",
         "content/features/font_tools.js",
         "content/features/accounts.js",
-        "content/features/ai_chat.js",
         "content/features/auto_delivery.js",
         "content/features/lot_cloning.js",
         "content/features/market_analytics.js",
@@ -124,7 +120,6 @@
         "content/features/section_commission.js",
         "content/features/cost_basis_editor.js",
         "content/features/open_lot_button.js",
-        "content/features/profile_descriptions.js",
         "content/features/profile_raise_all.js",
         "content/features/user_notes.js",
         "content/features/image_generator.js",
@@ -133,7 +128,7 @@
         "content/features/misc.js",
         "content/features/ui_enhancements.js",
         "content/features/review_sorter.js",
-        "content/features/ai_lot_creator.js",
+        "content/features/lot_translation.js",
         "content/features/magicstick.js",
         "content/features/lot_io.js",
         "content/features/auto_review.js",
@@ -179,8 +174,6 @@
         "content/features/blacklist.js",
         "content/ui/blacklist_page.js",
         "content/features/auto_delivery_ui.js",
-        "content/features/rmthub_search.js",
-        "content/features/new_chat_starter.js",
         "content/features/support.js",
         "content/features/purchases.js",
         "content/content_script.js",
@@ -204,7 +197,6 @@
         "css/content_styles.css",
         "css/popup_categories.css",
         "css/image_generator.css",
-        "css/ai_creator.css",
         "css/live_styler.css",
         "css/fpt_icons_theme.css",
         "css/automation.css",
@@ -220,8 +212,7 @@
         "background/remake.html",
         "background/remake.js",
         "icons/*.png",
-        "fonts/*.woff2",
-        "themes/wallpapers/fog-pines.webp"
+        "fonts/*.woff2"
       ],
       "matches": [
         "https://funpay.com/*",

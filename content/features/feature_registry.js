@@ -13,14 +13,10 @@
 //   3. preview - ЧЕСТНАЯ мини-копия реального элемента: тот же текст, та же
 //      иконка, те же цвета/форма, что и в живом элементе.
 //
-// preview.html может содержать токен {{MAGIC_ICON}} - он будет заменён на
-// реальный путь к иконке icons/magic.png (как в живой кнопке ИИ в чате).
-//
 // Отключённые элементы хранятся в fpToolsDisabledFeatures: string[].
 // =============================================================================
 
 const FPT_NEEDS_GROUP_ORDER = [
-    'Верхняя панель',
     'Чат',
     'Создание и оформление лота',
     'Копирование и импорт лотов',
@@ -37,15 +33,6 @@ const FPT_NEEDS_CHAT_SUBGROUP_ORDER = [
 const FPT_NEEDS_LEGACY_PAGE_LABELS = ['Функции'];
 
 const FPT_ALL_FEATURES = [
-    // ───────────── Шапка сайта ─────────────
-    {
-        id: 'rmthub_seller_search',
-        label: 'Поиск продавца на RMTHub',
-        desc: 'Поле в верхней панели сайта (плейсхолдер «Продавец») с кнопкой-иконкой пользователя - ищет профиль продавца по точному нику на RMTHub.',
-        group: 'Верхняя панель',
-        selector: '#fp-rmthub-form',
-        preview: { kind: 'html', html: '<div class="fpt-pv-rmthub"><span>Продавец</span> <span class="fpt-pv-rmthub-ico">👤</span></div>' }
-    },
 
     // ───────────── Чат: поле ввода ─────────────
     {
@@ -55,16 +42,7 @@ const FPT_ALL_FEATURES = [
         group: 'Чат',
         subgroup: 'Поле ввода',
         selector: '.fpt-attach-btn',
-        preview: { kind: 'html', html: '<div class="fpt-pv-aibtn"><span class="material-symbols-rounded" style="font-size:22px;color:#4a9fd4">attach_file</span></div>' }
-    },
-    {
-        id: 'chat_ai_rewrite_btn',
-        label: 'Кнопка ИИ-режима в чате',
-        desc: 'Круглая кнопка с фиолетовой иконкой-«волшебством» рядом с кнопкой отправки в чате - включает ИИ-режим (переписывает/генерирует ответ по Enter).',
-        group: 'Чат',
-        subgroup: 'Поле ввода',
-        selector: '#aiModeToggleBtn',
-        preview: { kind: 'html', html: '<div class="fpt-pv-aibtn"><img src="{{MAGIC_ICON}}" alt="AI"></div>' }
+        preview: { kind: 'html', html: '<div class="fpt-pv-iconbtn"><span class="material-symbols-rounded" style="font-size:22px;color:#4a9fd4">attach_file</span></div>' }
     },
     {
         id: 'chat_reply',
@@ -83,15 +61,6 @@ const FPT_ALL_FEATURES = [
         subgroup: 'Поле ввода',
         selector: '#fp-chat-char-count',
         preview: { kind: 'html', html: '<div class="fpt-pv-charcount-field"><span>сообщение…</span><span class="fpt-pv-charcount">128</span></div>' }
-    },
-    {
-        id: 'profanity_warning',
-        label: 'Предупреждение о грубости',
-        desc: 'Красная полоса над полем ввода в чате: «Обнаружена грубость! Хотите это исправить с помощью AI?…». Появляется при наличии мата.',
-        group: 'Чат',
-        subgroup: 'Поле ввода',
-        selector: '#fpToolsProfanityWarning',
-        preview: { kind: 'html', html: '<div class="fpt-pv-profanity">Обнаружена грубость! Хотите это исправить с помощью AI? Нажмите сюда, чтобы включить AI-режим.</div>' }
     },
 
     // ───────────── Чат: шапка диалога ─────────────
@@ -160,14 +129,6 @@ const FPT_ALL_FEATURES = [
         group: 'Создание и оформление лота',
         selector: '#fpToolsGenerateImageBtn, .generate-btn-container',
         preview: { kind: 'html', html: '<div class="fpt-pv-fpbtn">Сгенерировать</div>' }
-    },
-    {
-        id: 'lot_ai_gen_btn',
-        label: 'Кнопка «ИИ-генерация» лота',
-        desc: 'Кнопка с иконкой-блёстками «ИИ-генерация» рядом с заголовком страницы редактирования лота - открывает ИИ-генератор описания лота.',
-        group: 'Создание и оформление лота',
-        selector: '#fp-tools-ai-gen-btn-wrapper',
-        preview: { kind: 'html', html: '<div class="fpt-pv-aigen"><svg height="18" viewBox="0 -960 960 960" width="18" fill="currentColor"><path d="m176-120-56-56 301-302-181-45 198-123-17-234 179 151 216-88-87 217 151 178-234-16-124 198-45-181-301 301Zm24-520-80-80 80-80 80 80-80 80Zm520 743-80-80 80-80 80 80-80 80Z"/></svg><span>ИИ-генерация</span></div>' }
     },
     {
         id: 'lot_font_controls',
@@ -359,8 +320,7 @@ const FPT_ALL_FEATURES = [
 ];
 
 // expose globally for non-module content scripts
-const FPT_FEATURE_REGISTRY = FPT_ALL_FEATURES.filter(entry =>
-    globalThis.FPTFeatureAvailability?.isElementAvailable(entry.id) === true);
+const FPT_FEATURE_REGISTRY = FPT_ALL_FEATURES;
 if (typeof window !== 'undefined') {
     window.FPT_FEATURE_REGISTRY = FPT_FEATURE_REGISTRY;
 }

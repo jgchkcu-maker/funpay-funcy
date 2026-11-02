@@ -115,10 +115,16 @@ async function applyPopupBulkLots(p = {}, activate = false) {
         let lastBuyerInfo = '';
         try {
             if (!offerId || !nodeId) throw new Error('Не указан лот или раздел.');
+            if (lot.kind === 'chips' || lot.isChips) {
+                throw new Error('Валютные предложения (чипсы) не поддерживаются массовым редактором лотов.');
+            }
             const loaded = await chrome.runtime.sendMessage({ action: 'getLotForExport', nodeId, offerId });
             throwIfBulkLotAborted(p.signal);
             if (!loaded?.success || !loaded.data) throw new Error(loaded?.error || 'Ошибка загрузки лота.');
             const editData = loaded.data;
+            if (editData.chip_id || editData.chips || (!editData['fields[summary][ru]'] && !editData['fields[summary]'] && editData.amount_min != null)) {
+                throw new Error('Валютные предложения (чипсы) не поддерживаются массовым редактором лотов.');
+            }
                 const formData = { ...editData, offer_id: offerId };
                 if (activate) formData.active = 'on';
                 const currentTitle = getField(editData, 'summary');

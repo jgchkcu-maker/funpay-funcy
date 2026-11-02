@@ -19,14 +19,14 @@ function assets(initial = {}) {
     return h;
 }
 
-test('unreviewed catalog entries remain hidden, including new entries and offline cache', async () => {
+test('catalog entries are available, including new entries and offline cache', async () => {
     const h = assets();
     const updated = structuredClone(catalog);
     updated.themes.push({ ...updated.themes[0], id: 'third-theme', name: 'Third Theme', wallpaper: 'wallpapers/third-theme.webp' });
     let requests = 0;
     h.ctx.fetch = async () => { requests++; return new Response(JSON.stringify(updated)); };
     const result = await h.api.run('theme', 'getThemeCatalog');
-    assert.equal(result.themes.length, 0);
+    assert.equal(result.themes.length, 3);
 
     assert.equal(h.saved.fpToolsThemeCatalogCache.catalog.themes.length, 3);
     assert.equal(h.saved.fpToolsTheme, undefined);
@@ -36,16 +36,26 @@ test('unreviewed catalog entries remain hidden, including new entries and offlin
     assert.equal((await h.api.run('theme', 'getThemeCatalog', { refresh: true })).stale, true);
     assert.equal(requests, 2, 'manual refresh bypasses the TTL');
     h.saved.fpToolsThemeCatalogCache.savedAt = 0;
-    assert.equal((await h.api.run('theme', 'getThemeCatalog')).themes.length, 0, 'expired catalogue still works offline');
+    assert.equal((await h.api.run('theme', 'getThemeCatalog')).themes.length, 3, 'expired catalogue still works offline');
     const empty = assets();
     empty.ctx.fetch = async () => { throw Error('offline'); };
     await assert.rejects(empty.api.run('theme', 'getThemeCatalog'), /каталог/);
 });
 
-test('unreviewed wallpapers cannot be fetched directly or through popup actions', async () => {
+test('retired themes are excluded from old cached catalogs', async () => {
+    const old = structuredClone(catalog);
+    old.themes.push({ ...old.themes[0], id: 'ghoul-ink', wallpaper: 'wallpapers/ghoul-ink.webp' });
+    old.themes.push({ ...old.themes[0], id: 'white-ghoul', wallpaper: 'wallpapers/white-ghoul.webp' });
+    const h = assets({ fpToolsThemeCatalogCache: { source: BASE, catalog: old, savedAt: Date.now() } });
+    h.ctx.fetch = () => assert.fail('fresh cache should be used');
+    const result = await h.api.run('theme', 'getThemeCatalog');
+    assert.deepEqual(Array.from(result.themes, item => item.id), ['gargantua', 'underwater']);
+});
+
+test('valid wallpapers load and unsafe paths are rejected', async () => {
     const h = assets();
-    h.ctx.fetch = () => assert.fail('unreviewed asset was fetched');
-    await assert.rejects(h.api.run('theme', 'getThemeWallpaper', { path: catalog.themes[0].wallpaper }), /проверку прав/);
+    h.ctx.fetch = async () => new Response(new Blob(['image'], { type: 'image/webp' }));
+    assert.match(await h.api.run('theme', 'getThemeWallpaper', { path: catalog.themes[0].wallpaper }), /^data:image\/webp;base64,/);
     for (const path of ['https://example.com/a.webp', 'wallpapers/../a.webp', 'wallpapers/x.webp?token=x', 'wallpapers/x.svg']) {
         await assert.rejects(h.api.run('theme', 'getThemeWallpaper', { path }), /адрес/);
     }
@@ -58,6 +68,6 @@ test('invalid remote catalogue does not replace the last successful catalogue', 
     h.ctx.fetch = async () => new Response(JSON.stringify({ version: 1, themes: [{ ...catalog.themes[0], wallpaper: '../private.webp' }] }));
     const result = await h.api.run('theme', 'getThemeCatalog');
     assert.equal(result.stale, true);
-    assert.equal(result.themes.length, 0);
+    assert.equal(result.themes.length, 2);
     assert.deepEqual(h.saved.fpToolsThemeCatalogCache, cached);
 });

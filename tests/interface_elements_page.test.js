@@ -6,7 +6,7 @@ const vm = require('node:vm');
 
 function load() {
     const ctx = vm.createContext({ window: {}, console });
-    for (const file of ['background/feature_availability.js', 'content/features/feature_registry.js', 'content/ui/interface_elements_page.js']) {
+    for (const file of ['content/features/feature_registry.js', 'content/ui/interface_elements_page.js']) {
         vm.runInContext(fs.readFileSync(path.join(__dirname, '..', file), 'utf8'), ctx, { filename: file });
     }
     return { page: ctx.window.FPTInterfaceElementsPage, registry: ctx.window.FPT_FEATURE_REGISTRY };
@@ -55,10 +55,10 @@ test('filters split elements into shown and hidden', () => {
     assert.deepEqual({ ...page.summarize(registry, disabled) }, { total: registry.length, hidden: 2, shown: registry.length - 2, groups: 5 });
 });
 
-test('previews substitute the real magic icon path', () => {
+test('previews preserve bundled static markup and return empty for unsupported kinds', () => {
     const { page, registry } = load();
     assert.equal(registry.some(entry => entry.id === 'chat_ai_rewrite_btn'), false);
-    const ai = { preview: { kind: 'html', html: '<img src="{{MAGIC_ICON}}">' } };
-    assert.match(page.previewHtml(ai), /icons\/magic\.png/);
-    assert.doesNotMatch(page.previewHtml(ai), /\{\{MAGIC_ICON\}\}/);
+    const entry = registry.find(entry => entry.preview?.kind === 'html');
+    assert.equal(page.previewHtml(entry), entry.preview.html);
+    assert.equal(page.previewHtml({ preview: { kind: 'unknown' } }), '');
 });

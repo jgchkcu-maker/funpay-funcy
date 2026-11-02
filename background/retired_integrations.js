@@ -2,13 +2,18 @@
 (function (root) {
     'use strict';
     const RETIRED_PAGES = new Set(['telegram', 'support', 'global_chat', 'suppliers']);
-    const RETIRED_KEYS = new Set(['logToDiscord', 'discordWebhookUrl', 'fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled']);
+    const RETIRED_KEYS = new Set(['logToDiscord', 'discordWebhookUrl', 'fpToolsAutoRestoreEnabled', 'fpToolsAutoDisableEnabled',
+        'aiModeActive', 'FPTFeatureAvailability', 'fpToolsProfanityWarning', 'fptPendingVerifyLots', 'fptLastVerifyAt']);
+    const RETIRED_ELEMENTS = new Set(['chat_ai_rewrite_btn', 'profanity_warning', 'lot_ai_gen_btn', 'rmthub_seller_search']);
     const RETIRED_ALARMS = ['fpToolsTelegramPoll', 'fpToolsDiscordCheck', 'fpToolsAutoRestore'];
     const isRetiredKey = key => RETIRED_KEYS.has(key)
-        || /^(?:fpToolsTelegram|fpToolsDiscord|fpToolsProcessedDiscord|fpToolsGC|fpToolsSupplier|discordSent_)/.test(key);
+        || /^(?:fpToolsTelegram|fpToolsDiscord|fpToolsProcessedDiscord|fpToolsGC|fpToolsSupplier|discordSent_|fptProfileSession|fptProfileDescrCache)/.test(key);
 
     function sanitizeSettings(settings) {
         const result = Object.fromEntries(Object.entries(settings).filter(([key]) => !isRetiredKey(key)));
+        if (Array.isArray(result.fpToolsDisabledFeatures)) {
+            result.fpToolsDisabledFeatures = result.fpToolsDisabledFeatures.filter(id => !RETIRED_ELEMENTS.has(id));
+        }
         if (RETIRED_PAGES.has(result.fpToolsLastPage)) {
             result.fpToolsLastPage = 'lot_io';
             result.fpToolsLastPageMode = null;
@@ -34,7 +39,7 @@
         const removed = Object.keys(saved).filter(isRetiredKey);
         if (removed.length) await storage.remove(removed);
         const changes = {};
-        for (const key of ['fpToolsLastPage', 'fpToolsLastPageMode', 'fpToolsPageModes', 'fpToolsBlacklist']) {
+        for (const key of ['fpToolsLastPage', 'fpToolsLastPageMode', 'fpToolsPageModes', 'fpToolsBlacklist', 'fpToolsDisabledFeatures']) {
             if (Object.hasOwn(sanitized, key) && JSON.stringify(saved[key]) !== JSON.stringify(sanitized[key])) {
                 changes[key] = sanitized[key];
             }

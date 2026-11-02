@@ -74,10 +74,7 @@
         const disabled = Array.isArray(dfData.fpToolsDisabledFeatures) ? dfData.fpToolsDisabledFeatures : [];
         if (disabled.length) {
             const SELECTOR_MAP = {
-                rmthub_seller_search: '#fp-rmthub-form',
-                chat_ai_rewrite_btn: '#aiModeToggleBtn',
                 chat_char_counter: '#fp-chat-char-count',
-                profanity_warning: '#fpToolsProfanityWarning',
                 chat_read_all_btn: '#fp-tools-read-all-btn',
                 chat_filter_marked_btn: '#fp-tools-filter-marked-btn',
                 chat_menu_buyer_history: '#fp-buyer-hist-menu-btn',
@@ -85,7 +82,6 @@
                 chat_menu_export: '#fp-export-chat-menu-btn',
                 chat_menu_blacklist: '#fp-blacklist-menu-btn',
                 chat_image_generator_btn: '#fpToolsGenerateImageBtn, .generate-btn-container',
-                lot_ai_gen_btn: '#fp-tools-ai-gen-btn-wrapper',
                 lot_font_controls: '.fp-tools-font-controls, .fp-tools-symbols-panel',
                 lot_keyboard_btn: '#fpToolsKeyboardToggleBtn',
                 lot_translate_btn: '#fp-tools-translate-btn',
@@ -321,6 +317,7 @@
         // Цвета кнопок FunPay - общий модуль content/theme_buttons.js (грузится перед этим скриптом).
         if (typeof fptThemeButtonsCss === 'function') themedCss += fptThemeButtonsCss(settings);
         themedCss = FPTSafe.themeRadii(themedCss, settings.borderRadius);
+        themedCss += ` :root { --fpt-chat-action-radius: ${settings.borderRadius}px; } `;
 
         if (typeof fptThemeCirclesCss === 'function') themedCss += fptThemeCirclesCss(settings);
         if (settings.enableImprovedSeparators) {
@@ -380,7 +377,7 @@
 
         manageFontImports(settings);
 
-        if (window.FPTThemeVideo) window.FPTThemeVideo.apply(settings, true);
+        if (typeof window !== 'undefined' && window.FPTThemeVideo) window.FPTThemeVideo.apply(settings, true);
 
         if (!document.getElementById(THEME_STYLE_ID)) {
             const themeStyle = document.createElement('style');

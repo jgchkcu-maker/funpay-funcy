@@ -9,7 +9,7 @@ const { context } = require('./helpers/popup_actions_harness');
 test('actions persist only explicit settings and never read deleted controls', async () => {
     const h = context({ hideBalance: true, showSalesStats: false, fpToolsTheme: { enabled: true, accent: 'saved' } });
     assert.ok(h.api, 'headless action interface must be available');
-    await h.api.run('general', 'saveSettings', { settings: { hideBalance: false } });
+    await h.api.run('needs', 'saveSettings', { settings: { hideBalance: false } });
     assert.deepEqual(h.saved, { hideBalance: false, showSalesStats: false, fpToolsTheme: { enabled: true, accent: 'saved' } });
     assert.deepEqual(h.messages, []);
 });
@@ -36,10 +36,10 @@ test('partial nested settings updates retain saved theme fields', async () => {
 test('opening data actions never writes settings and invalid actions reject', async () => {
     const h = context({ hideBalance: true });
     assert.ok(h.api);
-    assert.equal((await h.api.run('general', 'getSettings')).hideBalance, true);
+    assert.equal((await h.api.run('needs', 'getSettings')).hideBalance, true);
     assert.deepEqual(h.saved, { hideBalance: true });
-    await assert.rejects(h.api.run('general', 'not-an-action'), /Unknown popup action/);
-    await assert.rejects(h.api.run('general', 'saveSettings', { settings: { fpToolsAutoReplies: {} } }), /fptPatchAutoReplies/);
+    await assert.rejects(h.api.run('needs', 'not-an-action'), /Unknown popup action/);
+    await assert.rejects(h.api.run('needs', 'saveSettings', { settings: { fpToolsAutoReplies: {} } }), /fptPatchAutoReplies/);
 });
 
 test('account actions are proxied to the background service by record id and never carry keys', async () => {

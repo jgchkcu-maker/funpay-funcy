@@ -48,3 +48,27 @@ test('bulk apply saves {current} after find/replace, returns the new title and r
     assert.equal(saved.price, '210');
     await assert.rejects(context.applyPopupBulkLots({ lots: [{ offerId: '1', nodeId: '5' }], changes: { price: { mode: 'pct_down', value: 150 } } }), /100%/);
 });
+
+
+test('bulk apply rejects explicit chips lots and chips form responses', async () => {
+    const { context } = loadEditor({
+        getLotForExport: () => ({ success: true, data: { chip_id: '99', amount_min: '10' } })
+    });
+    // 1. Explicit lot.kind === 'chips'
+    const res1 = await context.applyPopupBulkLots({
+        delayMs: 0,
+        lots: [{ offerId: '101', nodeId: '5', kind: 'chips' }],
+        changes: { name: 'New Name' }
+    });
+    assert.equal(res1.successCount, 0);
+    assert.match(res1.results[0].error, /чипсы|не поддерживаются/i);
+
+    // 2. Chip form response returned from getLotForExport
+    const res2 = await context.applyPopupBulkLots({
+        delayMs: 0,
+        lots: [{ offerId: '102', nodeId: '5' }],
+        changes: { name: 'New Name' }
+    });
+    assert.equal(res2.successCount, 0);
+    assert.match(res2.results[0].error, /чипсы|не поддерживаются/i);
+});
