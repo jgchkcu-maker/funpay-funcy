@@ -271,6 +271,15 @@ footer {
     color: var(--popup-credits);
 }
 
+.credits a {
+    color: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.credits a:hover { color: var(--popup-footer-hover); }
+
 /* ─── Changelog panel ───────────────────────────────────────────── */
 .changelog-panel {
     border-top: 1px solid var(--popup-border);
