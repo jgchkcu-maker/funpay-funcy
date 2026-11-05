@@ -480,11 +480,9 @@
         const masterSwitch = makeSwitch('autoDeliveryEnabled', 'Включить автовыдачу', deliveryEnabled, 'fpt-ad-global-switch');
         const masterControl = node('div', 'fpt-ab-master-control');
         masterControl.append(node('span', '', 'Включить'), makeSwitchLine(masterSwitch).element);
-        const masterHint = node('span', 'fpt-ab-schedule fpt-ad-master-hint');
-        masterHint.setAttribute('role', 'status');
         const masterStatus = node('p', 'fpt-ad-rules-status fpt-ab-hero-status');
         masterStatus.setAttribute('aria-live', 'polite');
-        controls.append(masterControl, masterHint, masterStatus);
+        controls.append(masterControl, masterStatus);
 
         const lotsSection = node('section', 'fpt-ad-lots');
         lotsSection.setAttribute('aria-label', 'Лоты для автовыдачи');
@@ -646,10 +644,6 @@
                 if (draft.dirty) counts.unsaved += 1;
             }
             counts.problems = counts.empty + counts.errors;
-            masterHint.textContent = deliveryEnabled
-                ? 'Выдаются лоты, у которых включена автовыдача'
-                : counts.active ? 'Выключено — заказы не выдаются, даже по включённым лотам' : 'Выключено';
-            masterHint.dataset.tone = !deliveryEnabled && counts.active ? 'warning' : '';
             for (const [filter, chip] of summaryChips) {
                 chip.querySelector('strong').textContent = String(counts[filter] || 0);
                 chip.setAttribute('aria-pressed', String(currentFilter === filter));

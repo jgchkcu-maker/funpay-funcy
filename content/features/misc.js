@@ -290,18 +290,17 @@ function initializeMarkAllAsRead() {
             
             contactItems.forEach(item => {
                 const hasMark = item.querySelector('.fp-tools-user-status[data-fp-tooltip]');
-                if (isFilterActive) {
-                    item.style.display = hasMark ? '' : 'none';
-                } else {
-                    item.style.display = '';
-                }
+                item.dataset.fptMarkedHidden = String(isFilterActive && !hasMark);
+                item.style.display = item.dataset.fptMarkedHidden === 'true' || item.dataset.fptWaitingHidden === 'true' ? 'none' : '';
             });
         };
 
         filterMarkedBtn.addEventListener('click', async () => {
             filterChanged = true;
             isFilterActive = !isFilterActive;
+            if (isFilterActive) document.dispatchEvent(new Event('fptChatMarkedFilterEnabled'));
             applyMarkedFilter();
+            document.dispatchEvent(new Event('fptChatFilterChanged'));
             if (!fptExtAlive()) return;
             await fptSafe(() => chrome.storage.local.set({ fpToolsIsMarkedFilterActive: isFilterActive }));
         });
@@ -310,7 +309,9 @@ function initializeMarkAllAsRead() {
             fptSafe(() => chrome.storage.local.get('fpToolsIsMarkedFilterActive'), {}).then(data => {
                 if (!filterChanged && data?.fpToolsIsMarkedFilterActive) {
                     isFilterActive = true;
+                    document.dispatchEvent(new Event('fptChatMarkedFilterEnabled'));
                     applyMarkedFilter();
+                    document.dispatchEvent(new Event('fptChatFilterChanged'));
                 }
             });
         }

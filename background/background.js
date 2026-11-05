@@ -12,7 +12,7 @@ import { cleanupRetiredFinancialToolData } from './retired_financial_tools.mjs';
 import { BUMP_ALARM_NAME, startAutoBump, stopAutoBump, runBumpCycle, runScheduledBump } from './autobump.js';
 import {
     runAutoResponderCycle, resetAutoResponderState, configureOrderAutomation, runOrderReconcile,
-    getStrictChatSender, getDeliveryChatSender, applyVariables, isBlacklisted
+    getStrictChatSender, getDeliveryChatSender, getChatGuard, isAutoResponderActive, applyVariables, isBlacklisted
 } from './autoresponder.js';
 import { createAccountGuard, sha256Short, ACCOUNT_EPOCH_KEY } from './account_guard.js';
 import { createOrderDetailsLoader } from './order_details.js';
@@ -24,10 +24,12 @@ import { createOrderCommands, orderNeedsAttention } from './order_commands.js';
 import { createReviewReminders, REMINDER_ALARM } from './review_reminders.js';
 import { createOpsJournal, createIndexedDbBackend } from './ops_db.js';
 import { createLotWriter, createLotWriteQueue } from './lot_writer.js';
-import { createChipWriter } from './chip_writer.js';
+import { createChipWriter, parseChipOfferId, chipRowPrice } from './chip_writer.js';
 import { createLotActivityService } from './lot_availability.js';
 import { createLotScheduleService, LOT_SCHEDULES_ALARM, LOT_SCHEDULES_KEY } from './lot_schedule_service.js';
-import { createPricingService, PRICING_ALARM, PRICING_KEY } from './pricing_service.js';
+import { createPricingService, PRICING_ALARM, PRICING_KEY, costOf as pricingCostOf } from './pricing_service.js';
+import { createDumperService, DUMPER_ALARM } from './dumper_service.js';
+import { createDumperHistory, createIndexedDbHistoryBackend, createMemoryHistoryBackend } from './dumper_history.js';
 import { createLotPolicyStore, releaseStockManagedLots } from './lot_policy.js';
 import { createJobScheduler } from './job_scheduler.js';
 import { patchAutoReplies, importAutoReplies, replaceAutoReplies, AUTO_REPLY_RUNTIME_FIELDS, hasAutoReplyConfigurationChanges } from './auto_reply_store.js';
@@ -644,7 +646,15 @@ async function runPurchasesUpdateCycle() {
 // 3.0: Upload an image to FunPay and send it to a chat via the runner - all in background.
 // Ported from FunPay Funcy (Account.upload_image + Account.send_image).
 async function fetchFreshCsrf() {
-    const response = await fetch('https://funpay.com/', { credentials: 'include' });
+    const first = await readHomeAppData();
+    // Гостевая страница при живом ключе: FunPay только что выдал куки сессии, второй запрос уже под аккаунтом.
+    if (Number(first.userId)) return first;
+    const key = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
+    return key?.value ? readHomeAppData() : first;
+}
+
+async function readHomeAppData() {
+    const response = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
     if (!response.ok) throw new Error(`csrf fetch: HTTP ${response.status}`);
     const text = await response.text();
     const m = text.match(/<body[^>]*data-app-data="([^"]+)"/);
@@ -862,7 +872,7 @@ async function readSessionForGuard() {
     const cookie = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_key' });
     if (!cookie?.value) return {};
     const { [ACCOUNT_EPOCH_KEY]: record } = await chrome.storage.local.get(ACCOUNT_EPOCH_KEY);
-    if (record?.accountId && record.keyHash === await sha256Short(cookie.value)) {
+    if (record?.accountId && /^\d+$/.test(String(record.accountId)) && /[1-9]/.test(String(record.accountId)) && record.keyHash === await sha256Short(cookie.value)) {
         return { goldenKey: cookie.value, userId: record.accountId, username: record.username };
     }
     const auth = await getAuthDetailsForBackground(true);
@@ -1121,9 +1131,110 @@ const pricingService = createPricingService({
     queue: lotWriteQueue,
     policies: lotPolicies,
     activity: lotActivity,
-    scheduler: jobScheduler
+    scheduler: jobScheduler,
+    isManagedElsewhere: (accountId, offerId) => dumperService.owns(accountId, offerId)
 });
 jobScheduler.register(PRICING_ALARM, () => pricingService.runAuto());
+
+// --- Автодемпер: чтение рынка, калькулятор FunPay и запись через общие очереди ---
+
+function dumperHttpError(response, what) {
+    if (response.status === 429) {
+        const header = response.headers.get('Retry-After');
+        const seconds = Number(header);
+        const date = header && !Number.isFinite(seconds) ? Date.parse(header) : NaN;
+        const retryAfterMs = header && Number.isFinite(seconds) ? seconds * 1000 : Number.isFinite(date) ? date - Date.now() : null;
+        return Object.assign(new Error(`FunPay ограничил частоту запросов (${what}).`), { code: 'rate-limit', retryAfterMs });
+    }
+    return Object.assign(new Error(`${what}: HTTP ${response.status}`), { code: 'http' });
+}
+
+async function dumperFetchHtml(url, what) {
+    const { response, seal } = await fptFetchWithSeal(url, {});
+    if (!response.ok) {
+        if (response.status !== 429 && seal.present && !seal.valid) throw Object.assign(new Error(GOLDEN_SEAL_ERROR), { code: 'auth' });
+        throw dumperHttpError(response, what);
+    }
+    return response.text();
+}
+
+async function fetchDumperSection({ kind, nodeId }) {
+    if (!['lots', 'chips'].includes(kind) || !/^\d+$/.test(String(nodeId))) throw new Error('Некорректный раздел.');
+    const html = await dumperFetchHtml(`https://funpay.com/${kind}/${nodeId}/`, 'выдача раздела');
+    return parseHtmlViaOffscreen(html, 'parseDumperMarket', { kind });
+}
+
+async function fetchDumperCard({ kind, offerId }) {
+    const id = String(offerId || '');
+    if (!(kind === 'lots' ? /^\d+$/.test(id) : /^\d+(?:-\d+)+$/.test(id))) throw new Error('Некорректное предложение.');
+    const html = await dumperFetchHtml(`https://funpay.com/${kind}/offer?id=${encodeURIComponent(id)}`, 'карточка предложения');
+    return parseHtmlViaOffscreen(html, 'parseDumperCard', { kind });
+}
+
+async function readDumperOwnLot({ offerId, nodeId }) {
+    const params = new URLSearchParams({ node: String(nodeId), offer: String(offerId) });
+    const html = await dumperFetchHtml(`https://funpay.com/lots/offerEdit?${params}`, 'форма лота');
+    return parseHtmlViaOffscreen(html, 'parseDumperOwnLot');
+}
+
+async function readDumperOwnChip(ref) {
+    const chip = parseChipOfferId(ref.offerId);
+    if (!chip) throw new Error('Некорректный ID валютного предложения.');
+    const fields = await readChipTradeForm(chip.nodeId);
+    const price = chipRowPrice(fields, chip.key);
+    if (price === null) throw Object.assign(new Error('Предложение не найдено в форме валюты.'), { code: 'own' });
+    return {
+        price,
+        amount: fields.find(([name]) => name === `${chip.key}[amount]`)?.[1] ?? null,
+        active: fields.some(([name]) => name === `${chip.key}[active]`)
+    };
+}
+
+// Калькулятор FunPay: lots/calc по разделу, chips/calc по игре. Ответ — методы оплаты с ценой покупателя.
+async function dumperCalc({ kind, nodeId, gameId, price }) {
+    const body = kind === 'chips'
+        ? new URLSearchParams({ game: String(gameId), price: String(price) })
+        : new URLSearchParams({ nodeId: String(nodeId), price: String(price) });
+    const { response } = await fptFetchWithSeal(`https://funpay.com/${kind === 'chips' ? 'chips' : 'lots'}/calc`, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json, text/javascript, */*; q=0.01', 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+        body
+    });
+    if (!response.ok) throw dumperHttpError(response, 'калькулятор FunPay');
+    return response.json();
+}
+
+// Действующее правило наценки/маржи с автопересчётом для этого лота — второй управляющий ценой.
+async function dumperPriceOwner(accountId, rule) {
+    if (rule.kind !== 'lots') return null;
+    const { [PRICING_KEY]: pricing } = await chrome.storage.local.get(PRICING_KEY);
+    const binding = pricing?.bindings?.[`${accountId}:${rule.offerId}`];
+    const pricingRule = binding ? pricing.rules?.[binding.ruleId] : null;
+    return pricingRule?.auto ? `Правило «${pricingRule.name || 'Правило цены'}» с автопересчётом.` : null;
+}
+
+let dumperHistoryBackend;
+try {
+    dumperHistoryBackend = createIndexedDbHistoryBackend(self.indexedDB);
+} catch (error) {
+    console.warn('FunPay Funcy: история демпера только в памяти:', error?.message || error);
+    dumperHistoryBackend = createMemoryHistoryBackend();
+}
+const dumperService = createDumperService({
+    storage: chrome.storage.local,
+    guard: accountGuard,
+    scheduler: jobScheduler,
+    history: createDumperHistory({ backend: dumperHistoryBackend }),
+    market: { fetchSection: fetchDumperSection, fetchCard: fetchDumperCard },
+    own: { readLot: readDumperOwnLot, readChip: readDumperOwnChip },
+    calc: dumperCalc,
+    writers: { lots: lotWriteQueue, chips: chipWriter },
+    priceOwner: dumperPriceOwner,
+    costOf: async (accountId, offerId) => pricingCostOf((await chrome.storage.local.get('fpToolsCostBasis')).fpToolsCostBasis, offerId)
+});
+jobScheduler.register(DUMPER_ALARM, () => dumperService.run());
+jobScheduler.registerRecovery('dumper', () => dumperService.recover());
+
 releaseStockManagedLots({ storage: chrome.storage.local, policies: lotPolicies, bindingKeys: [LOT_SCHEDULES_KEY, PRICING_KEY] })
     .catch(error => console.warn('FunPay Funcy: пометки управления складом не сняты:', error?.message || error));
 jobScheduler.register(ORDER_RECONCILE_ALARM, () => runAutomationPass());
@@ -1452,6 +1563,18 @@ async function writeGoldenKey(key) {
     let setResult = await chrome.cookies.set({ ...base, domain: '.funpay.com' });
     if (!setResult) setResult = await chrome.cookies.set(base);
     if (!setResult) throw new Error('Не удалось записать куку аккаунта (cookies.set вернул null).');
+    // Первый запрос в чистой сессии выдаёт PHPSESSID и golden_seal под новый ключ; аккаунт
+    // определяется уже следующими запросами. Живой ключ получает golden_seal сразу: если его
+    // нет, а страница гостевая — FunPay ключ не принял (выход из аккаунта или новый вход).
+    try {
+        const response = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
+        if (!response.ok) return { accepted: null };
+        const seal = await chrome.cookies.get({ url: 'https://funpay.com', name: 'golden_seal' });
+        const guest = /data-app-data="[^"]*&quot;userId&quot;:0[,}&]/.test(await response.text());
+        return { accepted: seal?.value ? true : guest ? false : null };
+    } catch (_) {
+        return { accepted: null };
+    }
 }
 
 function fptSnapshotForKey(key) {
@@ -1462,6 +1585,7 @@ function fptSnapshotForKey(key) {
         // Главная даёт имя, аватар и баланс; оплаченные, но не подтверждённые заказы — деньги «в ожидании».
         const loadSnapshot = async () => {
             const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
+            if (!resp.ok) throw new Error(`Снимок аккаунта: HTTP ${resp.status}`);
             const snap = await parseHtmlViaOffscreen(await resp.text(), 'parseAccountSnapshot');
             if (snap && snap.loggedIn) {
                 try {
@@ -1497,9 +1621,11 @@ function fptSnapshotForKey(key) {
 
         try {
             // 2) Ставим ключ целевого аккаунта в чистую сессию.
-            await writeGoldenKey(key);
+            const written = await writeGoldenKey(key);
             // 3) Грузим главную и заказы в ожидании под этим аккаунтом.
-            return await loadSnapshot();
+            const snap = await loadSnapshot();
+            if (snap && !snap.loggedIn && written?.accepted === false) snap.sessionExpired = true;
+            return snap;
         } catch (e) {
             return null;
         } finally {
@@ -1560,6 +1686,7 @@ async function probeCurrentSession() {
         try { await ensureGoldenSeal(); } catch (_) {}
         try {
             const resp = await fetch('https://funpay.com/', { credentials: 'include', cache: 'no-store' });
+            if (!resp.ok) return { key: cookie.value, snap: null };
             return { key: cookie.value, snap: await parseHtmlViaOffscreen(await resp.text(), 'parseAccountSnapshot') };
         } catch (_) {
             return { key: cookie.value, snap: null };
@@ -1603,6 +1730,22 @@ accountsService?.migrate()
 
 // --- Главный обработчик сообщений ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request?.action === 'fptChatGuard') {
+        let allowed = false;
+        try { allowed = sender.id === chrome.runtime.id && Boolean(sender.tab) && new URL(sender.url).origin === 'https://funpay.com'; } catch (_) {}
+        if (!allowed || !getChatGuard()) { sendResponse({ ok: false, error: 'Нет доступа к ChatGuard.' }); return false; }
+        Promise.resolve().then(async () => {
+            if (request.operation === 'claimNotification') {
+                const tab = await chrome.tabs.get(sender.tab.id);
+                const browserWindow = await chrome.windows.get(tab.windowId);
+                if (!tab.active || !browserWindow.focused) return { accountId: request.expectedAccountId };
+            }
+            return getChatGuard().command({ ...request, notificationTabId: sender.tab.id });
+        })
+            .then(result => sendResponse({ ok: true, ...result }))
+            .catch(error => sendResponse({ ok: false, error: error.message }));
+        return true;
+    }
     if (request?.action === 'fptPatchAutoReplies') {
         patchAutoReplies(request.patch)
             .then(autoReplies => sendResponse({ ok: true, autoReplies }))
@@ -2207,6 +2350,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (!run) { sendResponse({ success: false, error: 'Неизвестная команда цен.' }); return false; }
         run().then(data => sendResponse({ success: true, data }))
             .catch(error => sendResponse({ success: false, error: error?.message || 'Ошибка расчёта цен.', code: error?.code }));
+        return true;
+    }
+
+    // Автодемпер: правила конкретных предложений, проверка, включение, пауза и история.
+    if (request.action === 'fptDumper') {
+        const ref = request.ref || null;
+        const commands = {
+            list: () => dumperService.list(),
+            get: () => dumperService.get(ref || {}),
+            save: () => dumperService.save({ ref: ref || {}, rule: request.rule || {}, expectedRevision: request.expectedRevision ?? null }),
+            check: () => dumperService.check({ ref: ref || {}, rule: request.rule || null }),
+            enable: () => dumperService.enable({ ref: ref || {}, expectedRevision: request.expectedRevision ?? null }),
+            resume: () => dumperService.resume({ ref: ref || {}, expectedRevision: request.expectedRevision ?? null }),
+            disable: () => dumperService.disable({ ref: ref || {} }),
+            remove: () => dumperService.remove({ ref: ref || {} }),
+            copy: () => dumperService.copy({ from: ref || {}, to: Array.isArray(request.targets) ? request.targets : [] }),
+            setGlobal: () => dumperService.setGlobal({ enabled: request.enabled === true }),
+            history: () => dumperService.history({ ref, limit: request.limit }),
+            run: () => dumperService.run()
+        };
+        const run = commands[request.command];
+        if (!run) { sendResponse({ success: false, error: 'Неизвестная команда автодемпера.' }); return false; }
+        run().then(data => sendResponse({ success: true, data }))
+            .catch(error => sendResponse({ success: false, error: error?.message || 'Ошибка автодемпера.', code: error?.code, errors: error?.errors }));
         return true;
     }
 
@@ -2913,7 +3080,7 @@ function setupInitialAlarms() {
         const arAnyEnabled = autoReplies.greetingEnabled || autoReplies.keywordsEnabled ||
             autoReplies.autoReviewEnabled || autoReplies.bonusForReviewEnabled ||
             autoReplies.newOrderReplyEnabled || autoReplies.orderConfirmReplyEnabled ||
-            autoReplies.autoDeliveryEnabled || autoReplies.reviewReminderEnabled;
+            autoReplies.autoDeliveryEnabled || autoReplies.reviewReminderEnabled || autoReplies.chatGuardEnabled;
         if (arAnyEnabled) {
             // 3.0: start the MV3-safe active loop instead of the broken 0.25-min alarm.
             startEngine().catch(error => console.warn('FunPay Funcy: запуск автоматизации не удался:', error?.message || error));
@@ -2968,7 +3135,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
         }
         const newSettings = changes.fpToolsAutoReplies.newValue || {};
         const isEnabled = newSettings.greetingEnabled || newSettings.keywordsEnabled || newSettings.autoReviewEnabled || newSettings.bonusForReviewEnabled ||
-            newSettings.newOrderReplyEnabled || newSettings.orderConfirmReplyEnabled || newSettings.autoDeliveryEnabled || newSettings.reviewReminderEnabled;
+            newSettings.newOrderReplyEnabled || newSettings.orderConfirmReplyEnabled || newSettings.autoDeliveryEnabled || newSettings.reviewReminderEnabled || newSettings.chatGuardEnabled;
 
         // Durable cursor writes must not wake the engine that just wrote them.
         const configurationChanged = hasAutoReplyConfigurationChanges(before, after);
@@ -2980,7 +3147,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
                 stopEngine();
                 jobScheduler.clearDue('fpToolsDeliveryContinue').catch(() => {});
                 chrome.alarms.clear(AUTO_RESPONDER_ALARM_NAME);
-                resetAutoResponderState();
+                if (isAutoResponderActive(before)) resetAutoResponderState();
             }
         }
     }

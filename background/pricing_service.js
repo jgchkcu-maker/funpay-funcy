@@ -26,14 +26,14 @@ function emptyState() {
     return { rules: {}, bindings: {}, autoState: {} };
 }
 
-function costOf(costBasis, offerId) {
+export function costOf(costBasis, offerId) {
     const entry = costBasis?.offers?.[String(offerId)];
     const amount = entry ? parseDecimal(entry.amount, { allowComma: true }) : null;
     if (!entry || !amount || compareDecimal(amount, '0') <= 0 || !entry.currency) return null;
     return { amount: formatDecimal(amount), currency: String(entry.currency).toUpperCase(), source: 'seller-estimate', updatedAt: entry.updatedAt || null };
 }
 
-export function createPricingService({ storage, guard, readForm, queue, policies = null, activity = null, scheduler = null, getCostOverride = null, now = () => Date.now(), log = console } = {}) {
+export function createPricingService({ storage, guard, readForm, queue, policies = null, activity = null, scheduler = null, getCostOverride = null, isManagedElsewhere = null, now = () => Date.now(), log = console } = {}) {
     if (!storage || !guard || typeof readForm !== 'function' || !queue) throw new Error('Сервис цен не настроен.');
     let chain = Promise.resolve();
     const previews = new Map();
@@ -227,6 +227,11 @@ export function createPricingService({ storage, guard, readForm, queue, policies
             const key = `${account.accountId}:${binding.offerId}`;
             const auto = state.autoState[key] || {};
             if (auto.paused) { results.push({ offerId: binding.offerId, status: 'paused' }); continue; }
+            // У лота один автоматический управляющий ценой: если его ведёт автодемпер, наценка не пишет.
+            if (typeof isManagedElsewhere === 'function' && await isManagedElsewhere(account.accountId, binding.offerId)) {
+                results.push({ offerId: binding.offerId, status: 'managed-elsewhere' });
+                continue;
+            }
             const row = await evaluateLot(account, rule, binding);
             // Продавец сам изменил цену после нашей записи — автопересчёт останавливается.
             if (auto.lastAppliedPrice && row.currentPrice !== null && compareDecimal(auto.lastAppliedPrice, row.currentPrice) !== 0) {

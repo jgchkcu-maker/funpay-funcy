@@ -137,6 +137,31 @@ test('reader serializes batches per account, persists 429 cooldown, and never im
     assert.equal(readDelay({ status: 403, headers: { get: () => null } }), 900000);
 });
 
+test('reader reports timeouts, respects cooldown, and resumes on the next eligible read', async () => {
+    const { createChatReader } = await load('chat_reader.js');
+    for (const stage of ['fetch', 'body']) {
+        let time = 1000, cooldown = 0, reason = '', calls = 0;
+        const reader = createChatReader({ timeoutMs: 10, now: () => time,
+            getCooldown: async () => cooldown,
+            setCooldown: async (_, until, message) => { cooldown = until; reason = message; },
+            parseChatList: async () => [],
+            fetchImpl: async (_, options) => {
+                calls++;
+                if (calls > 1) return { ok: true, json: async () => ({ objects: [{ type: 'chat_bookmarks', data: { html: '' } }] }) };
+                const waitForAbort = () => new Promise((resolve, reject) => options.signal.addEventListener('abort',
+                    () => reject(new DOMException('signal is aborted without reason', 'AbortError')), { once: true }));
+                return stage === 'fetch' ? waitForAbort() : { ok: true, json: waitForAbort };
+            } });
+        await assert.rejects(reader.bookmarks(account, {}), error => error.code === 'CHAT_READ_TIMEOUT' && /повторено позже/.test(error.message));
+        assert.equal(cooldown, 31000); assert.match(reason, /не ответил вовремя/);
+        await assert.rejects(reader.bookmarks(account, {}), /отложено/);
+        assert.equal(calls, 1);
+        time = cooldown;
+        assert.deepEqual((await reader.bookmarks(account, {})).chats, []);
+        assert.equal(calls, 2);
+    }
+});
+
 test('wired autoresponder handles a buyer payment quotation as ordinary text; only system author registers an order; delivery stays unmarked', async () => {
     const previousChrome = global.chrome, previousFetch = global.fetch;
     const stored = { fpToolsAutoReplies: { keywordsEnabled: true, keywords: [
@@ -152,7 +177,9 @@ test('wired autoresponder handles a buyer payment quotation as ordinary text; on
         runtime: { getURL: file => file, getContexts: async () => [], sendMessage: async request =>
             request.action === 'parseChatList' ? [{ chatId: '77', msgId: target, chatName: 'Buyer' }] : { ok: true, messages: request.messages } }
     };
-    global.fetch = async (_, options) => {
+    global.fetch = async (url, options) => {
+        if (String(url).includes('/chat/history?')) return { ok: true, status: 200,
+            json: async () => ({ chat: { node: { id: '77' }, messages } }) };
         const payload = options.body;
         const effect = JSON.parse(payload.get('request'));
         if (effect) { sent.push(effect.data.content); return { ok: true, status: 200, text: async () => '{"objects":[]}' }; }
@@ -175,4 +202,36 @@ test('wired autoresponder handles a buyer payment quotation as ordinary text; on
         await ar.getDeliveryChatSender().send({ chatId: '77', text: 'KEY\u2060-1', accountId: '100', auth: { csrf_token: 'synthetic' } });
         assert.equal(sent.at(-1), 'KEY\u2060-1');
     } finally { global.chrome = previousChrome; global.fetch = previousFetch; }
+});
+
+test('background observation fetches history without subscribing to chat_node or opening a chat', async () => {
+    const { createChatReader } = await load('chat_reader.js');
+    const calls = [];
+    let unread = true, inFlight = 0, peak = 0;
+    const reader = createChatReader({
+        parseChatList: async () => [{ chatId: '77', msgId: '11', isUnread: unread }],
+        parseMessages: async messages => ({ ok: true, messages }),
+        fetchImpl: async (url, options) => {
+            calls.push({ url: String(url), method: options.method || 'GET' });
+            if (String(url).endsWith('/runner/')) {
+                const objects = JSON.parse(options.body.get('objects'));
+                if (objects.some(item => item.type === 'chat_node')) unread = false;
+                return { ok: true, json: async () => ({ objects: [{ type: 'chat_bookmarks', data: { html: 'unread' } }] }) };
+            }
+            assert.equal(new URL(url).pathname, '/chat/history');
+            const node = new URL(url).searchParams.get('node');
+            inFlight++; peak = Math.max(peak, inFlight);
+            await new Promise(resolve => setTimeout(resolve, 2)); inFlight--;
+            return { ok: true, json: async () => ({ chat: { node: { id: node }, messages: [message(11)] } }) };
+        }
+    });
+    await reader.bookmarks(account, {});
+    const [batch] = await Promise.all([reader.batch(account, {}, ['77', '88']), reader.history(account, '77', '11')]);
+    assert.equal(unread, true, 'background refresh must leave native unread state intact');
+    assert.deepEqual(Object.keys(batch), ['77', '88']);
+    assert.equal(batch['77'].messages[0].id, '11');
+    assert.equal(peak, 1, 'history requests remain serialized per account');
+    assert.equal(calls.filter(call => call.url.includes('/runner/')).length, 1, 'runner is only used for bookmarks');
+    assert.equal(calls.slice(1).every(call => call.method === 'GET' && call.url.includes('/chat/history?')), true);
+    await assert.rejects(reader.batch(account, {}, ['77', '88', '99', '100', '101']), /пакет/);
 });

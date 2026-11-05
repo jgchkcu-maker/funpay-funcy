@@ -18,7 +18,7 @@ function fptApplyDisabledCss(disabledIds) {
     const disabled = new Set(disabledIds || []);
     const selectors = [];
     reg.forEach(entry => {
-        if (entry.locked) return;                 // locked = cannot be disabled
+        if (entry.locked || entry.control) return; // Functional controls own their enabled state.
         if (!disabled.has(entry.id)) return;
         if (entry.selector) {
             // The chat button's base rule uses .chat-form .chat-btn-image !important.

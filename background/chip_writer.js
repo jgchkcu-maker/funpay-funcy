@@ -1,4 +1,5 @@
 import { computeAdjustedPrice } from './lot_writer.js';
+import { parseDecimal, formatDecimal } from './money.js';
 
 // Валютные предложения (chips) не имеют формы offerEdit: все серверы раздела
 // сохраняются одной формой chips/<node>/trade → chips/saveOffers.
@@ -36,6 +37,17 @@ export function applyChipOp(fields, key, op) {
     return { fields: next, price, active: next.some(([name]) => name === activeName) };
 }
 
+function samePrice(left, right) {
+    const a = parseDecimal(left, { allowComma: true });
+    const b = parseDecimal(right, { allowComma: true });
+    return Boolean(a && b) && formatDecimal(a) === formatDecimal(b);
+}
+
+// Цена строки в форме раздела или null, если строки нет.
+export function chipRowPrice(fields, key) {
+    return fields.find(([name]) => name === `${key}[price]`)?.[1] ?? null;
+}
+
 export function createChipWriter({ guard, readTrade, saveTrade }) {
     // Форма раздела сохраняется целиком, поэтому записи в один раздел строго по очереди.
     const chains = new Map();
@@ -51,9 +63,22 @@ export function createChipWriter({ guard, readTrade, saveTrade }) {
         const chainKey = `${account.accountId}:${chip.nodeId}`;
         const run = (chains.get(chainKey) || Promise.resolve()).catch(() => {}).then(async () => {
             const fields = await readTrade(chip.nodeId);
+            // expect.price — цена, которую видел вызывающий: ручная правка между чтением и записью не перетирается.
+            if (op?.expect && Object.hasOwn(op.expect, 'price')) {
+                const actual = chipRowPrice(fields, chip.key);
+                if (actual === null) throw new Error('Предложение не найдено в форме валюты — обновите список лотов.');
+                if (!samePrice(actual, op.expect.price)) return { status: 'conflict', conflicts: [{ field: 'price', expected: op.expect.price, actual }] };
+            }
             const result = applyChipOp(fields, chip.key, op);
             await guard.assertCurrent(account);
             await saveTrade(result.fields);
+            // Сохраняется форма всего раздела: перечитываем и сверяем именно эту строку.
+            if (op?.expect || op?.verify) {
+                const after = await readTrade(chip.nodeId);
+                const price = chipRowPrice(after, chip.key);
+                if (!samePrice(price, result.price)) return { status: 'unverified', notApplied: ['price'], price };
+                return { status: 'saved', price, active: after.some(([name]) => name === `${chip.key}[active]`) };
+            }
             return { status: 'saved', price: result.price, active: result.active };
         });
         chains.set(chainKey, run);

@@ -21,7 +21,8 @@ function memoryStorage(initial = {}) {
 }
 
 // FunPay as seen by the background: which user each session key belongs to (null = expired key).
-async function setup({ initial = {}, users = {}, cookie = '', snapshots = {}, automation = false, probe = null } = {}) {
+// rejected: keys FunPay answers with a guest page and no golden_seal (logged out elsewhere).
+async function setup({ initial = {}, users = {}, cookie = '', snapshots = {}, automation = false, probe = null, rejected = [] } = {}) {
     const { createAccountsService } = await load('accounts_service.js');
     const { createProfileManager } = await load('account_profiles.js');
     const { createAccountVault, createMemoryVaultBackend } = await load('account_vault.js');
@@ -43,7 +44,7 @@ async function setup({ initial = {}, users = {}, cookie = '', snapshots = {}, au
         cookies: {
             get: async () => (jar.value ? { value: jar.value } : null),
             capture: async () => ({ value: jar.value }),
-            write: async value => { jar.value = value; },
+            write: async value => { jar.value = value; return { accepted: rejected.includes(value) ? false : null }; },
             restore: async original => { jar.value = original?.value || ''; }
         },
         snapshot: async key => { calls.snapshots.push(key); return snapshots[key] ?? null; },
@@ -146,6 +147,42 @@ test('a snapshot of a key that now belongs to another user is rejected', async (
     assert.equal(storage.data.fpToolsAccounts[0].balance, undefined);
 });
 
+test('refresh uses the live session for the current account after key renewal, even with automation', async () => {
+    const users = baseUsers(); users['key-a2'] = users['key-a'];
+    let probeId = '100';
+    const { service, jar, vault, calls, storage } = await setup({ cookie: 'key-a', users, automation: true,
+        probe: key => ({ key, snap: { userId: probeId, loggedIn: true, username: 'Alpha', balance: '42 ₽' } }) });
+    await service.addCurrent();
+    jar.value = 'key-a2';
+    const result = await service.refresh({ id: 'acc_1' });
+    assert.equal(result.status, 'ok');
+    assert.equal(result.account.balance, '42 ₽');
+    assert.deepEqual(calls.snapshots, [], 'never swaps to the saved key');
+    assert.equal(jar.value, 'key-a2');
+    assert.equal((await vault.getSecret('acc_1')).key, 'key-a', 'reading does not replace saved credentials');
+    probeId = '200';
+    assert.equal((await service.refresh({ id: 'acc_1' })).status, 'failed');
+    assert.equal(storage.data.fpToolsAccounts[0].balance, '42 ₽', 'a changed session cannot overwrite the account snapshot');
+});
+
+test('an anonymous snapshot is not a successful refresh and a verified snapshot clears the old status', async () => {
+    const users = baseUsers();
+    const snapshots = { 'key-a': { loggedIn: false, userId: '', balance: '0 ₽' } };
+    const { service, storage } = await setup({ cookie: 'key-a', users, snapshots });
+    await service.addCurrent();
+    Object.assign(storage.data.fpToolsAccounts[0], { loggedIn: false, balance: '42 ₽', _snapTs: 100 });
+    const failed = await service.refresh({ id: 'acc_1' });
+    assert.equal(failed.status, 'failed');
+    assert.equal(failed.account.balance, '42 ₽');
+    assert.equal(failed.account._snapTs, 100);
+    assert.equal(failed.account.loggedIn, false);
+    snapshots['key-a'] = { loggedIn: true, userId: '100', username: 'Alpha', balance: '50 ₽' };
+    const recovered = await service.refresh({ id: 'acc_1' });
+    assert.equal(recovered.status, 'ok');
+    assert.equal(recovered.account.loggedIn, true);
+    assert.equal(recovered.account.balance, '50 ₽');
+});
+
 test('a wrong saved FunPay id is corrected when the key still opens the same nickname', async () => {
     const users = baseUsers();
     const { service, storage } = await setup({ cookie: 'key-a', users, snapshots: { 'key-a': { userId: '100', username: 'Alpha', loggedIn: true, balance: '5 ₽' } } });
@@ -192,11 +229,11 @@ test('switching suspends the current config, loads the target one and rolls back
 
     // The saved key for B stopped working: the cookie and A's config come back, B is marked expired.
     delete users['key-b'];
-    await assert.rejects(service.switchTo({ id: 'acc_2' }), /Сессия истекла/);
+    await assert.rejects(service.switchTo({ id: 'acc_2' }), /Не удалось подтвердить вход/);
     assert.equal(jar.value, 'key-a');
     assert.equal(storage.data.fpToolsProfileOwner.accountId, '100');
     assert.equal(storage.data.fpToolsAutoReplies.greetingEnabled, true);
-    assert.equal(storage.data.fpToolsAccounts[1].loggedIn, false);
+    assert.equal(storage.data.fpToolsAccounts[1].loggedIn, true);
 
     // B's record holds a key that now opens another account: nothing is switched or relabelled.
     users['key-b'] = { id: '300', name: 'Charlie' };
@@ -282,7 +319,7 @@ test('daily keepalive refreshes only the current account and never swaps keys', 
     assert.equal(storage.data.fpToolsAccounts[1].refresh ?? null, null);
 });
 
-test('daily keepalive marks a dead key as expired instead of failing silently', async () => {
+test('daily keepalive reports an unverified session without claiming it expired', async () => {
     const users = baseUsers();
     let loggedIn = true;
     const { service, storage, jar } = await setup({ cookie: 'key-a', users, probe: key => ({ key, snap: { loggedIn, userId: users[key].id } }) });
@@ -290,8 +327,30 @@ test('daily keepalive marks a dead key as expired instead of failing silently', 
     loggedIn = false;
     const result = await service.keepalive();
     assert.equal(result.status, 'failed');
-    assert.equal(storage.data.fpToolsAccounts[0].loggedIn, false);
-    assert.match(storage.data.fpToolsAccounts[0].refresh.error, /закрыта/);
-    assert.equal((await service.list()).sessionStale, true);
+    assert.equal(storage.data.fpToolsAccounts[0].loggedIn, true);
+    assert.match(storage.data.fpToolsAccounts[0].refresh.error, /Не удалось подтвердить/);
+    assert.equal((await service.list()).sessionStale, false);
     assert.equal(jar.value, 'key-a');
+});
+
+test('a key FunPay no longer accepts is reported as an expired session on switch and refresh', async () => {
+    const users = baseUsers();
+    delete users['key-b'];
+    const { service, storage, vault, jar } = await setup({ cookie: 'key-a', users, rejected: ['key-b'],
+        snapshots: { 'key-b': { loggedIn: false, userId: '', sessionExpired: true } } });
+    await service.addCurrent();
+    await service.reconcile();
+    await storage.set({ fpToolsAccounts: [...storage.data.fpToolsAccounts, { id: 'acc_b', userId: '200', name: 'Bravo', username: 'Bravo', loggedIn: true }] });
+    await vault.putSecret('acc_b', { key: 'key-b', keyHash: 'h:key-b' });
+
+    await assert.rejects(service.switchTo({ id: 'acc_b' }), /Сессия истекла.*Обновить сессию/);
+    assert.equal(jar.value, 'key-a', 'the original session is back');
+    assert.equal(storage.data.fpToolsProfileOwner.accountId, '100');
+    assert.equal(storage.data.fpToolsAccounts[1].loggedIn, false);
+
+    storage.data.fpToolsAccounts[1].loggedIn = true;
+    const refreshed = await service.refresh({ id: 'acc_b' });
+    assert.equal(refreshed.status, 'failed');
+    assert.match(refreshed.error, /Сессия истекла/);
+    assert.equal(storage.data.fpToolsAccounts[1].loggedIn, false);
 });

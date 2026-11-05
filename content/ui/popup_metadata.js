@@ -1,6 +1,22 @@
 // Search terms and routes retained independently of replacement views.
 window.FPTPopupMetadata = Object.freeze({
   "pages": {
+    "dumper": {
+      "features": [
+        {
+          "text": "Автодемпер"
+        },
+        {
+          "text": "Демпинг цен конкурентов: дешевле аналогов или N-е место по цене"
+        },
+        {
+          "text": "Настройки лота: цена, конкуренты, история"
+        }
+      ],
+      "modes": [],
+      "defaultMode": null,
+      "buttons": []
+    },
     "accounts": {
       "features": [
         {
@@ -21,6 +37,9 @@ window.FPTPopupMetadata = Object.freeze({
       "features": [
         {
           "text": "Элементы интерфейса"
+        },
+        {
+          "text": "Ждут ответа · Покупатели · Напоминать об ответах"
         },
         {
           "text": "Элементы, которые можно отключить"

@@ -1,0 +1,17 @@
+/* Shared site controls and Funcy surface tokens. */
+.chat-full-header:has(#fp-tools-chat-guard-btn) > h1 { font-size: clamp(13px, calc(18cqi - 23px), 26px); white-space: nowrap; }
+#fp-tools-chat-guard-btn .material-icons { font-size: 18px; opacity: .8; }
+#fp-tools-chat-guard-btn[aria-pressed="true"] { color: var(--fpt-accent, #1b75bb); background: color-mix(in srgb, currentColor 14%, transparent); }
+.fpt-cg-filter-empty { padding: 18px; text-align: center; font-size: 12px; opacity: .65; }
+.contact-list .contact-item:has(> .fpt-cg-contact-time) { position: relative; }
+.contact-list .contact-item:has(> .fpt-cg-contact-time) .contact-item-message { padding-right: 68px; box-sizing: border-box; }
+.fpt-cg-contact-time { position: absolute; right: 12px; bottom: 10px; max-width: 64px; white-space: nowrap; font-size: 10px; font-weight: 500; opacity: .7; pointer-events: none; }
+.fpt-cg-contact-time[data-overdue="true"] { color: var(--fptm-danger, #d65d64); opacity: 1; }
+.fpt-cg-setting-threshold { display: flex; align-items: center; gap: 7px; margin-top: 8px; font-size: 12px; }
+.fpt-cg-setting-threshold[hidden] { display: none; }
+.fpt-cg-setting-threshold input { width: 65px; padding: 5px 7px; }
+.fpt-global-notification--action { display: grid; grid-template-columns: minmax(0,1fr) 22px; column-gap: 12px; }
+.fpt-global-notification-action { grid-column: 1; justify-self: start; margin: 7px 0 0; padding: 0; border: 0; background: none; color: var(--fpt-accent, #a58efc); font: inherit; cursor: pointer; }
+.fpt-global-notification-close { grid-column: 2; grid-row: 1; align-self: start; border: 0; background: transparent; color: inherit; opacity: .6; padding: 0; font: 22px/22px sans-serif; cursor: pointer; }
+.fpt-global-notification-action:hover, .fpt-global-notification-close:hover { opacity: 1; text-decoration: underline; }
+.fpt-global-notification--action button:focus-visible { outline: 2px solid var(--fpt-accent, #a58efc); outline-offset: 3px; }

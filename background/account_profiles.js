@@ -6,8 +6,8 @@
  * конфиг владельца сохраняется в закрытое хранилище (account_vault.js), а на его место
  * загружается конфиг нового аккаунта; новый аккаунт получает стандартные настройки.
  *
- * Расписания, цены и политики лотов (fpToolsLotSchedules, fpToolsPricing, fpToolsLotPolicies)
- * сюда не входят: они уже хранят accountId в каждом правиле и сами работают только для
+ * Расписания, цены, политики лотов и автодемпер (fpToolsLotSchedules, fpToolsPricing,
+ * fpToolsLotPolicies, fpToolsDumper) сюда не входят: они уже хранят accountId в каждом правиле и сами работают только для
  * текущего аккаунта. Статистика и финансы живут в IndexedDB и тоже не переключаются.
  */
 
@@ -58,7 +58,7 @@ export const PROFILE_DEFAULTS = Object.freeze({ fpToolsAutoReplies: {}, autoBump
 const CHAT_SEEN_FIELDS = Object.freeze(['lastSeenMsgIds', 'lastHandledText', 'autoResponderSeeded']);
 
 const AUTO_REPLY_SWITCHES = Object.freeze(['greetingEnabled', 'keywordsEnabled', 'autoReviewEnabled', 'bonusForReviewEnabled',
-    'newOrderReplyEnabled', 'orderConfirmReplyEnabled', 'autoDeliveryEnabled', 'reviewReminderEnabled']);
+    'newOrderReplyEnabled', 'orderConfirmReplyEnabled', 'autoDeliveryEnabled', 'reviewReminderEnabled', 'chatGuardEnabled']);
 
 // Включено ли в наборе настроек что-то, что действует от имени аккаунта без продавца.
 export function automationEnabledIn(values = {}) {
@@ -69,7 +69,7 @@ export function automationEnabledIn(values = {}) {
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const clone = value => (value === undefined ? undefined : structuredClone(value));
 const pick = (source, keys) => Object.fromEntries(keys.filter(key => source[key] !== undefined).map(key => [key, clone(source[key])]));
-const accountIdOf = value => (value != null && /^\d+$/.test(String(value)) ? String(value) : null);
+const accountIdOf = value => (value != null && /^\d+$/.test(String(value)) && /[1-9]/.test(String(value)) ? String(value) : null);
 
 // storage — chrome.storage.local-подобный объект; vault — createAccountVault();
 // replaceAutoReplies(value, extra) — запись fpToolsAutoReplies через общую очередь автоответчика;

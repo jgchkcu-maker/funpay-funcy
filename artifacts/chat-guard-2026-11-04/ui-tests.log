@@ -1,0 +1,30 @@
+✔ ChatGuard baseline is independent of existing autoreply cursors; only new buyer messages count (13.5183ms)
+✔ ChatGuard preserves first detection time, cancels snooze on a new message and ignores duplicate IDs (9.556ms)
+✔ ChatGuard observes buyer → auto greeting → manual answer → new buyer in message order (3.1118ms)
+✔ ChatGuard records unmarked automatic delivery before sending, matches receipt by author/boundary/hash, and never stores secrets (3.6073ms)
+✔ ChatGuard automatic image and manual image have distinct provenance (2.299ms)
+✔ ChatGuard retains ambiguous automatic sends through a restart, then accepts a definite manual answer (4.5137ms)
+✔ ChatGuard does not guess which of two identical own messages was the automatic send (4.6205ms)
+✔ ChatGuard keeps observing a blocked automatic handler without replaying its side effect (2.406ms)
+✔ ChatGuard resume reconciles saved waiting chats, but baselines other chats again (2.6286ms)
+✔ ChatGuard stale account commands and late network responses cannot mutate the next account (1.4597ms)
+✔ ChatGuard runtime stays local during imports and does not wake the engine on every cursor write (2.2186ms)
+✔ ChatGuard alone activates the shared heartbeat; default remains off (5.0439ms)
+✔ ChatGuard page: responsive themes, navigation badge, snooze, account isolation, reopen and errors (11612.5917ms)
+✔ real browser: lot management screen, navigation and shell geometry (37016.4879ms)
+✔ popup creation leaves every category empty, retains navigation, and omits the close control (5.9978ms)
+✔ feature search metadata remains available after removing category headings (1.973ms)
+✔ deleted popup components have no remaining styles while page integrations stay styled (1.0932ms)
+✔ every prefixed literal has an explicit backup decision, including dynamic key prefixes (85.0304ms)
+✔ device sessions and verification queues never leave or enter settings backups (5.4956ms)
+✔ import normalizes known settings before writing and rejects oversized files before reading (3.4281ms)
+T18_NAVIGATION_IA_PASS
+✔ tests\t18_navigation_ia.test.js (63.082ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 37314.8743

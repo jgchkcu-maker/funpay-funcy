@@ -16,11 +16,12 @@ const NAME_MAX = 60;
 const NOTE_MAX = 500;
 
 const isRecord = value => value !== null && typeof value === 'object' && !Array.isArray(value);
-const accountIdOf = value => (value != null && /^\d+$/.test(String(value)) ? String(value) : null);
+const accountIdOf = value => (value != null && /^\d+$/.test(String(value)) && /[1-9]/.test(String(value)) ? String(value) : null);
 const sameName = (account, username) => {
     const name = String(username || '').trim().toLowerCase();
     return Boolean(name) && [account.username, account.name].some(value => String(value || '').trim().toLowerCase() === name);
 };
+const SESSION_EXPIRED = 'Сессия истекла: FunPay не принимает сохранённый ключ. Войдите в этот аккаунт на FunPay и нажмите «Обновить сессию».';
 const defaultId = () => `acc_${globalThis.crypto.randomUUID().replace(/-/g, '').slice(0, 16)}`;
 
 export function mergeAccountSnapshot(account, snapshot, at) {
@@ -203,14 +204,31 @@ export function createAccountsService({
             return { status: 'failed', error, account: await setRefresh(id, { status: 'failed', at: now(), error }) };
         }
         const session = await currentSession();
-        if (session.key !== secret.key && await isAutomationActive()) {
+        // A renewed key can still belong to the same account. Read that account
+        // through the live session without swapping cookies to its saved key.
+        const current = session.key !== secret.key && session.key
+            ? await guard.current({ fresh: true }) : null;
+        const useCurrent = Boolean(accountIdOf(account.userId) && current?.accountId === String(account.userId));
+        if (!useCurrent && session.key !== secret.key && await isAutomationActive()) {
             const error = 'Пока работает автоматизация, данные других аккаунтов не обновляются.';
             return { status: 'locked', error, account: await setRefresh(id, { status: 'locked', at: now(), error }) };
         }
         let snap = null;
-        try { snap = await snapshot(secret.key); } catch (error) { log.warn?.('FunPay Funcy: снимок аккаунта не получен:', error?.message || error); }
+        try {
+            if (useCurrent) {
+                const probe = await probeCurrent();
+                if (probe?.key === session.key && accountIdOf(probe.snap?.userId) === String(account.userId)) snap = probe.snap;
+            } else snap = await snapshot(secret.key);
+        } catch (error) { log.warn?.('FunPay Funcy: снимок аккаунта не получен:', error?.message || error); }
         if (!isRecord(snap)) {
             const error = 'FunPay не ответил. Проверьте соединение и попробуйте ещё раз.';
+            return { status: 'failed', error, account: await setRefresh(id, { status: 'failed', at: now(), error }) };
+        }
+        if (snap.sessionExpired) {
+            return { status: 'failed', error: SESSION_EXPIRED, account: await setRefresh(id, { status: 'failed', at: now(), error: SESSION_EXPIRED }, record => { record.loggedIn = false; }) };
+        }
+        if (snap.loggedIn !== true || !accountIdOf(snap.userId)) {
+            const error = 'Не удалось подтвердить вход в аккаунт. Проверьте сессию и повторите обновление.';
             return { status: 'failed', error, account: await setRefresh(id, { status: 'failed', at: now(), error }) };
         }
         const snapUserId = accountIdOf(snap.userId);
@@ -256,13 +274,18 @@ export function createAccountsService({
             let activated = false;
             try {
                 if (ownerKnown) await profiles.suspend();
-                await cookies.write(secret.key);
+                const written = await cookies.write(secret.key);
                 guard.invalidate?.();
                 const current = await guard.current({ fresh: true });
                 const userId = accountIdOf(current.accountId);
-                if (!userId) {
-                    const error = new Error('Сессия истекла — войдите в этот аккаунт на FunPay и нажмите «Обновить сессию».');
+                if (!userId && written?.accepted === false) {
+                    const error = new Error(SESSION_EXPIRED);
                     error.code = 'session-expired';
+                    throw error;
+                }
+                if (!userId) {
+                    const error = new Error('Не удалось подтвердить вход в аккаунт FunPay. Проверьте соединение и сессию, затем повторите.');
+                    error.code = 'session-unverified';
                     throw error;
                 }
                 if (account.userId && userId !== account.userId) {
@@ -349,8 +372,8 @@ export function createAccountsService({
         if (!isRecord(probe.snap)) {
             return fail('FunPay не ответил. Проверка повторится завтра или нажмите «Обновить».');
         }
-        if (!probe.snap.loggedIn) {
-            return fail('Сессия FunPay закрыта — войдите в этот аккаунт и нажмите «Обновить сессию».', account => { account.loggedIn = false; });
+        if (probe.snap.loggedIn !== true || !accountIdOf(probe.snap.userId)) {
+            return fail('Не удалось подтвердить вход в аккаунт FunPay. Проверьте соединение и сессию.');
         }
         const snapUserId = accountIdOf(probe.snap.userId);
         if (snapUserId && record.userId && snapUserId !== record.userId) {

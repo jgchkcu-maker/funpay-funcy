@@ -841,8 +841,10 @@ function parseChatMessages(messages, chatId) {
             const body = doc.querySelector(authorId === '0' ? '[role="alert"]' : '.chat-msg-text');
             if (body) body.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
             const image = doc.querySelector('.chat-img-link');
-            return { id, chatId: String(chatId), authorId, text: body?.textContent?.trim() || '',
-                kind: body ? 'text' : image ? 'image' : 'unknown',
+            const text = body?.textContent?.trim() || '';
+            return { id, chatId: String(chatId), authorId, text,
+                ...(image ? { imageId: String(raw.image_id || image.getAttribute('data-image-id') || image.getAttribute('data-file-id') || '') || null } : {}),
+                kind: image && !text ? 'image' : body ? 'text' : 'unknown',
                 ...(!body && !image ? { invalidReason: 'Тело сообщения не распознано.' } : {}) };
         }) };
     } catch (error) { return { ok: false, error: error.message }; }
@@ -1646,6 +1648,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             break;
         case 'parseChipTradeForm':
             sendResponse(parseChipTradeForm(message.html));
+            break;
+        case 'parseDumperMarket':
+            sendResponse(window.FPTDumperParsers.parseDumperMarket(message.html, message.kind));
+            break;
+        case 'parseDumperCard':
+            sendResponse(window.FPTDumperParsers.parseDumperCard(message.html, message.kind));
+            break;
+        case 'parseDumperOwnLot':
+            sendResponse(window.FPTDumperParsers.parseDumperOwnLot(message.html));
             break;
         case 'parsePublicLotForClone':
             sendResponse(parsePublicLotForClone(message.html));

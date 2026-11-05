@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Funcy Desktop — макет</title>
+    <link rel="icon" href="../icons/icon32.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="app.css">
+</head>
+<body>
+    <div class="desktop" id="desktop">
+        <div class="window" id="window">
+            <header class="titlebar">
+                <div class="tb-brand">
+                    <img src="../icons/icon128.png" alt="">
+                    <span>Funcy</span>
+                    <span class="ver">Desktop 1.0 · макет</span>
+                </div>
+                <button class="tb-account" id="accountBtn" type="button" title="Сменить аккаунт">
+                    <span class="avatar">NK</span>
+                    <span class="acc-name">nakazan</span>
+                    <span class="acc-bal num" data-balance>12 480 ₽</span>
+                    <span class="ms" style="font-size:18px;color:var(--faint)">expand_more</span>
+                </button>
+                <button class="tb-search" id="searchBtn" type="button">
+                    <span class="ms">search</span>
+                    <span>Поиск функций, лотов, чатов…</span>
+                    <span class="kbd">Ctrl K</span>
+                </button>
+                <div class="tb-conn" title="Приложение опрашивает FunPay напрямую">
+                    <span class="dot"></span>
+                    <span>FunPay · опрос 2 с</span>
+                </div>
+                <div class="tb-tools">
+                    <button class="tb-btn" id="bellBtn" type="button" title="Уведомления">
+                        <span class="ms">notifications</span><span class="badge danger">3</span>
+                    </button>
+                    <button class="tb-btn" id="themeBtn" type="button" title="Тема приложения">
+                        <span class="ms">dark_mode</span>
+                    </button>
+                </div>
+                <div class="win-ctrl">
+                    <button type="button" title="Свернуть в трей" data-win="min"><span class="ms">remove</span></button>
+                    <button type="button" title="Развернуть" data-win="max"><span class="ms">crop_square</span></button>
+                    <button type="button" title="Закрыть (свернуть в трей)" class="close" data-win="close"><span class="ms">close</span></button>
+                </div>
+            </header>
+
+            <div class="body">
+                <nav class="nav" id="nav" aria-label="Разделы"></nav>
+                <main class="main">
+                    <div class="main-scroll" id="mainScroll">
+                        <div id="page"></div>
+                    </div>
+                </main>
+            </div>
+
+            <footer class="statusbar" id="statusbar"></footer>
+            <div class="toasts" id="toasts"></div>
+            <div id="overlay"></div>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+    <script src="screens-sales.js"></script>
+    <script src="screens-buyers.js"></script>
+    <script src="screens-plugins.js"></script>
+    <script src="screens-settings.js"></script>
+    <script>FD.start();</script>
+</body>
+</html>

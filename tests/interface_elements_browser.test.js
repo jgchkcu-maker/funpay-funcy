@@ -15,7 +15,7 @@ test('interface elements screen fits both themes and widths without horizontal s
                     return content.scrollWidth - content.clientWidth;
                 });
                 assert.ok(overflow <= 0, `no horizontal scroll (${dark ? 'dark' : 'light'}, ${width})`);
-                assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row').count(), 32);
+                assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row').count(), 33);
                 assert.equal(await page.locator('.fpt-ie-display .fpt-ie-row').count(), 3);
                 assert.equal(await page.locator('.fpt-ie-group').count(), 5);
                 assert.equal(await page.locator('.fpt-ie-nav').isVisible(), width === 1480, 'section nav only on wide screens');
@@ -36,7 +36,7 @@ test('element and section switches save instantly and keep unrelated ids', async
         await page.waitForFunction(() => window.qaStorage.read().fpToolsDisabledFeatures.includes('chat_char_counter'));
         assert.deepEqual(await disabled(page), ['chat_char_counter', 'rmthub_seller_search']);
         assert.equal(await page.getAttribute('.fpt-ie-row[data-id="chat_char_counter"]', 'data-state'), 'off');
-        assert.match(await page.locator('.fpt-ie-group[data-group="Чат"] .fpt-qr-card-copy p').textContent(), /Показано 8 из 9/);
+        assert.match(await page.locator('.fpt-ie-group[data-group="Чат"] .fpt-qr-card-copy p').textContent(), /Показано 9 из 10/);
         assert.match(await page.getByRole('radio', { name: /Скрыты/ }).textContent(), /1/);
         // The disabler CSS hides the live element right away.
         assert.match(await page.evaluate(() => document.getElementById('fp-tools-disabled-features').textContent), /#fp-chat-char-count/);
@@ -95,9 +95,9 @@ test('keyboard row explains the hidden font block and search shows the parent as
         await page.fill('#fptNeedsFilter', 'несуществующий элемент');
         assert.equal(await page.locator('.fpt-ie-empty').isVisible(), true);
         await page.locator('.fpt-ie-empty').getByRole('button', { name: 'Сбросить поиск' }).click();
-        assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 32);
+        assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 33);
         await page.fill('#fptNeedsFilter', 'шапка диалога');
-        assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 2);
+        assert.equal(await page.locator('.fpt-ie-catalog .fpt-ie-row:visible').count(), 3);
         assert.equal(await page.locator('.fpt-ie-group:visible').count(), 1);
     } finally { await browser.close(); }
 });
@@ -145,5 +145,27 @@ test('external storage changes update the screen', async () => {
         await page.waitForFunction(() => document.querySelector('.fpt-ie-row[data-id="lot_search_bar"]').dataset.state === 'off');
         assert.equal(await page.getByRole('switch', { name: 'Показывать «Строка поиска по лотам»' }).isChecked(), false);
         assert.match(await page.getByRole('radio', { name: /Скрыты/ }).textContent(), /1/);
+    } finally { await browser.close(); }
+});
+
+
+test('chat guard setting uses account-aware control and keeps its own threshold', async () => {
+    const browser = await launch();
+    try {
+        const { page, errors, state } = await openInterfaceElements(browser, {});
+        const toggle = page.getByRole('switch', { name: 'Напоминать об ответах' });
+        const threshold = page.getByRole('spinbutton', { name: 'Напомнить об ответе через, минут' });
+        assert.equal(await toggle.isChecked(), true);
+        await threshold.fill('15'); await threshold.press('Tab');
+        await page.waitForFunction(() => window.qaStorage.read().fpToolsAutoReplies.chatGuardThresholdMinutes === 15);
+        await toggle.click();
+        await page.waitForFunction(() => window.qaStorage.read().fpToolsAutoReplies.chatGuardEnabled === false);
+        assert.equal(await threshold.isVisible(), false);
+        assert.equal((await state()).fpToolsAutoReplies.chatGuardThresholdMinutes, 15);
+        assert.equal((await state()).fpToolsDisabledFeatures?.includes('chat_guard') || false, false);
+        await toggle.click();
+        await page.waitForFunction(() => window.qaStorage.read().fpToolsAutoReplies.chatGuardEnabled === true);
+        assert.equal(await threshold.inputValue(), '15');
+        assert.deepEqual(errors, []);
     } finally { await browser.close(); }
 });

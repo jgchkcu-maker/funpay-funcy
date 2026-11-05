@@ -18,7 +18,8 @@ async function openInterfaceElements(browser, initial = {}, { dark = true, width
     await page.goto('https://funpay.com/');
     await page.setContent(`<html${dark ? ' class="fpt-theme-dark"' : ''}><head></head><body style="background:${dark ? '#18191d' : '#f2f3f5'}"></body></html>`);
     await page.evaluate(({ initial, failFirstRead }) => {
-        let stored = structuredClone(initial);
+        let stored = structuredClone({ fpToolsProfileOwner: { accountId: '100' }, fpToolsAutoReplies: { chatGuardEnabled: true, chatGuardThresholdMinutes: 30 }, ...initial });
+        window.fptPageUserId = () => '100';
         let failRead = failFirstRead;
         const listeners = [];
         const pick = keys => {
@@ -65,12 +66,20 @@ async function openInterfaceElements(browser, initial = {}, { dark = true, width
                 id: 'qa', getURL: file => `https://funpay.com/${file}`,
                 async sendMessage(message) {
                     (window.qaMessages ||= []).push(message);
+                    if (message.action === 'fptChatGuard') {
+                        if (message.expectedAccountId !== stored.fpToolsProfileOwner?.accountId) return { ok: false, error: 'Аккаунт изменился' };
+                        const settings = structuredClone(stored.fpToolsAutoReplies || {});
+                        if (typeof message.enabled === 'boolean') settings.chatGuardEnabled = message.enabled;
+                        if (message.threshold) settings.chatGuardThresholdMinutes = message.threshold;
+                        window.qaStorage.external({ fpToolsAutoReplies: settings });
+                        return { ok: true };
+                    }
                     return { success: true, data: [] };
                 }
             }
         };
     }, { initial, failFirstRead });
-    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css']) await page.addStyleTag({ path: path.join(root, file) });
+    for (const file of ['css/content_styles.css', 'css/fpt_icons_theme.css', 'css/popup_categories.css', 'css/chat_guard.css']) await page.addStyleTag({ path: path.join(root, file) });
     for (const file of ['content/ui/popup_metadata.js', 'content/ui/popup_actions.js', 'content/ui/popup_attachments.js',
         'content/ui/popup_components.js', 'content/ui/main_popup.js', 'content/features/feature_registry.js',
         'content/features/feature_disabler.js', 'content/features/needs_tab.js', 'content/ui/interface_elements_page.js']) {

@@ -50,7 +50,7 @@ test('active row, unread badge and expired session reflect stored data without a
         assert.equal(await active.count(), 1);
         assert.equal(await active.locator('.fpt-am-unread').textContent(), '3');
         assert.equal(await active.getByRole('button', { name: 'Активен' }).isDisabled(), true);
-        assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-tag--expired').textContent(), 'link_offСессия истекла');
+        assert.equal(await page.locator('.fpt-am-row[data-expired="true"] .fpt-am-tag--expired').textContent(), 'link_offСессия не подтверждена');
         assert.match(await page.locator('.fpt-am-row').nth(1).locator('.fpt-am-nick').textContent(), /KeyStorePro/);
         assert.match((await active.locator('.fpt-am-balance').textContent()).replace(/\s/g, ' '), /Баланс 12 480 ₽/);
         assert.match((await active.locator('.fpt-am-pending').textContent()).replace(/\s/g, ' '), /В ожидании 3 200 ₽ · 4 заказа/);
@@ -162,7 +162,7 @@ test('switching asks first, moves each account to its own config and rolls back 
         await page.getByRole('button', { name: 'Войти в Старый аккаунт' }).click();
         await page.locator('.fpt-am-switch-dialog').getByRole('button', { name: 'Войти' }).click();
         await page.waitForSelector('.fpt-popup-toast[data-kind="error"]');
-        assert.match(await page.locator('.fpt-popup-toast[data-kind="error"]').textContent(), /Сессия истекла/);
+        assert.match(await page.locator('.fpt-popup-toast[data-kind="error"]').textContent(), /Не удалось подтвердить вход/);
         assert.equal(await page.evaluate(() => window.qaSession), 'key-main');
         stored = await state();
         assert.equal(stored.fpToolsProfileOwner.accountId, '1');

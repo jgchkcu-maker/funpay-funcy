@@ -1,0 +1,929 @@
+✔ key lists are disjoint, classified and leave per-account lot services alone (4.4384ms)
+✔ first run marks the current account as owner without touching live settings (9.0613ms)
+✔ switching stores the old config, gives a new account defaults and restores the old one on return (3.0274ms)
+✔ sync copies config only, keeps the target history and can be undone (2.5109ms)
+✔ sync into the active account writes live keys and clears its fresh-account notice (1.2848ms)
+✔ automationEnabledIn reads auto-reply switches and auto bump (0.3347ms)
+✔ accounts screen fits both themes and widths and never renders or stores session keys (13886.0669ms)
+✔ active row, unread badge and expired session reflect stored data without an overview card (3543.1509ms)
+✔ empty list offers the current account and adding it saves the session without the key (5545.7724ms)
+✔ signed-out visitors see a hint instead of the add button (5950.6511ms)
+✔ a signed-in account with an expired saved session can refresh it in place (4182.2338ms)
+✔ switching asks first, moves each account to its own config and rolls back an expired session (15915.3952ms)
+✔ a plain switch between configured accounts without automation stays one click (6646.4777ms)
+✔ rename inline with Enter, cancel with Escape and delete through the dialog (7252.2225ms)
+✔ notes are written inline, shown under the name and found by search (6519.7922ms)
+✔ refresh updates every account in turn, failures keep their old time and stale data refreshes on open (3953.8769ms)
+✔ while automation runs other accounts are not refreshed and say so instead of failing (4418.0673ms)
+✔ sync copies the config after two steps and can be undone (4393.5228ms)
+✔ external storage changes re-render and a failed read can be retried (3009.8038ms)
+✔ returning to the page refreshes data that went stale while it was closed (2400.3725ms)
+✔ balances parse FunPay formats with spaces, commas and currency signs (8.0206ms)
+✔ summary adds balances of one currency and counts unread and expired sessions (32.5939ms)
+✔ initials, relative time and avatar urls (4.4309ms)
+✔ pending money is summed per currency across accounts (3.9826ms)
+✔ legacy records move their keys out of storage and keep working by id (19.8228ms)
+✔ adding the current account dedupes by FunPay id and refreshes an expired session (3.1415ms)
+✔ refresh keeps the last good snapshot time when FunPay fails or automation blocks it (1.6818ms)
+✔ a snapshot of a key that now belongs to another user is rejected (0.8286ms)
+✔ a wrong saved FunPay id is corrected when the key still opens the same nickname (0.7945ms)
+✔ switching suspends the current config, loads the target one and rolls back an expired key (3.1379ms)
+✔ a manual login elsewhere is reconciled and sync works by record id (2.1585ms)
+✔ notes are trimmed and limited, deleting drops the key but keeps the config (0.9619ms)
+✔ switching before the owner was marked saves the live config first and refuses when the account is unknown (2.1918ms)
+✔ daily keepalive refreshes only the current account and never swaps keys (1.0386ms)
+✔ daily keepalive marks a dead key as expired instead of failing silently (0.8334ms)
+✔ auto-delivery page loads stock states, saves per-lot changes, and fits the full popup (24846.3511ms)
+✔ auto-delivery shows layout-matched skeleton rows while the first lot list is loading (10914.628ms)
+Auto-delivery previews: C:\Users\Usser\AppData\Local\Temp\funpay-auto-delivery-minimal
+✔ compact auto-delivery supports editing, retry, filters and narrow layouts (11020.6138ms)
+✔ auto-delivery master switch saves the shared flag the background checks (2913.9479ms)
+✔ auto-delivery preview splits messages on $sleep and fills template variables like the runtime (9.23ms)
+✔ auto-delivery screen keeps stock status, lot cards and sticky save bar without an overview card (4.7193ms)
+✔ lot parser falls back from description text to category and lot ID (3.6994ms)
+✔ lot parser keeps the whole composite id of currency (chips) offers and marks them (1.0618ms)
+✔ category parser counts currency (chips) offers and marks the category as not raisable (1.8658ms)
+✔ profile stock badges use the same default-enabled rule as the settings page (5.2937ms)
+✔ auto-delivery stock utilities count non-empty secret rows and preserve concurrent lot updates (17.3791ms)
+✔ auto-delivery lot switch gates new delivery while legacy settings remain allowed (0.3443ms)
+✔ there is no stock sweep any more: no alarm, no toggles, no notice script, retired keys are cleaned (1.9976ms)
+✔ auto-delivery templates receive the parsed lot name (23.2367ms)
+✔ secret stock refresh follows a successful delivery and respects explicit lot disablement (7.6522ms)
+✔ auto_delivery: auto_delivery_ui_contract markup is removed and search metadata remains (7.3452ms)
+✔ auto_delivery: the category view is mounted into the existing popup shell (0.5509ms)
+✔ orders and deliveries mount as a separate popup category (0.6139ms)
+✔ autoresponder: empty settings show collapsed scenarios, an empty rule list and write nothing on open (8216.5065ms)
+✔ autoresponder: scenarios save through the store patch with explicit unsaved state and validation (5753.1088ms)
+✔ autoresponder: images attach, order is chosen and the saved reply keeps them (10753.4416ms)
+✔ autoresponder: keyword rules are added, edited and removed with indexed store operations (10530.3058ms)
+✔ autoresponder: disabled keyword rules stay visible with an explanation and fit narrow popups (5529.1233ms)
+✔ auto_reply: auto_reply_pages markup is removed and search metadata remains (5.335ms)
+✔ checked patches reject concurrent scalar and rating changes inside the storage queue (2.8526ms)
+✔ serializes UI patches and background updates against the latest saved object (30.4363ms)
+✔ patch replaces fields, merges rating maps, and can unset map entries (15.36ms)
+✔ parallel list additions, edits, and removals preserve every current item (45.5415ms)
+✔ rejects a stale index edit instead of deleting the item that shifted into its place (31.9195ms)
+✔ imports user preferences while preserving local runtime markers and fields omitted by old backups (14.9924ms)
+✔ a failed storage write rejects its caller and does not poison later queue operations (30.8672ms)
+✔ repository code outside the store does not write fpToolsAutoReplies directly (2057.6363ms)
+✔ content helper waits for the service-worker write and reports storage errors (1.6868ms)
+✔ rating patches work without any old controls and retain atomic-store semantics (8.0561ms)
+✔ auto_reply: static markup stays empty and search metadata remains (13.0256ms)
+✔ auto_reply: the category view is mounted into the existing popup shell (1.2313ms)
+✔ auto_reply: the page uses the shared frame, the store patch API and never writes the settings key itself (1.1585ms)
+✔ auto_reply: page-owned widgets do not reuse class names other pages are tested by (1.6889ms)
+✔ auto_reply: styles are responsive, motion-safe and scoped to the themed popup (5.8564ms)
+✔ auto_reply: popup metadata keeps the searchable titles of every scenario (0.492ms)
+✔ auto_reply: settings are normalized with the engine defaults and malformed data is tolerated (3.8156ms)
+✔ auto_reply: keyword rules are built the way the engine reads them (2.6168ms)
+✔ auto_reply: duplicates, filtering and the summary text are computed from the stored rules (1.5041ms)
+✔ auto_reply: each scenario offers only variables the engine fills for it (1.3209ms)
+✔ review help follows shared page typography, fits both themes and closes by click or Escape (13561.6592ms)
+✔ rating rail sits beside the editor and stars reflect saved answers (6468.4073ms)
+✔ reviews: drafts survive ratings, independent saves preserve runtime and unrelated settings (5568.1554ms)
+✔ reviews: validation, variables, image routing, save error and retry (5958.7944ms)
+✔ first single bonus save persists the mode required by the background sender (4404.0106ms)
+✔ bonuses: local list edits use a single checked patch; mode changes and cancel keep data (4416.3793ms)
+✔ reviews: external updates refresh clean blocks, preserve dirty drafts and expose conflict recovery (4902.1463ms)
+✔ bonus dialog survives external list shifts and cannot overwrite a different item (5208.792ms)
+✔ reviews: both themes, responsive stacking, transparent header and keyboard selection (12058.8766ms)
+✔ review save rejects a change made after preflight without losing the draft (3381.6664ms)
+✔ upload completion replays external changes and enables the other save button (6236.0456ms)
+✔ bonus text opens its editor; removing popup disposes the storage listener (3958.9143ms)
+✔ failed image upload keeps an actionable error on a clean block (3715.2775ms)
+✔ newer storage events win over a delayed successful save response (3640.174ms)
+✔ a stale preflight result cannot roll clean bonus settings back (2370.091ms)
+✔ removing popup with an open bonus dialog releases keyboard interception (2169.6206ms)
+✔ loading failure offers retry without enabling defaults or overwriting saved settings (1948.9054ms)
+✔ defaults do not enable automation or invent user content (2.6244ms)
+✔ review patch merges only edited ratings and never writes runtime or bonus settings (0.5528ms)
+✔ bonus operations keep indexes and expected values correct after multiple removals (0.3845ms)
+✔ validation allows skipped ratings but not image-only enabled replies (0.4133ms)
+✔ preview substitutes supported tokens and leaves arbitrary markup as plain text (0.3327ms)
+✔ auto_review: auto_review_ui_contract markup is removed and search metadata remains (6.1251ms)
+✔ autobump page renders status, saves rules with rollback, picks categories and shows the log (20594.1561ms)
+[FunPay Funcy AutoBump] [04:12:47] Пропущено: Валюта. FunPay не поднимает предложения валюты.
+[FunPay Funcy AutoBump] [04:12:47] Не поднято: [Системная ошибка]. Не удалось найти cookie "golden_key". Вы вошли в свой аккаунт FunPay?
+✔ raise-all message uses the imported bump cycle and returns a summary for currency lots and auth failure (31.4458ms)
+✔ autobump: static markup stays empty and search metadata remains (10.3191ms)
+✔ autobump: the category view is mounted into the existing popup shell (0.7633ms)
+✔ autobump: the page uses the shared category frame and preserves existing storage keys (1.367ms)
+✔ autobump: styles are responsive and the toast region covers the page (3.2541ms)
+✔ autobump: popup actions and background expose the status and raise-now routes (3.1578ms)
+✔ autobump: log entries are classified for display (2.8061ms)
+✔ blacklist page: empty state, adding with flags, duplicates and validation (7699.9983ms)
+✔ blacklist page: rows toggle flags, edit notes, search, remove and follow outside changes (8619.8301ms)
+✔ blacklist page: search appears for long lists; dark theme and narrow popup keep the layout (11493.6821ms)
+✔ blacklist: static markup stays empty and search metadata remains (7.1564ms)
+✔ blacklist: the page is loaded by the manifest and mounted by the popup (0.8396ms)
+✔ blacklist: the page uses the shared frame and blacklist popup actions only (1.3637ms)
+✔ blacklist: styles are scoped, responsive and respect reduced motion (4.2695ms)
+✔ blacklist: stored entries are normalized with safe defaults (5.8334ms)
+✔ manifest exposes Funcy without changing extension wiring (1.4546ms)
+✔ primary visible surfaces use the canonical brand and omit old public links (11.8816ms)
+✔ public identifier is excluded while the automation compatibility marker is retained (1.0169ms)
+✔ legacy settings, config protocols, and resource dependencies remain intact (3.4892ms)
+✔ bulk find/replace matches whole Cyrillic words and keeps alternation inside the word boundary (20.2009ms)
+✔ bulk price rules share one calculation with minimum and rounding (10.9849ms)
+✔ bulk apply saves {current} after find/replace, returns the new title and rejects drops over 100% (3.4644ms)
+✔ bulk apply rejects explicit chips lots and chips form responses (2.5032ms)
+✔ images use native multipart and image_id; caption is a separate last message (93.3412ms)
+✔ upload refusals, missing IDs and bad JSON never reach runner (4.7176ms)
+✔ runner failures are classified without replaying upload or message (83.5906ms)
+✔ timeout also bounds reading response bodies and never resends a message (21.0631ms)
+✔ invalid payloads cannot fetch arbitrary URLs or start uploads (6.5518ms)
+✔ account change between upload and runner prevents sending to a new account (0.8496ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\chat_attachments_browser.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\chat_attachments_browser.test.js:5:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\chat_attachments_browser.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\chat_attachments_browser.test.js (413.7211ms)
+✔ ChatGuard baseline is independent of existing autoreply cursors; only new buyer messages count (41.6471ms)
+✔ ChatGuard preserves first detection time, cancels snooze on a new message and ignores duplicate IDs (67.753ms)
+✔ ChatGuard observes buyer → auto greeting → manual answer → new buyer in message order (7.2777ms)
+✔ ChatGuard records unmarked automatic delivery before sending, matches receipt by author/boundary/hash, and never stores secrets (13.2646ms)
+✔ ChatGuard automatic image and manual image have distinct provenance (11.3911ms)
+✔ ChatGuard retains ambiguous automatic sends through a restart, then accepts a definite manual answer (9.2603ms)
+✔ ChatGuard does not guess which of two identical own messages was the automatic send (242.8696ms)
+✔ ChatGuard keeps observing a blocked automatic handler without replaying its side effect (4.3043ms)
+✔ ChatGuard resume reconciles saved waiting chats, but baselines other chats again (47.2011ms)
+✔ ChatGuard stale account commands and late network responses cannot mutate the next account (3.9449ms)
+✔ ChatGuard runtime stays local during imports and does not wake the engine on every cursor write (49.2128ms)
+✔ ChatGuard alone activates the shared heartbeat; default remains off (74.923ms)
+✔ ChatGuard page: responsive themes, navigation badge, snooze, account isolation, reopen and errors (18253.9968ms)
+✔ chat buttons: one row, theme radius including zero, light/dark, hover and keyboard filter (5658.4642ms)
+✔ filter restores saved state, applies to added contacts and does not overwrite a click with a late read (4616.1941ms)
+✔ read-all waits for network completion, prevents repeat requests, reports errors and resets feedback (8753.6567ms)
+✔ popup reveal releases its clip after opening, covers the outer shadow and survives resize/reopen/reduced motion (5218.8309ms)
+✔ modular chat CSS is empty until the switch is on and clamps every number (15.2696ms)
+✔ modular chat hides the info panel and restores seam borders only in the original look (18.3302ms)
+✔ early copy of the modular chat rules is injected, replaced and removed (3.5589ms)
+✔ theme CSS carries the modular chat in both looks, after the radius rewrite (19.8542ms)
+✔ theme settings clamp the chat numbers on import and the modules load in order (3.3072ms)
+✔ modular chat: separate rounded modules, drag handles save widths, reset, clamp and hide the panel (4959.3973ms)
+✔ modular chat: original look restores seam borders, mobile width keeps FunPay layout (5621.0659ms)
+✔ strict sender posts exactly once and classifies every outcome (41.6028ms)
+✔ account guard bumps the epoch on account or key change and rejects stale effects (7.1482ms)
+FunPay Funcy AR: → чат 77 (accepted)
+✔ bootstrap ignores history; buyer before own last message is processed exactly once (25.8197ms)
+✔ system origin comes only from numeric author; marker-prefixed buyer remains buyer (2.2738ms)
+✔ unknown author blocks cursor before later own messages (1.8123ms)
+✔ interrupted processing survives worker recreation and never replays a reserved reply (2.3583ms)
+✔ backfill persists across passes and stops on repeated history without jumping cursor (5.2084ms)
+✔ late account change cannot advance cursor or write into the next scope (2.2887ms)
+✔ pending reads coalesce, batches are bounded, and new chat starts after bootstrap boundary (22.6272ms)
+✔ IDs stay lossless, duplicate conflicts fail closed, and imported cursors are ignored (6.6665ms)
+✔ runtime cursor writes do not request another engine pass; configuration edits still do (0.5612ms)
+✔ reader serializes batches per account, persists 429 cooldown, and never immediately retries (3.5747ms)
+✔ wired autoresponder handles a buyer payment quotation as ordinary text; only system author registers an order; delivery stays unmarked (33.9895ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\chat_translation_browser.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\chat_translation_browser.test.js:5:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\chat_translation_browser.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\chat_translation_browser.test.js (231.8121ms)
+✔ chip offer id maps to its trade form row (72.8863ms)
+✔ deactivating a chip removes only its active flag and keeps other servers (4.7016ms)
+✔ chip price adjusts from the fresh form and enabling adds the flag (10.9059ms)
+✔ chip writes refuse foreign accounts, missing rows and delete (1.6851ms)
+✔ main popup disables manual resizing and has a reduced-motion-aware exit state (23.1525ms)
+✔ main popup omits the close button and closes only for outside clicks (8.8348ms)
+✔ legacy popup geometry is no longer read or written (6.5259ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\perf_browser_harness.js
+- C:\Users\Usser\Desktop\funpay-funcy\tests\cursor_fx_runtime_browser.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\perf_browser_harness.js:4:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\helpers\\perf_browser_harness.js',
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\cursor_fx_runtime_browser.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\cursor_fx_runtime_browser.test.js (217.6839ms)
+✔ effects page: preview draws, particle settings save at once and reset (13925.138ms)
+✔ effects page: custom cursor uploads, adjusts, validates and removes the image (11725.0697ms)
+✔ effects page: dark popup and narrow widths stay inside the frame (5334.5879ms)
+✔ effects: static markup stays empty and search metadata remains (28.8746ms)
+✔ effects: the category view is mounted into the existing popup shell (1.0477ms)
+✔ effects: the page uses the shared frame, existing storage keys and popup actions (4.3218ms)
+✔ effects: styles are scoped, responsive and respect reduced motion (6.1124ms)
+✔ effects: settings are normalized with safe defaults (5.8365ms)
+✔ effects: the page and the site effect share one particle model (5.6108ms)
+✔ heartbeat handles a failed automation pass and still runs recovery (7.9356ms)
+✔ page mutations debounce into one wake and allow the next independent signal (4.7633ms)
+✔ synchronous context invalidation is contained and detaches stale page listeners (1.8085ms)
+✔ context lost during debounce cancels the send and detaches the observer (1.7356ms)
+✔ asynchronous context invalidation detaches the observer without an unhandled rejection (27.1158ms)
+✔ transient worker rejection does not disable future page signals (1.5791ms)
+FINANCE_CURRENCY_PASS
+✔ tests\finance_currency.test.js (336.9562ms)
+✔ finance_hub: finance_custom_select_dropdown markup is removed and search metadata remains (6.4424ms)
+✔ finance_hub: finance_custom_select_scrollbar_bounds markup is removed and search metadata remains (12.1253ms)
+FINANCE_DB_ATOMIC_PASS
+✔ tests\finance_db_atomic.test.js (124.0125ms)
+﹣ every Finance dropdown row remains the mouse target while hovered (1.4499ms) # Microsoft Edge is not installed
+FINANCE_FILTERS_PASS
+✔ tests\finance_filters.test.js (156.2135ms)
+✔ finance_hub: finance_grid_equal_height markup is removed and search metadata remains (14.9892ms)
+✔ finance hub renders every tab with seeded data and responds to filters (16221.7406ms)
+✔ finance controls preserve unrelated cards and contain scrolling inside the popup (9032.7295ms)
+✔ finance notifications preserve layout and the tab pill tracks responsive tabs (17139.1451ms)
+✔ finance hub refresh reports partial failures and exports CSV (8159.4381ms)
+✔ finance screenshot layouts align controls and separate coverage and table filters (6170.5052ms)
+✔ zero cost coverage keeps truthful totals and filters only its orders table (7044.5817ms)
+✔ finance hub shows onboarding when there is no data and fits a narrow popup (3362.8852ms)
+✔ finance hub is readable at phone width (2368.6481ms)
+✔ money and percent formatting keeps a non-breaking symbol and never prints NaN (24.465ms)
+✔ delta is explicit when there is no baseline and never divides by zero (0.3357ms)
+✔ sales series fills empty days and sums only closed/paid orders in the chosen currency (4.9923ms)
+✔ month and week steps bucket by the MSK calendar (0.3883ms)
+✔ step selection follows the period and falls back to the data span (0.275ms)
+✔ rankings group by name, skip refunds and fold the tail into "Прочее" (0.5902ms)
+✔ currency choice never mixes currencies (1.0419ms)
+✔ nice scale returns ascending ticks covering the maximum (0.3646ms)
+✔ finance_hub: static markup stays empty and search metadata remains (10.2983ms)
+✔ finance_hub: model, chart and page modules load in order before the content script that mounts them (1.3044ms)
+✔ finance_hub: the page uses the shared category frame, builds DOM nodes and talks only to popup actions (34.67ms)
+✔ finance_hub: every metadata mode has a tab button and a mode action registered by the popup shell (11.7906ms)
+✔ finance_hub: styles are scoped, responsive and themed through the popup tokens (19.1587ms)
+✔ finance_hub: the overview data action also returns profit and the previous period for KPI deltas (16.4444ms)
+✔ finance_hub: finance_ios_subtabs markup is removed and search metadata remains (6.3776ms)
+✔ finance_hub: finance_kpi_alignment markup is removed and search metadata remains (7.1368ms)
+✔ finance_hub: finance_operations_breakdown_ui markup is removed and search metadata remains (46.1366ms)
+✔ finance_hub: finance_operations_modal_theme markup is removed and search metadata remains (10.118ms)
+✔ finance_hub: finance_overview_layout_cleanup markup is removed and search metadata remains (7.8103ms)
+✔ finance_hub: finance_overview_visual_contract markup is removed and search metadata remains (8.7948ms)
+✔ finance_hub: finance_profit_missing_cost_ui markup is removed and search metadata remains (7.2592ms)
+FINANCE_REFRESH_PASS
+✔ tests\finance_refresh.test.js (122.151ms)
+✔ finance_hub: finance_subtab_transition markup is removed and search metadata remains (8.815ms)
+✔ finance_hub: finance_task08_ui_contract markup is removed and search metadata remains (36.5185ms)
+FINANCE_TIME_PASS
+✔ tests\finance_time.test.js (322.7485ms)
+✔ finance_hub: finance_uiux_regressions markup is removed and search metadata remains (10.2204ms)
+✔ chat and reconcile share one delivery; a repeat sends nothing (31.8608ms)
+✔ unknown quantity, refund, foreign chat or missing binding block delivery (13.4179ms)
+✔ a purchase of my own and an unknown role are skipped without effects (2.0115ms)
+✔ an uncertain part stops the delivery and is never repeated automatically (23.6666ms)
+✔ a definite rejection before anything was sent may be retried, sending only unsent parts (4.946ms)
+✔ an account switch between parts stops the delivery (1.8242ms)
+✔ orders delivered by the previous version are not delivered again; not adopted orders only observed (1.4522ms)
+✔ fewer FunPay secrets than the quantity is a partial result flagged for attention (1.8978ms)
+✔ a long sleep persists pending parts and resumes after a worker restart exactly once (6.0637ms)
+✔ continuations recheck disable, refund, holds and session epoch before sending (5.7588ms)
+✔ all lines are validated before the first POST and quantity does not repeat instructions (7.7759ms)
+✔ continuation uses frozen parts and stops if verified quantity changed (5.7565ms)
+HOVER_STABILITY_PASS
+✔ tests\hover_stability.test.js (266.6267ms)
+✔ interface elements screen fits both themes and widths without horizontal scroll (19776.4046ms)
+✔ element and section switches save instantly and keep unrelated ids (4651.3384ms)
+✔ display options are opt-in settings saved under their own keys (3827.0792ms)
+✔ keyboard row explains the hidden font block and search shows the parent as context (9473.5393ms)
+✔ suspended features and AI helper stay absent after restore and remount (6392.1143ms)
+✔ catalog load errors are reported with recovery while AI stays absent (4180.422ms)
+✔ external storage changes update the screen (3562.49ms)
+✔ layout keeps the declared group and chat subgroup order and nests the keyboard under the font block (11.1308ms)
+✔ layout appends unknown groups instead of dropping them (5.0696ms)
+✔ visibility matches labels, descriptions, groups and legacy labels; a matching child keeps its parent as context (10.897ms)
+✔ filters split elements into shown and hidden (5.3791ms)
+✔ previews preserve bundled static markup and return empty for unsupported kinds (7.8329ms)
+✔ schedule pane saves a draft rule with the chosen zone and shows a preview (3078.4594ms)
+✔ the old standalone schedule and pricing dialogs are gone (6909.0707ms)
+✔ order page copy divides the order total by quantity (7.2535ms)
+✔ clone and import use the recalculated seller price before the raw buyer price (6.5346ms)
+✔ public lot parser reads the data-factors currency from data-cy (1.0441ms)
+✔ cloneGetSource computes finalPrice even when the category form fails to build (1.3664ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\lot_edit_page_browser.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\lot_edit_page_browser.test.js:4:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\lot_edit_page_browser.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\lot_edit_page_browser.test.js (114.1925ms)
+✔ export, own-lot import and auto delivery propagate parser errors without successful null data (27.9469ms)
+✔ successful lot fields keep the existing export, import-preview and stock contracts (7.036ms)
+✔ missing or malformed offscreen responses fail closed (7.9409ms)
+✔ startLotImport rejects duplicate concurrent and already-active imports (133.7495ms)
+✔ lot management keeps its help button after the page mounts (5556.2622ms)
+✔ lot management uses a task-card skeleton while checking pending imports (3505.6295ms)
+✔ lot management fits 1204, 680, and 420 pixel viewports in light and dark themes (2813.2229ms)
+✔ bulk editor shows lots above tabbed changes and validates live (7952.7881ms)
+✔ bulk editor selects a category group, previews Cyrillic whole-word replacement and offers a retry for failed lots (7420.3577ms)
+✔ export shows category and lot totals, disables empty export, and uses a visible progress indicator (4746.659ms)
+✔ import error reason stays visible and a completion report retains errors and skipped lots (10124.962ms)
+✔ lot import actions use a supported icon glyph (4864.5937ms)
+✔ an active import is announced and prevents starting a second import (1859.8368ms)
+✔ primary dialog buttons keep readable contrast while hovered (2937.5992ms)
+✔ shared popup utilities format russian plurals and create accessible status pills (2861.3362ms)
+✔ shared dialog traps and restores focus and blocks close paths while busy (2685.2471ms)
+✔ shared toast queue pauses on hover and stays inside an open dialog (3029.0034ms)
+✔ lot_io mounts its category view and keeps the existing action contracts (3.0556ms)
+✔ lot_io reuses the shell category header and keeps the shared title track (0.8146ms)
+✔ lot management view defines tool tiles, import card, empty state and narrow layouts (2.3413ms)
+✔ lot import accepts a JSON file dropped on the import tile through the same path as the file picker (0.8295ms)
+✔ category and select-all checkboxes preserve pin button states without promise errors (4586.3604ms)
+✔ pin and unpin skip a row without href and still process a valid selected lot (2436.5317ms)
+✔ missing category href does not crash pinning, activation or price editing (2462.4183ms)
+✔ rules are validated: zone, time format, equal bounds are not all day (38.0397ms)
+✔ overnight windows split at midnight, Sunday wraps to Monday, overlaps merge (1.7021ms)
+✔ membership uses the saved zone, not the computer clock (26.5083ms)
+✔ DST gap and fold follow wall-clock semantics (5.0184ms)
+✔ the next check is the nearest change within a day, else a control check in 24 hours (29.7898ms)
+✔ a saved rule is a draft; enabling it closes the lot and schedules one alarm (189.7549ms)
+✔ after a long sleep only the current state is applied, once (8.9473ms)
+✔ a lot that was already off is not switched on by the schedule; disabling a rule lifts only its blocker (49.8275ms)
+✔ invalid rules and foreign revisions are refused (3.737ms)
+✔ tiny prices are compared exactly (38.1467ms)
+✔ price rules are computed exactly from the fresh form (1.4784ms)
+✔ queued operations on one lot run in order against a fresh form (29.9863ms)
+✔ a stale bulk form cannot reopen a closed lot: only the intended fields are applied (77.0307ms)
+✔ a deleted lot is terminal for later queued updates (14.2931ms)
+✔ an account switch stops queued writes; a foreign page is refused (2.3621ms)
+✔ patchLot saves only real changes and verifies them after a re-read (17.9338ms)
+✔ patchLot refuses to overwrite a manual edit made after the caller looked at the lot (0.6055ms)
+✔ setLotActive removes the active field to deactivate and reports unverified saves (1.2934ms)
+✔ activity service leaves unmanaged lots alone and never reads or acts on stock (19.1803ms)
+✔ a manual change by the seller pauses management; manual off is never overridden (2.6468ms)
+✔ traces of the retired stock sweep neither hold a lot off nor let automation switch it on (1.4788ms)
+MENU_REFERENCE_CONTRACT_PASS
+✔ tests\menu_reference_contract.test.js (133.01ms)
+✔ decimal arithmetic is exact and keeps tiny prices apart (18.2827ms)
+✔ rounding follows the quantum of the operation (1.396ms)
+✔ allocation splits a batch cost exactly with a deterministic remainder (3.1056ms)
+✔ order quantity is parsed from the whole raw value with its unit (5.0792ms)
+✔ order facts keep unknown values unknown and take the order id from the page (3.8416ms)
+✔ verifier blocks effects on any unknown or mismatching fact (5.4337ms)
+✔ central navigation keeps active aliases and excludes retired financial pages (2.3265ms)
+NAVIGATION_SEARCH_ROUTES_PASS
+✔ tests\navigation_search_routes.test.js (5716.9379ms)
+✔ catalog reads preserve all feature data and never write settings or create previews (9.5872ms)
+✔ search continues to match descriptions, groups and prior feature labels without rendering rows (5.585ms)
+✔ removed AI actions are not registered without sending data (6.0226ms)
+✔ explicit toggles preserve unrelated feature IDs and ignore removed feature IDs (5.3681ms)
+✔ public registry preserves available ID-to-selector pairs and excludes suspended features (41.0015ms)
+✔ renamed font controls retain their prior searchable labels locally (14.4819ms)
+✔ stored disabled IDs still hide the exact original live selectors across the remaining groups (10.6013ms)
+✔ sounds page: standard sound remains usable and branded presets are absent (6249.292ms)
+✔ sounds page: a custom melody is loaded, trimmed on the waveform, saved and removed (22902.4131ms)
+✔ sounds page: dark theme and a narrow popup keep the layout inside the frame (10344.534ms)
+✔ sounds: static markup stays empty and search metadata remains (9.7853ms)
+✔ sounds: the page sits in the customers group and is mounted by the popup (1.7297ms)
+✔ sounds: every preset file ships with the extension and is web accessible (4.646ms)
+✔ sounds: the page uses the shared frame, the stored keys and popup actions only (1.8107ms)
+✔ sounds: the playback runtime no longer depends on the original source path (4.8572ms)
+✔ sounds: styles are scoped, responsive and respect reduced motion (6.1723ms)
+✔ sounds: stored values are normalized with safe defaults (2.7261ms)
+✔ recordOrder merges repeated sightings without erasing known fields or moving purchasedAt (12.1086ms)
+✔ beginOp is idempotent and transitions follow the state machine (2.4517ms)
+✔ concurrent beginOp calls for one key create exactly one operation (1.1857ms)
+✔ recovery marks only sends of a previous worker as uncertain (1.5289ms)
+✔ prune drops old finished records and keeps orders with live operations (2.6537ms)
+✔ meta values round-trip (0.5673ms)
+✔ IndexedDB journal: multi-store transaction is atomic and v1 data survives the upgrade (6909.8428ms)
+✔ account orders are keyed by account and order and carry a revision (12.9295ms)
+✔ an attempt and its event are written once per opKey (1.2548ms)
+✔ prune keeps unfinished attempts and their orders (1.5569ms)
+✔ recovery marks interrupted delivery parts uncertain (3.6306ms)
+✔ the card offers actions that match the evidence, never a generic retry (24.2283ms)
+✔ commands check the revision and the capability list (27.9974ms)
+✔ the list filters orders that need a decision and masks delivered goods (7.7601ms)
+✔ lot is resolved from the offer link first, then from a unique title in the same category (14.5294ms)
+✔ order loader reads each order once per account window and never invents quantity or binding (4.9385ms)
+✔ scheduler dispatches only its own alarms, keeps a running periodic alarm, and serializes recovery (9.185ms)
+✔ persisted deadlines survive a worker restart and run once when overdue (2.1101ms)
+✔ order page parser reads lot, category, quantity, status and buyer from real DOM (5295.5923ms)
+✔ order facts parser returns raw page facts without decisions (3891.9529ms)
+✔ the first pass only records a baseline and never executes old orders (22.5578ms)
+✔ known unfulfilled orders are retried even when they are far beyond the first page (4.8707ms)
+✔ pages are followed with continue until the previous border, missed paid orders are adopted (2.2906ms)
+✔ a repeating continue cursor reports failure without advancing the completed border (2.2583ms)
+✔ orders journal lists orders by decision and the card only offers allowed actions (6938.1882ms)
+✔ release: chat, review and lot AI stay absent after focus and dynamic markup; translations and manual images work (4600.4016ms)
+✔ release: own and other profiles do not use legacy cached data and do not mount server descriptions (6115.791ms)
+✔ page windows: lot copy uses the menu palette, switches languages and closes like a dialog (4725.2553ms)
+✔ page windows: stacked windows close one at a time and dark pages get the dark menu palette (5699.786ms)
+✔ page windows: narrow screens show windows as bottom sheets without horizontal overflow (3904.6287ms)
+✔ page windows: the shell and its stylesheet load with the content scripts (2.4708ms)
+✔ page windows: every window is built with fptWindow.create and keeps its id (49.8993ms)
+✔ page windows: no window reads its colours from the page any more (16.5495ms)
+✔ page windows: the stylesheet uses the menu tokens and the violet accent (1.5523ms)
+✔ page windows: site theme rules and the popup outside-click leave windows alone (9.5379ms)
+✔ page windows: the shell closes on Escape, keeps Tab inside and restores focus (1.2033ms)
+✔ coalescing preserves every mutation batch in order and accepts frame id zero (5.9029ms)
+✔ pending work migrates in both visibility directions without duplicate execution (1.5033ms)
+✔ callback failures do not block later work and disposal cancels pending batches (1.9242ms)
+✔ URL subscribers share detection, deduplicate events and dispose their sources (1.2215ms)
+✔ without Navigation API all URL subscribers use one polling timer (1.5502ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\perf_browser_harness.js
+- C:\Users\Usser\Desktop\funpay-funcy\tests\perf_runtime_browser.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\perf_browser_harness.js:4:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\helpers\\perf_browser_harness.js',
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\perf_runtime_browser.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\perf_runtime_browser.test.js (204.1939ms)
+✔ actions persist only explicit settings and never read deleted controls (17.619ms)
+✔ auto-reply changes use the existing atomic store and propagate storage failures (4.7438ms)
+✔ partial nested settings updates retain saved theme fields (6.2817ms)
+✔ opening data actions never writes settings and invalid actions reject (13.6873ms)
+✔ account actions are proxied to the background service by record id and never carry keys (11.7077ms)
+✔ lot exports return data without constructing progress bars or modal controls (21.1602ms)
+✔ bonus and keyword additions preserve existing atomic-store arrays (23.8094ms)
+✔ retired financial pages reject popup action registrations (36.825ms)
+✔ delivery updates preserve other lots and saved fields (10.7103ms)
+✔ manual lot loading asks the background to sync stock and returns counts without secret contents (6.9473ms)
+✔ theme actions preserve other theme settings and never hydrate removed previews (11.2112ms)
+✖ real browser: lot management screen, navigation and shell geometry (5306.7974ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\perf_browser_harness.js
+- C:\Users\Usser\Desktop\funpay-funcy\tests\popup_eager_load_browser.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\helpers\perf_browser_harness.js:4:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\helpers\\perf_browser_harness.js',
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\popup_eager_load_browser.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\popup_eager_load_browser.test.js (299.2313ms)
+✔ sales and operation filters are explicit and do not leak between requests (46.4678ms)
+✔ potential is a current snapshot and never applies a historical period to inventory (13.1086ms)
+✔ refresh coalesces concurrent calls, exposes partial failures and allows retry (11.2349ms)
+✔ custom date range rejects invalid dates and passes inclusive MSK dates to the engine (11.5224ms)
+✔ finance export uses the existing serializer and returns a file result without a dialog (17.5177ms)
+✔ profit filters return the aggregate totals and preserve unknown costs for export (13.834ms)
+✔ real finance engines export positive profit and potential totals in the existing file schema (16.7036ms)
+✔ expanded sidebar gains room while the collapsed rail remains compact (1.3921ms)
+✔ popup dimensions adapt to the viewport and ignore saved geometry (3.4189ms)
+✔ page surface clears the close control and shares the softer panel radius (0.5718ms)
+✔ narrow viewport automatically compacts the sidebar at the agreed breakpoint (0.3965ms)
+✔ deleted selection dialogs retain explicit selection and save actions (17.6721ms)
+✔ bulk lot edits preserve native fields and accept literal replacements and explicit empty fields (7.0899ms)
+✔ lot export reports failed items and rejects when nothing could be exported (5.7383ms)
+✔ lot export stops before requesting another lot when its abort signal is set (6.1733ms)
+✔ bulk lot updates stop before writing the next selected lot when cancelled (5.9087ms)
+✔ settings backup retains its format, exclusions and atomic auto-reply import (8.4543ms)
+✔ settings backups cannot export or restore retired piggy-bank data (3.0314ms)
+✔ concurrent feature mutations and partial settings writes retain both explicit changes (14.6828ms)
+✔ keyword attachments use the real atomic store and support an image-only response (12.227ms)
+✔ ticket submit returns a validated draft and only confirmation sends it (6.3446ms)
+✔ popup controls are normalized at the shared popup boundary (1.3053ms)
+✔ shared control styles and normalization stay inside the extension popup (1.2344ms)
+✔ checkbox marks are centered beside their native accessible inputs (0.5592ms)
+✔ popup fields share fixed geometry and price fields use the same control class (0.5311ms)
+✔ popup fields and buttons use one focus indicator without stacked outlines and shadows (1.1655ms)
+✔ popup buttons and selectable rows have clear press states with reduced motion support (0.3157ms)
+✖ popup creation leaves every category empty, retains navigation, and omits the close control (8.0041ms)
+✔ feature search metadata remains available after removing category headings (3.3905ms)
+✔ deleted popup components have no remaining styles while page integrations stay styled (2.1512ms)
+✔ floor satisfies both the minimum profit and the minimum margin (7.7638ms)
+✔ markup and margin are different and named correctly (1.094ms)
+✔ rounding up to the step is re-checked; tiny prices keep their precision (0.5944ms)
+✔ a ceiling below the floor blocks new sales; no raise without permission (1.9106ms)
+✔ fees reduce the net: the floor accounts for them (3.9432ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\pricing_coordination.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\pricing_coordination.test.js:4:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\pricing_coordination.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\pricing_coordination.test.js (86.5645ms)
+✔ preview reads fresh prices and costs; apply writes only previewed rows with expect (19.3946ms)
+✔ a changed cost or rule invalidates the preview (3.1172ms)
+✔ auto pricing is bounded per run and pauses after a manual price edit (3.7872ms)
+✔ profile toolbar survives both initialization orders, search, filters and selection cancellation (9320.1449ms)
+✔ toolbar and selected actions fit narrow and desktop viewports in both palettes (24456.0968ms)
+✔ foreign profile keeps its copy action and does not mount raise-all (2564.7651ms)
+✔ long write errors and currency warnings stay inside the panel without covering actions (9087.4837ms)
+✔ real original and custom theme styles update every lot control radius including zero (816.4512ms)
+✔ final feedback stays readable after the last selected lot succeeds and can be dismissed (2119.0432ms)
+✔ native profile tables keep heading gaps, checkbox columns and cell alignment consistent (1632.8968ms)
+✔ quick replies screen fits both themes and widths without horizontal scroll (9985.9426ms)
+✔ route modes, tab keyboard navigation and search panes stay in sync (8810.8023ms)
+✔ templates can be toggled, created with images, edited, reset and deleted (5080.9292ms)
+✔ slash commands validate triggers and save, edit and delete through the store (4881.882ms)
+✔ external changes rerender after the editor closes and load errors offer a retry (4123.0452ms)
+✔ templates: quick_replies_navigation markup is removed and search metadata remains (7.7689ms)
+✔ templates normalize to the chat runtime defaults without inventing custom entries (2.9142ms)
+✔ stored templates override defaults, keep custom order and drop malformed entries (0.5498ms)
+✔ commands normalize options and keep legacy entries without ids (0.5025ms)
+✔ preview fills template variables, picks the first variant and marks removed inserts (0.7441ms)
+✔ command preview only substitutes variables the slash runtime supports (0.4138ms)
+✔ command validation adds the slash and rejects blanks, spaces, inner slashes and duplicates (1.1294ms)
+✔ templates: quick_replies_ui_contract markup is removed and search metadata remains (6.6116ms)
+✔ strict date parsing validates ru/en/uk calendar, MSK day and year rollover (43.8156ms)
+✔ send receipts require a new numeric ID, our author and the complete normalized body (3.0049ms)
+✔ reconcile checkpoints span budget exhaustion and worker recreation without moving completed border (26.4443ms)
+✔ unknown and minute-boundary dates stay visible without automatic adoption (1.3519ms)
+✔ offscreen parser shares creation and waits for every concurrent parser before closing (23.8796ms)
+✔ engine coalesces a signal during a pass and disabled automation clears its alarms (58.3324ms)
+✔ catalog route validation rejects arbitrary parameters, userinfo and external redirects before another request (170.2063ms)
+✔ release migration changes only exact retired defaults, preserving sessions and custom assets (61.3224ms)
+✔ a failure while preparing parts rolls back the entire attempt and its event (2.6746ms)
+✔ one continuation alarm keeps the earliest persisted deadline across concurrent orders (65.7288ms)
+✔ real Chrome popup scrollbars follow theme with transparent tracks; site preview stays editable (5737.2989ms)
+✔ offscreen parses synthetic message IDs/authors/body without preview or author-name inference (5430.7835ms)
+✔ extension and remote config no longer enable removed financial tools (1.5887ms)
+✔ update cleanup deletes piggy data and stale routes while install leaves storage unchanged (7.8467ms)
+✔ update cleanup retains the active route and removes only retired saved modes (1.0058ms)
+✔ worker cleanup cancels only retired alarms, removes secrets and keeps unrelated data (7.4809ms)
+✔ retired rating route resets, active routes and malformed legacy values remain safe (0.359ms)
+✔ old backups cannot export or restore integrations or retired route state; sound choice survives without the heavy clip (34.6263ms)
+✔ retired popup pages reject actions and registrations (15.4609ms)
+✔ manifest resources exist, notification permissions are removed and bundled sounds are reachable (49.3148ms)
+✔ worker retirement runs on load and install, while shared parsing and support stay available (45.7491ms)
+✔ removed supplier module leaves no settings or page behind (0.3024ms)
+✔ reminder block: variable chips, preview, lot picker, manual send and no overflow (15610.5308ms)
+✔ only orders after enabling, with verified fulfillment and confirmation, get one task (31.3544ms)
+✔ any review cancels, an unknown review defers, refund and problems cancel (7.3259ms)
+✔ one reminder per chat within the cap; uncertain sends are not repeated and use the cap (2.007ms)
+✔ disabling cancels pending tasks; re-enabling starts a new baseline without reviving them (2.0857ms)
+✔ candidates: closed orders without a review, checked once and grouped by lot and buyer (28.8224ms)
+✔ candidates honours the per-call check limit (0.9642ms)
+✔ manual reminder: old closed order without review, even with automation off (3.3182ms)
+✔ manual reminder re-checks the page and respects reviews, holds and the chat cap (2.0143ms)
+✔ theme font style accepts only supported weight and boolean italic (3.1081ms)
+✔ URLs and fonts cannot introduce executable schemes or CSS (2.4604ms)
+✔ image URLs remain quoted and declarations reject escapes and rule breaks (6.5696ms)
+✔ CSV neutralizes formulas, including arithmetic, while keeping signed amounts (0.4794ms)
+✔ theme numbers and colors cannot introduce CSS rules through sibling fields (0.6419ms)
+✔ live CSS supports HTTPS images and shorthands while rejecting URL parser escapes (0.766ms)
+FunPay Funcy AR: ответ на подтверждение заказа #ABCD1234
+FunPay Funcy AR: ответ на новый заказ #ABCD1234 → чат 44
+✔ auto replies reject wrong order/account/chat and forged confirmation on paid orders (13.5484ms)
+✔ cookie snapshot swaps the whole session and restores it before a queued account switch or logout (4.1101ms)
+✔ retired profile descriptions module is deleted (0.3757ms)
+node:internal/modules/cjs/loader:1573
+  throw err;
+  ^
+
+Error: Cannot find module 'playwright'
+Require stack:
+- C:\Users\Usser\Desktop\funpay-funcy\tests\security_sinks_browser.test.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1569:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1123:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1147:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1174:12)
+    at Module._load (node:internal/modules/cjs/loader:1346:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.require (node:internal/modules/cjs/loader:1679:12)
+    at require (node:internal/modules/helpers:196:16)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\security_sinks_browser.test.js:4:22)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\Usser\\Desktop\\funpay-funcy\\tests\\security_sinks_browser.test.js'
+  ]
+}
+
+Node.js v26.7.0
+✖ tests\security_sinks_browser.test.js (118.6369ms)
+✔ tab-like controls use consistent hover and selected-state motion across popup sections (91.9454ms)
+✔ finance header separates title from tabs and segmented updates animate replacement content (4.7506ms)
+✔ selling editor cells have consistent padding, centered controls and contained mobile scrolling (6056.8014ms)
+✔ removed service files and runtime wiring are absent (7.7355ms)
+✔ worker dispatcher keeps ordinary Google translation after AI removal (999.6288ms)
+✔ old templates are blocked atomically before editing drafts or sending either part (172.9803ms)
+✔ ordinary templates keep substitutions and submit exactly once (6.0284ms)
+✔ startup cleanup removes legacy service settings and IDs without touching templates or FunPay accounts (1.1639ms)
+✔ old backups cannot reimport removed service settings, but templates remain editable (10.7591ms)
+✔ settings transfer keeps backup age, export and load recovery next to the actions (5362.434ms)
+✖ every prefixed literal has an explicit backup decision, including dynamic key prefixes (243.6085ms)
+✔ device sessions and verification queues never leave or enter settings backups (10.0905ms)
+✔ import normalizes known settings before writing and rejects oversized files before reading (24.3431ms)
+✔ general: settings_page_recomposition page is retired from the menu, search and actions (9.5411ms)
+✔ sidebar expansion preserves scroll and pending route reveal yields to manual scrolling (7550.9622ms)
+STORE_AUDIT_REMOVAL_RUNTIME_PASS
+✔ tests\store_audit_removal_runtime.test.js (90.9102ms)
+✔ support page: tickets load on open, filter, search and sort locally (8486.6493ms)
+✔ support page: a conversation opens, renders safe HTML, replies and closes the ticket (9503.0514ms)
+✔ support page: a new ticket is built from the site form and sent only after the preview (8972.304ms)
+✔ support page: order confirmation collects old orders, remembers limits and confirms before sending (3265.0842ms)
+✔ support page: no orders, load errors and the empty list explain themselves (2765.8499ms)
+✔ support page: dark popup and narrow widths stay inside the frame (3557.3583ms)
+✔ support: static markup stays empty and search metadata remains (20.726ms)
+✔ support: the category view is mounted into the existing popup shell (0.8953ms)
+✔ support: the page talks to support only through the registered popup actions (4.6683ms)
+✔ support: styles are scoped, responsive and respect reduced motion (6.3576ms)
+✔ support: statuses are grouped by word stem (4.2381ms)
+✔ support: tickets are counted, filtered and sorted locally (3.6329ms)
+✔ support: order request limits are clamped with safe defaults (5.1396ms)
+✔ support: form conditions and order ages read as on the site (1.6586ms)
+✔ support: typed text is escaped before it becomes ticket HTML (9.2004ms)
+✔ support: unconfirmed orders are filtered by age, oldest first (8.2477ms)
+T01_FINANCE_ATOMIC_REFRESH_PASS
+✔ tests\t01_finance_atomic_refresh.test.js (173.8764ms)
+T02_UPDATE_CONTRACT_PASS
+✔ tests\t02_update_contract.test.js (102.1202ms)
+✔ tests\t03_refresh_orchestration.test.js (123.1439ms)
+✔ tests\t04_separate_statuses.test.js (246.3648ms)
+✔ finance_hub: t05_potential_period_semantics markup is removed and search metadata remains (8.8806ms)
+T06_SINGLE_MSK_CALENDAR_MODEL_PASS
+✔ tests\t06_msk_calendar_model.test.js (270.9888ms)
+T07_REMOVE_GUESSED_FX_PASS
+✔ tests\t07_remove_guessed_fx.test.js (277.2344ms)
+✔ finance_hub: t08_source_freshness markup is removed and search metadata remains (7.6214ms)
+✔ finance_hub: t09_idempotent_lifecycle markup is removed and search metadata remains (7.6814ms)
+T10_UNIFY_FINANCE_EXPORT_PASS
+✔ tests\t10_unify_finance_export.test.js (154.8683ms)
+T11_CUSTOM_DATE_RANGE_PASS
+✔ tests\t11_custom_date_range.test.js (89.6992ms)
+T11_HARDENING_PASS elapsed_10k_ms=8.2
+✔ tests\t11_hardening.test.js (99.5505ms)
+T12_PREVIOUS_PERIOD_KPI_COMPARISON_PASS
+✔ tests\t12_previous_period_kpi_comparison.test.js (98.2066ms)
+✔ finance_hub: t14_final_integration_audit markup is removed and search metadata remains (6.189ms)
+✔ finance_hub: t15_finance_filter_css_isolation markup is removed and search metadata remains (6.714ms)
+✔ finance_hub: t16_contextual_filter_visibility markup is removed and search metadata remains (6.356ms)
+✔ finance_hub: t17_finance_header_information_architecture markup is removed and search metadata remains (9.3466ms)
+✔ finance_hub: t18_labeled_contextual_filters markup is removed and search metadata remains (15.0548ms)
+T18_NAVIGATION_IA_FAIL: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+17 !== 16
+
+    at testEveryExistingPageBelongsToExactlyOneSection (C:\Users\Usser\Desktop\funpay-funcy\tests\t18_navigation_ia.test.js:43:12)
+    at runAll (C:\Users\Usser\Desktop\funpay-funcy\tests\t18_navigation_ia.test.js:366:5)
+    at Object.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\t18_navigation_ia.test.js:383:5)
+    at Module._compile (node:internal/modules/cjs/loader:1934:14)
+    at Object..js (node:internal/modules/cjs/loader:2074:10)
+    at Module.load (node:internal/modules/cjs/loader:1656:32)
+    at Module._load (node:internal/modules/cjs/loader:1448:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: 17,
+  expected: 16,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+✖ tests\t18_navigation_ia.test.js (129.6616ms)
+✔ finance_hub: t19_finance_ui_localization markup is removed and search metadata remains (8.8024ms)
+✔ finance_hub: t20_export_modal_theme_integration markup is removed and search metadata remains (8.7018ms)
+POTENTIAL_STOCK_SEMANTICS_PASS
+✔ tests\t21_potential_stock_semantics.test.js (408.8352ms)
+✔ finance_hub: t22_profit_missing_cost_onboarding markup is removed and search metadata remains (10.9066ms)
+✔ finance_hub: t23_scroll_and_empty_state_cleanup markup is removed and search metadata remains (7.2487ms)
+✔ finance_hub: t24_finance_hub_modularization markup is removed and search metadata remains (11.3158ms)
+✔ catalog entries are available, including new entries and offline cache (114.3759ms)
+✔ retired themes are excluded from old cached catalogs (15.5301ms)
+✔ valid wallpapers load and unsafe paths are rejected (31.4588ms)
+✔ invalid remote catalogue does not replace the last successful catalogue (10.6753ms)
+✔ theme contrast utilities exist and maintain readability standards (36.5554ms)
+✔ contrast calculation algorithm lifts problematic theme colors above WCAG AA standard (7.4492ms)
+✔ theme draftOnly actions return values without touching storage or the site (26.6964ms)
+✔ theme actions keep their original write-through behaviour without the draft flag (18.0106ms)
+✔ theme page metadata keeps searchable labels and only registered button ids (16.15ms)
+✔ theme page module is wired in order, mounts safely and avoids native dialogs (4.256ms)
+✔ theme page reads and writes only through popup actions and keeps drafts out of storage (1.0272ms)
+✔ theme page styles stay inside the popup, use shared tokens and honour reduced motion (34.7489ms)
+✔ original FunPay look: defaults, reset and a light CSS without wallpaper or recolouring (14.0116ms)
+✔ theme page cards avoid bare header elements and keep native file inputs out of sight (0.3156ms)
+✔ site theme rules are guarded against the popup without changing specificity (3.5732ms)
+✔ real browser: custom scrollbar applies to site and chat without recolouring the popup (5585.558ms)
+✔ real browser: new fonts are selectable and an old saved font remains intact (5053.0694ms)
+✔ real browser: catalogue themes can be selected and remain available offline (4740.6007ms)
+✔ real browser: theme page builds every section from stored settings and keeps the dock closed (2732.659ms)
+✔ real browser: buttons card follows the theme in auto mode and takes an explicit colour (2494.5669ms)
+✔ real browser: edits stay in the draft until Apply, Cancel restores, Apply enables a disabled theme (3539.5585ms)
+✔ real browser: original and custom tiles switch the base style in the draft only (2450.7329ms)
+✔ real browser: preset strip has no scrollbar, starts at the first tile and pages exactly one theme (6717.6441ms)
+✔ real browser: reset, export and share use page dialogs instead of native prompts (2360.0613ms)
+✔ real browser: swatches flag corrected colours and low contrast, previews follow every toggle (5622.0134ms)
+✔ real browser: dark popup, narrow layouts and reduced motion keep the page inside its frame (3693.1787ms)
+✔ real browser: background upload, palette from image, size limit and theme import stay in the draft (15922.609ms)
+✔ real browser: tools card has no stray backdrop or native file input, original look keeps shape settings (3098.3946ms)
+✔ real browser: the site theme does not leak into the popup and turns it dark (3175.8852ms)
+✔ early theme loading preserves original, empty and legacy custom themes (102.8524ms)
+✔ translation queue serializes different requests, deduplicates and preserves chat/lot contracts (12.7886ms)
+✔ 429 and network retries use bounded attempts and backoff; HTTP 400 is not retried (5.0125ms)
+✔ long Retry-After seconds and HTTP dates pause the entire queue without early network calls (5.8669ms)
+✔ a terminal 429 also delays the next queued request (3.4103ms)
+✔ timeout covers response bodies, clears attempts and releases the queue (2.3898ms)
+✔ invalid responses and failed lot fields are errors, not unchanged successful translations (2.8334ms)
+✔ nothing is sent to Google Translate until the user has allowed it (1.1715ms)
+✔ general: ui_foundation_contract page is retired from the menu, search and actions (6.4182ms)
+ℹ tests 588
+ℹ suites 0
+ℹ pass 575
+ℹ fail 12
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 142195.4557
+
+✖ failing tests:
+
+test at tests\chat_attachments_browser.test.js:1:1
+✖ tests\chat_attachments_browser.test.js (413.7211ms)
+  'test failed'
+
+test at tests\chat_translation_browser.test.js:1:1
+✖ tests\chat_translation_browser.test.js (231.8121ms)
+  'test failed'
+
+test at tests\cursor_fx_runtime_browser.test.js:1:1
+✖ tests\cursor_fx_runtime_browser.test.js (217.6839ms)
+  'test failed'
+
+test at tests\lot_edit_page_browser.test.js:1:1
+✖ tests\lot_edit_page_browser.test.js (114.1925ms)
+  'test failed'
+
+test at tests\perf_runtime_browser.test.js:1:1
+✖ tests\perf_runtime_browser.test.js (204.1939ms)
+  'test failed'
+
+test at tests\popup_browser.test.js:10:1
+✖ real browser: lot management screen, navigation and shell geometry (5306.7974ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  17 !== 16
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_browser.test.js:78:16)
+      at async Test.run (node:internal/test_runner/test:1404:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 17,
+    expected: 16,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\popup_eager_load_browser.test.js:1:1
+✖ tests\popup_eager_load_browser.test.js (299.2313ms)
+  'test failed'
+
+test at tests\popup_shell.test.js:22:1
+✖ popup creation leaves every category empty, retains navigation, and omits the close control (8.0041ms)
+  AssertionError [ERR_ASSERTION]: only active routes need an empty container
+  
+  17 !== 16
+  
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\popup_shell.test.js:27:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 17,
+    expected: 16,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\pricing_coordination.test.js:1:1
+✖ tests\pricing_coordination.test.js (86.5645ms)
+  'test failed'
+
+test at tests\security_sinks_browser.test.js:1:1
+✖ tests\security_sinks_browser.test.js (118.6369ms)
+  'test failed'
+
+test at tests\settings_io_keys.test.js:10:1
+✖ every prefixed literal has an explicit backup decision, including dynamic key prefixes (243.6085ms)
+  AssertionError [ERR_ASSERTION]: Classify new key fptChatGuard in content\ui\chat_guard_page.js
+      at TestContext.<anonymous> (C:\Users\Usser\Desktop\funpay-funcy\tests\settings_io_keys.test.js:19:20)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1397:25)
+      at Test.start (node:internal/test_runner/test:1257:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\t18_navigation_ia.test.js:1:1
+✖ tests\t18_navigation_ia.test.js (129.6616ms)
+  'test failed'

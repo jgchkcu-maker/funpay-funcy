@@ -43,7 +43,7 @@ test('visibility matches labels, descriptions, groups and legacy labels; a match
     const child = page.visibility(registry, new Set(['lot_keyboard_btn']), { filter: 'hidden' });
     assert.equal(child.get('lot_keyboard_btn'), 'match');
     assert.equal(child.get('lot_font_controls'), 'context');
-    assert.equal(page.visibility(registry, none, { query: 'Шапка диалога' }).size, 2);
+    assert.equal(page.visibility(registry, none, { query: 'Шапка диалога' }).size, 3);
     assert.equal(page.visibility(registry, none, { query: 'ёлка-несуществующая' }).size, 0);
 });
 

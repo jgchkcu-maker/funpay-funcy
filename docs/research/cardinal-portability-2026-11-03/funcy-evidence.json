@@ -1,0 +1,156 @@
+[
+  {
+    "path": "manifest.json",
+    "symbol": "\"version\"",
+    "line": 5,
+    "sha256": "bdbe31c3070b9a7352e7f6cb2544ec296e2b19bbf5f0c94d30fa7dce48f965b2",
+    "interpretation": "MV3 0.9.13; storage/cookies/alarms/offscreen; внешних поставщиков/Telegram/AI в текущих host_permissions нет."
+  },
+  {
+    "path": "background/fpt_engine.js",
+    "symbol": "ENGINE_HEARTBEAT_ALARM",
+    "line": 2,
+    "sha256": "e1322dae8dc2d00dac574f1667b9ccfcc029cedfbaca1b051f46bf204f6d3237",
+    "interpretation": "Единый фоновый запуск и продолжение автоматизации; точка расширения будущих задач."
+  },
+  {
+    "path": "background/job_scheduler.js",
+    "symbol": "createJobScheduler",
+    "line": 12,
+    "sha256": "07ddce7a7e3f518590cc9cca2d01e101cc5779d9452c01d7fa45b216f17b1d6a",
+    "interpretation": "Долговечные задачи/alarms; не отдельный бесконечный поток."
+  },
+  {
+    "path": "background/account_guard.js",
+    "symbol": "createAccountGuard",
+    "line": 30,
+    "sha256": "0adf4ff7f143546781406321edf17478d1e71465d7810cc061496961be9cf4be",
+    "interpretation": "Проверка текущего аккаунта и epoch."
+  },
+  {
+    "path": "background/account_profiles.js",
+    "symbol": "createProfileManager",
+    "line": 77,
+    "sha256": "c8ba73f20202e3611f42ad8495e29af234040c0219d7f7b3e6abafbe4801e259",
+    "interpretation": "Профили; автоматизация текущего подтверждённого аккаунта, не произвольная серверная многопоточность."
+  },
+  {
+    "path": "background/ops_db.js",
+    "symbol": "createOpsJournal",
+    "line": 281,
+    "sha256": "62a5d4890eae222ee848928bc8dd690bd495b89e211d2e3f3853bcdcf40730d3",
+    "interpretation": "Журнал операций/состояний."
+  },
+  {
+    "path": "background/fulfillment_dispatcher.js",
+    "symbol": "createFulfillmentDispatcher",
+    "line": 63,
+    "sha256": "5cfea9eb4e762b9efa249539b62d19f42c0edcac8e4f197725d337b91b8201bd",
+    "interpretation": "Проверенная выдача и части результата; не готовый локальный FIFO склад."
+  },
+  {
+    "path": "background/order_commands.js",
+    "symbol": "createOrderCommands",
+    "line": 77,
+    "sha256": "99af5b9254367ff906eb1031d2b026e81ed1295616b300ef7e5dce611de7a82b",
+    "interpretation": "Карточка проблемного заказа, действия и проверка возможностей."
+  },
+  {
+    "path": "background/lot_writer.js",
+    "symbol": "createLotWriteQueue",
+    "line": 10,
+    "sha256": "7f9acfeb6a0c45a4e41db8309a29a4ba5c7924f49974d9080da7cc64499653f1",
+    "interpretation": "Общая запись свежих форм и terminal deleted guard."
+  },
+  {
+    "path": "background/lot_availability.js",
+    "symbol": "createLotActivityService",
+    "line": 4,
+    "sha256": "eee25af4bf73695a812c2c82af94c6fb1be1c252bcc669169d178a7f42209093",
+    "interpretation": "Причины активности/блокировки; не взаимное перетирание автоматизаций."
+  },
+  {
+    "path": "background/lot_schedule_service.js",
+    "symbol": "createLotScheduleService",
+    "line": 27,
+    "sha256": "4a157d17d7eb82c62f9f19c18a9eda76452897a0a4cef583fbd53c4afee86ca5",
+    "interpretation": "Расписания уже реализованы; искать недостающие сценарии, не второй модуль."
+  },
+  {
+    "path": "background/pricing_service.js",
+    "symbol": "createPricingService",
+    "line": 36,
+    "sha256": "c6d4dba408bab5ef64323070f6e5031c585536562e1a6d71df259466650a6987",
+    "interpretation": "Цена на основе себестоимости/маржи и preview; это не конкурентный демпинг."
+  },
+  {
+    "path": "background/review_reminders.js",
+    "symbol": "createReviewReminders",
+    "line": 116,
+    "sha256": "4341bf9de4185c1d3f5dff8a9ee4c5fdaa21754038587be443ad9f341ebe3d61",
+    "interpretation": "Напоминание об отзыве после проверенной выдачи и подтверждения; не общий confirm reminder."
+  },
+  {
+    "path": "content/features/auto_review.js",
+    "symbol": "review",
+    "line": 2,
+    "sha256": "9c0015f77f9545ad21ff0938e34e17f48a0c5206c39ba9fd914a204723672b60",
+    "interpretation": "Ответы продавца/бонусы за отзыв; не создание рейтинга покупателю."
+  },
+  {
+    "path": "content/features/market_analytics.js",
+    "symbol": "market",
+    "line": 66,
+    "sha256": "61f9a1d0ce9eea1762f94b4821a842fb07b510ba4b17190b50c978e01ef5507e",
+    "interpretation": "Сбор рыночной информации; не полный непрерывный CompetitorWatch."
+  },
+  {
+    "path": "content/features/buyer_history.js",
+    "symbol": "buyer",
+    "line": 1,
+    "sha256": "741f128c284734bafd99e791a7ac1658684bf8c37996090cd0610c4e6922242f",
+    "interpretation": "История покупателя; дополнения RegularsDetector/BuyerGuard оценены отдельно."
+  },
+  {
+    "path": "content/features/lot_cloning.js",
+    "symbol": "clone",
+    "line": 4,
+    "sha256": "b19d188b443a33136ab5583f736a70e264c74e43ebd904e91e4de66589867f49",
+    "interpretation": "Клонирование лотов."
+  },
+  {
+    "path": "content/features/bulk_lot_editor.js",
+    "symbol": "bulk",
+    "line": 2,
+    "sha256": "26ac7b063596c4450b0e9b8afb52d8531bfadd4fa2955a1415b3437f69420ff9",
+    "interpretation": "Массовое редактирование/операции."
+  },
+  {
+    "path": "content/features/section_commission.js",
+    "symbol": "commission",
+    "line": 1,
+    "sha256": "4bf796a0d0661f9ee621e7d098a2bd0e0f4e21b0f672d164de6b29348149e5c5",
+    "interpretation": "Комиссия раздела; основа PriceCalc уже есть."
+  },
+  {
+    "path": "content/features/profit_engine.js",
+    "symbol": "profit",
+    "line": 2,
+    "sha256": "20991a0350edc6e5b941fb4e6e770190a93dc6a4673d015800df0e5fa106de96",
+    "interpretation": "Прибыль и себестоимость; не приравнивать её к выручке."
+  },
+  {
+    "path": "content/features/export_studio.js",
+    "symbol": "export",
+    "line": 1,
+    "sha256": "8206fbf866879797eb7214e24b47562be4b03ad538a05ca8545d51194d55343f",
+    "interpretation": "Экспорт данных/отчётов."
+  },
+  {
+    "path": "background/retired_integrations.js",
+    "symbol": "RETIRED_PAGES",
+    "line": 4,
+    "sha256": "d845842075fc113d8feb80a0a95b95f47a3d7c0bf826e9dd304e38739f305836",
+    "interpretation": "Telegram, Discord, suppliers и связанные настройки удалены; нельзя считать их действующими интеграциями."
+  }
+]

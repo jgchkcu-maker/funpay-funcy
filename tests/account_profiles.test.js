@@ -65,6 +65,21 @@ test('first run marks the current account as owner without touching live setting
     assert.equal((await profiles.reconcile(null)).changed, false, 'signed out: nothing happens');
 });
 
+test('anonymous zero cannot switch the profile and an existing zero owner can recover', async () => {
+    const { storage, vault, profiles } = await setup(accountA);
+    await profiles.reconcile('100');
+    const before = structuredClone(storage.data);
+    for (const id of [0, '0', '000']) assert.deepEqual(await profiles.reconcile(id), { changed: false });
+    assert.deepEqual(storage.data, before);
+    await vault.putProfile('100', { values: structuredClone(accountA), savedAt: 1 });
+    storage.data.fpToolsProfileOwner = { accountId: '0', previous: '100' };
+    storage.data.fpToolsAutoReplies = {};
+    const restored = await profiles.reconcile('100');
+    assert.equal(restored.created, false);
+    assert.equal(storage.data.fpToolsProfileOwner.accountId, '100');
+    assert.equal(storage.data.fpToolsAutoReplies.greetingText, accountA.fpToolsAutoReplies.greetingText);
+});
+
 test('switching stores the old config, gives a new account defaults and restores the old one on return', async () => {
     const { storage, vault, profiles } = await setup(accountA);
     await profiles.reconcile('100');

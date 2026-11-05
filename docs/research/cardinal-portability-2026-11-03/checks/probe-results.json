@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-03",
+  "scope": "separate blank profile and synthetic MV3; loopback HTTP only",
+  "workerUrl": "chrome-extension://ekgnmgfnkmdgkfejphpdijjjolodfhcd/worker.js",
+  "browserVersion": "151.0.7922.34",
+  "runtime": {
+    "instanceId": "c7374a88-b1b6-412b-a1a7-cee9724b2e39",
+    "sockets": "undefined",
+    "process": "undefined",
+    "require": "undefined",
+    "subtle": "object",
+    "offscreen": "function",
+    "crossOriginFetchWithoutACAO": true,
+    "manualCookieHeader": null,
+    "cookieJar": "synthetic=jar",
+    "rfc6238at59": "94287082",
+    "steamCodeAt59": "PV9M4",
+    "dnrUserAgent": "CardinalPortabilityProbe/1.0",
+    "alarm": {
+      "name": "probe",
+      "persistAcrossSessions": true,
+      "scheduledTime": 1793713393666
+    },
+    "checkpoint": {
+      "checkpoint": {
+        "phase": "waiting",
+        "providerOrder": "synthetic-123",
+        "updatedAt": 1793713363658
+      }
+    }
+  },
+  "serviceWorkerVersion": {
+    "versionId": "0",
+    "registrationId": "0",
+    "scriptURL": "chrome-extension://ekgnmgfnkmdgkfejphpdijjjolodfhcd/worker.js",
+    "runningStatus": "running",
+    "status": "activated",
+    "scriptLastModified": 1793713363,
+    "scriptResponseTime": 0,
+    "controlledClients": [
+      "34AA8598449BE69570E943C6A6E5C069"
+    ],
+    "targetId": "5683597C5F9A1C50D4779825E6047DAD"
+  },
+  "workerObservedStopped": true,
+  "afterWorkerRestart": {
+    "checkpoint": {
+      "phase": "waiting",
+      "providerOrder": "synthetic-123",
+      "updatedAt": 1793713363658
+    },
+    "instanceId": "b48a671a-d9ae-4640-9b1b-c7bdc5fac087"
+  },
+  "workerTargetBefore": "5683597C5F9A1C50D4779825E6047DAD",
+  "workerTargetAfter": "5683597C5F9A1C50D4779825E6047DAD",
+  "workerRestarted": true,
+  "pass": true
+}

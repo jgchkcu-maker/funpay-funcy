@@ -1,0 +1,705 @@
+[
+  {
+    "plugin_id": "auto_robux",
+    "name": "Auto Robux",
+    "version": "1.4.5",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_robux/windows.x86_64/download",
+    "expected_sha256": "173916aba93bf137858616dbc631fa50b3f2c7564970ed4c6258e3e02c022c76",
+    "status": 200,
+    "bytes": 508829,
+    "sha256": "173916aba93bf137858616dbc631fa50b3f2c7564970ed4c6258e3e02c022c76",
+    "files": [
+      {
+        "path": "AutoRobux.py",
+        "size": 740
+      },
+      {
+        "path": "AutoRobux_pkg/license_guard.py",
+        "size": 245455
+      },
+      {
+        "path": "AutoRobux_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "AutoRobux_pkg/__init__.py",
+        "size": 338936
+      },
+      {
+        "path": "AutoRobux_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "AutoRobux_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_smm",
+    "name": "Auto SMM",
+    "version": "1.3.0",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_smm/windows.x86_64/download",
+    "expected_sha256": "c0a672a126adc7f7cbbc2419113878c45f0016864d3971475031657ed9322975",
+    "status": 200,
+    "bytes": 649586,
+    "sha256": "c0a672a126adc7f7cbbc2419113878c45f0016864d3971475031657ed9322975",
+    "files": [
+      {
+        "path": "AutoSmm.py",
+        "size": 738
+      },
+      {
+        "path": "AutoSmm_pkg/license_guard.py",
+        "size": 245268
+      },
+      {
+        "path": "AutoSmm_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "AutoSmm_pkg/__init__.py",
+        "size": 633688
+      },
+      {
+        "path": "AutoSmm_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "AutoSmm_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_ai",
+    "name": "AutoAI Account",
+    "version": "0.1.4",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_ai/windows.x86_64/download",
+    "expected_sha256": "3d6fffe7df6cf9df16224e24fda3be3f593547b95f24fd994a5c9b35e6844244",
+    "status": 200,
+    "bytes": 688047,
+    "sha256": "3d6fffe7df6cf9df16224e24fda3be3f593547b95f24fd994a5c9b35e6844244",
+    "files": [
+      {
+        "path": "auto_ai_accounts.py",
+        "size": 867
+      },
+      {
+        "path": "auto_ai_accounts_pkg/license_guard.py",
+        "size": 244654
+      },
+      {
+        "path": "auto_ai_accounts_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "auto_ai_accounts_pkg/__init__.py",
+        "size": 714267
+      },
+      {
+        "path": "auto_ai_accounts_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "auto_ai_accounts_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_stars",
+    "name": "AutoStars",
+    "version": "1.4.19",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_stars/windows.x86_64/download",
+    "expected_sha256": "bfd22c1e472c2456d864fa28c536582f91c1a28a552966a6d392862b467fcf96",
+    "status": 200,
+    "bytes": 825425,
+    "sha256": "bfd22c1e472c2456d864fa28c536582f91c1a28a552966a6d392862b467fcf96",
+    "files": [
+      {
+        "path": "AutoStars.py",
+        "size": 735
+      },
+      {
+        "path": "AutoStars_pkg/license_guard.py",
+        "size": 245817
+      },
+      {
+        "path": "AutoStars_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "AutoStars_pkg/__init__.py",
+        "size": 1003154
+      },
+      {
+        "path": "AutoStars_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "AutoStars_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_steamns",
+    "name": "AutoSteamNS",
+    "version": "3.18",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_steamns/windows.x86_64/download",
+    "expected_sha256": "ed47000220c4c593dbb1b6b9e5199dd66f33085f091664ef14386b8f6739848d",
+    "status": 200,
+    "bytes": 715870,
+    "sha256": "ed47000220c4c593dbb1b6b9e5199dd66f33085f091664ef14386b8f6739848d",
+    "files": [
+      {
+        "path": "AutoSteamNS.py",
+        "size": 770
+      },
+      {
+        "path": "AutoSteamNS_pkg/license_guard.py",
+        "size": 245531
+      },
+      {
+        "path": "AutoSteamNS_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "AutoSteamNS_pkg/__init__.py",
+        "size": 772181
+      },
+      {
+        "path": "AutoSteamNS_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "AutoSteamNS_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_tt",
+    "name": "AutoTikTok",
+    "version": "1.0.21",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_tt/windows.x86_64/download",
+    "expected_sha256": "8c5c86cd8057534a0629403d58d2a06f1a33c04acc31008290cc16876835f3f9",
+    "status": 200,
+    "bytes": 739491,
+    "sha256": "8c5c86cd8057534a0629403d58d2a06f1a33c04acc31008290cc16876835f3f9",
+    "files": [
+      {
+        "path": "AutoTt.py",
+        "size": 741
+      },
+      {
+        "path": "AutoTt_pkg/license_guard.py",
+        "size": 245682
+      },
+      {
+        "path": "AutoTt_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "AutoTt_pkg/__init__.py",
+        "size": 823224
+      },
+      {
+        "path": "AutoTt_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "AutoTt_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "discord_boost",
+    "name": "Discord Boost",
+    "version": "0.3.1",
+    "url": "https://carvinage.ru/license/api/v1/releases/discord_boost/windows.x86_64/download",
+    "expected_sha256": "9c1ba03acba758563c007776404228dc4b372e6bbb745309ca0505d3e33d837d",
+    "status": 200,
+    "bytes": 998546,
+    "sha256": "9c1ba03acba758563c007776404228dc4b372e6bbb745309ca0505d3e33d837d",
+    "files": [
+      {
+        "path": "DiscordBoost.py",
+        "size": 1268
+      },
+      {
+        "path": "DiscordBoost_pkg/license_guard.py",
+        "size": 246012
+      },
+      {
+        "path": "DiscordBoost_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "DiscordBoost_pkg/__init__.py",
+        "size": 1365260
+      },
+      {
+        "path": "DiscordBoost_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "DiscordBoost_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "gpt_seller",
+    "name": "GPT SELLER",
+    "version": "1.1.11",
+    "url": "https://carvinage.ru/license/api/v1/releases/gpt_seller/windows.x86_64/download",
+    "expected_sha256": "5a871f62af41d4831fdff8dd0f030876748c4b4b89a7926c66bfbdafd484a849",
+    "status": 200,
+    "bytes": 439903,
+    "sha256": "5a871f62af41d4831fdff8dd0f030876748c4b4b89a7926c66bfbdafd484a849",
+    "files": [
+      {
+        "path": "gpt_info_lots.py",
+        "size": 823
+      },
+      {
+        "path": "gpt_info_lots_pkg/license_guard.py",
+        "size": 244802
+      },
+      {
+        "path": "gpt_info_lots_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "gpt_info_lots_pkg/__init__.py",
+        "size": 194518
+      },
+      {
+        "path": "gpt_info_lots_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "gpt_info_lots_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "code_fetcher",
+    "name": "GmailCodeFetcher",
+    "version": "1.0.4",
+    "url": "https://carvinage.ru/license/api/v1/releases/code_fetcher/windows.x86_64/download",
+    "expected_sha256": "a5c51f8798306cfbf7b4da06b08693f7b2152f359959431aeea2f60c8f0167be",
+    "status": 200,
+    "bytes": 487498,
+    "sha256": "a5c51f8798306cfbf7b4da06b08693f7b2152f359959431aeea2f60c8f0167be",
+    "files": [
+      {
+        "path": "GmailCodeFetcher.py",
+        "size": 795
+      },
+      {
+        "path": "GmailCodeFetcher_pkg/license_guard.py",
+        "size": 244820
+      },
+      {
+        "path": "GmailCodeFetcher_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "GmailCodeFetcher_pkg/__init__.py",
+        "size": 293774
+      },
+      {
+        "path": "GmailCodeFetcher_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "GmailCodeFetcher_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "offline_activate",
+    "name": "Offline Activate",
+    "version": "1.3.7",
+    "url": "https://carvinage.ru/license/api/v1/releases/offline_activate/windows.x86_64/download",
+    "expected_sha256": "c0912c3222831852528445595e96666df132c59da54c031f0515022f4a55d07b",
+    "status": 200,
+    "bytes": 433787,
+    "sha256": "c0912c3222831852528445595e96666df132c59da54c031f0515022f4a55d07b",
+    "files": [
+      {
+        "path": "OfflineActivite.py",
+        "size": 763
+      },
+      {
+        "path": "OfflineActivite_pkg/license_guard.py",
+        "size": 245678
+      },
+      {
+        "path": "OfflineActivite_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "OfflineActivite_pkg/__init__.py",
+        "size": 180334
+      },
+      {
+        "path": "OfflineActivite_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "OfflineActivite_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_viproblox",
+    "name": "VipRoblox",
+    "version": "1.0.7",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_viproblox/windows.x86_64/download",
+    "expected_sha256": "e9b3598e24489bc079c20024a03948cef51ad2a2bcbccd178a19c193ff2d420e",
+    "status": 200,
+    "bytes": 770915,
+    "sha256": "e9b3598e24489bc079c20024a03948cef51ad2a2bcbccd178a19c193ff2d420e",
+    "files": [
+      {
+        "path": "viproblox.py",
+        "size": 737
+      },
+      {
+        "path": "viproblox_pkg/license_guard.py",
+        "size": 244867
+      },
+      {
+        "path": "viproblox_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "viproblox_pkg/__init__.py",
+        "size": 888343
+      },
+      {
+        "path": "viproblox_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "viproblox_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_back",
+    "name": "auto_back",
+    "version": "0.0.2",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_back/windows.x86_64/download",
+    "expected_sha256": "06119610fc1eab5404e4a9f3847f1e788d914615b1792224affd73905514df19",
+    "status": 200,
+    "bytes": 438210,
+    "sha256": "06119610fc1eab5404e4a9f3847f1e788d914615b1792224affd73905514df19",
+    "files": [
+      {
+        "path": "autoback.py",
+        "size": 1179
+      },
+      {
+        "path": "autoback_pkg/license_guard.py",
+        "size": 245219
+      },
+      {
+        "path": "autoback_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "autoback_pkg/__init__.py",
+        "size": 189538
+      },
+      {
+        "path": "autoback_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "autoback_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_ticket",
+    "name": "auto_ticket",
+    "version": "1.3.1",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_ticket/windows.x86_64/download",
+    "expected_sha256": "c3f498052ca2ddcc35d812e4a9d3c3ba8688352f280b2ad981cfc1d50ea058eb",
+    "status": 200,
+    "bytes": 534801,
+    "sha256": "c3f498052ca2ddcc35d812e4a9d3c3ba8688352f280b2ad981cfc1d50ea058eb",
+    "files": [
+      {
+        "path": "autoticket.py",
+        "size": 1064
+      },
+      {
+        "path": "autoticket_pkg/license_guard.py",
+        "size": 245288
+      },
+      {
+        "path": "autoticket_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "autoticket_pkg/__init__.py",
+        "size": 393102
+      },
+      {
+        "path": "autoticket_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "autoticket_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "auto_withdraw",
+    "name": "auto_withdraw",
+    "version": "0.0.11",
+    "url": "https://carvinage.ru/license/api/v1/releases/auto_withdraw/windows.x86_64/download",
+    "expected_sha256": "1acac310003dc29c5ffb53270b179cdf1cb0bc240e81c0b6c91c340767975931",
+    "status": 200,
+    "bytes": 417143,
+    "sha256": "1acac310003dc29c5ffb53270b179cdf1cb0bc240e81c0b6c91c340767975931",
+    "files": [
+      {
+        "path": "auto_withdraw.py",
+        "size": 1249
+      },
+      {
+        "path": "auto_withdraw_pkg/license_guard.py",
+        "size": 245278
+      },
+      {
+        "path": "auto_withdraw_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "auto_withdraw_pkg/__init__.py",
+        "size": 145102
+      },
+      {
+        "path": "auto_withdraw_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "auto_withdraw_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "chat_sync",
+    "name": "chat_sync",
+    "version": "0.1.21",
+    "url": "https://carvinage.ru/license/api/v1/releases/chat_sync/windows.x86_64/download",
+    "expected_sha256": "fb05a945c7a0d1c72adab15bc8c6d1fe9bc9cf297883860bdc73ebf4c8158c0d",
+    "status": 200,
+    "bytes": 542300,
+    "sha256": "fb05a945c7a0d1c72adab15bc8c6d1fe9bc9cf297883860bdc73ebf4c8158c0d",
+    "files": [
+      {
+        "path": "chat_sync_plugin.py",
+        "size": 1205
+      },
+      {
+        "path": "chat_sync_plugin_pkg/license_guard.py",
+        "size": 245114
+      },
+      {
+        "path": "chat_sync_plugin_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "chat_sync_plugin_pkg/__init__.py",
+        "size": 407630
+      },
+      {
+        "path": "chat_sync_plugin_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "chat_sync_plugin_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "confirm_reminder",
+    "name": "confirm_reminder",
+    "version": "2.3.1",
+    "url": "https://carvinage.ru/license/api/v1/releases/confirm_reminder/windows.x86_64/download",
+    "expected_sha256": "2d0bd049f361290ead2f446024bd6a490e202fc76f3d6757a022abd41786c2ea",
+    "status": 200,
+    "bytes": 418655,
+    "sha256": "2d0bd049f361290ead2f446024bd6a490e202fc76f3d6757a022abd41786c2ea",
+    "files": [
+      {
+        "path": "confirm_reminder.py",
+        "size": 1088
+      },
+      {
+        "path": "confirm_reminder_pkg/license_guard.py",
+        "size": 245906
+      },
+      {
+        "path": "confirm_reminder_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "confirm_reminder_pkg/__init__.py",
+        "size": 148493
+      },
+      {
+        "path": "confirm_reminder_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "confirm_reminder_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "cookie_changer",
+    "name": "cookie_changer",
+    "version": "0.0.3",
+    "url": "https://carvinage.ru/license/api/v1/releases/cookie_changer/windows.x86_64/download",
+    "expected_sha256": "564b82d69eb79615952344710901e87821876a16d61381eb4f8d9e0413265de8",
+    "status": 200,
+    "bytes": 373780,
+    "sha256": "564b82d69eb79615952344710901e87821876a16d61381eb4f8d9e0413265de8",
+    "files": [
+      {
+        "path": "cookie_changer.py",
+        "size": 1038
+      },
+      {
+        "path": "cookie_changer_pkg/license_guard.py",
+        "size": 244761
+      },
+      {
+        "path": "cookie_changer_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "cookie_changer_pkg/__init__.py",
+        "size": 54707
+      },
+      {
+        "path": "cookie_changer_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "cookie_changer_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "copy_lots",
+    "name": "copy_lots",
+    "version": "0.0.6",
+    "url": "https://carvinage.ru/license/api/v1/releases/copy_lots/windows.x86_64/download",
+    "expected_sha256": "ffcd871ca2eb6f215c57b757e9ceb27434f22c2fbc51d195081487b33e1fe4b5",
+    "status": 200,
+    "bytes": 413362,
+    "sha256": "ffcd871ca2eb6f215c57b757e9ceb27434f22c2fbc51d195081487b33e1fe4b5",
+    "files": [
+      {
+        "path": "copy_lots_plugin.py",
+        "size": 1069
+      },
+      {
+        "path": "copy_lots_plugin_pkg/license_guard.py",
+        "size": 246110
+      },
+      {
+        "path": "copy_lots_plugin_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "copy_lots_plugin_pkg/__init__.py",
+        "size": 137019
+      },
+      {
+        "path": "copy_lots_plugin_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "copy_lots_plugin_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  },
+  {
+    "plugin_id": "delete_lots",
+    "name": "delete_lots",
+    "version": "0.0.6",
+    "url": "https://carvinage.ru/license/api/v1/releases/delete_lots/windows.x86_64/download",
+    "expected_sha256": "65ffc3eecc92a089d198124cafa02f2ffb158a6b9810112327473cdab70c8358",
+    "status": 200,
+    "bytes": 438683,
+    "sha256": "65ffc3eecc92a089d198124cafa02f2ffb158a6b9810112327473cdab70c8358",
+    "files": [
+      {
+        "path": "delete_lots.py",
+        "size": 1046
+      },
+      {
+        "path": "delete_lots_pkg/license_guard.py",
+        "size": 245560
+      },
+      {
+        "path": "delete_lots_pkg/license.sig",
+        "size": 129
+      },
+      {
+        "path": "delete_lots_pkg/__init__.py",
+        "size": 190974
+      },
+      {
+        "path": "delete_lots_pkg/pyarmor_runtime_011341/pyarmor_runtime.pyd",
+        "size": 632320
+      },
+      {
+        "path": "delete_lots_pkg/pyarmor_runtime_011341/__init__.py",
+        "size": 99
+      }
+    ],
+    "sha_matches": true
+  }
+]

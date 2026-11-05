@@ -253,6 +253,13 @@
                         console.error('Funcy: не удалось открыть раздел автоподнятия:', error);
                     }
                 }
+                if (window.FPTDumperPage && typeof window.FPTDumperPage.mount === 'function') {
+                    try {
+                        await window.FPTDumperPage.mount(toolsPopup);
+                    } catch (error) {
+                        console.error('Funcy: не удалось открыть раздел автодемпера:', error);
+                    }
+                }
                 if (window.FPTAutoReplyPage && typeof window.FPTAutoReplyPage.mount === 'function') {
                     try {
                         await window.FPTAutoReplyPage.mount(toolsPopup);

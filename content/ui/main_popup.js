@@ -211,6 +211,7 @@ function createMainPopup() {
                     <li class="fp-nav-divider">Торговля</li>
                     <li data-page="lot_io" class="active"><a><span class="nav-icon material-symbols-rounded">inventory_2</span><span>Управление лотами</span></a></li>
                     <li data-page="autobump"><a><span class="nav-icon material-symbols-rounded">rocket_launch</span><span>Автоподнятие</span></a></li>
+                    <li data-page="dumper"><a><span class="nav-icon material-symbols-rounded">trending_down</span><span>Автодемпер</span></a></li>
                     <li data-page="blacklist"><a><span class="nav-icon material-symbols-rounded">block</span><span>Чёрный список</span></a></li>
                     <li class="fp-nav-divider">Финансы</li>
                     <li data-page="finance_hub"><a><span class="nav-icon material-symbols-rounded">payments</span><span>Обзор и аналитика</span></a></li>
@@ -231,6 +232,7 @@ function createMainPopup() {
                 <div class="fp-tools-page-content" data-page="finance_hub"></div>
                 <div class="fp-tools-page-content" data-page="theme"></div>
                 <div class="fp-tools-page-content" data-page="autobump"></div>
+                <div class="fp-tools-page-content" data-page="dumper"></div>
                 <div class="fp-tools-page-content" data-page="effects"></div>
                 <div class="fp-tools-page-content" data-page="settings_io"></div>
                 <div class="fp-tools-page-content" data-page="blacklist"></div>
@@ -720,7 +722,7 @@ let _fpThemeCatalog = null;   // массив тем после загрузки
 let _fpThemeCatalogLoaded = false;
 
 const FPT_NAV_SECTIONS = Object.freeze([
-    { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'auto_orders', 'autobump']) },
+    { id: 'sales', label: 'Лоты и продажи', icon: 'storefront', pages: Object.freeze(['lot_io', 'auto_delivery', 'auto_orders', 'autobump', 'dumper']) },
     { id: 'customers', label: 'Покупатели', icon: 'chat', pages: Object.freeze(['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds']) },
     { id: 'finance', label: 'Финансы', icon: 'analytics', pages: Object.freeze(['finance_hub']) },
     { id: 'interface', label: 'Интерфейс', icon: 'apps', pages: Object.freeze(['theme', 'effects', 'needs']) },
@@ -733,6 +735,7 @@ const FPT_NAV_LABEL_OVERRIDES = Object.freeze({
     auto_delivery: 'Автовыдача',
     auto_orders: 'Заказы и выдачи',
     autobump: 'Автоподнятие',
+    dumper: 'Автодемпер',
     auto_reply: 'Автоответчик',
     auto_review: 'Отзывы и бонусы',
     templates: 'Быстрые ответы',

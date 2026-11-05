@@ -2247,7 +2247,6 @@
 .fp-tools-popup.fptm-themed .fpt-ab-schedule[hidden] { display: none; }
 .fp-tools-popup.fptm-themed .fpt-ab-controls .fpt-ab-hero-status { position: absolute; z-index: 2; top: 100%; right: 0; margin: 0; background: var(--fptm-nav-field); }
 .fp-tools-popup.fptm-themed .fpt-ab-controls .fpt-ab-hero-status:empty { display: none; }
-.fp-tools-popup.fptm-themed .fpt-ad-master-hint[data-tone="warning"] { color: var(--fptm-warning); }
 .fp-tools-popup.fptm-themed .fpt-ab-hero {
     box-sizing: border-box;
     min-width: 0;
@@ -4616,6 +4615,7 @@
 .fp-tools-popup.fptm-themed .fpt-qr-editor .material-symbols-rounded,
 .fp-tools-popup.fptm-themed .fpt-qr-button .material-symbols-rounded { width: 1em; overflow: hidden; text-align: center; }
 .fp-tools-popup.fptm-themed .fpt-qr-help:not([hidden]) { animation: fpt-ad-panel-in .42s cubic-bezier(.2, 1.35, .4, 1) both; transform-origin: top right; }
+.fp-tools-popup.fptm-themed #fpt-am-help { max-height: max(120px, calc(100vh - 120px)); overflow-y: auto; overscroll-behavior: contain; }
 
 /* Hero */
 .fp-tools-popup.fptm-themed .fpt-qr-hero {

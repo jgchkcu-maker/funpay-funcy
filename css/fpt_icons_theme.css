@@ -302,7 +302,8 @@ h3 .material-symbols-rounded {
     margin-left: auto;
 }
 #fp-tools-read-all-btn,
-#fp-tools-filter-marked-btn {
+#fp-tools-filter-marked-btn,
+#fp-tools-chat-guard-btn {
     width: 30px;
     height: 30px;
     min-width: 30px;
@@ -337,16 +338,19 @@ h3 .material-symbols-rounded {
     pointer-events: none;
 }
 #fp-tools-read-all-btn:hover:not(:disabled),
-#fp-tools-filter-marked-btn:hover {
+#fp-tools-filter-marked-btn:hover,
+#fp-tools-chat-guard-btn:hover {
     background: color-mix(in srgb, currentColor 12%, transparent);
     transform: none;
 }
 #fp-tools-read-all-btn:active:not(:disabled),
-#fp-tools-filter-marked-btn:active {
+#fp-tools-filter-marked-btn:active,
+#fp-tools-chat-guard-btn:active {
     transform: scale(.92);
 }
 #fp-tools-read-all-btn:focus-visible,
-#fp-tools-filter-marked-btn:focus-visible {
+#fp-tools-filter-marked-btn:focus-visible,
+#fp-tools-chat-guard-btn:focus-visible {
     outline: 2px solid var(--fpt-accent, #1b75bb);
     outline-offset: 3px;
 }
@@ -356,7 +360,8 @@ h3 .material-symbols-rounded {
     border-color: color-mix(in srgb, currentColor 30%, transparent);
     background: color-mix(in srgb, currentColor 14%, transparent);
 }
-#fp-tools-filter-marked-btn[aria-pressed="true"] .material-icons { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
+#fp-tools-filter-marked-btn[aria-pressed="true"] .material-icons,
+#fp-tools-chat-guard-btn[aria-pressed="true"] .material-icons { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
 #fp-tools-read-all-btn[data-state="success"],
 #fp-tools-read-all-btn[data-state="empty"] {
     color: var(--fptm-success, #318b65);
@@ -370,10 +375,12 @@ h3 .material-symbols-rounded {
 #fp-tools-read-all-btn[data-state="loading"] .material-icons { animation: fptChatActionSpin 1s linear infinite; }
 /* Tooltips also work from the keyboard; their position never moves the heading. */
 #fp-tools-read-all-btn:focus-visible::after,
-#fp-tools-filter-marked-btn:focus-visible::after { opacity: 1; visibility: visible; }
+#fp-tools-filter-marked-btn:focus-visible::after,
+#fp-tools-chat-guard-btn:focus-visible::after { opacity: 1; visibility: visible; }
 /* Keep chat-action labels above the header and aligned to the right edge of the pair. */
 #fp-tools-read-all-btn::after,
-#fp-tools-filter-marked-btn::after {
+#fp-tools-filter-marked-btn::after,
+#fp-tools-chat-guard-btn::after {
     right: 0;
     bottom: calc(100% + 5px);
     left: auto;
@@ -385,12 +392,15 @@ h3 .material-symbols-rounded {
 #fp-tools-read-all-btn:hover::after,
 #fp-tools-read-all-btn:focus-visible::after,
 #fp-tools-filter-marked-btn:hover::after,
-#fp-tools-filter-marked-btn:focus-visible::after { transform: translateY(0); }
+#fp-tools-filter-marked-btn:focus-visible::after,
+#fp-tools-chat-guard-btn:focus-visible::after { transform: translateY(0); }
 @keyframes fptChatActionSpin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) {
     .fpt-nav-group-collapse, .fpt-nav-group-chevron { transition: none; }
-    #fp-tools-read-all-btn, #fp-tools-filter-marked-btn { transition: none; }
-    #fp-tools-read-all-btn:active, #fp-tools-filter-marked-btn:active { transform: none; }
+    #fp-tools-read-all-btn, #fp-tools-filter-marked-btn,
+#fp-tools-chat-guard-btn { transition: none; }
+    #fp-tools-read-all-btn:active, #fp-tools-filter-marked-btn:active,
+#fp-tools-chat-guard-btn:active { transform: none; }
     #fp-tools-read-all-btn[data-state="loading"] .material-icons { animation: none; }
 }
 

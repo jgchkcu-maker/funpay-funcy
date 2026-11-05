@@ -62,7 +62,9 @@ test('cookie snapshot swaps the whole session and restores it before a queued ac
         jar.set('golden_key', { name: 'golden_key', value: 'selected' });
     });
     await Promise.resolve(); release(); await snapshot;
-    assert.deepEqual(seen, [{ key: 'temporary', sess: undefined, seal: undefined }], 'the other key never meets the current session');
+    // The warm-up opens a clean session; later requests carry only the session FunPay issued to that key.
+    assert.deepEqual(seen, [{ key: 'temporary', sess: undefined, seal: undefined }, { key: 'temporary', sess: 'sess-b', seal: undefined }],
+        'the other key never meets the current session');
     const key = calls.find(details => details.name === 'golden_key' && details.value === 'original');
     assert.equal(key.httpOnly, true); assert.equal(key.domain, undefined);
     assert.equal(key.expirationDate, 1234567890); assert.equal(key.sameSite, 'strict');

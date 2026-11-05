@@ -83,6 +83,17 @@ const FPT_ALL_FEATURES = [
         preview: { kind: 'html', html: '<div class="fpt-pv-toggle"><span class="material-icons">sell</span></div>' }
     },
 
+    {
+        id: 'chat_guard',
+        control: 'chatGuard',
+        label: 'Напоминать об ответах',
+        desc: 'Кнопка «Ждут ответа» рядом с заголовком «Сообщения» оставляет в списке чаты без вашего ответа. Funcy один раз напомнит о долгом ожидании. Выключение останавливает наблюдение.',
+        group: 'Чат',
+        subgroup: 'Шапка диалога',
+        selector: '#fp-tools-chat-guard-btn, .fpt-cg-contact-time',
+        preview: { kind: 'html', html: '<div class="fpt-pv-readall"><span class="material-icons">schedule</span></div>' }
+    },
+
     // ───────────── Чат: выпадающее меню «⋮» ─────────────
     {
         id: 'chat_menu_buyer_history',

@@ -25,9 +25,12 @@ export function createChatReader({ fetchImpl = (...args) => fetch(...args), pars
             await assertCurrent(account);
             return json;
         } catch (error) {
+            if (controller.signal.aborted && error?.name === 'AbortError') {
+                error = Object.assign(new Error('FunPay не ответил вовремя. Чтение чатов будет повторено позже.'), { code: 'CHAT_READ_TIMEOUT' });
+            }
             if (!error.retryAt) {
                 error.retryAt = now() + 30000;
-                await setCooldown(account, error.retryAt, 'Ошибка чтения или формата ответа.');
+                await setCooldown(account, error.retryAt, error.code === 'CHAT_READ_TIMEOUT' ? error.message : 'Ошибка чтения или формата ответа.');
             }
             throw error;
         } finally { clearTimeout(timer); }
@@ -65,29 +68,29 @@ export function createChatReader({ fetchImpl = (...args) => fetch(...args), pars
                 ordersCounters: json.objects.find(o => o.type === 'orders_counters')?.data ?? null };
         });
     }
-    function batch(account, auth, ids) {
+    function batch(account, _auth, ids) {
         return serial(account, async () => {
             if (!ids.length || ids.length > batchSize || ids.some(id => !messageId(id))) throw new Error('Некорректный пакет чатов.');
-            const json = await runner(account, auth, ids.map(id => ({ type: 'chat_node', id, tag: tag(), data: { node: id, last_message: -1, content: '' } })));
-            if (!Array.isArray(json?.objects)) throw new Error('Не распознан пакет сообщений.');
             const result = {};
+            // Subscribing to chat_node declares the chat viewed and can clear
+            // unread on FunPay. Background observation must only fetch history.
+            // Keep the per-account queue/cooldown and bounded group of IDs.
             for (const id of ids) {
-                const nodes = json.objects.filter(o => o.type === 'chat_node' && (String(o.data?.node?.id ?? o.id) === id));
-                if (nodes.length !== 1 || !Array.isArray(nodes[0].data?.messages)) {
-                    result[id] = { ok: false, error: 'Чат отсутствует в ответе или формат не распознан.' }; continue;
-                }
-                result[id] = await parseMessages(nodes[0].data.messages, id);
+                result[id] = await readHistory(account, id, '99999999999999999999999');
             }
             return result;
         });
     }
+    async function readHistory(account, chatId, beforeId) {
+        const url = `https://funpay.com/chat/history?${new URLSearchParams({ node: chatId, last_message: beforeId })}`;
+        const json = await request(account, url, { headers: { 'x-requested-with': 'XMLHttpRequest' } });
+        if (String(json?.chat?.node?.id) !== chatId || !Array.isArray(json.chat.messages)) return { ok: false, error: 'История чата не распознана.' };
+        return parseMessages(json.chat.messages, chatId);
+    }
     function history(account, chatId, beforeId) {
         return serial(account, async () => {
             if (!messageId(chatId) || !messageId(beforeId)) throw new Error('Некорректный курсор истории.');
-            const url = `https://funpay.com/chat/history?${new URLSearchParams({ node: chatId, last_message: beforeId })}`;
-            const json = await request(account, url, { headers: { 'x-requested-with': 'XMLHttpRequest' } });
-            if (String(json?.chat?.node?.id) !== chatId || !Array.isArray(json.chat.messages)) return { ok: false, error: 'История чата не распознана.' };
-            return parseMessages(json.chat.messages, chatId);
+            return readHistory(account, chatId, beforeId);
         });
     }
     return Object.freeze({ bookmarks, batch, history, batchSize });

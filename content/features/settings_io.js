@@ -31,6 +31,7 @@ const EXCLUDE_KEYS = new Set([
     'fptStartStateTitle',
     // Имя сообщения background и имя старого alarm, не ключи хранилища.
     'fptChipWrite',
+    'fptChatGuard',
     'fpToolsAccountKeepalive',
     'fpToolsSalesCollecting',
     'fpToolsPurchasesCollecting',
@@ -55,6 +56,11 @@ const EXCLUDE_KEYS = new Set([
     'fpToolsLotSchedules',
     'fpToolsLotSchedulesEnabled',
     'fpToolsPricing',
+    // Автодемпер: правила, состояние и история привязаны к аккаунту и этому браузеру;
+    // перенос включил бы запись цен без новой проверки.
+    'fpToolsDumper',
+    'fpToolsDumperRun',
+    'fptDumper',
     'fpToolsBlacklistUpdated',
     'fpToolsUnreadCount',
     // --- Кэши (большие, легко перезапросятся) ---
@@ -149,6 +155,7 @@ async function getPopupSettingsExport() {
     if (all.fpToolsAutoReplies) {
         all.fpToolsAutoReplies = { ...all.fpToolsAutoReplies };
         delete all.fpToolsAutoReplies.chatStreams;
+        delete all.fpToolsAutoReplies.chatGuardState;
     }
     return { _magic: FP_CONFIG_MAGIC, _version: FP_CONFIG_VERSION, _date: new Date().toISOString(),
         _extVer: chrome.runtime.getManifest().version,

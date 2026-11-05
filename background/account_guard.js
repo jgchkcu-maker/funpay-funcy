@@ -31,6 +31,7 @@ export function createAccountGuard({ storage, readSession, hash = sha256Short, n
     if (!storage || typeof readSession !== 'function') throw new Error('Проверка аккаунта не настроена.');
     let cached = null;
     let pending = null;
+    let generation = 0;
     const listeners = new Set();
     let chain = Promise.resolve();
 
@@ -40,12 +41,15 @@ export function createAccountGuard({ storage, readSession, hash = sha256Short, n
         return run;
     }
 
-    async function refresh() {
+    async function refresh(version) {
         const session = await readSession();
-        const accountId = session?.userId != null && /^\d+$/.test(String(session.userId)) ? String(session.userId) : null;
+        const accountId = session?.userId != null && /^\d+$/.test(String(session.userId)) && /[1-9]/.test(String(session.userId)) ? String(session.userId) : null;
         const keyHash = session?.goldenKey ? await hash(session.goldenKey) : null;
         return serialize(async () => {
+            // A request started before a cookie change cannot identify the new session.
+            if (version !== generation) throw new AccountChangedError();
             const { [ACCOUNT_EPOCH_KEY]: stored } = await storage.get(ACCOUNT_EPOCH_KEY);
+            if (version !== generation) throw new AccountChangedError();
             let record = stored && typeof stored === 'object' ? stored : null;
             const changed = !record || record.accountId !== accountId || record.keyHash !== keyHash;
             if (changed) {
@@ -61,7 +65,12 @@ export function createAccountGuard({ storage, readSession, hash = sha256Short, n
     // { accountId, epoch, username }. accountId === null — аккаунт не определён.
     function current({ fresh = false } = {}) {
         if (!fresh && cached && now() - cached.at < cacheMs) return Promise.resolve(cached.value);
-        if (!pending) pending = refresh().finally(() => { pending = null; });
+        if (!pending) {
+            const request = refresh(generation).finally(() => {
+                if (pending === request) pending = null;
+            });
+            pending = request;
+        }
         return pending;
     }
 
@@ -76,7 +85,9 @@ export function createAccountGuard({ storage, readSession, hash = sha256Short, n
     }
 
     function invalidate() {
+        generation += 1;
         cached = null;
+        pending = null;
     }
 
     function onChange(listener) {

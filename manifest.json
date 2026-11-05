@@ -144,7 +144,9 @@
         "content/ui/orders_view.js",
         "content/ui/auto_delivery_page.js",
         "content/ui/auto_orders_page.js",
+        "content/features/chat_guard.js",
         "content/ui/auto_bump_page.js",
+        "content/ui/dumper_page.js",
         "content/ui/auto_reply_page.js",
         "content/ui/review_reminder_block.js",
         "content/ui/auto_review_page.js",
@@ -200,6 +202,8 @@
         "css/live_styler.css",
         "css/fpt_icons_theme.css",
         "css/automation.css",
+        "css/dumper.css",
+        "css/chat_guard.css",
         "css/page_windows.css",
         "css/scrollbars.css"
       ],

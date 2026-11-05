@@ -128,7 +128,7 @@
         const groups = layout(entries);
         const state = {
             disabled: new Set(), loaded: false, query: '', filter: 'all', pending: 0,
-            activeDialog: null
+            activeDialog: null, guardAccount: null, guardOwner: null, guardSettings: {}, guardBusy: false
         };
         const rows = new Map();
         const groupViews = [];
@@ -144,7 +144,7 @@
         const helpList = node('ul', '');
         [
             'Здесь собраны кнопки, поля и пункты меню, которые Funcy добавляет на страницы FunPay.',
-            'Выключенный элемент сразу пропадает со страницы — без перезагрузки. Сама функция и её настройки не удаляются.',
+            'Выключенный элемент сразу пропадает со страницы. «Напоминать об ответах» также останавливает наблюдение; очередь и настройки сохраняются.',
             'Значок глаза показывает, как элемент выглядит на сайте, чтобы его было проще узнать.',
             'Кнопка «Клавиатура» живёт внутри блока шрифта: если скрыть блок, пропадёт и она.',
         ].forEach(item => helpList.append(node('li', '', item)));
@@ -303,10 +303,11 @@
                 lock.append(icon('lock'));
                 actions.append(lock);
             } else {
-                toggle = makeSwitch(`Показывать «${entry.label}»`);
+                toggle = makeSwitch(entry.control ? entry.label : `Показывать «${entry.label}»`);
                 toggle.input.dataset.id = entry.id;
                 toggle.input.addEventListener('change', () => {
                     const enabled = toggle.input.checked;
+                    if (entry.control === 'chatGuard') { saveGuard({ enabled }); return; }
                     write({ [entry.id]: enabled }, enabled ? `«${entry.label}» снова на месте` : `«${entry.label}» скрыт`);
                 });
                 actions.append(toggle.element);
@@ -330,7 +331,23 @@
                 previewButton.setAttribute('aria-expanded', String(open));
             });
             row.append(main, actions, preview);
-            const view = { entry, row, toggle, hiddenBadge, contextBadge, note };
+            let threshold = null, thresholdRow = null;
+            if (entry.control === 'chatGuard') {
+                hiddenBadge.lastChild.textContent = 'Выключено';
+                thresholdRow = node('label', 'fpt-cg-setting-threshold');
+                thresholdRow.append(node('span', '', 'Напомнить через'));
+                threshold = node('input', 'fpt-qr-input fpt-control-field');
+                threshold.type = 'number'; threshold.min = '1'; threshold.max = '1440'; threshold.step = '1';
+                threshold.setAttribute('aria-label', 'Напомнить об ответе через, минут');
+                threshold.addEventListener('change', () => {
+                    const value = Number(threshold.value);
+                    if (!Number.isInteger(value) || value < 1 || value > 1440) { toast('Укажите от 1 до 1440 минут.', 'error'); threshold.value = String(state.guardSettings.chatGuardThresholdMinutes || 30); return; }
+                    saveGuard({ threshold: value });
+                });
+                thresholdRow.append(threshold, node('span', '', 'мин'));
+                main.append(thresholdRow);
+            }
+            const view = { entry, row, toggle, hiddenBadge, contextBadge, note, threshold, thresholdRow };
             rows.set(entry.id, view);
             return row;
         }
@@ -348,7 +365,7 @@
             heading.id = headingId;
             const status = node('p', '', '');
             copy.append(heading, status);
-            const unlocked = group.entries.filter(entry => !entry.locked);
+            const unlocked = group.entries.filter(entry => !entry.locked && !entry.control);
             const groupToggle = makeSwitch(`Показывать все элементы раздела «${group.name}»`);
             groupToggle.element.classList.add('fpt-ie-group-switch');
             groupToggle.input.addEventListener('change', () => {
@@ -459,9 +476,25 @@
         screen.append(banner, display, catalog);
 
         // --- State → DOM -------------------------------------------------------------------------
+        function guardLocked() { return !state.guardAccount || state.guardAccount !== state.guardOwner || state.guardAccount !== root.fptPageUserId?.() || state.guardBusy; }
+        function syncGuardDisabled() {
+            if (state.guardSettings.chatGuardEnabled && state.guardAccount === state.guardOwner) state.disabled.delete('chat_guard');
+            else state.disabled.add('chat_guard');
+        }
+        async function saveGuard(payload) {
+            if (guardLocked()) { toast('Аккаунт изменился. Обновите страницу.', 'error'); return; }
+            state.guardBusy = true; sync();
+            try {
+                const response = await chrome.runtime.sendMessage({ action: 'fptChatGuard', operation: 'settings', expectedAccountId: state.guardAccount, ...payload });
+                if (!response?.ok) throw new Error(response?.error || 'Не удалось сохранить настройку.');
+                await load();
+            } catch (error) { toast(error.message, 'error'); }
+            finally { state.guardBusy = false; renderAll(); }
+        }
         function sync() {
+            syncGuardDisabled();
             const summary = summarize(entries, state.disabled);
-            showAll.disabled = !state.loaded || !summary.hidden;
+            showAll.disabled = !state.loaded || !entries.some(entry => !entry.control && state.disabled.has(entry.id));
             filterButtons.forEach(el => {
                 const value = el.dataset.value;
                 el._count.textContent = String(value === 'all' ? summary.total : value === 'hidden' ? summary.hidden : summary.shown);
@@ -471,7 +504,12 @@
                 view.row.dataset.state = off ? 'off' : 'on';
                 if (view.toggle) {
                     view.toggle.input.checked = !off;
-                    view.toggle.input.disabled = !state.loaded || view.row.dataset.context === 'true';
+                    view.toggle.input.disabled = !state.loaded || view.row.dataset.context === 'true' || Boolean(view.entry.control && guardLocked());
+                }
+                if (view.threshold) {
+                    view.thresholdRow.hidden = off;
+                    view.threshold.disabled = guardLocked();
+                    if (document.activeElement !== view.threshold) view.threshold.value = String(state.guardSettings.chatGuardThresholdMinutes || 30);
                 }
                 const parentId = PARENT_BY_CHILD[view.entry.id];
                 const blocked = Boolean(parentId && state.disabled.has(parentId));
@@ -479,7 +517,8 @@
                 if (view.note) view.note.hidden = !blocked;
             });
             groupViews.forEach(view => {
-                const hidden = view.unlocked.filter(entry => state.disabled.has(entry.id)).length;
+                const hidden = view.group.entries.filter(entry => state.disabled.has(entry.id)).length;
+                const hiddenSwitches = view.unlocked.filter(entry => state.disabled.has(entry.id)).length;
                 const total = view.group.entries.length;
                 view.status.textContent = !hidden ? `${total} ${pluralize(total, ['элемент', 'элемента', 'элементов'])} · все показаны`
                     : hidden === total ? 'Все элементы скрыты' : `Показано ${total - hidden} из ${total}`;
@@ -487,9 +526,9 @@
                 view.navCount.textContent = `${total - hidden}/${total}`;
                 view.navButton.dataset.state = view.card.dataset.state;
                 if (view.toggle) {
-                    view.toggle.input.checked = hidden === 0;
+                    view.toggle.input.checked = hiddenSwitches === 0;
                     view.toggle.input.disabled = !state.loaded;
-                    view.toggle.element.dataset.partial = String(hidden > 0 && hidden < view.unlocked.length);
+                    view.toggle.element.dataset.partial = String(hiddenSwitches > 0 && hiddenSwitches < view.unlocked.length);
                 }
             });
         }
@@ -501,7 +540,7 @@
                 view.row.hidden = !mode;
                 view.row.dataset.context = String(mode === 'context');
                 view.contextBadge.hidden = mode !== 'context';
-                if (view.toggle) view.toggle.input.disabled = !state.loaded || mode === 'context';
+                if (view.toggle) view.toggle.input.disabled = !state.loaded || mode === 'context' || Boolean(view.entry.control && guardLocked());
             });
             let shown = 0;
             groupViews.forEach(view => {
@@ -536,6 +575,7 @@
         }
 
         function renderAll() {
+            syncGuardDisabled();
             applyVisibility();
             sync();
         }
@@ -566,7 +606,7 @@
         }
 
         showAll.addEventListener('click', () => {
-            const hidden = entries.filter(entry => !entry.locked && state.disabled.has(entry.id));
+            const hidden = entries.filter(entry => !entry.locked && !entry.control && state.disabled.has(entry.id));
             if (!hidden.length) return;
             state.activeDialog?.close({ force: true });
             const dialog = ui.createDialog(popup, 'Показать все элементы?', {
@@ -590,7 +630,10 @@
         async function load() {
             retry.disabled = true;
             try {
-                const stored = await run('getSettings', { keys: [STORAGE_KEY] });
+                const stored = await run('getSettings', { keys: [STORAGE_KEY, 'fpToolsAutoReplies', 'fpToolsProfileOwner'] });
+                state.guardAccount = root.fptPageUserId?.() || null;
+                state.guardOwner = stored.fpToolsProfileOwner?.accountId || null;
+                state.guardSettings = state.guardAccount && state.guardAccount === state.guardOwner ? stored.fpToolsAutoReplies || {} : {};
                 const ids = Array.isArray(stored?.[STORAGE_KEY]) ? stored[STORAGE_KEY] : [];
                 state.disabled = new Set(ids.filter(id => byId.has(id)));
                 state.loaded = true;
@@ -607,6 +650,7 @@
         }
         const onStorage = (changes, area) => {
             if (!page.isConnected) { dispose(); return; }
+            if (area === 'local' && (changes.fpToolsAutoReplies || changes.fpToolsProfileOwner)) { load(); return; }
             if (area !== 'local' || !changes[STORAGE_KEY] || !state.loaded || state.pending) return;
             const ids = Array.isArray(changes[STORAGE_KEY].newValue) ? changes[STORAGE_KEY].newValue : [];
             state.disabled = new Set(ids.filter(id => byId.has(id)));

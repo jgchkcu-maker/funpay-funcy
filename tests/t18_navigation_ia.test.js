@@ -40,7 +40,7 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
     assert.ok(navPages.length > 0, 'popup must retain existing page nodes');
     assert.equal(new Set(navPages).size, navPages.length, 'flat nav must not contain duplicate data-page ids');
     assert.equal(new Set(pages).size, pages.length, 'navigation schema must not duplicate page ids');
-    assert.equal(pages.length, 16);
+    assert.equal(pages.length, 17);
     assert.deepEqual([...pages].sort(), [...navPages].sort());
     assert.ok(!navPages.includes('telegram') && !navPages.includes('support'));
 
@@ -49,7 +49,7 @@ function testEveryExistingPageBelongsToExactlyOneSection() {
 function testSixIndependentAccordionSections() {
     const { schema, sections } = extractSchema();
     const expected = [
-        { id: 'sales', pages: ['lot_io', 'auto_delivery', 'auto_orders', 'autobump'] },
+        { id: 'sales', pages: ['lot_io', 'auto_delivery', 'auto_orders', 'autobump', 'dumper'] },
         { id: 'customers', pages: ['auto_reply', 'auto_review', 'templates', 'blacklist', 'sounds'] },
         { id: 'finance', pages: ['finance_hub'] },
         { id: 'interface', pages: ['theme', 'effects', 'needs'] },
@@ -128,7 +128,7 @@ function testFinalLabelsAndRatingRoute() {
             id + ' must use the approved section title');
     }
     const pageLabels = [
-        ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['auto_orders', 'Заказы и выдачи'], ['autobump', 'Автоподнятие'],
+        ['lot_io', 'Управление лотами'], ['auto_delivery', 'Автовыдача'], ['auto_orders', 'Заказы и выдачи'], ['autobump', 'Автоподнятие'], ['dumper', 'Автодемпер'],
         ['auto_reply', 'Автоответчик'], ['auto_review', 'Отзывы и бонусы'], ['templates', 'Быстрые ответы'], ['blacklist', 'Чёрный список'], ['sounds', 'Звук уведомлений'],
         ['finance_hub', 'Обзор и аналитика'],
         ['theme', 'Темы'], ['effects', 'Эффекты'], ['needs', 'Элементы интерфейса'],

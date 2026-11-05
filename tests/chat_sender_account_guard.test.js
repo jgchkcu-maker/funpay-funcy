@@ -6,6 +6,50 @@ const { pathToFileURL } = require('node:url');
 const load = file => import(pathToFileURL(path.join(__dirname, '../background', file)).href);
 const auth = { csrf_token: 'csrf' };
 
+test('invalidating a session detaches the old request and prevents stale identity writes', async () => {
+    const { createAccountGuard, AccountChangedError } = await load('account_guard.js');
+    for (const oldFinishesFirst of [true, false]) {
+        const data = {};
+        const reads = [];
+        const storage = { get: async key => ({ [key]: data[key] }), set: async patch => Object.assign(data, patch) };
+        const guard = createAccountGuard({ storage, readSession: () => new Promise(resolve => reads.push(resolve)), hash: async value => value });
+        const old = guard.current();
+        const rejected = assert.rejects(old, AccountChangedError);
+        guard.invalidate();
+        const fresh = guard.current({ fresh: true });
+        assert.equal(reads.length, 2);
+        if (oldFinishesFirst) {
+            reads[0]({ userId: '100', goldenKey: 'old' });
+            await rejected;
+            assert.equal(guard.current({ fresh: true }), fresh, 'old completion must not clear the new pending request');
+        }
+        reads[1]({ userId: '200', goldenKey: 'new' });
+        assert.equal((await fresh).accountId, '200');
+        if (!oldFinishesFirst) {
+            reads[0]({ userId: '100', goldenKey: 'old' });
+            await rejected;
+        }
+        assert.equal(data.fpToolsAccountEpoch.accountId, '200');
+        assert.equal((await guard.current()).accountId, '200');
+    }
+});
+
+test('fresh authentication bypasses the cached homepage', async () => {
+    const fs = require('node:fs');
+    const vm = require('node:vm');
+    const source = fs.readFileSync(path.join(__dirname, '../background/background.js'), 'utf8');
+    const start = source.indexOf('async function fetchFreshCsrf()');
+    const end = source.indexOf('\nconst GOLDEN_SEAL_ERROR', start);
+    const context = vm.createContext({ fetch: async (url, options) => {
+        assert.equal(options.credentials, 'include');
+        assert.equal(options.cache, 'no-store');
+        return { ok: true, text: async () => '<body data-app-data="{&quot;userId&quot;:200,&quot;csrf-token&quot;:&quot;fresh&quot;}">' };
+    } });
+    const result = await vm.runInContext(source.slice(start, end) + '\nfetchFreshCsrf()', context);
+    assert.equal(result.userId, 200);
+    assert.equal(result.csrf_token, 'fresh');
+});
+
 function respond(status, body) {
     return async () => ({ status, ok: status >= 200 && status < 300, text: async () => body });
 }
@@ -70,4 +114,19 @@ test('account guard bumps the epoch on account or key change and rejects stale e
     assert.equal(none.accountId, null);
     await assert.rejects(() => guard.assertCurrent({ accountId: '200', epoch: 3 }), AccountChangedError);
     assert.deepEqual(changes, [2, 3, 4]);
+});
+
+test('account guard treats anonymous zero as unknown and recovers when the user is identified', async () => {
+    const { createAccountGuard } = await load('account_guard.js');
+    const data = {};
+    const storage = { get: async key => ({ [key]: data[key] }), set: async patch => Object.assign(data, patch) };
+    let userId = '0';
+    const guard = createAccountGuard({ storage, readSession: async () => ({ userId, goldenKey: 'k' }), hash: async () => 'hash', cacheMs: 0 });
+    const anonymous = await guard.current({ fresh: true });
+    assert.equal(anonymous.accountId, null);
+    await assert.rejects(guard.assertCurrent({ accountId: '0', epoch: anonymous.epoch }), /не определён/);
+    userId = '100';
+    const recovered = await guard.current({ fresh: true });
+    assert.equal(recovered.accountId, '100');
+    await guard.assertCurrent(recovered);
 });

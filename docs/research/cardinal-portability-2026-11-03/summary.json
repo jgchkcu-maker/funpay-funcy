@@ -1,0 +1,28 @@
+{
+  "checked_date": "2026-11-03",
+  "funcy_version": "0.9.13",
+  "funcy_commit": "c4c40825a853bb3ef6f4a3cf568908463f8f4510",
+  "repository_trees_screened": 353,
+  "repository_snapshots_with_python_read": 114,
+  "source_texts_read": 718,
+  "python_texts_analyzed": 525,
+  "source_families": 130,
+  "source_verdicts": {
+    "полный перенос": 76,
+    "недостаточно данных": 43,
+    "перенос с потерями": 4,
+    "нужен помощник/сервер": 7
+  },
+  "all_cards": 331,
+  "all_verdicts": {
+    "полный перенос": 76,
+    "недостаточно данных": 243,
+    "перенос с потерями": 4,
+    "нужен помощник/сервер": 8
+  },
+  "public_channels": 16,
+  "public_posts": 803,
+  "product_pages": 82,
+  "parse_errors": 4,
+  "hash_mismatches": 0
+}

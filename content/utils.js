@@ -92,8 +92,8 @@ function waitForElementToBeEnabled(element, timeout = 2000) {
 }
 
 /** Show a viewport-fixed toast without changing the page layout. */
-function showNotification(message, isError = false) {
-    const DURATION = 5200;
+function showNotification(message, isError = false, options = {}) {
+    const DURATION = options.duration || 5200;
     const DOCK_ID = 'fpt-global-notification-dock';
     let dock = document.getElementById(DOCK_ID);
     if (!dock) {
@@ -109,12 +109,16 @@ function showNotification(message, isError = false) {
     toast.className = 'fpt-global-notification';
     toast.dataset.kind = isError ? 'error' : 'success';
     toast.setAttribute('role', isError ? 'alert' : 'status');
-    toast.textContent = String(message ?? '');
+    const copy = document.createElement('span');
+    copy.textContent = String(message ?? '');
+    toast.append(copy);
     dock.appendChild(toast);
 
     while (dock.children.length > 4) dock.firstElementChild.remove();
 
+    let timer;
     const remove = () => {
+        clearTimeout(timer);
         if (!toast.isConnected) return;
         toast.classList.add('is-leaving');
         window.setTimeout(() => {
@@ -122,7 +126,24 @@ function showNotification(message, isError = false) {
             if (!dock.childElementCount) dock.remove();
         }, 220);
     };
-    window.setTimeout(remove, DURATION);
+    if (options.action && typeof options.onAction === 'function') {
+        toast.classList.add('fpt-global-notification--action');
+        const action = document.createElement('button');
+        action.type = 'button'; action.className = 'fpt-global-notification-action'; action.textContent = options.action;
+        action.addEventListener('click', () => { remove(); options.onAction(); });
+        const close = document.createElement('button');
+        close.type = 'button'; close.className = 'fpt-global-notification-close';
+        close.setAttribute('aria-label', 'Закрыть уведомление'); close.textContent = '×';
+        close.addEventListener('click', remove);
+        toast.append(action, close);
+    }
+    const resume = () => { clearTimeout(timer); if (!toast.matches(':hover') && !toast.contains(document.activeElement)) timer = window.setTimeout(remove, DURATION); };
+    toast.addEventListener('pointerenter', () => clearTimeout(timer));
+    toast.addEventListener('pointerleave', resume);
+    toast.addEventListener('focusin', () => clearTimeout(timer));
+    toast.addEventListener('focusout', () => queueMicrotask(resume));
+    resume();
+    return { element: toast, close: remove };
 }
 
 // === ВЛОЖЕНИЯ ИЗОБРАЖЕНИЙ (отдельно от текста) ===

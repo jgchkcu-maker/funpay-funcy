@@ -9,7 +9,7 @@ export function randomTag() { return Math.floor(Math.random() * 0xffffffff).toSt
 export async function anyAutomationEnabled() {
     const { fpToolsAutoReplies: s = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
     return ['greetingEnabled', 'keywordsEnabled', 'autoReviewEnabled', 'bonusForReviewEnabled',
-        'newOrderReplyEnabled', 'orderConfirmReplyEnabled', 'autoDeliveryEnabled', 'reviewReminderEnabled'].some(k => s[k]);
+        'newOrderReplyEnabled', 'orderConfirmReplyEnabled', 'autoDeliveryEnabled', 'reviewReminderEnabled', 'chatGuardEnabled'].some(k => s[k]);
 }
 // One pass at a time. Coalesce signals received during work, with a bounded drain.
 export function runAutomationPass() {

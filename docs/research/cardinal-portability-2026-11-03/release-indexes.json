@@ -1,0 +1,928 @@
+[
+  {
+    "url": "https://carvinage.ru/license/api/v1/catalog",
+    "status": 200,
+    "data": {
+      "ok": true,
+      "products": [
+        {
+          "plugin_id": "auto_robux",
+          "name": "Auto Robux",
+          "description": "Автовыдача робуксов через Gamepass",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.4.5",
+              "sha256": "d57937f4e01274626a867a4167ea27fa6e4ebece96aa9bdce278f7b3aabe66a0",
+              "signature": "783a38d40f1dfd8676486854b6109617cbf3f67780820e701a768ba592bb314295a7a6b95b8d38a4ea5e655ecd10730c72366f85e31a1c16c7d623b0ac349f01",
+              "file_size": 535357
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.4.5",
+              "sha256": "064ee2b436d324b15a0ec371ebd45f7a3000f626fd4170e538c8c70c3a7705bd",
+              "signature": "c41bc5a8b53c7ef3ced62449a12697badd3b24f5c59d8606d984ddf88c80e7174ab2137e72f9d1b4597ab29aa233225e469edac786fcf57be2712da2985f2307",
+              "file_size": 505270
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.4.5",
+              "sha256": "173916aba93bf137858616dbc631fa50b3f2c7564970ed4c6258e3e02c022c76",
+              "signature": "372c742be932ab08758e25ed5c1b2f74b1fe450b3fdab9e753b266c21aac5962aa6b0173a61a82d9ad51f26a2315e41c0d0eb0c57d6045fe0dc46674c0117806",
+              "file_size": 508829
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.4.5",
+              "sha256": "09600ec07a59382ce949267cd98727508833cee376f1deb2be118b34c5757514",
+              "signature": "c645fa12f2c975860555c62297eb87876a53ea3be5a4c1e0f681ccdd9998df76fa1a351ab6640889ccf0238302f01fb291b8fcc5d52679b04fdae7a5ab83ea0b",
+              "file_size": 478758
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_smm",
+          "name": "Auto SMM",
+          "description": "Автоматическая накрутка в соц. сети через сервисы",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.3.0",
+              "sha256": "8f7b852fcb09db70a5f1cc64f4890ceeb7f322457059a0de827a38df25e0b996",
+              "signature": "e677b5c46919f230897b70627b913b57969b2ddfade3cc06fab7cec5f2443d9efb2e6bf901f92fa23614b3c80e04e9bceb412d0044a76e1e3f85df3553a29402",
+              "file_size": 676123
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.3.0",
+              "sha256": "51372fac2804dabe825fc1fec8f1dec1c951c6081ea103f432382f0d89368361",
+              "signature": "75b81ead5f8e7dc630e0c6f8a5a7a02de99054e6f16878edd532e2376174695959b737fbb8c8f07b6b276ffb663b2a90a0649b5ba488961a2086252d9973fb02",
+              "file_size": 630143
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.3.0",
+              "sha256": "c0a672a126adc7f7cbbc2419113878c45f0016864d3971475031657ed9322975",
+              "signature": "00bf8ed460e8d56cc5e1ef5bf099e7c18dfd9b857edced6af64e7df3c4eb972cbd113a73fe51854d403760de93c33196550d734d870e2c4e0d3a2ecf273f8002",
+              "file_size": 649586
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.3.0",
+              "sha256": "5ff3cda49d6c0098c0ccd28ee121e73c7fa96bc7de39eb130e6214ee342ca5e3",
+              "signature": "0b5fb4fda335e99742be283538365f944ab3154b33c1b234b48227cedd2a296e266d15591571d5af8950210988282761c29b130638df28cabd48956cd0463c0c",
+              "file_size": 603052
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_ai",
+          "name": "AutoAI Account",
+          "description": "Автовыдача аккаунтов AI с Lolz",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.1.4",
+              "sha256": "c867b169e44513343474c43a245122ec1f5824759d62ebd5a156072fe080a229",
+              "signature": "c5ac982a7f24ceb96e63d4de0baab5dfa88eb87172f47f54d8493c458e241425333b54b7251f49af449a3a81864a2d51a834827a650885380c064913e16f2100",
+              "file_size": 714655
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.1.4",
+              "sha256": "978519eb80c1c3b26d86309263c37f6fe91b4bc59b71f0cb4844ede7b27afcc2",
+              "signature": "d9d0b837cf9b7b2fd206cccac35d801a4e371db0ee4917f4258bcf0c2f7c9a41832fa80d88db2d7484b1a60181aa1bee5a9799f44fdb71fe234b2c4ba2ec900a",
+              "file_size": 656993
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.1.4",
+              "sha256": "3d6fffe7df6cf9df16224e24fda3be3f593547b95f24fd994a5c9b35e6844244",
+              "signature": "17d6081082835f9edbc5190b41d0de2b982e48d6fd3e34093e67efef1cba46cf163fa12f73b43c103466a9b97d22552e71f766eb56c5d40206fac038f07f8500",
+              "file_size": 688047
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.1.4",
+              "sha256": "5c8b139abc8cbd533d97121d58885ffd965735feb9651f02af8f82fc2921af78",
+              "signature": "3b19b96b05a95bebeaad8acea63b8ff2ad14a15c2b3cfeb55858eb2e57195ad4b04f95d59dc8b26d5536dc5fad9424e71bb711a639ab25c0a596db6c71ab630e",
+              "file_size": 630080
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_stars",
+          "name": "AutoStars",
+          "description": "Автоматическая покупка и продажа Stars через Fragment",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.4.19",
+              "sha256": "ca777cddf2d3d18599a73c402f63bac21f4685b78ccb5b7196a5a96fc975e23e",
+              "signature": "ff5bea031b4fdb715fd20654f6565c8addba0a148ad86bfb55e50171df7537508b59385d11e8be885f75b90be49866ae3ffa3f3da55bb745235e46336d3ac20d",
+              "file_size": 852153
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.4.19",
+              "sha256": "3b242740cd7395709e00213d5e63d4090e2173260a732faacd62ac93f4173605",
+              "signature": "4403336361f0119252b03e34e1e04ded195eaece34fe6e154e52d587d313a52d77bf5201e5599fa46720e620c8156ab39245df6cd8b557499f56615895fd8f06",
+              "file_size": 777746
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.4.19",
+              "sha256": "bfd22c1e472c2456d864fa28c536582f91c1a28a552966a6d392862b467fcf96",
+              "signature": "ff8f22a32d7a48f0b04d67e2f8dd13a0ce7c4031d3fc21e26aa4856d296944e9f41c2805e6230267efd79f2460e318b49f66eb667ca111df80c968b83c156a00",
+              "file_size": 825425
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.4.19",
+              "sha256": "4e046bf120596ac019ad10f2a5aa4f0a4393229b08cb5ae1cc80e889759929ec",
+              "signature": "725828e4055a387a78bfcf76a1eb954b8ebeadf7e1d02cf4d1e92278c1a0c7f24c37dcb041eb5da6c871c9013ed2ade6ef7bc0bec89ff34d5331c5a700fde804",
+              "file_size": 751164
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_steamns",
+          "name": "AutoSteamNS",
+          "description": "AutoSteamNS плагин который пополняет STEAM",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "3.18",
+              "sha256": "ae404084c0852e2d2481fdd4743f6e303adf81d3c3119973aeddb25c829eb76b",
+              "signature": "a052f6a8235b0febb11a92de4893394adc42df72b0064cd32546051406e30bddf22f1aeb8db8db47b0b9ad4fa70ccd82a635119cea5f3e641ab879ad9fa7f205",
+              "file_size": 742232
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "3.18",
+              "sha256": "d843f99ef31800fadc51faf200e2e3334d23b554cdc26ca315e0f1b6008e61f6",
+              "signature": "d62b6cc7bbb9980e0346c3070b9fb73137989f0be029f0bf220b3b28f2b977a8a3e0632d362eabf5c6c3f88806e21f0434b9da8008a49ca50df1286de37f8c0a",
+              "file_size": 694316
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "3.18",
+              "sha256": "ed47000220c4c593dbb1b6b9e5199dd66f33085f091664ef14386b8f6739848d",
+              "signature": "0498db10e27728b350d5c51a66a17f1f98b9551404be7b743646e8c8ae49987ef537f7d583803b0548636e489e6ab9ed5b6f984757e819edf15b9c594499f106",
+              "file_size": 715870
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "3.18",
+              "sha256": "a8c1a2247ee9f095710d9abfe77bbb638072a12cce78a5776a6fd91825ea6b88",
+              "signature": "008e49b562b9a7c159bb3cc4425531c37ecc695888f455f0a963edc8e0e6653f37661fc1969c5dfc7a360fecf8b09f7b58dfc20348bfc7e7fbd21ec8fd7ee60d",
+              "file_size": 666961
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_tt",
+          "name": "AutoTikTok",
+          "description": "Автоматическая покупка аккаунтов TikTok с LZT",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.21",
+              "sha256": "8b36f16a8f22eba2fa91ab275f2d4bfaa1a73436b6a992c2cea1909006c24713",
+              "signature": "1e60cb50e98bd0075bb903fb438596be6ef6b2886de2f97290cbf85dd303531b73e3efc6f3c6c9ec273afdaab021eb4143c372dee7d5620341f0a331bdda8403",
+              "file_size": 766140
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.0.21",
+              "sha256": "d69047cded44e235f7b9fc407180c7841249041e254f07a8a0df23dae8f0d931",
+              "signature": "a8d10d9bdbf06aea872fd858a3b8a74494c080aeb91b06270121fbb5289d79b4612c03aad72c82e8dc073c9231c01d4ab80755a0c08eb518f45a2c5d47ee6d01",
+              "file_size": 713075
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.21",
+              "sha256": "8c5c86cd8057534a0629403d58d2a06f1a33c04acc31008290cc16876835f3f9",
+              "signature": "3048b000d7f9ae9a485b85e79466d5217d391d7130c44f27ebbdb8618f0a0abc8652058d050b8fb703a6e2623ff30ea83ca9e65a92d717b69046df10f0184a05",
+              "file_size": 739491
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.0.21",
+              "sha256": "b8df41523e87f3cfe529fc122f0087d00ce18dc8fad5fc63cdbf3a913ae62004",
+              "signature": "e3e6887a1072e3a2a76bf34b68bed805be9686ba800507b7ffd41daa47e155690202ea41d57f32cb484d4135dc9a92c38dc493e5cf2ca16891081f237eb16c0a",
+              "file_size": 686618
+            }
+          ]
+        },
+        {
+          "plugin_id": "discord_boost",
+          "name": "Discord Boost",
+          "description": "Автовыдача бустов через HoldBoost",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.3.1",
+              "sha256": "1d427dd1f11377e1bfbaf967d4a826972bc94c736a63188143a7b104c0db7b2b",
+              "signature": "5fc7367fe3f7764108144d91a39897273309e9970e86b63321239c06ebe4048d64554bce4300c40890eed498c646b8d6882df129c453da7fc42f49d4ab44430e",
+              "file_size": 1025590
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.3.1",
+              "sha256": "6675f6d5c432d68a6e12f9c7af39bbb7be27c1e887395b3547bd21a1dc454e88",
+              "signature": "39e91e5ceb4e3022b0dceb87f24ea078ad354edea5eebb079a491519aeaadd8f5b187ce5f39a68deaeabfef80af09d30669a7893f0c897032cc9cc204b1b1303",
+              "file_size": 926937
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.3.1",
+              "sha256": "9c1ba03acba758563c007776404228dc4b372e6bbb745309ca0505d3e33d837d",
+              "signature": "7a45b7b2ff82146af76444b9015a849d1fc0e5a4ff18a619d9baf3a0a9606c902765403bcdb30a1155fd87f08be9b067096337a16bc2833a0e2f2e32d3559200",
+              "file_size": 998546
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.3.1",
+              "sha256": "4700dc315e6681ee1020f590aeecb1527d13324a6c634aa0f4bfdc50e24ddf53",
+              "signature": "74f685c889fc4e0ef1a5dcc35b1f525513ec8d609b4d04a6760269ac3c7a2fe01960081231e13f7b6bfa5016c322702a37c82d2ca4530e4ddc2b3b4cb728de07",
+              "file_size": 900496
+            }
+          ]
+        },
+        {
+          "plugin_id": "gpt_seller",
+          "name": "GPT SELLER",
+          "description": "Автоматический консультант с встроенными LLM",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.1.11",
+              "sha256": "fbc79cc8ff6170da34d8bae67951f52dd922345c05bdf5e8574272a237076ff4",
+              "signature": "4aaf31ad0f911a757878deb888c14f5bc2ff80279aa68033ca36a46bd66e2616516596e199340515e7cc05d348b45ea0cb4f2db7260b9eed0098c353df31770a",
+              "file_size": 466690
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.1.11",
+              "sha256": "536ef723599c3cc81917b03669566d9d1707281d5e9c94763001fbe5a235b1c7",
+              "signature": "b5d6009c66d9183530b1d8a11bfc884d425084082d804c3574f2576f5f6013885d70f9b19430dbe963c98d3d0c65880211f9a9cab28f2c531d5cb1ec1a18160c",
+              "file_size": 447120
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.1.11",
+              "sha256": "5a871f62af41d4831fdff8dd0f030876748c4b4b89a7926c66bfbdafd484a849",
+              "signature": "f425b6f255f5cd179bca03113e75011c42abf361c16bef8c7777be40a04118366b5eec918f534aa3661e81dffa82f83d58c2e28fbf5fee6ee4615630ed82910f",
+              "file_size": 439903
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.1.11",
+              "sha256": "a1e722a7d51c61805713deaa72056f7d71f9e86d1688923c2e0d7f8bc0d6976e",
+              "signature": "012cdd9415c7ea0b5b8384f5fde74729fdc2c22c9ea0b7cdaf6d4b32aefda7ccfbb792f123cfcb7884665bf42ee80ece2c92f1121726f7951e6c029744ca0a06",
+              "file_size": 420154
+            }
+          ]
+        },
+        {
+          "plugin_id": "code_fetcher",
+          "name": "GmailCodeFetcher",
+          "description": "Автоматическая отправка писем с почты (коды и прочее)",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.4",
+              "sha256": "bc072fd0f4f4dcdaa37637e51ae860bc7c46cbe9db7995737e0b714a24e488bc",
+              "signature": "b95657a2739d984aafced5be48334f9820ec1ed48874328cc4dac3e3e0b79a788ce9a7242df768f52fff37a2971dbcd7c5a4d6185aeb5f29b752d207829bc00d",
+              "file_size": 514321
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.0.4",
+              "sha256": "66776f1376952b29a59722a533451133c584c2dd0d177abd38c48b6848bbdcc4",
+              "signature": "7a2d0917df2868cb9475a3836c33dd6f6b4551f7d1ba254bbc3df3c440057c3d0f7ba117f537c80ae0035270ac23e1489c9bc657f5a6374f6d27f906f8a92407",
+              "file_size": 489379
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.4",
+              "sha256": "a5c51f8798306cfbf7b4da06b08693f7b2152f359959431aeea2f60c8f0167be",
+              "signature": "06027b7e2a9260b882bbded2bfe5e2676b17b74a344d0f745091e6911f59e3536c6101549bead65c6ab2b23950e20a1880ab789bbe4b5cd683c160a1d0d38905",
+              "file_size": 487498
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.0.4",
+              "sha256": "51e9fba865f7bc29b23d1ec477cf8a5e9b017180ecebe66234cc77accf6ddee1",
+              "signature": "721d39bcb2024a9f5d5e71c484b65d58a5310cdcad15579d35368c380bf5cb05de39167e45df5b67d45c269a8b03490b90b81b482f0bef9194452b5d4dd7720d",
+              "file_size": 462674
+            }
+          ]
+        },
+        {
+          "plugin_id": "offline_activate",
+          "name": "Offline Activate",
+          "description": "Offline Activate Steam аккаунтов",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.3.7",
+              "sha256": "80dc9e7549e8a6296bdbe226447801030e94107065f373afb66cce8e76bfdd03",
+              "signature": "73d9e338a13b9398eb859c87cf98276cc69ae6a2f71b3cf51418881280d6b57dfd1925554a70c21f5fc14efac22fcf055e474941816c9f36d4fe5b72a7693d0e",
+              "file_size": 460073
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.3.7",
+              "sha256": "ac1576d418ef13bb9da96507704a1ee17b00608db99b5c5d3a16673d9ac3eac8",
+              "signature": "a32d90f20ad3909434cd7387796fa61d9bed307f92843d1734a02d6b35e39147a40456ac153b9b4d0305caa4d5c4f88636b89ff3c7ee1d9c29ce77edd572990e",
+              "file_size": 441151
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.3.7",
+              "sha256": "c0912c3222831852528445595e96666df132c59da54c031f0515022f4a55d07b",
+              "signature": "2e872545e7a7931b918fd4fa4335d37677c18596f2a6e31cdf2efc817beffedabf1baf1e45cfa260c8f6fb4dffdf7c6c7015ced20055c280838cc398b597ce0d",
+              "file_size": 433787
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.3.7",
+              "sha256": "2040e78f6669a62dc5ad7230809718ade113f532bffbf51903cddbb633b70401",
+              "signature": "c200f71211e7181942f68ead493bcaaebbc22a30d1efc580faaaa67cb79d04fdf151710dea3cc7def1d5e77c7765e4b7f9f7967be2a1408de710ee316ea3420e",
+              "file_size": 414537
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_viproblox",
+          "name": "VipRoblox",
+          "description": "Автовыдача VIP серверов Roblox",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.7",
+              "sha256": "7fcc209902178379145e22b0e12741927478d0eaeff59693bc0b061da0bd68ed",
+              "signature": "a5a55faac5fbe0a917c56d0bbb6a820e19ae1dde538cc8546e85f02ae8773a27649d4b1427b9da3ce77131ee0c762904d68cce8e10eb8a89af5bacf81ee84906",
+              "file_size": 796596
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.0.7",
+              "sha256": "13a4b3519b5276e4dbebd42cc12d2e91f964ec95aeea571ee9e07b3b55c3f9d3",
+              "signature": "30cdd1d0a99cc593d774215a9af7279c1a282b992e89e5ff9f73b14962b609e1f4067f77d811045586582b5ad3aadf4ba658268daf4ca494930dfdca9c806105",
+              "file_size": 727908
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.7",
+              "sha256": "e9b3598e24489bc079c20024a03948cef51ad2a2bcbccd178a19c193ff2d420e",
+              "signature": "ea4e78173ac8f8d6d1f66a6bd62703dcbf4848889603aadae7e302a3c59bb068dbf2110974fd281a12575a2b468cf803734dbdb44001b3e012bd48e4a4b16f09",
+              "file_size": 770915
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.0.7",
+              "sha256": "d33d604a579f22f5e45e7249cd51791338d95c15e6b7e339a0f56493907cd7a6",
+              "signature": "7c9f149acadc21d1ce618989622162f99892ab80da82c7cf4ad341778e8ed074b05898ac69584ac5cfdce3dc63b1c2c8038f1afdb0b4aadbda318c654993a70a",
+              "file_size": 701171
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_back",
+          "name": "auto_back",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.0.2",
+              "sha256": "e5ccb6ce98961041875121a7d02b9891832dde75ee8c91bb83424c679edcf958",
+              "signature": "7269b7bc125f68639f05fa8cc2cc2498afed75c96c73c208786ce6d4a0accab902433ad6c3c375b0455801d5262320dc80858550ae7b7543f7bdd18c9d0bf60e",
+              "file_size": 464401
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.0.2",
+              "sha256": "3a5169d4fd9b21b245e9e27cd35b991c2faccbddaf50044b0c20a04fae05047b",
+              "signature": "194ecbf90ef767802a06adb40f2391d6bce20c9040a64b5ff79717e343d6b611252defd7c2612fb544d870f02b37362a131b827c911739174549666c51e90b02",
+              "file_size": 444308
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.0.2",
+              "sha256": "06119610fc1eab5404e4a9f3847f1e788d914615b1792224affd73905514df19",
+              "signature": "644cf78229423607c9beb797590c4cd8df1654890909a807321be9f956ec2971c3d74b2c48c9aee3c1adae8738ad357f7d060870a12eff2f11be0169ff993104",
+              "file_size": 438210
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.0.2",
+              "sha256": "c9f70e154f27ab8964e8817945ae9761d1cfdf3888d0389be7abc47b012c3f46",
+              "signature": "65b066e597d26239b6d1a1b6d4dc25d4a94a9b289f7ef8033c4bdf00cc015cb294389171b23cabee3db9ab893b78592f7e1f132a46f5ca78d252f048b148050d",
+              "file_size": 417724
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_ticket",
+          "name": "auto_ticket",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.3.1",
+              "sha256": "d627d79d959902a13251062d10b1a9f215f7a9d42cafddcc1dcf7d3812208d95",
+              "signature": "916954baf3632f2bd9f5528eb439751a68b55f3bb556415bcfb5eebff93ba1cbc2374f0e1472cdd721f838669cb772e78240dff3cefb3b27202b3640d3f3ee04",
+              "file_size": 561193
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "1.3.1",
+              "sha256": "acc772747e253e5b9fc066a33a4812935aa34143cce9692af2a2abafef268342",
+              "signature": "982a6c5b0b590a7675462760119a013058e0c3253e1e3828a0ba5dccb057fcbfe3c2142bf2a74c6514400e4a3157ca488a70b8a96e8564f111ead7cedf719b02",
+              "file_size": 539407
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.3.1",
+              "sha256": "c3f498052ca2ddcc35d812e4a9d3c3ba8688352f280b2ad981cfc1d50ea058eb",
+              "signature": "043fd3ac6954f99a970aee43a8dd77847693c08a0474388286e31c9e08025fe803ea111e6c11421e8e08b20191d4b8cd38c679e46c5ae6705dbd814b79c6da08",
+              "file_size": 534801
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "1.3.1",
+              "sha256": "18de9713587fe15aaf0a6d2447191300d743db6078abaa50836405a167e76bab",
+              "signature": "361aa8df15cabf97f43d6fd28e29c862611f56907b9c3c00473e8cb667cc66de2a9a6bac1c086cf56f422d3e12adf79bfcf82e5ff322b9127a85ac008cb86907",
+              "file_size": 512588
+            }
+          ]
+        },
+        {
+          "plugin_id": "auto_withdraw",
+          "name": "auto_withdraw",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.0.11",
+              "sha256": "9eeb0cd1e2a47181f2c120ab3973a79325d3edd51eb8fef032b98f97b5244a4e",
+              "signature": "ede890308a45dd1037510169dfaaf2c8fb6a7ab9d367164c38ac90346b0b5a49c8c92b2ce866fb54de0090dc83b2333b0ae07d69f94d99570f766d47d8fa1801",
+              "file_size": 443177
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.0.11",
+              "sha256": "2ae18f8ed7216e79ea06702d7cd352196e1706272c4aba5574254aa314f30aed",
+              "signature": "ef6fb94e2659992be4d95a1a01a5fafc36095f03cb45b3c37587e2f08d913e6792529e1fc539cbf77b7198b045fe512f83868ce7690c68ea9c6f19518bded302",
+              "file_size": 426460
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.0.11",
+              "sha256": "1acac310003dc29c5ffb53270b179cdf1cb0bc240e81c0b6c91c340767975931",
+              "signature": "36420988b07d22877d002b340e688e480dc43cc04e04aa4900cd95559fc3a0695424fdccfd15337c53885fdbba24a3d0a10985a4efb736ea828bb55870125a0e",
+              "file_size": 417143
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.0.11",
+              "sha256": "1b34f0f2ce27b38c5bf2ff8235304b9100839625eef91d6b01b4708ed82b0e8f",
+              "signature": "863d487122d0135d22f5c610928cc1b4c8cae22511b7d0259931fc4d2de7716ee17d0547de27597d8e191c3db5519a2f101085d48a89df6020bd15f4476f8600",
+              "file_size": 399918
+            }
+          ]
+        },
+        {
+          "plugin_id": "chat_sync",
+          "name": "chat_sync",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.1.21",
+              "sha256": "a49f64d12e4dba6b5e87ce35bf7cf321d07d43dce8d62d2e9d7e3139ca4b00a7",
+              "signature": "951a84f05a5e065a247523d651c53a28bbd49075ac6d2a6a293d903d025f2a216001c31cb1f02bf4831291d87c371fd9d928edbee6a46173c4168abce1adc10f",
+              "file_size": 568703
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.1.21",
+              "sha256": "2ab5d8ec83b59f41d2d425993177b87637b1be6266099f416f18b1926d472d57",
+              "signature": "dea7bcb23b3abc61e5eda7d250f96a1c87a84c8d3ad4f2272cc35c639ea3e83ecd89f127c710d7a6fb63c74ec12e6a5cc878e17d810df3fcd278a44241a6c600",
+              "file_size": 545541
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.1.21",
+              "sha256": "fb05a945c7a0d1c72adab15bc8c6d1fe9bc9cf297883860bdc73ebf4c8158c0d",
+              "signature": "fa6b31d5556467f27ce9df88a7260eb94f67685eed2d37a2305bcf7b042334fe8bc7f4699512c011bbd68ef739a3d40bd5301a2be92d67ca0a7ef2afebf95a0c",
+              "file_size": 542300
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.1.21",
+              "sha256": "7943aab4efdf568b5519932c219e60e605764daed5cbb24ef6b0e1b1d3327bd4",
+              "signature": "b34707f8d5f86f2fee6fb1ed11bc95153b5853f5fe5f20d183bced078406ab914baf70b4871dd02d5aa006bdd7e1d7854c2984a5726847b793e6e2aee6183c01",
+              "file_size": 518680
+            }
+          ]
+        },
+        {
+          "plugin_id": "confirm_reminder",
+          "name": "confirm_reminder",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "2.3.1",
+              "sha256": "9f8583532d8444029ce77faff9233c54465636207a654efa800507907d2e0797",
+              "signature": "f2039b09d1ad738ef0753cbf2b496bb5f75031a7b7466984059bf260cc428ece38bdec74ac68d1adc51a533ee9ca399b4302a29430641706194623cc0b33cc00",
+              "file_size": 445377
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "2.3.1",
+              "sha256": "8a740e939d8be7c5e7dce8f4d6efb013274cb8095810cdf31db4e9804ab949d7",
+              "signature": "6730a74519cbce3aad7d5cdd603eab3eb31edeb49f062275823b075269eecbeeaf66b30486e277347470c1fd91f73bc4fe4ebc71c9d50a07e3d458398a9ee00f",
+              "file_size": 426265
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "2.3.1",
+              "sha256": "2d0bd049f361290ead2f446024bd6a490e202fc76f3d6757a022abd41786c2ea",
+              "signature": "7f988ac12e8f5bc108ab85dd294fecce013146d9493d2a009c5836b461caa94ed411d21d6f6a9131f7586b679b4b34da4c403e6faf6cfcb03b33aa7c9719e40b",
+              "file_size": 418655
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "2.3.1",
+              "sha256": "6194461580cb2a33fc2c2d307af33de2ad7d98d75b4cdf53df3435ad03845323",
+              "signature": "bd9c8690556551e17b017acdd8a895d8edf7bcae0458622b5e89c539ba947fed32ae6ae6eaed2daf114ba31561a8687d9689bc97674477b07b3eb6573548ea03",
+              "file_size": 399119
+            }
+          ]
+        },
+        {
+          "plugin_id": "cookie_changer",
+          "name": "cookie_changer",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.0.3",
+              "sha256": "7c19341ba46024795275ade4b0279544e158210fc326ca0d49613fb34424a624",
+              "signature": "e5b3013c1ca8a76c36166109521723f8c52c087fb87c81f493639077c0496990387c857835f5ae6fcef93ea4a20f2e4d527c2be8469b9f0daa4f2994da734b08",
+              "file_size": 400395
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.0.3",
+              "sha256": "cf84f6cce6ec6ff55793dd2674b14dab3ae6b2a8d81878162b173d842c3bd0c0",
+              "signature": "da682a25c17e3360e7bce29728859e91e1f8d039aef3ed3b7d95bbb1031f8ceb7fcf02928ff1ef0247ef2374d1b13afcf15a121dd92714e3cd844c523598940e",
+              "file_size": 387234
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.0.3",
+              "sha256": "564b82d69eb79615952344710901e87821876a16d61381eb4f8d9e0413265de8",
+              "signature": "0d3f827069511aee3d20c6c0821c39a044ea6a9d04941c5ce77da00c97df4ea43ce7db2615cfbe80bec25f12c6c444661b2c412d56fbe4ca2cb0b2aede1bcb02",
+              "file_size": 373780
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.0.3",
+              "sha256": "2ac83ccca4e31bdf8449623b39c65d1bc75a621ec69e9ded4f75dc11457b3527",
+              "signature": "f90a597d1e8575fd57440f70bd3bcb51d2f2b1ba2432843b254c48c673c3c1e56493f5264ff89165a4695fbc6ecb267d978d314b9e975726251a956e3fd3200f",
+              "file_size": 359966
+            }
+          ]
+        },
+        {
+          "plugin_id": "copy_lots",
+          "name": "copy_lots",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.0.6",
+              "sha256": "f18adf135085be3f7457d008418ea0dff044baf678f6f55bba787806b171d1ff",
+              "signature": "b23f280868f8b41e54aa6d78a8d5f2a7ac617eade8fc1825f3f8f2c26365ddb20f1d32dba0d8511c4b6db951147abc2149bba4729cec7d731c140b49be72be01",
+              "file_size": 439777
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.0.6",
+              "sha256": "1c31b4d990b7a6f63dfefd809231331aedc86d3fac1277b674a49ea2a44707c9",
+              "signature": "3d4a6b2ae1f2dc017eeec088e0b19e2dcbd058e8c4ff6ca1bfe531c22d7ee1b437f2c18b72496001c95ce4267486aca0c74c7166229f728346fb8e015ca51700",
+              "file_size": 423316
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.0.6",
+              "sha256": "ffcd871ca2eb6f215c57b757e9ceb27434f22c2fbc51d195081487b33e1fe4b5",
+              "signature": "6006728c7b050c88fb6b84de6bf0994a98b8082d82a4675da74031cda093d95906d0f0a867b7a2214cba18720592d94523ed99251f1d2fab478b74d3947a220e",
+              "file_size": 413362
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.0.6",
+              "sha256": "e129814a736683185c5ce69b77948845a0cd074c48d37b9a00b9f5636ed61146",
+              "signature": "ccde6afd600fd055748e02c2bc725e9878e5b6ccf979b631541146dde5a14358cc4377cdcda02f0a6d98d20d48300880903faeb7908cf99531aafec66373a101",
+              "file_size": 396353
+            }
+          ]
+        },
+        {
+          "plugin_id": "delete_lots",
+          "name": "delete_lots",
+          "description": "",
+          "category": "cardinal",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.0.6",
+              "sha256": "4c12e42ef6a87f1196453a49e822f9952d8b84e4e76b26ca617654e5d68ac61a",
+              "signature": "8e6c6f3184bb2be11a618d4c2d0aec418b913f00d53bab1e16b00bac7b7b39f09c5780ac2849bf3f22921db0e227fd53b4f95b1f86f7a42f67fc0c68516cc809",
+              "file_size": 465279
+            },
+            {
+              "platform": "linux.x86_64-py312",
+              "version": "0.0.6",
+              "sha256": "0b2e91fd6e3d11ae549f99158ae5d70895dab9d95de8aaf2b2b6490edbd9cb8f",
+              "signature": "5b048481fbf2f10facc6de4486eba81774cb0e51b2e1bd4be50146f0c1d9345bb809316609759eae3e11894208cecd6ea3a0d031188993d1ccb7222d064e3e02",
+              "file_size": 442028
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.0.6",
+              "sha256": "65ffc3eecc92a089d198124cafa02f2ffb158a6b9810112327473cdab70c8358",
+              "signature": "c4e2a018c9092283d5bd49672891bb6c7defd7b647092f92dc0b56108bab8259422e51e09cdf41074a01c44e9f272e89ca528a3c066898f4dbfec03c2be00007",
+              "file_size": 438683
+            },
+            {
+              "platform": "windows.x86_64-py312",
+              "version": "0.0.6",
+              "sha256": "824d7bd0c5d0940c19b1b817ff951823970d192941e6a35f93384398ad46e604",
+              "signature": "0fccd3b14c787e1c8bf1d3bcbd668c79ccf6cae7be54b4f13712581df19e6a05dfde31aeaee0b928ecc77772dfe4e5db1a35c85b48d20c56f2cee84f0137b40c",
+              "file_size": 415829
+            }
+          ]
+        },
+        {
+          "plugin_id": "pw_ai",
+          "name": "Auto AI PW",
+          "description": "PlayerWave-модуль автовыдачи ИИ-аккаунтов (ChatGPT, Claude, Midjourney) — для бота PlayerWave, не Cardinal-плагин.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.0",
+              "sha256": "09de39f4cf813736f83d5aefa700218f34bc74165a549d87025041a7bfe8d351",
+              "signature": "d1316abfe1241e6d621c5724ad957b1aee66330a7c53de1661e1ab30f0fc866722813f687afcb08d7495f6ccd411e075229a55d3864a31b1b5d48d788872b50a",
+              "file_size": 710629
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.0",
+              "sha256": "13cdc289b29b006a73c420ef230ce413be6ac0c7f07635fd0a759afeaf0b147b",
+              "signature": "73cc97cd176a32b051454ae14d12d2a83edb07146baa0685a01d33e828dc670041d70d8b750e3b451f337dc2adddf6ca165cb222462704eb522806fb1020ad0a",
+              "file_size": 683939
+            }
+          ]
+        },
+        {
+          "plugin_id": "pw_smm",
+          "name": "Auto SMM PW",
+          "description": "PlayerWave-модуль автонакрутки подписчиков/лайков/просмотров через сервисы — для бота PlayerWave.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.0",
+              "sha256": "b03816530779d6986d92bc48593f873bec5e62c609f1aa54fb1add50adf2d295",
+              "signature": "58a03cb31880cdcf9c0190228c30bfe9bda6d04a7faa9857e94d7b30dd6ea94e690146fa48ea16435e25a53e9a98ff5e521a1a45b22d9352c43f03495a686802",
+              "file_size": 543256
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.0",
+              "sha256": "a1391e725112ea676fe336283c4b1a9df498fd028fbcd7b0520bd04eacaae210",
+              "signature": "8cf8c403eec2b3b7fe00e48497006ea01c1fabebbf967ebdb3267e226a36cdbed65d05848baef06d294cbe85f0cb43462a0082350a47b62c7a51668aa0345008",
+              "file_size": 515737
+            }
+          ]
+        },
+        {
+          "plugin_id": "lzt_tiktok",
+          "name": "Auto TikTok",
+          "description": "PlayerWave-модуль автопродвижения TikTok и выдачи монет/аккаунтов — нативный модуль для бота PlayerWave.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "0.1.1",
+              "sha256": "f190d9b4526f77fadc7cfe7ad71157065a4dbd208a45f0f3af1a7a4fcad0fa62",
+              "signature": "55dd4a5d2e969ef992bf6da2b2af6b85656b9ef5f6cc92fc57e77617856fe40b09f0196e2856b885079a49609e0e1882ca27ed614911c160f468c153753c430a",
+              "file_size": 671292
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "0.1.1",
+              "sha256": "d34abd88876ca9cdfe2a4de39a45a6fcbb10ae338763adfb7ad4631c9980310f",
+              "signature": "f6f1334fa2d91cc1939728016ef071eaf9b73d30450ae277a45ebe7d3db1f84e4bd699f2ad459b178c5bd618194f073ccbec78bd558c82f41697066654046e00",
+              "file_size": 644365
+            }
+          ]
+        },
+        {
+          "plugin_id": "autorobux",
+          "name": "AutoRobux",
+          "description": "Автоматическая выдача Robux через покупку GamePass на Roblox.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.1",
+              "sha256": "924473139950130f4ee45c24e92ed1586c28cc7d71b33c99f292368c9ce079e2",
+              "signature": "23101f7d11962ca7f88a52bdade160dd24e61bbc5afd139ab2586198c5bea576f5dedad1c51e7d591f86e3d89f459041fd8374f65670f057a30ddb0fc1511e0c",
+              "file_size": 569345
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.1",
+              "sha256": "ba804ce9616cbc00c1d7d2a30cc26df50d8fee7e30512457af5f5e777a20f8a7",
+              "signature": "b8f160f891d9c175dba45820eb690d6731a748a93d8ae9f284c46e271968e412c25006cad4b023f1b51b557b6ffcc4eabc9cded1ae4abeb09465920ad76ac207",
+              "file_size": 542265
+            }
+          ]
+        },
+        {
+          "plugin_id": "autostars",
+          "name": "AutoStars",
+          "description": "Автоматическая продажа Telegram Stars через Fragment API.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.1",
+              "sha256": "edcbff5f84108dc9f43c9a84f68ce7465aec35289af5ca37914e34768f682234",
+              "signature": "18bda4d41f26057d235cd5eb8295a3532af4131d8a1f2503ebe6b7cbaa0655b11f30e02f4f7e04f4f9616fcbb6cfec3b539fc060a349379a0f246db37ed9520b",
+              "file_size": 646991
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.1",
+              "sha256": "c9a3d8f6fa12174e4cdc7d957790562816422f263e9d07170684ef870bd63b65",
+              "signature": "d29679c852483c26dd098bf38693ed6a26fc0239f60640e41c705603d86c54d42e3251b6e0e4a03e91a5ee7f9fe83ab83692aadbe986141afdf6373ee4bc0406",
+              "file_size": 621514
+            }
+          ]
+        },
+        {
+          "plugin_id": "gpt_info_lots",
+          "name": "GPT Info Lots",
+          "description": "Автоматические ответы ИИ на вопросы покупателей по команде #info / !info в чате Playerok.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.1",
+              "sha256": "e50db59ec489261cc0ceff8f5fc859a5b7357dc5bb88d8a4169b903c378feb2c",
+              "signature": "b4a1eb5bb536144fdd691924b6e16278e8b5652419b8788a9a4ffe0e80f1c4cc74efcb2535b25389e9630cf007d2d787cb75e11d6be69330b90897ae5ce7bc02",
+              "file_size": 496478
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.1",
+              "sha256": "d1c715cf1c84d0787cb73e191cae9f174705e4119814d51eb3c3e78d5014a0e7",
+              "signature": "b46f17e97ebd8c457493f0569835046da9253e30e479df4bd6a01403767285c517d83e257b32e95b12f24223813d2be5fc97a37f258c554ba3292be947305003",
+              "file_size": 469705
+            }
+          ]
+        },
+        {
+          "plugin_id": "pw_gmail",
+          "name": "Gmail Fetcher PW",
+          "description": "PlayerWave-модуль перехвата кодов подтверждения из Gmail по IMAP — для бота PlayerWave.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.0",
+              "sha256": "04054ef4f7f9dc71e0d823de354f0bc7f1c21b115856184bab7d7f3bf9e3ae48",
+              "signature": "244e61cca0a740368cf897acf72a3216914fb5130a05715f692ac82206e5d6a7fd9109d2d69a84d73bdf6819b7895e9a2beb8943b6088c1d63ebc15580cc6c0d",
+              "file_size": 530070
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.0",
+              "sha256": "9ef043a3ca031868790355a18393c27488f04eab2e2b0586afc7dde29d9f99d5",
+              "signature": "32948774ba41802844dee6eda10aeade2ae58f895d5f30e98a55eabd6306e2296269e8a51b9b5e09ee01e4d20959fe9e3dd5ba3aaf104308dc8919e20ba9ad0c",
+              "file_size": 503252
+            }
+          ]
+        },
+        {
+          "plugin_id": "pw_offline",
+          "name": "Offline Activate PW",
+          "description": "PlayerWave-модуль оффлайн-активации Steam Guard и привязки оборудования — для бота PlayerWave.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.0",
+              "sha256": "32e3f0325c29308d5a755afed6bdbdc7f8acaad0c1cf28293d088d5cb56aedcb",
+              "signature": "66651e92a9095bac72404f2dbd6a13126844c2909bd75a190ad09527a5e7821c8967b48d7ca4f63ffd935338719677ecd7f69a417dd2dff74421df2510be900c",
+              "file_size": 501207
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.0",
+              "sha256": "2cbb9503efb083d760e1fd7878820703e2e45d8dd42a55eb65c79a07c7540a45",
+              "signature": "670735cd054cebf921143f4a0c9dbd7cab67501bf3b07c78f83eca3bf9f2650e7e85e8f49352f47f688517ff83037b53a8ed242fa92b4392b7a465277e563b02",
+              "file_size": 474344
+            }
+          ]
+        },
+        {
+          "plugin_id": "steamns",
+          "name": "SteamNS",
+          "description": "Автоматическое пополнение Steam через API NS.Gifts v2.",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.1",
+              "sha256": "7c447c3d9f536815e1a641051969ce2d2666363397a25ee5691abaff6f317af9",
+              "signature": "c0cf9d956d3e4a3f1c1814c15e74be0b2ba930edb5af42ef5e9cc034375440386b01157e81ba73196c3137e2d9c8377d5b74b99bd9689d57a6eaa8338a0c070d",
+              "file_size": 620308
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.1",
+              "sha256": "83c51cd608a0cc5e3dd017800345757e1696dfa11305703d3d37334bae631226",
+              "signature": "8945a0ce306c7e093fa82aeba6e10ce8f4afb7ebd6d08f1d6a46e6788738ebe603e437661a13227ef2c5349910ff82c0230e42777bc4266622eb3845bdf5e605",
+              "file_size": 593612
+            }
+          ]
+        },
+        {
+          "plugin_id": "vip_roblox",
+          "name": "Vip Roblox",
+          "description": "Автовыдача VIP серверов Roblox",
+          "category": "playerwave",
+          "releases": [
+            {
+              "platform": "linux.x86_64",
+              "version": "1.0.1",
+              "sha256": "e5d60bc49e8038d2c32db4b6eec37f10ce83a3fa95d86c12f0274ec62914a785",
+              "signature": "7e3a8b5de9e3dce285c520d57fcfeda9bda9850538065f69de4e0a50faf75775d68f34323e7b584881621cc4fcef613da2afafda764fb1fac48be58243a48508",
+              "file_size": 672337
+            },
+            {
+              "platform": "windows.x86_64",
+              "version": "1.0.1",
+              "sha256": "50a499e45c38fca24c21e7e9039451c118fd6988e9601276fd6e7f0ba91cc6cf",
+              "signature": "5c1bb79d3213176bc1ab4ee84491c6f8e99a7fa4d382de3d61fafaccf4cc0fa4c052a90a24fa242fecb39006615ff67015e17423ca6970318112e6dbe7843404",
+              "file_size": 646497
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "url": "https://techjonny.dantez.website/installers/release.json",
+    "status": 200,
+    "data": {
+      "archive": "cardinal-installer-0.2.12.zip",
+      "archive_sha256": "905ad78dd1868105a669ab8c935aae6aa846ac204cd5a9bc0f257bc9cd8e49f4",
+      "archive_signature": "cardinal-installer-0.2.12.zip.sig",
+      "archive_size_bytes": 1015879,
+      "python_spec": ">=3.12.3,<3.13",
+      "schema_version": "1",
+      "version": "0.2.12"
+    }
+  }
+]

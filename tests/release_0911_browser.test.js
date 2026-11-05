@@ -65,12 +65,13 @@ test('offscreen parses synthetic message IDs/authors/body without preview or aut
             { id: '9007199254740993', author: 200, html: '<div class="media-user-name">Имя</div><div class="chat-msg-text">ключ<br>A&amp;B</div>' },
             { id: 12, author: 0, html: '<div role="alert">оплатил заказ #ABCDEFGH</div>' },
             { id: 13, html: '<div data-author="100"><div class="chat-msg-text">чужое имя не автор</div></div>' },
-            { id: 14, author: 100, html: '<a class="chat-img-link" href="https://example.test/image"></a>' }
+            { id: 14, author: 100, image_id: '500', html: '<div class="chat-msg-text"></div><a class="chat-img-link" href="https://example.test/image"></a>' }
         ], '77'));
         assert.equal(result.ok, true);
         assert.equal(result.messages[0].id, '9007199254740993'); assert.equal(result.messages[0].text, 'ключ\nA&B');
         assert.deepEqual(result.messages.map(m => m.authorId), ['200', '0', null, '100']);
         assert.equal(result.messages[3].kind, 'image');
+        assert.equal(result.messages[3].imageId, '500');
         assert.equal(await page.evaluate(() => parseChatMessages([{ id: 9007199254740992, author: 100, html: '' }], '77').ok), false);
     } finally { await browser.close(); }
 });

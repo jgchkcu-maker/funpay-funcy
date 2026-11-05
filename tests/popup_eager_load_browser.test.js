@@ -37,7 +37,7 @@ test('one, two and five rapid clicks build once; closing, reopening and template
             }, clicks);
             await page.waitForSelector('.fp-tools-popup.active');
             assert.equal(await page.evaluate(() => qaBuilds), 1);
-            assert.equal(await page.locator('.fp-tools-page-content').count(), 16);
+            assert.equal(await page.locator('.fp-tools-page-content').count(), 17);
             await page.evaluate(() => document.querySelector('#fpToolsButton').click());
             await page.waitForFunction(() => !document.querySelector('.fp-tools-popup').classList.contains('is-closing'));
             assert.equal(await page.locator('.fp-tools-popup.active').count(), 0);

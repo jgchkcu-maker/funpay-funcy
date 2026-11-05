@@ -4,6 +4,7 @@ import { updateAutoReplies } from './auto_reply_store.js';
 import { createStrictChatSender } from './chat_sender.js';
 import { createChatReader } from './chat_reader.js';
 import { createChatStream } from './chat_stream.js';
+import { createChatGuard } from './chat_guard.js';
 export { countAutoDeliverySecrets, createAutoDeliveryStore, isAutoDeliveryLotEnabled } from './auto_delivery_store.js';
 
 const BOT_MARKER = '\u2061';
@@ -119,7 +120,10 @@ async function getAuth() {
 
 // Сообщения уходят строгим отправителем: один POST без повторов. Неясный исход
 // (таймаут, 5xx, нечитаемый ответ) не повторяется — сообщение могло дойти.
-const strictSender = createStrictChatSender({ mark: markOutgoing });
+function trackedSender(sender) {
+    return Object.freeze({ send: args => getChatGuard()?.trackSend(args, boundary => sender.send({ ...args, ...boundary })) || sender.send(args) });
+}
+const strictSender = trackedSender(createStrictChatSender({ mark: markOutgoing }));
 
 export async function sendChatMessage(chatId, text, auth) {
     await assertMessageAccount();
@@ -136,7 +140,7 @@ export function getStrictChatSender() {
 }
 
 // Fulfillment bodies must remain byte-for-byte user content, without bot marks.
-const deliverySender = createStrictChatSender();
+const deliverySender = trackedSender(createStrictChatSender());
 export function getDeliveryChatSender() { return deliverySender; }
 
 // 3.0: upload an image (data URL) to FunPay and send it to a chat, in the background.
@@ -167,15 +171,21 @@ async function sendChatImage(chatId, dataUrl, auth) {
     };
     // Отправка картинки в чат — внешний эффект: один POST без автоматических повторов.
     await assertMessageAccount();
-    const res = await fetch('https://funpay.com/runner/', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', 'cookie': cookieStr },
-        body: new URLSearchParams(payload)
-    });
-    if (!res.ok) throw new Error(`sendImage HTTP ${res.status}`);
-    const json = await res.json().catch(() => null);
-    if (json?.error) throw new Error(`FunPay runner error: ${json.error}`);
+    const send = async () => {
+        const res = await fetch('https://funpay.com/runner/', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'content-type': 'application/x-www-form-urlencoded; charset=UTF-8', 'x-requested-with': 'XMLHttpRequest', 'cookie': cookieStr },
+            body: new URLSearchParams(payload)
+        });
+        if (!res.ok) throw new Error(`sendImage HTTP ${res.status}`);
+        const json = await res.json().catch(() => null);
+        if (json?.error) throw new Error(`FunPay runner error: ${json.error}`);
+        if (!json) throw new Error('FunPay вернул нечитаемый ответ.');
+        return { status: 'accepted' };
+    };
+    if (getChatGuard()) await getChatGuard().trackSend({ chatId, imageId: fileId, auth }, send);
+    else await send();
     console.log(`FunPay Funcy AR: 🖼 → чат ${chatId}`);
 }
 
@@ -437,9 +447,19 @@ async function handleReview(msg, auth, settings) {
 // проверку роли. Без них события заказов только пишутся в лог: автоответчик не
 // выдаёт товар и не отвечает на заказы, если не может подтвердить, что вы продавец.
 let orderAutomation = null;
+let chatGuard = null;
+export function getChatGuard() {
+    if (!chatGuard && orderAutomation?.guard) chatGuard = createChatGuard({
+        guard: orderAutomation.guard, updateSettings: updateAutoReplies,
+        readSettings: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {}
+    });
+    return chatGuard;
+}
 
 export function configureOrderAutomation(automation) {
     orderAutomation = automation || null;
+    chatGuard = null;
+    messageStream = null;
 }
 
 function orderIdOf(msg) {
@@ -555,7 +575,7 @@ export async function runAutoResponderCycle() {
     }
 }
 
-function isAutoResponderActive(settings) {
+export function isAutoResponderActive(settings) {
     return Boolean(
         settings.greetingEnabled      ||
         settings.keywordsEnabled      ||
@@ -595,10 +615,13 @@ async function assertMessageAccount() {
 }
 
 async function processIncoming(message, account, auth) {
+    const currentSettings = (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {};
+    if (!isAutoResponderActive(currentSettings)) return;
     activeMessageAccount = account;
     try {
         await assertMessageAccount();
         const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
+        if (!isAutoResponderActive(settings)) return;
         const msg = { chatId: message.chatId, messageId: message.id, messageText: message.text,
             buyerName: message.buyerName, msgType: message.system ? getMessageType(message.text) : 'NON_SYSTEM',
             orderId: message.system ? (message.text.match(RX.ORDER_ID) || [])[1] || null : null, source: 'chat' };
@@ -627,7 +650,7 @@ async function processIncoming(message, account, auth) {
 
 async function _runAutoResponderCycleInner() {
     const { fpToolsAutoReplies: settings = {} } = await chrome.storage.local.get('fpToolsAutoReplies');
-    if (!isAutoResponderActive(settings) || !orderAutomation?.guard) return;
+    if ((!isAutoResponderActive(settings) && !settings.chatGuardEnabled) || !orderAutomation?.guard) return;
     const account = await orderAutomation.guard.current({ fresh: true });
     if (!account.accountId) return;
     const auth = await getAuth();
@@ -642,10 +665,18 @@ async function _runAutoResponderCycleInner() {
         });
         messageStream = createChatStream({ reader, guard: orderAutomation.guard,
             readSettings: async () => (await chrome.storage.local.get('fpToolsAutoReplies')).fpToolsAutoReplies || {},
-            updateSettings: updateAutoReplies, processMessage: processIncoming });
+            updateSettings: updateAutoReplies, processMessage: processIncoming, observer: getChatGuard() });
     }
     try { await messageStream.poll(account, auth); }
-    catch (error) { console.error('FunPay Funcy AR: чтение сообщений остановлено', error.message); }
+    catch (error) {
+        if (error?.code === 'account-changed') {
+            console.warn('FunPay Funcy AR: опрос чатов прерван сменой аккаунта —', error.message);
+            return;
+        }
+        await getChatGuard()?.report(account, error).catch(() => {});
+        if (error?.code === 'CHAT_READ_TIMEOUT') console.warn('FunPay Funcy AR:', error.message);
+        else console.error('FunPay Funcy AR: чтение сообщений остановлено', error.message);
+    }
 }
 
 export async function resetAutoResponderState() {

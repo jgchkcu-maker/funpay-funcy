@@ -1,7 +1,9 @@
+import { chatGuardSettingsChanged } from './chat_guard.js';
 const AUTO_REPLY_STORAGE_KEY = 'fpToolsAutoReplies';
 const AUTO_REPLY_MAP_FIELDS = new Set(['reviewTemplates', 'reviewTemplateImages']);
 export const AUTO_REPLY_RUNTIME_FIELDS = new Set([
     'chatStreams',
+    'chatGuardState',
     'processedMessageIds',
     'lastSeenMsgIds',
     'lastHandledText',
@@ -159,14 +161,18 @@ export function createAutoReplyStore(storage) {
     async function updateInsideQueue(mutator) {
         if (typeof mutator !== 'function') throw new TypeError('updateAutoReplies expects a mutator function.');
         const next = await readCurrent();
+        const before = { chatGuardEnabled: next.chatGuardEnabled };
         await mutator(next);
+        chatGuardSettingsChanged(before, next);
         await storage.set({ [AUTO_REPLY_STORAGE_KEY]: next });
         return clone(next);
     }
 
     async function patchInsideQueue(patch) {
         const next = await readCurrent();
+        const before = { chatGuardEnabled: next.chatGuardEnabled };
         applyPatch(next, patch);
+        chatGuardSettingsChanged(before, next);
         await storage.set({ [AUTO_REPLY_STORAGE_KEY]: next });
         return clone(next);
     }

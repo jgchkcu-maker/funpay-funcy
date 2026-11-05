@@ -23,7 +23,7 @@ if (typeof window !== 'undefined' && window.fptPopupActions) {
     window.fptPopupActions.register('needs', 'getFeatureRegistry', () => fptNeedsRegistry());
     // Writes the disabled list through the shared queue so quick consecutive toggles never overwrite each other.
     function fptNeedsWriteDisabled(change) {
-        const known = new Set(fptNeedsRegistry().filter(entry => !entry.locked).map(entry => entry.id));
+        const known = new Set(fptNeedsRegistry().filter(entry => !entry.locked && !entry.control).map(entry => entry.id));
         return window.fptPopupActions.updateSettings(['fpToolsDisabledFeatures'], current => {
             const saved = Array.isArray(current.fpToolsDisabledFeatures) ? current.fpToolsDisabledFeatures : [];
             const disabled = new Set(saved);
